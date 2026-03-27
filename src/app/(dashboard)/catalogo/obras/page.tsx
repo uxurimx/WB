@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getObras } from "@/app/actions/catalogo";
 import ObrasTable from "@/components/catalogo/ObrasTable";
 import { HardHat } from "lucide-react";

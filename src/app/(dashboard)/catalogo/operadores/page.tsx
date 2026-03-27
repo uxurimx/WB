@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getOperadores } from "@/app/actions/catalogo";
 import OperadoresTable from "@/components/catalogo/OperadoresTable";
 import { Users } from "lucide-react";

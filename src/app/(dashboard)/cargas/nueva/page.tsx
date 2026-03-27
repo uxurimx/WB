@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { PlusCircle } from "lucide-react";
 import { getUnidades, getOperadores } from "@/app/actions/catalogo";
 import { getSiguienteFolioPublic } from "@/app/actions/cargas";

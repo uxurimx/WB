@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { Fuel } from "lucide-react";
 import { getUnidades, getOperadores, getObras } from "@/app/actions/catalogo";
 import { getSiguienteFolioCampoPublic } from "@/app/actions/cargas";

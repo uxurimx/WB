@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getUnidades } from "@/app/actions/catalogo";
 import UnidadesTable from "@/components/catalogo/UnidadesTable";
 import { Truck } from "lucide-react";
