@@ -52,10 +52,15 @@ function parseTipoDiesel(val: unknown): string {
   return "normal";
 }
 
+function normalizeStr(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
 function detectCol(headers: unknown[], terms: string[]): number {
-  const lower = headers.map((h) => String(h ?? "").toLowerCase().trim());
+  const normalized = headers.map((h) => normalizeStr(String(h ?? "")));
   for (const term of terms) {
-    const idx = lower.findIndex((h) => h.includes(term));
+    const normTerm = normalizeStr(term);
+    const idx = normalized.findIndex((h) => h.includes(normTerm));
     if (idx !== -1) return idx;
   }
   return -1;
@@ -69,17 +74,29 @@ type ColMap = {
 
 function detectColMap(headers: unknown[]): ColMap {
   return {
-    fecha:      detectCol(headers, ["fecha", "date", "día", "dia"]),
-    folio:      detectCol(headers, ["folio", "no.", "núm", "num", "ticket"]),
-    unidad:     detectCol(headers, ["unidad", "camion", "camión", "equipo", "vehículo", "vehiculo", "cod"]),
-    operador:   detectCol(headers, ["operador", "chofer", "conductor", "piloto", "operador"]),
-    litros:     detectCol(headers, ["litro", "lts", "lt ", "combustible", "diesel"]),
-    origen:     detectCol(headers, ["origen", "tipo carga", "fuente", "lugar"]),
-    tipoDiesel: detectCol(headers, ["tipo diesel", "tipo de diesel", "calidad", "amigo", "oxxo"]),
-    obra:       detectCol(headers, ["obra", "proyecto", "trabajo", "job"]),
-    odometro:   detectCol(headers, ["odometro", "odómetro", "km", "hrs", "horas", "horómetro", "horometro"]),
-    hora:       detectCol(headers, ["hora", "time", "hh", "h:"]),
+    fecha:      detectCol(headers, ["fecha", "date", "dia", "día"]),
+    folio:      detectCol(headers, ["folio", "ticket", "factura", "remision", "remisión", "no.", "num"]),
+    unidad:     detectCol(headers, ["unidad", "equipo", "camion", "camión", "vehiculo", "vehículo", "econom", "placa", "descripcion", "unid", "cod"]),
+    operador:   detectCol(headers, ["operador", "chofer", "conductor", "piloto", "responsable", "nombre"]),
+    litros:     detectCol(headers, ["litro", "lts", "lt.", "lt ", "combustible", "diesel", "vol", "comb"]),
+    origen:     detectCol(headers, ["origen", "tipo carga", "tipo de carga", "fuente", "lugar", "procede"]),
+    tipoDiesel: detectCol(headers, ["tipo diesel", "tipo de diesel", "calidad", "amigo", "oxxo", "marca"]),
+    obra:       detectCol(headers, ["obra", "proyecto", "frente", "trabajo", "job", "destino"]),
+    odometro:   detectCol(headers, ["odometro", "odómetro", "horometro", "horómetro", "kilometro", "kilometraje", "km", "hrs", "horas"]),
+    hora:       detectCol(headers, ["hora", "time", "hh:", "h:"]),
   };
+}
+
+function scoreRow(headers: unknown[]): number {
+  const col = detectColMap(headers);
+  let score = 0;
+  if (col.fecha !== -1) score += 3;
+  if (col.unidad !== -1) score += 3;
+  if (col.litros !== -1) score += 3;
+  if (col.operador !== -1) score += 1;
+  if (col.folio !== -1) score += 1;
+  if (col.origen !== -1) score += 1;
+  return score;
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -132,27 +149,31 @@ export default function ImportarExcel() {
         raw: true,
       }) as unknown[][];
 
-      // Find header row (first non-empty row with meaningful content)
+      // Find header row: scan first 20 rows, pick the one that scores highest
+      // (matches most expected column names). This handles title rows above headers.
       let headerIdx = 0;
-      for (let i = 0; i < Math.min(10, rawData.length); i++) {
+      let bestScore = -1;
+      for (let i = 0; i < Math.min(20, rawData.length); i++) {
         const row = rawData[i];
-        if (row && row.filter((c) => c !== "").length >= 4) {
-          headerIdx = i;
-          break;
-        }
+        if (!row || row.filter((c) => c !== "" && c !== null && c !== undefined).length < 2) continue;
+        const s = scoreRow(row);
+        if (s > bestScore) { bestScore = s; headerIdx = i; }
       }
 
       const headers = rawData[headerIdx] ?? [];
       const dataRows = rawData.slice(headerIdx + 1).filter(
-        (r) => r && r.some((c) => c !== "" && c !== null)
+        (r) => r && r.some((c) => c !== "" && c !== null && c !== undefined)
       );
 
       const colMap = detectColMap(headers);
 
       if (colMap.unidad === -1 || colMap.litros === -1 || colMap.fecha === -1) {
+        // Show what was actually found to help debug
+        const headerStr = headers.slice(0, 10).map((h) => `"${String(h ?? "").trim()}"`).join(", ");
         setParseError(
           `No se detectaron columnas esenciales. Hoja: "${sheetName}". ` +
-          `Asegúrate de que el archivo tiene columnas Fecha, Unidad y Litros.`
+          `Encabezados encontrados (fila ${headerIdx + 1}): ${headerStr}. ` +
+          `Necesita columnas de Fecha, Unidad/Equipo y Litros.`
         );
         return;
       }
