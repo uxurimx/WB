@@ -1,18 +1,15 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { ArrowLeft, FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import ImportarExcel from "@/components/admin/ImportarExcel";
 
 export default async function ImportarPage() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
-  const me = await db.query.users.findFirst({ where: eq(users.id, userId) });
-  if (!me || me.role !== "admin") redirect("/overview");
+  const clerkUser = await currentUser();
+  if (clerkUser?.publicMetadata?.role !== "admin") redirect("/overview");
 
   return (
     <div className="p-6 md:p-8 max-w-3xl">

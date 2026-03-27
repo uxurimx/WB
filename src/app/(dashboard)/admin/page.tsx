@@ -1,9 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Shield, Users, Mail } from "lucide-react";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import {
   getUsuarios,
   getInvitacionesPendientes,
@@ -16,9 +13,9 @@ export default async function AdminPage() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
-  // Solo admins
-  const me = await db.query.users.findFirst({ where: eq(users.id, userId) });
-  if (!me || me.role !== "admin") redirect("/overview");
+  // Solo admins — lee el rol desde Clerk (no depende de la tabla users)
+  const clerkUser = await currentUser();
+  if (clerkUser?.publicMetadata?.role !== "admin") redirect("/overview");
 
   const [usuariosList, invitaciones] = await Promise.all([
     getUsuarios(),

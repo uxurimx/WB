@@ -1,6 +1,6 @@
 "use server";
 
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { users } from "@/db/schema";
@@ -11,9 +11,9 @@ import { VALID_ROLES, type Role } from "@/lib/roles";
 async function requireAdmin() {
   const { userId } = await auth();
   if (!userId) throw new Error("No autenticado");
-  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
-  if (!user || user.role !== "admin") throw new Error("Sin permisos de administrador");
-  return { userId, adminUser: user };
+  const clerkUser = await currentUser();
+  if (clerkUser?.publicMetadata?.role !== "admin") throw new Error("Sin permisos de administrador");
+  return { userId };
 }
 
 // ─── Queries ──────────────────────────────────────────────────

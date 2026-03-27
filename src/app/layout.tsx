@@ -22,7 +22,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: siteConfig.name,
   description: siteConfig.description,
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
