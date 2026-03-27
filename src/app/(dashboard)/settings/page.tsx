@@ -2,9 +2,11 @@ import { currentUser } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
 import ThemeToggle from "@/components/ThemeToggle";
 import SeedButton from "@/components/SeedButton";
+import TestingPanel from "@/components/settings/TestingPanel";
 
 export default async function SettingsPage() {
   const user = await currentUser();
+  const isAdmin = user?.publicMetadata?.role === "admin";
 
   return (
     <div className="p-6 md:p-8 max-w-2xl">
@@ -77,6 +79,16 @@ export default async function SettingsPage() {
           <SeedButton />
         </div>
       </section>
+
+      {/* Zona de testing — solo admins */}
+      {isAdmin && (
+        <section className="mt-6">
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--fg-muted)" }}>
+            Testing
+          </h2>
+          <TestingPanel />
+        </section>
+      )}
     </div>
   );
 }
