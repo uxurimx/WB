@@ -26,6 +26,8 @@ export async function createUnidad(data: {
 }) {
   const [nueva] = await db.insert(unidades).values(data).returning();
   revalidatePath("/catalogo/unidades");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
   return nueva;
 }
 
@@ -39,12 +41,16 @@ export async function updateUnidad(
     .where(eq(unidades.id, id))
     .returning();
   revalidatePath("/catalogo/unidades");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
   return updated;
 }
 
 export async function toggleUnidadActivo(id: number, activo: boolean) {
   await db.update(unidades).set({ activo }).where(eq(unidades.id, id));
   revalidatePath("/catalogo/unidades");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -64,6 +70,8 @@ export async function createOperador(data: {
 }) {
   const [nuevo] = await db.insert(operadores).values(data).returning();
   revalidatePath("/catalogo/operadores");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
   return nuevo;
 }
 
@@ -77,12 +85,16 @@ export async function updateOperador(
     .where(eq(operadores.id, id))
     .returning();
   revalidatePath("/catalogo/operadores");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
   return updated;
 }
 
 export async function toggleOperadorActivo(id: number, activo: boolean) {
   await db.update(operadores).set({ activo }).where(eq(operadores.id, id));
   revalidatePath("/catalogo/operadores");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -103,6 +115,7 @@ export async function createObra(data: {
 }) {
   const [nueva] = await db.insert(obras).values(data).returning();
   revalidatePath("/catalogo/obras");
+  revalidatePath("/cargas/campo");
   return nueva;
 }
 
@@ -116,10 +129,12 @@ export async function updateObra(
     .where(eq(obras.id, id))
     .returning();
   revalidatePath("/catalogo/obras");
+  revalidatePath("/cargas/campo");
   return updated;
 }
 
 export async function toggleObraActiva(id: number, activo: boolean) {
   await db.update(obras).set({ activo }).where(eq(obras.id, id));
   revalidatePath("/catalogo/obras");
+  revalidatePath("/cargas/campo");
 }
