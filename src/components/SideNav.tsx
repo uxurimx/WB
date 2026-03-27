@@ -18,6 +18,7 @@ import {
   X,
   Wrench,
   Calendar,
+  Shield,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
@@ -25,42 +26,47 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 // ─── Estructura de navegación ────────────────────────────────
-const navSections = [
-  {
-    label: null,
-    items: [
-      { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: "Cargas",
-    items: [
-      { name: "Nueva Carga Patio", href: "/cargas/nueva", icon: PlusCircle },
-      { name: "Nueva Carga Campo", href: "/cargas/campo", icon: Fuel },
-      { name: "Historial", href: "/cargas", icon: ClipboardList },
-    ],
-  },
-  {
-    label: "Catálogos",
-    items: [
-      { name: "Unidades", href: "/catalogo/unidades", icon: Truck },
-      { name: "Operadores", href: "/catalogo/operadores", icon: Users },
-      { name: "Obras", href: "/catalogo/obras", icon: HardHat },
-    ],
-  },
-  {
-    label: "Análisis",
-    items: [
-      { name: "Períodos", href: "/periodos", icon: Calendar },
-    ],
-  },
-  {
-    label: "Sistema",
-    items: [
-      { name: "Configuración", href: "/settings", icon: Settings },
-    ],
-  },
-];
+function getNavSections(isAdmin: boolean) {
+  return [
+    {
+      label: null,
+      items: [
+        { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
+      ],
+    },
+    {
+      label: "Cargas",
+      items: [
+        { name: "Nueva Carga Patio", href: "/cargas/nueva", icon: PlusCircle },
+        { name: "Nueva Carga Campo", href: "/cargas/campo", icon: Fuel },
+        { name: "Historial", href: "/cargas", icon: ClipboardList },
+      ],
+    },
+    {
+      label: "Catálogos",
+      items: [
+        { name: "Unidades", href: "/catalogo/unidades", icon: Truck },
+        { name: "Operadores", href: "/catalogo/operadores", icon: Users },
+        { name: "Obras", href: "/catalogo/obras", icon: HardHat },
+      ],
+    },
+    {
+      label: "Análisis",
+      items: [
+        { name: "Períodos", href: "/periodos", icon: Calendar },
+      ],
+    },
+    {
+      label: "Sistema",
+      items: [
+        ...(isAdmin
+          ? [{ name: "Administración", href: "/admin", icon: Shield }]
+          : []),
+        { name: "Configuración", href: "/settings", icon: Settings },
+      ],
+    },
+  ];
+}
 
 function NavItem({ name, href, icon: Icon }: { name: string; href: string; icon: React.ComponentType<{ className?: string }> }) {
   const pathname = usePathname();
@@ -93,6 +99,8 @@ function NavItem({ name, href, icon: Icon }: { name: string; href: string; icon:
 
 function SidebarContent() {
   const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === "admin";
+  const navSections = getNavSections(isAdmin);
 
   return (
     <div className="h-full flex flex-col p-4">
