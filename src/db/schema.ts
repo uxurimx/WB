@@ -156,6 +156,20 @@ export const recargasTanque = pgTable("recargas_tanque", {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TRANSFERENCIAS DE TANQUE — mover diesel de Taller → NISSAN (o viceversa)
+// ─────────────────────────────────────────────────────────────────────────────
+export const transferenciasTanque = pgTable("transferencias_tanque", {
+  id: serial("id").primaryKey(),
+  fecha: date("fecha").notNull(),
+  litros: real("litros").notNull(),
+  tanqueOrigenId: integer("tanque_origen_id").notNull(),
+  tanqueDestinoId: integer("tanque_destino_id").notNull(),
+  registradoPorId: text("registrado_por_id"),
+  notas: text("notas"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // RENDIMIENTOS — calculados al cerrar cada periodo
 // ─────────────────────────────────────────────────────────────────────────────
 export const rendimientos = pgTable("rendimientos", {
@@ -274,6 +288,17 @@ export const rendimientosRelations = relations(rendimientos, ({ one }) => ({
 export const recargasTanqueRelations = relations(recargasTanque, ({ one }) => ({
   tanque: one(tanques, {
     fields: [recargasTanque.tanqueId],
+    references: [tanques.id],
+  }),
+}));
+
+export const transferenciasTanqueRelations = relations(transferenciasTanque, ({ one }) => ({
+  tanqueOrigen: one(tanques, {
+    fields: [transferenciasTanque.tanqueOrigenId],
+    references: [tanques.id],
+  }),
+  tanqueDestino: one(tanques, {
+    fields: [transferenciasTanque.tanqueDestinoId],
     references: [tanques.id],
   }),
 }));

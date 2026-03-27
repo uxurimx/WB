@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Fuel, Truck, AlertTriangle } from "lucide-react";
 import RecargaTanqueModal from "./RecargaTanqueModal";
+import TransferirNissanModal from "./TransferirNissanModal";
 
 type StockData = { id: number; litros: number; max: number };
 
@@ -150,19 +151,28 @@ export default function StockCards({
           borderColor: alertaNissan ? "rgb(239 68 68 / 0.4)" : "var(--border)",
         }}
       >
-        <div className="flex items-center gap-2 mb-1">
-          <div className="p-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
-            <Truck className="w-3.5 h-3.5 text-violet-500" />
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
+              <Truck className="w-3.5 h-3.5 text-violet-500" />
+            </div>
+            <span
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              NISSAN
+            </span>
           </div>
-          <span
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: "var(--fg-muted)" }}
-          >
-            NISSAN
-          </span>
-          {alertaNissan && (
-            <AlertTriangle className="w-4 h-4 text-red-500 ml-auto shrink-0" />
-          )}
+          <div className="flex items-center gap-2">
+            {alertaNissan && (
+              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+            )}
+            <TransferirNissanModal
+              tanqueOrigenId={taller.id}
+              tanqueDestinoId={nissan.id}
+              litrosDisponibles={taller.litros}
+            />
+          </div>
         </div>
 
         <p
