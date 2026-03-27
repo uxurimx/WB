@@ -1,7 +1,7 @@
-// Central configuration — update this file to rebrand the app
+// Central configuration — actualizar aquí para cambiar nombre/versión
 export const siteConfig = {
-  name: "Admin Panel",
-  tagline: "Your platform, your rules.",
-  description: "A clean, modular admin panel template built with Next.js, Clerk, and Drizzle ORM.",
-  version: "1.0.0",
+  name: "WB Diesel Control",
+  tagline: "Control de flota en tiempo real.",
+  description: "Sistema de control de diesel, rendimiento y maquinaria para WB Construcción.",
+  version: "0.1.0",
 };

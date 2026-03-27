@@ -1,101 +1,169 @@
-import { auth } from "@clerk/nextjs/server";
-import { currentUser } from "@clerk/nextjs/server";
-import { LayoutDashboard, Users, Activity, ArrowUpRight } from "lucide-react";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { Fuel, Truck, Wrench, AlertTriangle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default async function OverviewPage() {
   const { userId } = await auth();
   const user = await currentUser();
 
-  const greeting = user?.firstName ? `Welcome back, ${user.firstName}.` : "Welcome back.";
+  const greeting = user?.firstName
+    ? `Bienvenido, ${user.firstName}.`
+    : "Bienvenido.";
 
-  // Template stat cards — replace with real data from your modules
+  // Placeholder stats — se conectarán a la DB en Fase 2
   const stats = [
-    { label: "Total Users", value: "—", icon: Users, hint: "Connect your users table" },
-    { label: "Active Sessions", value: "—", icon: Activity, hint: "Wire up analytics" },
-    { label: "Events Today", value: "—", icon: LayoutDashboard, hint: "Add your events module" },
+    {
+      label: "Stock Taller",
+      value: "—",
+      unit: "litros",
+      icon: Fuel,
+      color: "indigo",
+      hint: "Diesel disponible en taller",
+    },
+    {
+      label: "NISSAN",
+      value: "—",
+      unit: "/ 1200 L",
+      icon: Truck,
+      color: "violet",
+      hint: "Saldo actual en camión NISSAN",
+    },
+    {
+      label: "Cargas Hoy",
+      value: "—",
+      unit: "eventos",
+      icon: Wrench,
+      color: "purple",
+      hint: "Despachos registrados hoy",
+    },
+    {
+      label: "Alertas",
+      value: "—",
+      unit: "activas",
+      icon: AlertTriangle,
+      color: "amber",
+      hint: "Unidades fuera de tolerancia",
+    },
   ];
 
   return (
-    <div className="p-8 max-w-5xl">
-      {/* Page header */}
-      <div className="mb-10">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--fg-muted)" }}>
+    <div className="p-6 md:p-8 max-w-6xl">
+      {/* Header */}
+      <div className="mb-8">
+        <p
+          className="text-xs font-semibold uppercase tracking-widest mb-1"
+          style={{ color: "var(--fg-muted)" }}
+        >
           Dashboard
         </p>
-        <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>
+        <h1
+          className="font-outfit font-bold text-3xl"
+          style={{ color: "var(--fg)" }}
+        >
           {greeting}
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--fg-muted)" }}>
-          Your admin panel is ready. Start building your modules below.
+          Control de diesel y rendimiento de flota en tiempo real.
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-        {stats.map(({ label, value, icon: Icon, hint }) => (
-          <div
-            key={label}
-            className="p-5 rounded-2xl border"
-            style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--fg-muted)" }}>
-                {label}
-              </span>
-              <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                <Icon className="w-3.5 h-3.5 text-indigo-500" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {stats.map(({ label, value, unit, icon: Icon, hint }) => (
+          <Card key={label}>
+            <CardContent>
+              <div className="flex items-center justify-between mb-3">
+                <span
+                  className="text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: "var(--fg-muted)" }}
+                >
+                  {label}
+                </span>
+                <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                  <Icon className="w-3.5 h-3.5 text-indigo-500" />
+                </div>
               </div>
-            </div>
-            <p className="font-outfit font-bold text-3xl mb-1" style={{ color: "var(--fg)" }}>{value}</p>
-            <p className="text-xs" style={{ color: "var(--fg-muted)" }}>{hint}</p>
-          </div>
+              <p
+                className="font-outfit font-bold text-3xl mb-0.5"
+                style={{ color: "var(--fg)" }}
+              >
+                {value}
+              </p>
+              <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+                {unit} — {hint}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      {/* Getting started */}
-      <div
-        className="p-6 rounded-2xl border"
-        style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-      >
-        <h2 className="font-outfit font-bold text-lg mb-4" style={{ color: "var(--fg)" }}>
-          Getting Started
-        </h2>
-        <div className="space-y-3">
-          {[
-            {
-              step: "1",
-              title: "Update site config",
-              desc: "Edit src/config/site.ts to set your app name and description.",
-            },
-            {
-              step: "2",
-              title: "Extend the database schema",
-              desc: "Add your tables to src/db/schema.ts and run npm run db:push.",
-            },
-            {
-              step: "3",
-              title: "Add your modules",
-              desc: "Create new routes under src/app/(dashboard)/ and add them to the SideNav.",
-            },
-          ].map(({ step, title, desc }) => (
-            <div
-              key={step}
-              className="flex items-start gap-4 p-4 rounded-xl border"
-              style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}
-            >
-              <span
-                className="w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-500 flex-shrink-0 mt-0.5"
+      {/* Setup checklist */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Próximos pasos</CardTitle>
+          <CardDescription>
+            El sistema base está listo. Estos módulos se activarán fase a fase.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[
+              {
+                fase: "Fase 1",
+                title: "Captura de cargas",
+                desc: "Registrar despachos de diesel desde patio y campo.",
+                status: "pending" as const,
+              },
+              {
+                fase: "Fase 2",
+                title: "Dashboard en tiempo real",
+                desc: "Stock, cargas del día y alertas actualizados vía Pusher.",
+                status: "pending" as const,
+              },
+              {
+                fase: "Fase 3",
+                title: "Rendimientos automáticos",
+                desc: "Cálculo automático al cerrar cada período semanal.",
+                status: "pending" as const,
+              },
+              {
+                fase: "Fase 4",
+                title: "Reportes y exportación",
+                desc: "Reporte semanal en PDF/Excel con un clic.",
+                status: "pending" as const,
+              },
+            ].map(({ fase, title, desc, status }) => (
+              <div
+                key={title}
+                className="flex items-start gap-4 p-4 rounded-xl border"
+                style={{
+                  borderColor: "var(--border)",
+                  backgroundColor: "var(--surface-2)",
+                }}
               >
-                {step}
-              </span>
-              <div>
-                <p className="text-sm font-semibold mb-0.5" style={{ color: "var(--fg)" }}>{title}</p>
-                <p className="text-xs" style={{ color: "var(--fg-muted)" }}>{desc}</p>
+                <Badge variant="secondary" className="mt-0.5 shrink-0">
+                  {fase}
+                </Badge>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm font-semibold mb-0.5"
+                    style={{ color: "var(--fg)" }}
+                  >
+                    {title}
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+                    {desc}
+                  </p>
+                </div>
+                <Badge variant="warning" className="shrink-0">
+                  Pendiente
+                </Badge>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
