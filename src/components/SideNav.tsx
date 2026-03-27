@@ -60,7 +60,10 @@ function getNavSections(isAdmin: boolean) {
       label: "Sistema",
       items: [
         ...(isAdmin
-          ? [{ name: "Administración", href: "/admin", icon: Shield }]
+          ? [
+              { name: "Administración", href: "/admin", icon: Shield },
+              { name: "Importar Datos", href: "/admin/importar", icon: Wrench },
+            ]
           : []),
         { name: "Configuración", href: "/settings", icon: Settings },
       ],

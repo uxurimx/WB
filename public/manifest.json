@@ -1,21 +1,26 @@
 {
-    "name": "Tinta y Café Nexus",
-    "short_name": "T&C Nexus",
-    "description": "Sistema de gestión inteligente para Tinta y Café",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#020617",
-    "theme_color": "#0f172a",
-    "icons": [
-        {
-            "src": "/icon-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "/icon-512x512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ]
+  "name": "WB Diesel Control",
+  "short_name": "WB Diesel",
+  "description": "Control de diesel y rendimiento de flota WB",
+  "start_url": "/overview",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#020617",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "es"
 }

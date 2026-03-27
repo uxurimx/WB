@@ -6,6 +6,7 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { siteConfig } from "@/config/site";
+import SwRegister from "@/components/SwRegister";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,6 +22,13 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: siteConfig.name,
   description: siteConfig.description,
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: siteConfig.name,
+  },
+  formatDetection: { telephone: false },
 };
 
 export default function RootLayout({
@@ -33,6 +41,7 @@ export default function RootLayout({
       <html lang="es" suppressHydrationWarning>
         <body className={`${inter.variable} ${outfit.variable} antialiased font-sans`}>
           <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
+          <SwRegister />
           <ThemeProvider>{children}</ThemeProvider>
         </body>
       </html>
