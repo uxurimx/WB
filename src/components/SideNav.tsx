@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   Wrench,
+  Calendar,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
@@ -45,6 +46,12 @@ const navSections = [
       { name: "Unidades", href: "/catalogo/unidades", icon: Truck },
       { name: "Operadores", href: "/catalogo/operadores", icon: Users },
       { name: "Obras", href: "/catalogo/obras", icon: HardHat },
+    ],
+  },
+  {
+    label: "Análisis",
+    items: [
+      { name: "Períodos", href: "/periodos", icon: Calendar },
     ],
   },
   {
