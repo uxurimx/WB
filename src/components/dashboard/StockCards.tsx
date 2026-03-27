@@ -5,7 +5,7 @@ import { Fuel, Truck, AlertTriangle } from "lucide-react";
 import RecargaTanqueModal from "./RecargaTanqueModal";
 import TransferirNissanModal from "./TransferirNissanModal";
 
-type StockData = { id: number; litros: number; max: number };
+type StockData = { id: number; litros: number; max: number; cuentalitros?: number };
 
 function StockBar({
   litros,
@@ -109,7 +109,7 @@ export default function StockCards({
             {alertaTaller && (
               <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
             )}
-            <RecargaTanqueModal tanqueId={taller.id} />
+            <RecargaTanqueModal tanqueId={taller.id} cuentalitrosActual={taller.cuentalitros ?? 0} />
           </div>
         </div>
 

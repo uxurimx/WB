@@ -3,18 +3,21 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { cargas, tanques, unidades, fuentesDiesel } from "@/db/schema";
+import { cargas, tanques, unidades, fuentesDiesel, configuracion } from "@/db/schema";
 import { eq, max, desc } from "drizzle-orm";
 import { getOrCreatePeriodoActual } from "./periodos";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
 // ─── Helpers ─────────────────────────────────────────────────
 async function getSiguienteFolio(): Promise<number> {
-  const result = await db
-    .select({ maxFolio: max(cargas.folio) })
-    .from(cargas)
-    .where(eq(cargas.origen, "patio"));
-  return (result[0]?.maxFolio ?? 12882) + 1;
+  const [maxResult, baseRow] = await Promise.all([
+    db.select({ maxFolio: max(cargas.folio) }).from(cargas).where(eq(cargas.origen, "patio")),
+    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_base") }),
+  ]);
+  const base = baseRow ? parseInt(baseRow.valor, 10) : 1;
+  const maxFolio = maxResult[0]?.maxFolio ?? null;
+  // Si hay cargas, continúa desde el máximo. Si no, usa el folio_base configurado.
+  return maxFolio !== null ? maxFolio + 1 : base;
 }
 
 async function getTanquePorNombre(nombre: string) {

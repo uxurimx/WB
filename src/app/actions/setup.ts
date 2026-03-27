@@ -1,12 +1,29 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
   tanques, fuentesDiesel, unidades, operadores, obras,
   periodos, cargas, recargasTanque, transferenciasTanque,
-  rendimientos, archivos, auditLog,
+  rendimientos, archivos, auditLog, configuracion,
 } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
+
+// ─── Folio base configurable ──────────────────────────────────────────────────
+export async function getFolioBase(): Promise<number> {
+  const row = await db.query.configuracion.findFirst({
+    where: eq(configuracion.clave, "folio_base"),
+  });
+  return row ? parseInt(row.valor, 10) : 1;
+}
+
+export async function setFolioBase(folio: number) {
+  await db
+    .insert(configuracion)
+    .values({ clave: "folio_base", valor: String(folio) })
+    .onConflictDoUpdate({ target: configuracion.clave, set: { valor: String(folio), updatedAt: new Date() } });
+  return { ok: true, msg: `Folio base establecido en ${folio}` };
+}
 
 // Seed inicial — ejecutar una sola vez al configurar el sistema
 // Inserta tanques y fuentes de diesel base si no existen
@@ -106,18 +123,21 @@ export async function seedUnidadesWB() {
 // ─────────────────────────────────────────────────────────────────────────────
 // RESET OPERACIONAL — borra datos de operación, mantiene catálogos
 // Elimina: cargas, períodos, rendimientos, recargas, transferencias
-// Conserva: unidades, operadores, obras, tanques (litros → 0)
+// Conserva: unidades, operadores, obras — tanques quedan en 0 L
 // ─────────────────────────────────────────────────────────────────────────────
 export async function resetOperacional() {
-  await db.delete(archivos);
-  await db.delete(rendimientos);
-  await db.delete(cargas);
-  await db.delete(periodos);
-  await db.delete(transferenciasTanque);
-  await db.delete(recargasTanque);
-  await db.delete(auditLog);
-  // Ceros en tanques
-  await db.update(tanques).set({ litrosActuales: 0, cuentalitrosActual: 0 });
+  // SQL directo para evitar restricciones del ORM en deletes sin WHERE
+  await db.execute(sql`DELETE FROM archivos`);
+  await db.execute(sql`DELETE FROM rendimientos`);
+  await db.execute(sql`DELETE FROM cargas`);
+  await db.execute(sql`DELETE FROM periodos`);
+  await db.execute(sql`DELETE FROM transferencias_tanque`);
+  await db.execute(sql`DELETE FROM recargas_tanque`);
+  await db.execute(sql`DELETE FROM audit_log`);
+  await db.execute(sql`UPDATE tanques SET litros_actuales = 0, cuentalitros_actual = 0`);
+  revalidatePath("/overview");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
   return { ok: true, msg: "Reset operacional completado. Catálogos y configuración intactos." };
 }
 
@@ -125,20 +145,24 @@ export async function resetOperacional() {
 // RESET TOTAL — borra absolutamente todo y vuelve a sembrar base
 // ─────────────────────────────────────────────────────────────────────────────
 export async function resetTotal() {
-  await db.delete(archivos);
-  await db.delete(rendimientos);
-  await db.delete(cargas);
-  await db.delete(periodos);
-  await db.delete(transferenciasTanque);
-  await db.delete(recargasTanque);
-  await db.delete(auditLog);
-  await db.delete(operadores);
-  await db.delete(obras);
-  await db.delete(unidades);
-  await db.delete(fuentesDiesel);
-  await db.delete(tanques);
+  await db.execute(sql`DELETE FROM archivos`);
+  await db.execute(sql`DELETE FROM rendimientos`);
+  await db.execute(sql`DELETE FROM cargas`);
+  await db.execute(sql`DELETE FROM periodos`);
+  await db.execute(sql`DELETE FROM transferencias_tanque`);
+  await db.execute(sql`DELETE FROM recargas_tanque`);
+  await db.execute(sql`DELETE FROM audit_log`);
+  await db.execute(sql`DELETE FROM operadores`);
+  await db.execute(sql`DELETE FROM obras`);
+  await db.execute(sql`DELETE FROM unidades`);
+  await db.execute(sql`DELETE FROM fuentes_diesel`);
+  await db.execute(sql`DELETE FROM tanques`);
+  await db.execute(sql`DELETE FROM configuracion`);
   // Re-sembrar configuración base
   await seedInicial();
+  revalidatePath("/overview");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
   return { ok: true, msg: "Reset total completado. Sistema listo para configuración inicial." };
 }
 
@@ -146,8 +170,9 @@ export async function resetTotal() {
 // AJUSTAR STOCK TANQUES — set niveles específicos para probar alertas
 // ─────────────────────────────────────────────────────────────────────────────
 export async function ajustarStockTanques(litrosTaller: number, litrosNissan: number) {
-  await db.update(tanques).set({ litrosActuales: litrosTaller }).where(eq(tanques.nombre, "Taller"));
-  await db.update(tanques).set({ litrosActuales: litrosNissan }).where(eq(tanques.nombre, "NISSAN"));
+  await db.execute(sql`UPDATE tanques SET litros_actuales = ${litrosTaller} WHERE nombre = 'Taller'`);
+  await db.execute(sql`UPDATE tanques SET litros_actuales = ${litrosNissan} WHERE nombre = 'NISSAN'`);
+  revalidatePath("/overview");
   return { ok: true, msg: `Taller: ${litrosTaller} L | NISSAN: ${litrosNissan} L` };
 }
 

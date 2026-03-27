@@ -20,7 +20,13 @@ function todayStr() {
   return new Date().toISOString().split("T")[0];
 }
 
-export default function RecargaTanqueModal({ tanqueId }: { tanqueId: number }) {
+export default function RecargaTanqueModal({
+  tanqueId,
+  cuentalitrosActual = 0,
+}: {
+  tanqueId: number;
+  cuentalitrosActual?: number;
+}) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -42,7 +48,12 @@ export default function RecargaTanqueModal({ tanqueId }: { tanqueId: number }) {
   }
 
   function handleOpen() {
-    setForm((prev) => ({ ...prev, fecha: todayStr() }));
+    setForm((prev) => ({
+      ...prev,
+      fecha: todayStr(),
+      // Pre-llenar con el último valor del cuentalitros almacenado
+      cuentalitrosNuevo: cuentalitrosActual > 0 ? String(cuentalitrosActual) : "",
+    }));
     setError("");
     setOpen(true);
   }
@@ -140,8 +151,8 @@ export default function RecargaTanqueModal({ tanqueId }: { tanqueId: number }) {
 
             <div className="space-y-1.5">
               <Label htmlFor="r-cuentalitros">
-                Lectura cuentalitros nueva{" "}
-                <span className="font-normal opacity-60">(opcional)</span>
+                Cuentalitros al finalizar descarga
+                <span className="font-normal opacity-60 ml-1">(anterior: {cuentalitrosActual.toLocaleString()})</span>
               </Label>
               <Input
                 id="r-cuentalitros"
@@ -150,7 +161,7 @@ export default function RecargaTanqueModal({ tanqueId }: { tanqueId: number }) {
                 step="1"
                 value={form.cuentalitrosNuevo}
                 onChange={handleChange}
-                placeholder="84320"
+                placeholder={String(cuentalitrosActual)}
                 className="font-mono"
               />
             </div>

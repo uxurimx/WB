@@ -10,6 +10,7 @@ import {
   resetTotal,
   ajustarStockTanques,
   seedDatosPrueba,
+  setFolioBase,
 } from "@/app/actions/setup";
 
 // ── Confirmation input ─────────────────────────────────────────
@@ -123,6 +124,61 @@ function StockAdjuster() {
   );
 }
 
+// ── Folio control ──────────────────────────────────────────────
+function FolioControl() {
+  const [isPending, startTransition] = useTransition();
+  const [msg, setMsg] = useState("");
+  const [folio, setFolio] = useState("1");
+
+  function apply(value: number) {
+    startTransition(async () => {
+      const res = await setFolioBase(value);
+      setMsg(res.msg);
+      setTimeout(() => setMsg(""), 4000);
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2 items-end">
+        <div className="space-y-1 flex-1">
+          <Label className="text-xs">Número de folio inicial</Label>
+          <Input
+            value={folio}
+            onChange={(e) => setFolio(e.target.value)}
+            type="number"
+            min="1"
+            className="h-8 font-mono text-sm"
+          />
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          className="h-8 shrink-0"
+          disabled={isPending}
+          onClick={() => apply(parseInt(folio) || 1)}
+        >
+          Aplicar
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="h-8 shrink-0"
+          disabled={isPending}
+          onClick={() => { setFolio("1"); apply(1); }}
+        >
+          Reset a 1
+        </Button>
+      </div>
+      <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+        Aplica solo cuando no hay cargas en la DB. Si ya hay cargas, el folio continúa desde el máximo existente.
+      </p>
+      {msg && <p className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{msg}</p>}
+    </div>
+  );
+}
+
 // ── Main panel ─────────────────────────────────────────────────
 type ActionState = { ok: boolean; msg: string } | null;
 
@@ -208,6 +264,18 @@ export default function TestingPanel() {
               Fija los litros de cada tanque a un valor específico para probar alertas de stock bajo, lleno, etc.
             </p>
             <StockAdjuster />
+          </div>
+
+          {/* Control de folio */}
+          <div className="p-4 rounded-xl border" style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-mono font-bold text-indigo-400">#</span>
+              <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>Control de folio</p>
+            </div>
+            <p className="text-xs mb-3" style={{ color: "var(--fg-muted)" }}>
+              Define desde qué número inicia el folio cuando no hay cargas registradas (ej. después de un reset operacional).
+            </p>
+            <FolioControl />
           </div>
 
           {/* Reset operacional */}

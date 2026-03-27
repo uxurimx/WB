@@ -204,6 +204,15 @@ export const archivos = pgTable("archivos", {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CONFIGURACION — pares clave/valor para ajustes del sistema
+// ─────────────────────────────────────────────────────────────────────────────
+export const configuracion = pgTable("configuracion", {
+  clave: text("clave").primaryKey(),
+  valor: text("valor").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // AUDIT LOG — registro de acciones del sistema
 // ─────────────────────────────────────────────────────────────────────────────
 export const auditLog = pgTable("audit_log", {
