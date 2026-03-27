@@ -1,11 +1,15 @@
 export const dynamic = 'force-dynamic';
 
+import { currentUser } from "@clerk/nextjs/server";
 import { getObras } from "@/app/actions/catalogo";
 import ObrasTable from "@/components/catalogo/ObrasTable";
 import { HardHat } from "lucide-react";
 
+const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
+
 export default async function ObrasPage() {
-  const obras = await getObras(false);
+  const [obras, clerkUser] = await Promise.all([getObras(false), currentUser()]);
+  const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
   return (
     <div className="p-6 md:p-8 max-w-4xl">
@@ -25,7 +29,7 @@ export default async function ObrasPage() {
           Proyectos activos. {obras.filter(o => o.activo).length} activas de {obras.length} totales.
         </p>
       </div>
-      <ObrasTable obras={obras} />
+      <ObrasTable obras={obras} canEdit={canEdit} />
     </div>
   );
 }

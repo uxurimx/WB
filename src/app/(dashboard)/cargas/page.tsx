@@ -1,24 +1,15 @@
+export const dynamic = 'force-dynamic';
+
 import Link from "next/link";
+import { currentUser } from "@clerk/nextjs/server";
 import { ClipboardList, PlusCircle, Fuel } from "lucide-react";
 import { getCargas } from "@/app/actions/cargas";
-import { Badge } from "@/components/ui/badge";
+import { getOperadores, getObras } from "@/app/actions/catalogo";
 import { Button } from "@/components/ui/button";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import CargasTable from "@/components/cargas/CargasTable";
 
-const ORIGEN_LABEL: Record<string, string> = { patio: "Patio", campo: "Campo" };
-const ORIGEN_VARIANT: Record<string, "default" | "warning"> = { patio: "default", campo: "warning" };
-const DIESEL_LABEL: Record<string, string> = { normal: "Normal", amigo: "Amigo", oxxogas: "OxxoGas" };
-const DIESEL_VARIANT: Record<string, "default" | "success" | "danger"> = {
-  normal: "default", amigo: "success", oxxogas: "danger",
-};
-
-function formatFecha(fecha: string) {
-  return new Date(fecha + "T12:00:00").toLocaleDateString("es-MX", {
-    weekday: "short", day: "numeric", month: "short",
-  });
-}
+const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
 export default async function HistorialCargasPage({
   searchParams,
@@ -27,11 +18,18 @@ export default async function HistorialCargasPage({
 }) {
   const params = await searchParams;
 
-  const cargas = await getCargas({
-    origen: params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined,
-    unidadId: params.unidadId ? parseInt(params.unidadId) : undefined,
-    limit: 150,
-  });
+  const [cargas, operadores, obras, clerkUser] = await Promise.all([
+    getCargas({
+      origen: params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined,
+      unidadId: params.unidadId ? parseInt(params.unidadId) : undefined,
+      limit: 150,
+    }),
+    getOperadores(false),
+    getObras(false),
+    currentUser(),
+  ]);
+
+  const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
   const totalLitros = cargas.reduce((sum, c) => sum + (c.litros ?? 0), 0);
   const cargasPatio = cargas.filter((c) => c.origen === "patio").length;
@@ -111,80 +109,12 @@ export default async function HistorialCargasPage({
         ))}
       </div>
 
-      {/* Tabla */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
-        <Table>
-          <TableHeader>
-            <TableRow style={{ backgroundColor: "var(--surface)" }}>
-              <TableHead>Folio</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Unidad</TableHead>
-              <TableHead>Operador</TableHead>
-              <TableHead className="text-right">Litros</TableHead>
-              <TableHead>Origen</TableHead>
-              <TableHead>Obra</TableHead>
-              <TableHead>Diesel</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cargas.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-16" style={{ color: "var(--fg-muted)" }}>
-                  <p className="mb-2">Sin cargas registradas.</p>
-                  <Link href="/cargas/nueva"
-                    className="text-sm font-semibold text-indigo-500 hover:text-indigo-400">
-                    Registrar primera carga →
-                  </Link>
-                </TableCell>
-              </TableRow>
-            )}
-            {cargas.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell>
-                  <span className="font-mono text-sm font-semibold">{c.folio ?? "—"}</span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm">{formatFecha(c.fecha)}</span>
-                  {c.hora && (
-                    <span className="ml-1.5 text-xs" style={{ color: "var(--fg-muted)" }}>
-                      {c.hora.slice(0, 5)}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <span className="font-mono font-bold text-sm">{c.unidad?.codigo ?? `#${c.unidadId}`}</span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm">{c.operador?.nombre ?? "—"}</span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <span className="font-mono font-semibold text-sm">{c.litros.toLocaleString()}</span>
-                  <span className="text-xs ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={ORIGEN_VARIANT[c.origen] ?? "secondary"}>
-                    {ORIGEN_LABEL[c.origen] ?? c.origen}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm" style={{ color: "var(--fg-muted)" }}>
-                    {c.obra?.nombre ?? "—"}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {c.tipoDiesel && c.tipoDiesel !== "normal" ? (
-                    <Badge variant={DIESEL_VARIANT[c.tipoDiesel] ?? "secondary"}>
-                      {DIESEL_LABEL[c.tipoDiesel] ?? c.tipoDiesel}
-                    </Badge>
-                  ) : (
-                    <span className="text-xs" style={{ color: "var(--fg-muted)" }}>Normal</span>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <CargasTable
+        cargas={cargas}
+        operadores={operadores}
+        obras={obras}
+        canEdit={canEdit}
+      />
     </div>
   );
 }

@@ -1,11 +1,15 @@
 export const dynamic = 'force-dynamic';
 
+import { currentUser } from "@clerk/nextjs/server";
 import { getUnidades } from "@/app/actions/catalogo";
 import UnidadesTable from "@/components/catalogo/UnidadesTable";
 import { Truck } from "lucide-react";
 
+const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
+
 export default async function UnidadesPage() {
-  const unidades = await getUnidades(false); // incluye inactivas
+  const [unidades, clerkUser] = await Promise.all([getUnidades(false), currentUser()]);
+  const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
@@ -25,7 +29,7 @@ export default async function UnidadesPage() {
           Camiones, maquinaria y vehículos del sistema. {unidades.filter(u => u.activo).length} activos de {unidades.length} totales.
         </p>
       </div>
-      <UnidadesTable unidades={unidades} />
+      <UnidadesTable unidades={unidades} canEdit={canEdit} />
     </div>
   );
 }

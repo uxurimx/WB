@@ -1,10 +1,18 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { cargas, tanques, unidades, fuentesDiesel, configuracion } from "@/db/schema";
 import { eq, max, desc } from "drizzle-orm";
+
+const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
+
+async function requireManageRole() {
+  const user = await currentUser();
+  const role = user?.publicMetadata?.role as string;
+  if (!MANAGE_ROLES.includes(role)) throw new Error("Sin permisos para realizar esta acción");
+}
 import { getOrCreatePeriodoActual } from "./periodos";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
@@ -245,4 +253,68 @@ async function getSiguienteFolioCampo(): Promise<number> {
 
 export async function getSiguienteFolioCampoPublic() {
   return getSiguienteFolioCampo();
+}
+
+// ─────────────────────────────────────────────────────────────
+// EDITAR CARGA
+// ─────────────────────────────────────────────────────────────
+export type UpdateCargaInput = {
+  fecha?: string;
+  hora?: string;
+  folio?: number;
+  litros?: number;
+  odometroHrs?: number | null;
+  operadorId?: number | null;
+  obraId?: number | null;
+  tipoDiesel?: string;
+  notas?: string | null;
+};
+
+export async function updateCarga(id: number, data: UpdateCargaInput) {
+  await requireManageRole();
+
+  // Si cambia litros, ajustar stock del tanque
+  if (data.litros !== undefined) {
+    const carga = await db.query.cargas.findFirst({ where: eq(cargas.id, id) });
+    if (carga?.tanqueId) {
+      const tanque = await db.query.tanques.findFirst({ where: eq(tanques.id, carga.tanqueId) });
+      if (tanque) {
+        const diff = data.litros - carga.litros; // positivo = más consumo
+        const nuevosLitros = Math.max(0, (tanque.litrosActuales ?? 0) - diff);
+        await db.update(tanques)
+          .set({ litrosActuales: nuevosLitros, ultimaActualizacion: new Date() })
+          .where(eq(tanques.id, tanque.id));
+      }
+    }
+  }
+
+  const [updated] = await db.update(cargas).set(data).where(eq(cargas.id, id)).returning();
+  revalidatePath("/cargas");
+  revalidatePath("/overview");
+  return updated;
+}
+
+// ─────────────────────────────────────────────────────────────
+// ELIMINAR CARGA (revierte stock del tanque)
+// ─────────────────────────────────────────────────────────────
+export async function deleteCarga(id: number) {
+  await requireManageRole();
+
+  const carga = await db.query.cargas.findFirst({ where: eq(cargas.id, id) });
+  if (!carga) throw new Error("Carga no encontrada");
+
+  // Revertir stock del tanque
+  if (carga.tanqueId) {
+    const tanque = await db.query.tanques.findFirst({ where: eq(tanques.id, carga.tanqueId) });
+    if (tanque) {
+      const restoredLitros = (tanque.litrosActuales ?? 0) + carga.litros;
+      await db.update(tanques)
+        .set({ litrosActuales: restoredLitros, ultimaActualizacion: new Date() })
+        .where(eq(tanques.id, tanque.id));
+    }
+  }
+
+  await db.delete(cargas).where(eq(cargas.id, id));
+  revalidatePath("/cargas");
+  revalidatePath("/overview");
 }

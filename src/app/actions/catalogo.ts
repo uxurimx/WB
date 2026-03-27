@@ -1,9 +1,18 @@
 "use server";
 
+import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { unidades, operadores, obras } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { unidades, operadores, obras, cargas } from "@/db/schema";
+import { eq, count } from "drizzle-orm";
+
+const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
+
+async function requireManageRole() {
+  const user = await currentUser();
+  const role = user?.publicMetadata?.role as string;
+  if (!MANAGE_ROLES.includes(role)) throw new Error("Sin permisos para realizar esta acción");
+}
 
 // ─────────────────────────────────────────────────────────────
 // UNIDADES
@@ -135,6 +144,41 @@ export async function updateObra(
 
 export async function toggleObraActiva(id: number, activo: boolean) {
   await db.update(obras).set({ activo }).where(eq(obras.id, id));
+  revalidatePath("/catalogo/obras");
+  revalidatePath("/cargas/campo");
+}
+
+// ─────────────────────────────────────────────────────────────
+// DELETE — requieren rol admin/gerente/encargado_obra
+// ─────────────────────────────────────────────────────────────
+export async function deleteUnidad(id: number) {
+  await requireManageRole();
+  const [result] = await db.select({ total: count() }).from(cargas).where(eq(cargas.unidadId, id));
+  if (result.total > 0)
+    throw new Error(`No se puede eliminar: tiene ${result.total} cargas. Desactívala en su lugar.`);
+  await db.delete(unidades).where(eq(unidades.id, id));
+  revalidatePath("/catalogo/unidades");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
+}
+
+export async function deleteOperador(id: number) {
+  await requireManageRole();
+  const [result] = await db.select({ total: count() }).from(cargas).where(eq(cargas.operadorId, id));
+  if (result.total > 0)
+    throw new Error(`No se puede eliminar: tiene ${result.total} cargas. Desactívalo en su lugar.`);
+  await db.delete(operadores).where(eq(operadores.id, id));
+  revalidatePath("/catalogo/operadores");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
+}
+
+export async function deleteObra(id: number) {
+  await requireManageRole();
+  const [result] = await db.select({ total: count() }).from(cargas).where(eq(cargas.obraId, id));
+  if (result.total > 0)
+    throw new Error(`No se puede eliminar: tiene ${result.total} cargas. Desactívala en su lugar.`);
+  await db.delete(obras).where(eq(obras.id, id));
   revalidatePath("/catalogo/obras");
   revalidatePath("/cargas/campo");
 }

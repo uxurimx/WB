@@ -1,11 +1,15 @@
 export const dynamic = 'force-dynamic';
 
+import { currentUser } from "@clerk/nextjs/server";
 import { getOperadores } from "@/app/actions/catalogo";
 import OperadoresTable from "@/components/catalogo/OperadoresTable";
 import { Users } from "lucide-react";
 
+const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
+
 export default async function OperadoresPage() {
-  const operadores = await getOperadores(false);
+  const [operadores, clerkUser] = await Promise.all([getOperadores(false), currentUser()]);
+  const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
   return (
     <div className="p-6 md:p-8 max-w-4xl">
@@ -25,7 +29,7 @@ export default async function OperadoresPage() {
           Choferes y maquinistas. {operadores.filter(o => o.activo).length} activos de {operadores.length} totales.
         </p>
       </div>
-      <OperadoresTable operadores={operadores} />
+      <OperadoresTable operadores={operadores} canEdit={canEdit} />
     </div>
   );
 }
