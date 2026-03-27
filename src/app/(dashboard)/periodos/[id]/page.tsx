@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import {
   getRendimientosPeriodo,
 } from "@/app/actions/rendimientos";
+import ReporteActions from "@/components/periodos/ReporteActions";
 import {
   Table,
   TableBody,
@@ -138,9 +139,12 @@ export default async function PeriodoDetailPage({
               {formatRango(periodo.fechaInicio, periodo.fechaFin)}
             </p>
           </div>
-          <Badge variant={periodo.cerrado ? "success" : "default"}>
-            {periodo.cerrado ? "Cerrado" : "Activo"}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant={periodo.cerrado ? "success" : "default"}>
+              {periodo.cerrado ? "Cerrado" : "Activo"}
+            </Badge>
+            <ReporteActions periodoId={periodo.id} />
+          </div>
         </div>
       </div>
 
