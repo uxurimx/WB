@@ -1,39 +1,30 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
 import ThemeToggle from "@/components/ThemeToggle";
+import SeedButton from "@/components/SeedButton";
 
 export default async function SettingsPage() {
   const user = await currentUser();
 
   return (
-    <div className="p-8 max-w-2xl">
-      {/* Page header */}
-      <div className="mb-10">
+    <div className="p-6 md:p-8 max-w-2xl">
+      <div className="mb-8">
         <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--fg-muted)" }}>
-          Admin
+          Sistema
         </p>
         <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>
-          Settings
+          Configuración
         </h1>
-        <p className="mt-1 text-sm" style={{ color: "var(--fg-muted)" }}>
-          Manage your account and application preferences.
-        </p>
       </div>
 
-      {/* Account */}
+      {/* Cuenta */}
       <section className="mb-6">
         <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--fg-muted)" }}>
-          Account
+          Cuenta
         </h2>
-        <div
-          className="p-5 rounded-2xl border flex items-center gap-4"
-          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-        >
-          <UserButton
-            appearance={{
-              elements: { userButtonAvatarBox: "w-12 h-12 rounded-xl" },
-            }}
-          />
+        <div className="p-5 rounded-2xl border flex items-center gap-4"
+          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
+          <UserButton appearance={{ elements: { userButtonAvatarBox: "w-12 h-12 rounded-xl" } }} />
           <div>
             <p className="font-semibold text-sm" style={{ color: "var(--fg)" }}>
               {user?.firstName} {user?.lastName}
@@ -45,22 +36,45 @@ export default async function SettingsPage() {
         </div>
       </section>
 
-      {/* Appearance */}
-      <section>
+      {/* Apariencia */}
+      <section className="mb-6">
         <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--fg-muted)" }}>
-          Appearance
+          Apariencia
         </h2>
-        <div
-          className="p-5 rounded-2xl border flex items-center justify-between"
-          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-        >
+        <div className="p-5 rounded-2xl border flex items-center justify-between"
+          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
           <div>
-            <p className="font-semibold text-sm" style={{ color: "var(--fg)" }}>Theme</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-              Toggle between light and dark mode.
-            </p>
+            <p className="font-semibold text-sm" style={{ color: "var(--fg)" }}>Tema</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>Claro u oscuro.</p>
           </div>
           <ThemeToggle />
+        </div>
+      </section>
+
+      {/* Setup inicial */}
+      <section>
+        <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--fg-muted)" }}>
+          Datos Iniciales
+        </h2>
+        <div className="p-5 rounded-2xl border space-y-4"
+          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
+          <div>
+            <p className="font-semibold text-sm mb-0.5" style={{ color: "var(--fg)" }}>
+              Seed Inicial
+            </p>
+            <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+              Crea tanques (Taller + NISSAN) y fuentes de diesel base. Solo si están vacíos.
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold text-sm mb-0.5" style={{ color: "var(--fg)" }}>
+              Seed Unidades WB
+            </p>
+            <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+              Importa el catálogo de camiones (CA06–CA34) y maquinaria del sistema WB. Solo si no hay unidades.
+            </p>
+          </div>
+          <SeedButton />
         </div>
       </section>
     </div>
