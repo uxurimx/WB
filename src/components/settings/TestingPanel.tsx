@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, Trash2, RotateCcw, FlaskConical, Gauge, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import {
   ajustarStockTanques,
   seedDatosPrueba,
   setFolioBase,
+  setFolioBaseCampo,
 } from "@/app/actions/setup";
 
 // ── Confirmation input ─────────────────────────────────────────
@@ -128,9 +130,10 @@ function StockAdjuster() {
 function FolioControl() {
   const [isPending, startTransition] = useTransition();
   const [msg, setMsg] = useState("");
-  const [folio, setFolio] = useState("1");
+  const [folioPatio, setFolioPatio] = useState("1");
+  const [folioCampo, setFolioCampo] = useState("1");
 
-  function apply(value: number) {
+  function applyPatio(value: number) {
     startTransition(async () => {
       const res = await setFolioBase(value);
       setMsg(res.msg);
@@ -138,41 +141,50 @@ function FolioControl() {
     });
   }
 
+  function applyCampo(value: number) {
+    startTransition(async () => {
+      const res = await setFolioBaseCampo(value);
+      setMsg(res.msg);
+      setTimeout(() => setMsg(""), 4000);
+    });
+  }
+
   return (
-    <div className="space-y-2">
-      <div className="flex gap-2 items-end">
-        <div className="space-y-1 flex-1">
-          <Label className="text-xs">Número de folio inicial</Label>
-          <Input
-            value={folio}
-            onChange={(e) => setFolio(e.target.value)}
-            type="number"
-            min="1"
-            className="h-8 font-mono text-sm"
-          />
+    <div className="space-y-3">
+      {/* Patio */}
+      <div>
+        <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--fg-muted)" }}>Folio Patio</p>
+        <div className="flex gap-2">
+          <Input value={folioPatio} onChange={(e) => setFolioPatio(e.target.value)}
+            type="number" min="1" className="h-8 font-mono text-sm flex-1" />
+          <Button type="button" size="sm" className="h-8 shrink-0" disabled={isPending}
+            onClick={() => applyPatio(parseInt(folioPatio) || 1)}>
+            Aplicar
+          </Button>
+          <Button type="button" variant="secondary" size="sm" className="h-8 shrink-0" disabled={isPending}
+            onClick={() => { setFolioPatio("1"); applyPatio(1); }}>
+            Reset a 1
+          </Button>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          className="h-8 shrink-0"
-          disabled={isPending}
-          onClick={() => apply(parseInt(folio) || 1)}
-        >
-          Aplicar
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="h-8 shrink-0"
-          disabled={isPending}
-          onClick={() => { setFolio("1"); apply(1); }}
-        >
-          Reset a 1
-        </Button>
+      </div>
+      {/* Campo */}
+      <div>
+        <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--fg-muted)" }}>Folio Campo (NISSAN)</p>
+        <div className="flex gap-2">
+          <Input value={folioCampo} onChange={(e) => setFolioCampo(e.target.value)}
+            type="number" min="1" className="h-8 font-mono text-sm flex-1" />
+          <Button type="button" size="sm" className="h-8 shrink-0" disabled={isPending}
+            onClick={() => applyCampo(parseInt(folioCampo) || 1)}>
+            Aplicar
+          </Button>
+          <Button type="button" variant="secondary" size="sm" className="h-8 shrink-0" disabled={isPending}
+            onClick={() => { setFolioCampo("1"); applyCampo(1); }}>
+            Reset a 1
+          </Button>
+        </div>
       </div>
       <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
-        Aplica solo cuando no hay cargas en la DB. Si ya hay cargas, el folio continúa desde el máximo existente.
+        Solo aplica cuando no hay cargas en la DB. Con cargas existentes, el folio continúa desde el último.
       </p>
       {msg && <p className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{msg}</p>}
     </div>
@@ -183,6 +195,7 @@ function FolioControl() {
 type ActionState = { ok: boolean; msg: string } | null;
 
 export default function TestingPanel() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<ActionState>(null);
@@ -192,6 +205,8 @@ export default function TestingPanel() {
       try {
         const res = await action();
         setResult(res);
+        // Limpia el Router Cache del cliente para que las páginas muestren datos frescos
+        router.refresh();
         setTimeout(() => setResult(null), 6000);
       } catch (err) {
         setResult({ ok: false, msg: err instanceof Error ? err.message : "Error" });

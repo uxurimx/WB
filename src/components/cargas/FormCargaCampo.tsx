@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle, Fuel, AlertCircle } from "lucide-react";
+import { CheckCircle, Fuel, AlertCircle, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,11 +26,13 @@ export default function FormCargaCampo({
   operadores,
   obras,
   saldoNissan,
+  siguienteFolio,
 }: {
   unidades: Unidad[];
   operadores: Operador[];
   obras: Obra[];
   saldoNissan: number;
+  siguienteFolio?: number;
 }) {
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState<{ litros: number; unidad: string } | null>(null);
@@ -41,7 +43,7 @@ export default function FormCargaCampo({
   const [form, setForm] = useState({
     fecha: fechaInit,
     hora: horaInit,
-    folioNissan: "",
+    folioNissan: siguienteFolio ? String(siguienteFolio) : "",
     unidadId: "",
     litros: "",
     odometroHrs: "",
@@ -148,14 +150,18 @@ export default function FormCargaCampo({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Folio NISSAN */}
+        {/* Folio NISSAN — auto-generado, editable si el ticket físico es diferente */}
         <div className="space-y-1.5">
           <Label htmlFor="folioNissan">Folio NISSAN *</Label>
-          <Input id="folioNissan" name="folioNissan" type="number"
-            value={form.folioNissan} onChange={handleChange}
-            placeholder="11773" className="font-mono text-lg h-12" />
+          <div className="relative">
+            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500 pointer-events-none" />
+            <Input id="folioNissan" name="folioNissan" type="number"
+              value={form.folioNissan} onChange={handleChange}
+              placeholder={String(siguienteFolio ?? "")}
+              className="font-mono font-bold text-xl h-12 pl-9" />
+          </div>
           <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>
-            Número del ticket físico de la NISSAN
+            Auto-generado. Edita si el ticket físico tiene un número distinto.
           </p>
         </div>
 

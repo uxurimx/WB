@@ -232,3 +232,17 @@ export async function getCargas(opts?: {
 export async function getSiguienteFolioPublic() {
   return getSiguienteFolio();
 }
+
+async function getSiguienteFolioCampo(): Promise<number> {
+  const [maxResult, baseRow] = await Promise.all([
+    db.select({ maxFolio: max(cargas.folio) }).from(cargas).where(eq(cargas.origen, "campo")),
+    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_base_campo") }),
+  ]);
+  const base = baseRow ? parseInt(baseRow.valor, 10) : 1;
+  const maxFolio = maxResult[0]?.maxFolio ?? null;
+  return maxFolio !== null ? maxFolio + 1 : base;
+}
+
+export async function getSiguienteFolioCampoPublic() {
+  return getSiguienteFolioCampo();
+}

@@ -1,5 +1,6 @@
 import { Fuel } from "lucide-react";
 import { getUnidades, getOperadores, getObras } from "@/app/actions/catalogo";
+import { getSiguienteFolioCampoPublic } from "@/app/actions/cargas";
 import { db } from "@/db";
 import { tanques } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -13,11 +14,12 @@ async function getSaldoNissan() {
 }
 
 export default async function NuevaCargaCampoPage() {
-  const [unidades, operadores, obras, saldoNissan] = await Promise.all([
+  const [unidades, operadores, obras, saldoNissan, siguienteFolio] = await Promise.all([
     getUnidades(true),
     getOperadores(true),
     getObras(true),
     getSaldoNissan(),
+    getSiguienteFolioCampoPublic(),
   ]);
 
   return (
@@ -56,6 +58,7 @@ export default async function NuevaCargaCampoPage() {
           operadores={operadores}
           obras={obras}
           saldoNissan={saldoNissan}
+          siguienteFolio={siguienteFolio}
         />
       )}
     </div>

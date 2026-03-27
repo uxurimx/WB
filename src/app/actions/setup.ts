@@ -22,7 +22,17 @@ export async function setFolioBase(folio: number) {
     .insert(configuracion)
     .values({ clave: "folio_base", valor: String(folio) })
     .onConflictDoUpdate({ target: configuracion.clave, set: { valor: String(folio), updatedAt: new Date() } });
-  return { ok: true, msg: `Folio base establecido en ${folio}` };
+  revalidatePath("/cargas/nueva");
+  return { ok: true, msg: `Folio patio base establecido en ${folio}` };
+}
+
+export async function setFolioBaseCampo(folio: number) {
+  await db
+    .insert(configuracion)
+    .values({ clave: "folio_base_campo", valor: String(folio) })
+    .onConflictDoUpdate({ target: configuracion.clave, set: { valor: String(folio), updatedAt: new Date() } });
+  revalidatePath("/cargas/campo");
+  return { ok: true, msg: `Folio campo base establecido en ${folio}` };
 }
 
 // Seed inicial — ejecutar una sola vez al configurar el sistema
