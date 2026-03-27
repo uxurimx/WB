@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boda de Jair & Gilli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-gold: #d4af37;
+            --neon-cyan: #00f3ff;
+            --dark-bg: #050505;
+        }
+        body { font-family: 'Montserrat', sans-serif; background-color: var(--dark-bg); color: #fff; }
+        .font-serif { font-family: 'Cinzel', serif; }
+        .neon-border { border: 1px solid var(--neon-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); }
+        .gradient-text { background: linear-gradient(45deg, var(--neon-gold), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body x-data="weddingApp()">
+
+    <section class="relative h-screen flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069" class="w-full h-full object-cover opacity-40" alt="Wedding Background">
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black"></div>
+        </div>
+        
+        <div class="relative z-10 text-center px-4" x-transition>
+            <p class="uppercase tracking-[0.5em] text-sm mb-4 text-gray-400">Nuestra Boda</p>
+            <h1 class="font-serif text-6xl md:text-8xl gradient-text mb-6">Jair & Gilli</h1> [cite: 5, 34]
+            <p class="text-xl mb-8 italic">"Me comprometeré contigo para siempre..." (Óseas 2:19)</p> [cite: 9, 10]
+            
+            <div class="flex justify-center gap-4 text-center mt-10">
+                <template x-for="(val, label) in countdown" :key="label">
+                    <div class="glass neon-border p-4 w-20 md:w-24 rounded-lg">
+                        <span class="block text-2xl md:text-4xl font-bold text-cyan-400" x-text="val"></span>
+                        <span class="text-[10px] uppercase tracking-widest text-gray-400" x-text="label"></span>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 px-6 max-w-4xl mx-auto text-center">
+        <h2 class="font-serif text-3xl mb-10 text-gold-500">Nuestra Historia</h2>
+        <div class="glass p-8 rounded-2xl neon-border">
+            <div class="aspect-video mb-6 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center">
+                <span class="text-gray-500">[ Aquí va la foto de la pareja ]</span>
+            </div>
+            <p class="text-gray-300 leading-relaxed mb-6">
+                Desde nuestro inicio en 2008[cite: 41], hemos caminado juntos hacia este momento especial...
+            </p>
+            <button class="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-full flex items-center mx-auto gap-2 transition">
+                <span>🎵 Reproducir Canción</span>
+            </button>
+        </div>
+    </section>
+
+    <section class="py-20 bg-zinc-950 px-6">
+        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
+            <div class="glass p-10 rounded-3xl border border-white/10">
+                <h3 class="font-serif text-2xl mb-4 text-cyan-400">Discurso Bíblico</h3> [cite: 15]
+                <p class="mb-2">Sábado 6 Junio 2026 - 2:30 PM</p> [cite: 14, 16]
+                <p class="text-gray-400 mb-6">Salón del Reino de los Testigos de Jehová [cite: 17]<br>Blvd P. Toscana 3388 [cite: 18]</p>
+                <a href="#" class="text-xs tracking-widest uppercase border-b border-cyan-400 pb-1 hover:text-cyan-400">Ver Ubicación</a>
+            </div>
+            <div class="glass p-10 rounded-3xl border border-white/10">
+                <h3 class="font-serif text-2xl mb-4 text-gold-500">Recepción</h3> [cite: 19]
+                <p class="mb-2">5:00 PM</p> [cite: 19]
+                <p class="text-gray-400 mb-6">Salón de eventos Queen Palace [cite: 20, 21]<br>De Los Insurgentes 386, Centro Sinaloa [cite: 22]</p>
+                <a href="#" class="text-xs tracking-widest uppercase border-b border-yellow-500 pb-1 hover:text-yellow-500">Abrir en Maps</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 px-6 max-w-md mx-auto">
+        <div class="bg-white text-black p-8 rounded-3xl text-center shadow-[0_0_50px_rgba(0,243,255,0.2)]">
+            <h2 class="font-serif text-2xl mb-2">Tu Pase Digital</h2>
+            <p class="text-sm font-bold uppercase mb-6 tracking-tighter">Homero Simpson y Compañía</p>
+            
+            <div class="bg-gray-100 p-4 rounded-xl mb-6 flex justify-center">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=HOMERO_INV_123" alt="QR Code" class="w-48 h-48">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="border-r border-gray-200">
+                    <p class="text-[10px] uppercase text-gray-500">Pases</p>
+                    <p class="text-2xl font-bold">3</p> 
+                </div>
+                <div>
+                    <p class="text-[10px] uppercase text-gray-500">Mesa</p>
+                    <p class="text-2xl font-bold">12</p>
+                </div>
+            </div>
+            
+            <p class="text-[10px] uppercase text-red-600 font-bold mb-4 italic">Respetuosamente No niños</p> [cite: 25]
+            
+            <button class="w-full bg-black text-white py-4 rounded-xl font-bold hover:scale-105 transition">
+                CONFIRMAR ASISTENCIA
+            </button>
+        </div>
+    </section>
+
+    <section class="py-20 px-6 text-center max-w-4xl mx-auto">
+        <h2 class="font-serif text-3xl mb-10">Mesa de Regalos</h2> [cite: 28]
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass p-6 rounded-xl border border-white/5">
+                <p class="font-bold mb-2">Sears</p> [cite: 29]
+                <p class="text-cyan-400">No. 234094</p> [cite: 30]
+            </div>
+            <div class="glass p-6 rounded-xl border border-white/5">
+                <p class="font-bold mb-2">Liverpool</p> [cite: 31]
+                <p class="text-cyan-400">No. 51947875</p> [cite: 32]
+            </div>
+            <div class="glass p-6 rounded-xl border border-white/5">
+                <p class="font-bold mb-2">Transferencia (BBVA)</p> [cite: 36]
+                <p class="text-[10px] text-gray-400">Gilliane Aréchiga</p> [cite: 34, 35]
+                <p class="text-cyan-400 text-xs">4152 3139 3980-6738</p> 
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-10 text-center opacity-50 text-xs tracking-widest">
+        CON CARIÑO JAIR Y GILLI © 2026 [cite: 39]
+    </footer>
+
+    <script>
+        function weddingApp() {
+            return {
+                countdown: { días: 0, horas: 0, min: 0, seg: 0 },
+                eventDate: new Date('June 6, 2026 14:30:00').getTime(),
+                
+                init() {
+                    setInterval(() => {
+                        const now = new Date().getTime();
+                        const diff = this.eventDate - now;
+                        
+                        this.countdown.días = Math.floor(diff / (1000 * 60 * 60 * 24));
+                        this.countdown.horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        this.countdown.min = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        this.countdown.seg = Math.floor((diff % (1000 * 60)) / 1000);
+                    }, 1000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

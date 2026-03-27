@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode */
+@variant dark (&:where(.dark, .dark *));
+
+/* ─── Light theme (default) ─── */
+:root {
+  --bg:         #ffffff;
+  --surface:    #f5f5fa;
+  --surface-2:  #ebebf5;
+  --border:     #e2e2ee;
+  --fg:         #0f0f1a;
+  --fg-muted:   #6b6b80;
+  --accent:     #6366f1;
+  --accent-hover: #4f46e5;
+}
+
+/* ─── Dark theme ─── */
+.dark {
+  --bg:         #09090f;
+  --surface:    #111118;
+  --surface-2:  #1a1a24;
+  --border:     #1e1e2e;
+  --fg:         #f0f0f8;
+  --fg-muted:   #8b8ba8;
+  --accent:     #818cf8;
+  --accent-hover: #6366f1;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-outfit: var(--font-outfit);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-inter), ui-sans-serif, system-ui;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ─── Animations ─── */
+@keyframes blob {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  33%  { transform: translate(30px, -40px) scale(1.08); }
+  66%  { transform: translate(-20px, 20px) scale(0.95); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-blob       { animation: blob 9s infinite ease-in-out; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+.animate-fade-in    { animation: fade-in 0.7s ease-out forwards; }

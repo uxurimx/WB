@@ -1,0 +1,21 @@
+{
+    "name": "Tinta y Café Nexus",
+    "short_name": "T&C Nexus",
+    "description": "Sistema de gestión inteligente para Tinta y Café",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#020617",
+    "theme_color": "#0f172a",
+    "icons": [
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
