@@ -3,7 +3,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { cargas, tanques, unidades, fuentesDiesel, configuracion } from "@/db/schema";
+import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque } from "@/db/schema";
 import { eq, max, desc } from "drizzle-orm";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
@@ -18,14 +18,19 @@ import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
 // ─── Helpers ─────────────────────────────────────────────────
 async function getSiguienteFolio(): Promise<number> {
-  const [maxResult, baseRow] = await Promise.all([
+  // El folio es compartido entre cargas patio y transferencias de tanque
+  const [maxCargaResult, maxTransfResult, baseRow] = await Promise.all([
     db.select({ maxFolio: max(cargas.folio) }).from(cargas).where(eq(cargas.origen, "patio")),
+    db.select({ maxFolio: max(transferenciasTanque.folio) }).from(transferenciasTanque),
     db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_base") }),
   ]);
   const base = baseRow ? parseInt(baseRow.valor, 10) : 1;
-  const maxFolio = maxResult[0]?.maxFolio ?? null;
-  // Si hay cargas, continúa desde el máximo. Si no, usa el folio_base configurado.
-  return maxFolio !== null ? maxFolio + 1 : base;
+  const maxCarga = maxCargaResult[0]?.maxFolio ?? null;
+  const maxTransf = maxTransfResult[0]?.maxFolio ?? null;
+  const maxGlobal =
+    maxCarga !== null && maxTransf !== null ? Math.max(maxCarga, maxTransf)
+    : maxCarga ?? maxTransf;
+  return maxGlobal !== null ? maxGlobal + 1 : base;
 }
 
 async function getTanquePorNombre(nombre: string) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { transferirEntreTanques } from "@/app/actions/tanques";
+import { getSiguienteFolioPublic } from "@/app/actions/cargas";
 
 function todayStr() {
   return new Date().toISOString().split("T")[0];
@@ -33,6 +34,7 @@ export default function TransferirNissanModal({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [folioPreview, setFolioPreview] = useState<number | null>(null);
 
   const [form, setForm] = useState({ fecha: todayStr(), litros: "", notas: "" });
 
@@ -44,7 +46,13 @@ export default function TransferirNissanModal({
     setForm({ fecha: todayStr(), litros: "", notas: "" });
     setError("");
     setSuccess("");
+    setFolioPreview(null);
     setOpen(true);
+    // Obtener el folio que se asignará a esta transferencia
+    startTransition(async () => {
+      const folio = await getSiguienteFolioPublic();
+      setFolioPreview(folio);
+    });
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -96,7 +104,16 @@ export default function TransferirNissanModal({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Cargar NISSAN desde Taller</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Cargar NISSAN desde Taller
+              {folioPreview !== null && (
+                <span className="flex items-center gap-1 text-sm font-normal px-2 py-0.5 rounded-lg"
+                  style={{ backgroundColor: "var(--surface-2)", color: "var(--fg-muted)" }}>
+                  <Hash className="w-3.5 h-3.5" />
+                  Folio {folioPreview}
+                </span>
+              )}
+            </DialogTitle>
             <DialogDescription>
               Resta del tanque Taller y suma al NISSAN.{" "}
               <span className="font-semibold">

@@ -4,7 +4,8 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { tanques, recargasTanque, transferenciasTanque } from "@/db/schema";
-import { eq, inArray, max } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
+import { getSiguienteFolioPublic } from "./cargas";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
 export type RecargaTanqueInput = {
@@ -103,11 +104,8 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
     (destino.litrosActuales ?? 0) + input.litros
   );
 
-  // Generar folio secuencial para la transferencia
-  const [maxFolioRow] = await db
-    .select({ max: max(transferenciasTanque.folio) })
-    .from(transferenciasTanque);
-  const folio = (maxFolioRow?.max ?? 0) + 1;
+  // El folio de transferencia es parte de la misma secuencia que cargas patio
+  const folio = await getSiguienteFolioPublic();
 
   // Actualizar ambos tanques + insertar registro
   await Promise.all([
