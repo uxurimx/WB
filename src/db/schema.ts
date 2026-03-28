@@ -160,6 +160,7 @@ export const recargasTanque = pgTable("recargas_tanque", {
 // ─────────────────────────────────────────────────────────────────────────────
 export const transferenciasTanque = pgTable("transferencias_tanque", {
   id: serial("id").primaryKey(),
+  folio: integer("folio"),
   fecha: date("fecha").notNull(),
   litros: real("litros").notNull(),
   tanqueOrigenId: integer("tanque_origen_id").notNull(),

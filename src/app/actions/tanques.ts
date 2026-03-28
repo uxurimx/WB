@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { tanques, recargasTanque, transferenciasTanque } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, max } from "drizzle-orm";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
 export type RecargaTanqueInput = {
@@ -103,6 +103,12 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
     (destino.litrosActuales ?? 0) + input.litros
   );
 
+  // Generar folio secuencial para la transferencia
+  const [maxFolioRow] = await db
+    .select({ max: max(transferenciasTanque.folio) })
+    .from(transferenciasTanque);
+  const folio = (maxFolioRow?.max ?? 0) + 1;
+
   // Actualizar ambos tanques + insertar registro
   await Promise.all([
     db
@@ -114,6 +120,7 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
       .set({ litrosActuales: nuevosLitrosDestino, ultimaActualizacion: new Date() })
       .where(eq(tanques.id, input.tanqueDestinoId)),
     db.insert(transferenciasTanque).values({
+      folio,
       fecha: input.fecha,
       litros: input.litros,
       tanqueOrigenId: input.tanqueOrigenId,
@@ -136,9 +143,29 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   ]);
 
   revalidatePath("/overview");
+  revalidatePath("/transferencias");
   return {
     ok: true,
+    folio,
     origen: { nombre: origen.nombre, litrosActuales: nuevosLitrosOrigen },
     destino: { nombre: destino.nombre, litrosActuales: nuevosLitrosDestino },
   };
+}
+
+// ─────────────────────────────────────────────────────────────
+// HISTORIAL DE TRANSFERENCIAS
+// ─────────────────────────────────────────────────────────────
+export async function getTransferencias(limit = 100) {
+  const rows = await db.query.transferenciasTanque.findMany({
+    orderBy: (t, { desc }) => [desc(t.createdAt)],
+    limit,
+  });
+  // Enriquecer con nombres de tanque (evita join manual)
+  const tanquesRows = await db.select({ id: tanques.id, nombre: tanques.nombre }).from(tanques);
+  const byId = Object.fromEntries(tanquesRows.map((t) => [t.id, t.nombre]));
+  return rows.map((r) => ({
+    ...r,
+    origenNombre: byId[r.tanqueOrigenId] ?? `Tanque ${r.tanqueOrigenId}`,
+    destinoNombre: byId[r.tanqueDestinoId] ?? `Tanque ${r.tanqueDestinoId}`,
+  }));
 }

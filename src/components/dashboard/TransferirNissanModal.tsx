@@ -70,7 +70,7 @@ export default function TransferirNissanModal({
           notas: form.notas || undefined,
         });
         setSuccess(
-          `Transferidos ${litros.toLocaleString()} L → NISSAN. ` +
+          `Folio #${res.folio} · ${litros.toLocaleString()} L transferidos → NISSAN. ` +
           `Taller: ${res.origen.litrosActuales.toFixed(0)} L | ` +
           `NISSAN: ${res.destino.litrosActuales.toFixed(0)} L`
         );

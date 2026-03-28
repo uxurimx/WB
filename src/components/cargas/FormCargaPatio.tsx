@@ -27,11 +27,13 @@ export default function FormCargaPatio({
   operadores,
   siguienteFolio,
   stockActual,
+  ultimaCuentaLt,
 }: {
   unidades: Unidad[];
   operadores: Operador[];
   siguienteFolio: number;
   stockActual: number;
+  ultimaCuentaLt?: number | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -46,7 +48,7 @@ export default function FormCargaPatio({
     unidadId: "",
     litros: "",
     odometroHrs: "",
-    cuentaLtInicio: "",
+    cuentaLtInicio: ultimaCuentaLt != null ? String(ultimaCuentaLt) : "",
     cuentaLtFin: "",
     operadorId: "",
     tipoDiesel: "normal",
@@ -93,7 +95,8 @@ export default function FormCargaPatio({
         });
 
         setSuccess({ folio: result.folio, litros });
-        // Reset para siguiente carga
+        // Reset para siguiente carga — cuentaLtInicio toma el fin de la carga que se acaba de registrar
+        const nextCuentaLt = form.cuentaLtFin;
         const { fecha, hora } = getNow();
         setForm((prev) => ({
           ...prev,
@@ -102,7 +105,7 @@ export default function FormCargaPatio({
           unidadId: "",
           litros: "",
           odometroHrs: "",
-          cuentaLtInicio: "",
+          cuentaLtInicio: nextCuentaLt,
           cuentaLtFin: "",
           notas: "",
         }));
@@ -252,7 +255,14 @@ export default function FormCargaPatio({
         {/* Cuentalitros */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="cuentaLtInicio">Cuenta LT Inicio</Label>
+            <Label htmlFor="cuentaLtInicio">
+              Cuenta LT Inicio
+              {ultimaCuentaLt != null && (
+                <span className="ml-1.5 font-normal text-xs" style={{ color: "var(--fg-muted)" }}>
+                  (anterior: {ultimaCuentaLt.toLocaleString()})
+                </span>
+              )}
+            </Label>
             <Input id="cuentaLtInicio" name="cuentaLtInicio" type="number" step="1"
               value={form.cuentaLtInicio} onChange={handleChange} placeholder="2460100" className="font-mono" />
           </div>

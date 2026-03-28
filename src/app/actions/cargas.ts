@@ -241,6 +241,15 @@ export async function getSiguienteFolioPublic() {
   return getSiguienteFolio();
 }
 
+export async function getUltimaCuentaLtPatio(): Promise<number | null> {
+  const ultima = await db.query.cargas.findFirst({
+    where: (c, { eq }) => eq(c.origen, "patio"),
+    orderBy: (c, { desc }) => [desc(c.createdAt)],
+    columns: { cuentaLtFin: true },
+  });
+  return ultima?.cuentaLtFin ?? null;
+}
+
 async function getSiguienteFolioCampo(): Promise<number> {
   const [maxResult, baseRow] = await Promise.all([
     db.select({ maxFolio: max(cargas.folio) }).from(cargas).where(eq(cargas.origen, "campo")),

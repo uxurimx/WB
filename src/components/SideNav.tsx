@@ -19,6 +19,7 @@ import {
   Wrench,
   Calendar,
   Shield,
+  ArrowRight,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
@@ -39,7 +40,8 @@ function getNavSections(isAdmin: boolean) {
       items: [
         { name: "Nueva Carga Patio", href: "/cargas/nueva", icon: PlusCircle },
         { name: "Nueva Carga Campo", href: "/cargas/campo", icon: Fuel },
-        { name: "Historial", href: "/cargas", icon: ClipboardList },
+        { name: "Historial Cargas", href: "/cargas", icon: ClipboardList },
+        { name: "Transferencias", href: "/transferencias", icon: ArrowRight },
       ],
     },
     {

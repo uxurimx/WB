@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { PlusCircle } from "lucide-react";
 import { getUnidades, getOperadores } from "@/app/actions/catalogo";
-import { getSiguienteFolioPublic } from "@/app/actions/cargas";
+import { getSiguienteFolioPublic, getUltimaCuentaLtPatio } from "@/app/actions/cargas";
 import { db } from "@/db";
 import { tanques } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -16,11 +16,12 @@ async function getStockTaller() {
 }
 
 export default async function NuevaCargaPatioPage() {
-  const [unidades, operadores, siguienteFolio, stockActual] = await Promise.all([
+  const [unidades, operadores, siguienteFolio, stockActual, ultimaCuentaLt] = await Promise.all([
     getUnidades(true),
     getOperadores(true),
     getSiguienteFolioPublic(),
     getStockTaller(),
+    getUltimaCuentaLtPatio(),
   ]);
 
   return (
@@ -59,6 +60,7 @@ export default async function NuevaCargaPatioPage() {
           operadores={operadores}
           siguienteFolio={siguienteFolio}
           stockActual={stockActual}
+          ultimaCuentaLt={ultimaCuentaLt}
         />
       )}
     </div>
