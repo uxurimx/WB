@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Trash2, Check, X, AlertCircle } from "lucide-react";
+import { Pencil, Trash2, Check, X, AlertCircle, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,13 +16,14 @@ import {
 } from "@/components/ui/dialog";
 import { updateCarga, deleteCarga } from "@/app/actions/cargas";
 
-type Carga = {
+// ─── Types ───────────────────────────────────────────────────
+export type CargaItem = {
+  _tipo: "carga";
   id: number;
   fecha: string;
   hora: string | null;
   folio: number | null;
   litros: number;
-  odometroHrs: number | null;
   origen: string;
   tipoDiesel: string | null;
   notas: string | null;
@@ -33,9 +34,23 @@ type Carga = {
   obra: { nombre: string } | null;
 };
 
+export type TransferenciaItem = {
+  _tipo: "transferencia";
+  id: number;
+  fecha: string;
+  folio: number | null;
+  litros: number;
+  origenNombre: string;
+  destinoNombre: string;
+  notas: string | null;
+};
+
+export type HistorialItem = CargaItem | TransferenciaItem;
+
 type Operador = { id: number; nombre: string };
 type Obra = { id: number; nombre: string };
 
+// ─── Constants ───────────────────────────────────────────────
 const ORIGEN_LABEL: Record<string, string> = { patio: "Patio", campo: "Campo" };
 const ORIGEN_VARIANT: Record<string, "default" | "warning"> = { patio: "default", campo: "warning" };
 const DIESEL_LABEL: Record<string, string> = { normal: "Normal", amigo: "Amigo", oxxogas: "OxxoGas" };
@@ -49,13 +64,14 @@ function formatFecha(fecha: string) {
   });
 }
 
+// ─── Component ───────────────────────────────────────────────
 export default function CargasTable({
-  cargas,
+  items,
   operadores,
   obras,
   canEdit,
 }: {
-  cargas: Carga[];
+  items: HistorialItem[];
   operadores: Operador[];
   obras: Obra[];
   canEdit: boolean;
@@ -63,25 +79,18 @@ export default function CargasTable({
   const [isPending, startTransition] = useTransition();
 
   // Edit state
-  const [editCarga, setEditCarga] = useState<Carga | null>(null);
+  const [editCarga, setEditCarga] = useState<CargaItem | null>(null);
   const [editForm, setEditForm] = useState({
-    fecha: "",
-    hora: "",
-    folio: "",
-    litros: "",
-    odometroHrs: "",
-    operadorId: "",
-    obraId: "",
-    tipoDiesel: "normal",
-    notas: "",
+    fecha: "", hora: "", folio: "", litros: "", odometroHrs: "",
+    operadorId: "", obraId: "", tipoDiesel: "normal", notas: "",
   });
   const [editError, setEditError] = useState("");
 
   // Delete state
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null); // "carga-123"
   const [deleteError, setDeleteError] = useState("");
 
-  function openEdit(c: Carga) {
+  function openEdit(c: CargaItem) {
     setEditCarga(c);
     setEditError("");
     setEditForm({
@@ -89,7 +98,7 @@ export default function CargasTable({
       hora: c.hora?.slice(0, 5) ?? "",
       folio: c.folio ? String(c.folio) : "",
       litros: String(c.litros),
-      odometroHrs: c.odometroHrs ? String(c.odometroHrs) : "",
+      odometroHrs: "",
       operadorId: c.operadorId ? String(c.operadorId) : "",
       obraId: c.obraId ? String(c.obraId) : "",
       tipoDiesel: c.tipoDiesel ?? "normal",
@@ -166,52 +175,108 @@ export default function CargasTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {cargas.length === 0 && (
+            {items.length === 0 && (
               <TableRow>
                 <TableCell colSpan={canEdit ? 9 : 8} className="text-center py-16" style={{ color: "var(--fg-muted)" }}>
-                  Sin cargas registradas.
+                  Sin registros.
                 </TableCell>
               </TableRow>
             )}
-            {cargas.map((c) => {
-              const isDeleting = deletingId === c.id;
+
+            {items.map((item) => {
+              const key = `${item._tipo}-${item.id}`;
+              const deletingKey = `carga-${item.id}`;
+              const isDeleting = deletingId === deletingKey;
+
+              // ─── Transferencia row ────────────────────────
+              if (item._tipo === "transferencia") {
+                return (
+                  <TableRow
+                    key={key}
+                    style={{ backgroundColor: "rgba(139, 92, 246, 0.04)" }}
+                  >
+                    <TableCell>
+                      <span className="font-mono text-sm font-semibold" style={{ color: "var(--fg-muted)" }}>
+                        {item.folio != null ? `#${item.folio}` : "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{formatFecha(item.fecha)}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--fg-muted)" }}>
+                        {item.origenNombre}
+                        <ArrowRight className="w-3 h-3 shrink-0" />
+                        {item.destinoNombre}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs" style={{ color: "var(--fg-muted)" }}>—</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="font-mono font-semibold text-sm">{item.litros.toLocaleString()}</span>
+                      <span className="text-xs ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                        style={{ backgroundColor: "rgba(139, 92, 246, 0.15)", color: "rgb(139, 92, 246)" }}
+                      >
+                        <ArrowRight className="w-2.5 h-2.5" />
+                        Transferencia
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs" style={{ color: "var(--fg-muted)" }}>—</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs" style={{ color: "var(--fg-muted)" }}>
+                        {item.notas ?? "—"}
+                      </span>
+                    </TableCell>
+                    {canEdit && <TableCell />}
+                  </TableRow>
+                );
+              }
+
+              // ─── Carga row ────────────────────────────────
               return (
-                <TableRow key={c.id}>
+                <TableRow key={key}>
                   <TableCell>
-                    <span className="font-mono text-sm font-semibold">{c.folio ?? "—"}</span>
+                    <span className="font-mono text-sm font-semibold">{item.folio ?? "—"}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm">{formatFecha(c.fecha)}</span>
-                    {c.hora && (
+                    <span className="text-sm">{formatFecha(item.fecha)}</span>
+                    {item.hora && (
                       <span className="ml-1.5 text-xs" style={{ color: "var(--fg-muted)" }}>
-                        {c.hora.slice(0, 5)}
+                        {item.hora.slice(0, 5)}
                       </span>
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono font-bold text-sm">{c.unidad?.codigo ?? "—"}</span>
+                    <span className="font-mono font-bold text-sm">{item.unidad?.codigo ?? "—"}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm">{c.operador?.nombre ?? "—"}</span>
+                    <span className="text-sm">{item.operador?.nombre ?? "—"}</span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <span className="font-mono font-semibold text-sm">{c.litros.toLocaleString()}</span>
+                    <span className="font-mono font-semibold text-sm">{item.litros.toLocaleString()}</span>
                     <span className="text-xs ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={ORIGEN_VARIANT[c.origen] ?? "secondary"}>
-                      {ORIGEN_LABEL[c.origen] ?? c.origen}
+                    <Badge variant={ORIGEN_VARIANT[item.origen] ?? "secondary"}>
+                      {ORIGEN_LABEL[item.origen] ?? item.origen}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm" style={{ color: "var(--fg-muted)" }}>
-                      {c.obra?.nombre ?? "—"}
+                      {item.obra?.nombre ?? "—"}
                     </span>
                   </TableCell>
                   <TableCell>
-                    {c.tipoDiesel && c.tipoDiesel !== "normal" ? (
-                      <Badge variant={DIESEL_VARIANT[c.tipoDiesel] ?? "secondary"}>
-                        {DIESEL_LABEL[c.tipoDiesel] ?? c.tipoDiesel}
+                    {item.tipoDiesel && item.tipoDiesel !== "normal" ? (
+                      <Badge variant={DIESEL_VARIANT[item.tipoDiesel] ?? "secondary"}>
+                        {DIESEL_LABEL[item.tipoDiesel] ?? item.tipoDiesel}
                       </Badge>
                     ) : (
                       <span className="text-xs" style={{ color: "var(--fg-muted)" }}>Normal</span>
@@ -224,7 +289,7 @@ export default function CargasTable({
                           <>
                             <span className="text-xs text-red-500 mr-1">¿Eliminar?</span>
                             <button
-                              onClick={() => confirmDelete(c.id)}
+                              onClick={() => confirmDelete(item.id)}
                               disabled={isPending}
                               className="px-2 py-1 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
                             >
@@ -241,14 +306,14 @@ export default function CargasTable({
                         ) : (
                           <>
                             <button
-                              onClick={() => openEdit(c)}
+                              onClick={() => openEdit(item)}
                               className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"
                               title="Editar"
                             >
                               <Pencil className="w-4 h-4 text-indigo-400" />
                             </button>
                             <button
-                              onClick={() => { setDeletingId(c.id); setDeleteError(""); }}
+                              onClick={() => { setDeletingId(deletingKey); setDeleteError(""); }}
                               className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"
                               title="Eliminar"
                             >

@@ -5,9 +5,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import { ClipboardList, PlusCircle, Fuel } from "lucide-react";
 import { getCargas } from "@/app/actions/cargas";
 import { getOperadores, getObras } from "@/app/actions/catalogo";
+import { getTransferencias } from "@/app/actions/tanques";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import CargasTable from "@/components/cargas/CargasTable";
+import CargasTable, { type CargaItem, type TransferenciaItem, type HistorialItem } from "@/components/cargas/CargasTable";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
@@ -17,20 +18,58 @@ export default async function HistorialCargasPage({
   searchParams: Promise<{ origen?: string; unidadId?: string }>;
 }) {
   const params = await searchParams;
+  const origen = params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined;
 
-  const [cargas, operadores, obras, clerkUser] = await Promise.all([
+  const [cargas, operadores, obras, clerkUser, transferencias] = await Promise.all([
     getCargas({
-      origen: params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined,
+      origen,
       unidadId: params.unidadId ? parseInt(params.unidadId) : undefined,
       limit: 150,
     }),
     getOperadores(false),
     getObras(false),
     currentUser(),
+    // Transferencias solo en vista "Todas" (sin filtro de origen)
+    origen ? Promise.resolve([] as Awaited<ReturnType<typeof getTransferencias>>) : getTransferencias(150),
   ]);
 
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
+  // Mapear a tipos del componente
+  const cargaItems: CargaItem[] = cargas.map((c) => ({
+    _tipo: "carga",
+    id: c.id,
+    fecha: c.fecha,
+    hora: c.hora,
+    folio: c.folio,
+    litros: c.litros,
+    origen: c.origen,
+    tipoDiesel: c.tipoDiesel,
+    notas: c.notas,
+    operadorId: c.operadorId,
+    obraId: c.obraId,
+    unidad: c.unidad ? { codigo: c.unidad.codigo } : null,
+    operador: c.operador ? { nombre: c.operador.nombre } : null,
+    obra: c.obra ? { nombre: c.obra.nombre } : null,
+  }));
+
+  const transfItems: TransferenciaItem[] = transferencias.map((t) => ({
+    _tipo: "transferencia",
+    id: t.id,
+    fecha: t.fecha,
+    folio: t.folio,
+    litros: t.litros,
+    origenNombre: t.origenNombre,
+    destinoNombre: t.destinoNombre,
+    notas: t.notas,
+  }));
+
+  // Mezclar y ordenar por fecha desc
+  const items: HistorialItem[] = [...cargaItems, ...transfItems].sort(
+    (a, b) => b.fecha.localeCompare(a.fecha)
+  );
+
+  // Stats (sólo cargas)
   const totalLitros = cargas.reduce((sum, c) => sum + (c.litros ?? 0), 0);
   const cargasPatio = cargas.filter((c) => c.origen === "patio").length;
   const cargasCampo = cargas.filter((c) => c.origen === "campo").length;
@@ -50,7 +89,10 @@ export default async function HistorialCargasPage({
           </div>
           <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>Historial</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--fg-muted)" }}>
-            {cargas.length} registros · {totalLitros.toLocaleString()} L total
+            {cargas.length} cargas · {totalLitros.toLocaleString()} L
+            {!origen && transferencias.length > 0 && (
+              <span> · {transferencias.length} transferencias</span>
+            )}
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -77,9 +119,9 @@ export default async function HistorialCargasPage({
           <Link key={label} href={href}>
             <Badge
               variant={
-                (params.origen === "patio" && label === "Patio") ||
-                (params.origen === "campo" && label === "Campo") ||
-                (!params.origen && label === "Todas")
+                (origen === "patio" && label === "Patio") ||
+                (origen === "campo" && label === "Campo") ||
+                (!origen && label === "Todas")
                   ? "default"
                   : "secondary"
               }
@@ -94,7 +136,7 @@ export default async function HistorialCargasPage({
         ))}
       </div>
 
-      {/* Stats rápidos */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
           { label: "Total Cargas", value: cargas.length },
@@ -110,7 +152,7 @@ export default async function HistorialCargasPage({
       </div>
 
       <CargasTable
-        cargas={cargas}
+        items={items}
         operadores={operadores}
         obras={obras}
         canEdit={canEdit}

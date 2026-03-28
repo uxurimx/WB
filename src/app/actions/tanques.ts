@@ -141,7 +141,7 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   ]);
 
   revalidatePath("/overview");
-  revalidatePath("/transferencias");
+  revalidatePath("/cargas");
   return {
     ok: true,
     folio,
