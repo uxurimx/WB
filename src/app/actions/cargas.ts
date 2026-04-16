@@ -4,7 +4,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque } from "@/db/schema";
-import { eq, max, desc } from "drizzle-orm";
+import { eq, max, desc, and } from "drizzle-orm";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
@@ -52,6 +52,7 @@ export type CargaPatioInput = {
   unidadId: number;
   litros: number;
   odometroHrs?: number;
+  kmEstimado?: boolean;   // A5: true si se usó el último km conocido
   cuentaLtInicio?: number;
   cuentaLtFin?: number;
   operadorId?: number;
@@ -81,6 +82,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
       tanqueId: tanqueTaller?.id ?? null,
       litros: input.litros,
       odometroHrs: input.odometroHrs ?? null,
+      kmEstimado: input.kmEstimado ?? false,
       cuentaLtInicio: input.cuentaLtInicio ?? null,
       cuentaLtFin: input.cuentaLtFin ?? null,
       origen: "patio",
@@ -144,9 +146,12 @@ export type CargaCampoInput = {
   unidadId: number;
   litros: number;
   odometroHrs?: number;
+  kmEstimado?: boolean;       // A5: true si se usó el último km conocido
   obraId?: number;
   operadorId?: number;
-  tipoDiesel?: string;  // normal | amigo | oxxogas
+  quienSuministraId?: number; // A3: quién despacha desde la NISSAN
+  quienRecibeId?: number;     // A3: quién recibe el diesel
+  tipoDiesel?: string;        // normal | amigo | oxxogas
   notas?: string;
 };
 
@@ -172,6 +177,9 @@ export async function createCargaCampo(input: CargaCampoInput) {
       tanqueId: tanqueNissan?.id ?? null,
       litros: input.litros,
       odometroHrs: input.odometroHrs ?? null,
+      kmEstimado: input.kmEstimado ?? false,
+      quienSuministraId: input.quienSuministraId ?? null,
+      quienRecibeId: input.quienRecibeId ?? null,
       origen: "campo",
       tipoDiesel: input.tipoDiesel ?? "normal",
       notas: input.notas ?? null,
@@ -267,6 +275,19 @@ async function getSiguienteFolioCampo(): Promise<number> {
 
 export async function getSiguienteFolioCampoPublic() {
   return getSiguienteFolioCampo();
+}
+
+// ─────────────────────────────────────────────────────────────
+// ÚLTIMO ODÓMETRO — para validación kilométrica (A5)
+// ─────────────────────────────────────────────────────────────
+export async function getUltimoOdometro(unidadId: number): Promise<number | null> {
+  const ultima = await db.query.cargas.findFirst({
+    where: (c, { eq, and, isNotNull }) =>
+      and(eq(c.unidadId, unidadId), isNotNull(c.odometroHrs)),
+    orderBy: (c, { desc }) => [desc(c.createdAt)],
+    columns: { odometroHrs: true },
+  });
+  return ultima?.odometroHrs ?? null;
 }
 
 // ─────────────────────────────────────────────────────────────

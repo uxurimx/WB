@@ -32,13 +32,14 @@ export default function RecargaTanqueModal({
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
-    fecha: todayStr(),
-    litros: "",
-    cuentalitrosNuevo: "",
-    proveedor: "",
-    folioFactura: "",
-    precioLitro: "",
-    notas: "",
+    fecha:              todayStr(),
+    litros:             "",
+    cuentalitrosInicio: "",  // A2: lectura ANTES de que llegue la pipa
+    cuentalitrosNuevo:  "",  // lectura DESPUÉS de la descarga
+    proveedor:          "",
+    folioFactura:       "",
+    precioLitro:        "",
+    notas:              "",
   });
 
   function handleChange(
@@ -71,27 +72,25 @@ export default function RecargaTanqueModal({
       try {
         await addRecargaTanque({
           tanqueId,
-          fecha: form.fecha,
+          fecha:              form.fecha,
           litros,
-          cuentalitrosNuevo: form.cuentalitrosNuevo
-            ? parseFloat(form.cuentalitrosNuevo)
-            : undefined,
-          proveedor: form.proveedor || undefined,
-          folioFactura: form.folioFactura || undefined,
-          precioLitro: form.precioLitro
-            ? parseFloat(form.precioLitro)
-            : undefined,
-          notas: form.notas || undefined,
+          cuentalitrosInicio: form.cuentalitrosInicio ? parseFloat(form.cuentalitrosInicio) : undefined,
+          cuentalitrosNuevo:  form.cuentalitrosNuevo  ? parseFloat(form.cuentalitrosNuevo)  : undefined,
+          proveedor:          form.proveedor    || undefined,
+          folioFactura:       form.folioFactura || undefined,
+          precioLitro:        form.precioLitro  ? parseFloat(form.precioLitro) : undefined,
+          notas:              form.notas        || undefined,
         });
         setOpen(false);
         setForm({
-          fecha: todayStr(),
-          litros: "",
-          cuentalitrosNuevo: "",
-          proveedor: "",
-          folioFactura: "",
-          precioLitro: "",
-          notas: "",
+          fecha:              todayStr(),
+          litros:             "",
+          cuentalitrosInicio: "",
+          cuentalitrosNuevo:  "",
+          proveedor:          "",
+          folioFactura:       "",
+          precioLitro:        "",
+          notas:              "",
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al guardar");
@@ -149,21 +148,40 @@ export default function RecargaTanqueModal({
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="r-cuentalitros">
-                Cuentalitros al finalizar descarga
-                <span className="font-normal opacity-60 ml-1">(anterior: {cuentalitrosActual.toLocaleString()})</span>
-              </Label>
-              <Input
-                id="r-cuentalitros"
-                name="cuentalitrosNuevo"
-                type="number"
-                step="1"
-                value={form.cuentalitrosNuevo}
-                onChange={handleChange}
-                placeholder={String(cuentalitrosActual)}
-                className="font-mono"
-              />
+            {/* A2: Cuentalitros ANTES — punto ancla del proveedor */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="r-cuentalitros-inicio">
+                  Cuentalitros al llegar
+                  <span className="font-normal opacity-60 ml-1 text-[10px]">(antes de descargar)</span>
+                </Label>
+                <Input
+                  id="r-cuentalitros-inicio"
+                  name="cuentalitrosInicio"
+                  type="number"
+                  step="1"
+                  value={form.cuentalitrosInicio}
+                  onChange={handleChange}
+                  placeholder={String(cuentalitrosActual)}
+                  className="font-mono"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="r-cuentalitros">
+                  Cuentalitros al terminar
+                  <span className="font-normal opacity-60 ml-1 text-[10px]">(tras descarga)</span>
+                </Label>
+                <Input
+                  id="r-cuentalitros"
+                  name="cuentalitrosNuevo"
+                  type="number"
+                  step="1"
+                  value={form.cuentalitrosNuevo}
+                  onChange={handleChange}
+                  placeholder={form.cuentalitrosInicio ? String(parseFloat(form.cuentalitrosInicio || "0") + parseFloat(form.litros || "0")) : ""}
+                  className="font-mono"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

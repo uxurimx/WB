@@ -134,6 +134,11 @@ export const cargas = pgTable("cargas", {
   // origen: patio | campo
   tipoDiesel: varchar("tipo_diesel", { length: 20 }).default("normal"),
   // tipo: normal | amigo | oxxogas
+  // ── Cadena de custodia en campo (A3) ─────────────────────────
+  quienSuministraId: integer("quien_suministra_id"), // operador NISSAN que despacha
+  quienRecibeId: integer("quien_recibe_id"),          // chofer/maquinista que recibe
+  // ── Validación kilométrica (A5) ──────────────────────────────
+  kmEstimado: boolean("km_estimado").notNull().default(false), // true = se usó último km conocido
   notas: text("notas"),
   registradoPorId: text("registrado_por_id"), // Clerk user ID
   createdAt: timestamp("created_at").defaultNow(),
@@ -149,6 +154,7 @@ export const recargasTanque = pgTable("recargas_tanque", {
   proveedor: text("proveedor"),
   folioFactura: text("folio_factura"),
   precioLitro: real("precio_litro"),
+  cuentalitrosInicio: real("cuentalitros_inicio"), // lectura ANTES de que llegue la pipa
   tanqueId: integer("tanque_id").notNull(),
   registradoPorId: text("registrado_por_id"),
   notas: text("notas"),
@@ -261,6 +267,16 @@ export const cargasRelations = relations(cargas, ({ one, many }) => ({
   operador: one(operadores, {
     fields: [cargas.operadorId],
     references: [operadores.id],
+  }),
+  quienSuministra: one(operadores, {
+    fields: [cargas.quienSuministraId],
+    references: [operadores.id],
+    relationName: "suministrador",
+  }),
+  quienRecibe: one(operadores, {
+    fields: [cargas.quienRecibeId],
+    references: [operadores.id],
+    relationName: "receptor",
   }),
   obra: one(obras, {
     fields: [cargas.obraId],

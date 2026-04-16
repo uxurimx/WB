@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WB Diesel Control — Propuesta v2.0</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #07070f;
+    --bg-2: #0d0d1a;
+    --surface: #111128;
+    --surface-2: #16162e;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.12);
+    --fg: #f0f0fa;
+    --fg-muted: #6b6b8a;
+    --fg-dim: #3d3d5c;
+    --indigo: #6366f1;
+    --indigo-bright: #818cf8;
+    --violet: #8b5cf6;
+    --emerald: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --cyan: #06b6d4;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ─── NOISE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(7,7,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+  }
+
+  .nav-logo .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--indigo);
+    box-shadow: 0 0 12px var(--indigo);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--fg); }
+
+  /* ─── CONTAINER ─── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 160px 0 100px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -200px; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 600px;
+    background: radial-gradient(ellipse at center, rgba(99,102,241,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--indigo-bright);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #f0f0fa 0%, #a5b4fc 50%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero p {
+    font-size: 1.15rem;
+    color: var(--fg-muted);
+    max-width: 580px;
+    margin: 0 auto 3rem;
+    line-height: 1.7;
+  }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--indigo);
+    color: white;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 0 40px rgba(99,102,241,0.3);
+  }
+
+  .hero-cta:hover {
+    background: var(--indigo-bright);
+    transform: translateY(-2px);
+    box-shadow: 0 0 60px rgba(99,102,241,0.4);
+  }
+
+  /* ─── NUMBERS STRIP ─── */
+  .numbers-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 80px 0;
+  }
+
+  .number-item {
+    background: var(--surface);
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+
+  .number-item .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--fg);
+    display: block;
+  }
+
+  .number-item .label {
+    font-size: 11px;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  .number-item .sublabel {
+    font-size: 11px;
+    color: var(--indigo-bright);
+    margin-top: 2px;
+  }
+
+  /* ─── SECTION TITLES ─── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--indigo);
+    margin-bottom: 0.75rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    color: var(--fg);
+    margin-bottom: 1rem;
+  }
+
+  .section-desc {
+    color: var(--fg-muted);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+  }
+
+  section { padding: 80px 0; }
+
+  /* ─── V1 RECAP ─── */
+  .v1-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .v1-item {
+    background: var(--surface);
+    padding: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .v1-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    background: rgba(99,102,241,0.12);
+    border: 1px solid rgba(99,102,241,0.2);
+  }
+
+  .v1-item h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--fg);
+    margin-bottom: 2px;
+  }
+
+  .v1-item p {
+    font-size: 12px;
+    color: var(--fg-muted);
+    line-height: 1.5;
+  }
+
+  /* ─── MEJORAS INCLUIDAS ─── */
+  .mejoras-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 1.5rem;
+  }
+
+  .mejora-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mejora-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--emerald), transparent);
+  }
+
+  .mejora-card .badge-included {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--emerald);
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 100px;
+    padding: 3px 10px;
+    margin-bottom: 1rem;
+  }
+
+  .mejora-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--fg);
+    margin-bottom: 0.5rem;
+  }
+
+  .mejora-card p {
+    font-size: 13px;
+    color: var(--fg-muted);
+    line-height: 1.6;
+  }
+
+  /* ─── MÓDULOS NUEVOS ─── */
+  .modulos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .modulo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .modulo-card:hover {
+    border-color: var(--border-bright);
+  }
+
+  .modulo-header {
+    padding: 1.75rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .modulo-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .modulo-meta {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .modulo-meta .num {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--fg-dim);
+    margin-bottom: 3px;
+  }
+
+  .modulo-meta h3 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+    margin-bottom: 3px;
+  }
+
+  .modulo-meta .tagline {
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+
+  .modulo-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .modulo-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--fg);
+  }
+
+  .modulo-toggle {
+    font-size: 12px;
+    color: var(--fg-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+  }
+
+  .chevron {
+    transition: transform 0.3s;
+    display: inline-block;
+  }
+
+  .modulo-card.open .chevron { transform: rotate(180deg); }
+  .modulo-card.open .modulo-toggle { color: var(--indigo-bright); }
+
+  .modulo-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-top: 0px solid var(--border);
+  }
+
+  .modulo-card.open .modulo-body {
+    max-height: 1200px;
+    border-top-width: 1px;
+  }
+
+  .modulo-body-inner {
+    padding: 2rem;
+  }
+
+  .modulo-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  @media (max-width: 700px) {
+    .modulo-cols { grid-template-columns: 1fr; }
+    .numbers-strip { grid-template-columns: repeat(2, 1fr); }
+    .nav-links { display: none; }
+  }
+
+  .modulo-body h4 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-muted);
+    margin-bottom: 1rem;
+  }
+
+  .uso-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .uso-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--fg-muted);
+    line-height: 1.5;
+  }
+
+  .uso-list li .ico {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .impact-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .impact-box .impact-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--amber);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .impact-box p {
+    font-size: 13px;
+    color: var(--fg);
+    line-height: 1.6;
+  }
+
+  .mockup {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--fg-muted);
+    line-height: 1.8;
+    margin-top: 1.5rem;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .mockup .hl { color: var(--indigo-bright); }
+  .mockup .ok { color: var(--emerald); }
+  .mockup .warn { color: var(--amber); }
+  .mockup .bad { color: var(--red); }
+  .mockup .dim { color: var(--fg-dim); }
+
+  /* ─── ROI SECTION ─── */
+  .roi-section {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%);
+    border: 1px solid rgba(99,102,241,0.15);
+    border-radius: 24px;
+    padding: 3rem;
+    margin: 80px 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .roi-section::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .roi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  @media (max-width: 700px) {
+    .roi-grid { grid-template-columns: 1fr; }
+    .roi-section { padding: 2rem; }
+    .mejoras-grid { grid-template-columns: 1fr; }
+  }
+
+  .roi-stat {
+    margin-bottom: 1.5rem;
+  }
+
+  .roi-stat .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-muted);
+    margin-bottom: 4px;
+  }
+
+  .roi-stat .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--fg);
+  }
+
+  .roi-stat .value span {
+    font-size: 1rem;
+    color: var(--fg-muted);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+  }
+
+  .benefit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .benefit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .benefit-item .benefit-ico {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(16,185,129,0.12);
+    border: 1px solid rgba(16,185,129,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .benefit-item .benefit-text h5 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--fg);
+    margin-bottom: 1px;
+  }
+
+  .benefit-item .benefit-text p {
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+
+  /* ─── COTIZACIÓN INTERACTIVA ─── */
+  .cotizacion {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    overflow: hidden;
+  }
+
+  .cotizacion-header {
+    padding: 2.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .cotizacion-header h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--fg);
+    margin-bottom: 0.5rem;
+  }
+
+  .cotizacion-header p {
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+
+  .cotizacion-items {
+    padding: 2rem;
+  }
+
+  .cot-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 12px;
+    padding: 1rem 1rem;
+    margin: 0 -1rem;
+  }
+
+  .cot-item:hover { background: rgba(255,255,255,0.02); }
+  .cot-item:last-child { border-bottom: none; }
+
+  .cot-checkbox {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: 2px solid var(--border-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .cot-item.selected .cot-checkbox {
+    background: var(--indigo);
+    border-color: var(--indigo);
+  }
+
+  .cot-checkbox svg {
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .cot-item.selected .cot-checkbox svg { opacity: 1; }
+
+  .cot-item .cot-info { flex: 1; }
+  .cot-item .cot-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+  }
+  .cot-item .cot-desc {
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-top: 1px;
+  }
+
+  .cot-item .cot-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--fg);
+    flex-shrink: 0;
+  }
+
+  .cotizacion-footer {
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .total-row .total-label {
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+
+  .total-row .total-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--fg-muted);
+  }
+
+  .total-row.main .total-label {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--fg);
+  }
+
+  .total-row.main .total-val {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--indigo-bright);
+  }
+
+  .discount-banner {
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 13px;
+    color: var(--emerald);
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .discount-banner.hidden { display: none; }
+
+  .select-all-btn {
+    background: none;
+    border: 1px solid var(--border-bright);
+    color: var(--fg-muted);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .select-all-btn:hover {
+    border-color: var(--indigo);
+    color: var(--indigo-bright);
+  }
+
+  /* ─── TIMELINE ─── */
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin-top: 3rem;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--indigo), transparent);
+  }
+
+  .tl-item {
+    position: relative;
+    padding-bottom: 2.5rem;
+    padding-left: 1.75rem;
+  }
+
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -1.75rem;
+    top: 5px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--indigo);
+    box-shadow: 0 0 12px var(--indigo);
+  }
+
+  .tl-item .tl-period {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--indigo-bright);
+    margin-bottom: 4px;
+  }
+
+  .tl-item h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--fg);
+    margin-bottom: 4px;
+  }
+
+  .tl-item p {
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+
+  /* ─── FOOTER CTA ─── */
+  .footer-cta {
+    padding: 100px 0;
+    text-align: center;
+  }
+
+  .footer-cta h2 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: var(--fg);
+    margin-bottom: 1rem;
+  }
+
+  .footer-cta p {
+    color: var(--fg-muted);
+    margin-bottom: 2.5rem;
+    font-size: 1.05rem;
+  }
+
+  .cta-btns {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--indigo);
+    color: white;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 0 40px rgba(99,102,241,0.3);
+    display: inline-block;
+  }
+
+  .btn-primary:hover {
+    background: var(--indigo-bright);
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--fg-muted);
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    border: 1px solid var(--border-bright);
+    transition: all 0.2s;
+    display: inline-block;
+  }
+
+  .btn-secondary:hover {
+    color: var(--fg);
+    border-color: var(--fg-muted);
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0;
+  }
+
+  /* ─── CHIPS ─── */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 1rem;
+  }
+
+  .chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--border-bright);
+    color: var(--fg-muted);
+  }
+
+  /* ─── COUNTER ANIM ─── */
+  .counter { display: inline-block; }
+
+  /* ─── COLOR SCHEMES PER MODULE ─── */
+  .mod-b1 { background: rgba(99,102,241,0.1); }
+  .mod-b2 { background: rgba(6,182,212,0.1); }
+  .mod-b3 { background: rgba(245,158,11,0.1); }
+  .mod-b4 { background: rgba(139,92,246,0.1); }
+  .mod-b5 { background: rgba(239,68,68,0.1); }
+  .mod-b6 { background: rgba(16,185,129,0.1); }
+
+  .tag-b1 { color: var(--indigo-bright); }
+  .tag-b2 { color: var(--cyan); }
+  .tag-b3 { color: var(--amber); }
+  .tag-b4 { color: var(--violet); }
+  .tag-b5 { color: var(--red); }
+  .tag-b6 { color: var(--emerald); }
+
+  /* ─── SCROLL INDICATOR ─── */
+  .scroll-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--fg-dim);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 4rem;
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* animate on scroll */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <div class="nav-logo">
+    <span class="dot"></span>
+    WB Diesel Control
+    <span style="color:var(--fg-dim);font-weight:400">/ Propuesta v2.0</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#v1">Lo que tienes</a></li>
+    <li><a href="#mejoras">Mejoras incluidas</a></li>
+    <li><a href="#modulos">Módulos nuevos</a></li>
+    <li><a href="#roi">Valor / ROI</a></li>
+    <li><a href="#cotizacion">Cotización</a></li>
+  </ul>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">
+      <span class="dot" style="width:6px;height:6px"></span>
+      Propuesta de desarrollo — Abril 2026
+    </div>
+    <h1>WB Diesel Control<br>versión 2.0</h1>
+    <p>De control de diesel a sistema de gestión operativa de flota. Cada módulo resuelve un problema real que hoy cuesta tiempo, dinero o información perdida.</p>
+    <a href="#modulos" class="hero-cta">Ver módulos nuevos ↓</a>
+    <div class="scroll-indicator">
+      <span>scroll</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 3v10M4 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ─── NUMBERS STRIP ─── -->
+<div class="container">
+  <div class="numbers-strip reveal">
+    <div class="number-item">
+      <span class="value" data-target="11173" data-suffix=" L">0</span>
+      <span class="label">Diesel por semana</span>
+      <span class="sublabel">promedio actual</span>
+    </div>
+    <div class="number-item">
+      <span class="value">$273K</span>
+      <span class="label">MXN / semana</span>
+      <span class="sublabel">valor controlado</span>
+    </div>
+    <div class="number-item">
+      <span class="value" data-target="38" data-suffix="">0</span>
+      <span class="label">Unidades activas</span>
+      <span class="sublabel">camiones + maquinaria</span>
+    </div>
+    <div class="number-item">
+      <span class="value">$13.1M</span>
+      <span class="label">MXN / año</span>
+      <span class="sublabel">flujo que gestiona el sistema</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── V1 RECAP ─── -->
+<section id="v1">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Sistema actual</div>
+      <h2 class="section-title">Lo que ya funciona hoy</h2>
+      <p class="section-desc">Esto es lo que tiene operando desde el día de entrega. Es la base sobre la que se construye todo lo demás.</p>
+    </div>
+    <div class="v1-grid reveal">
+      <div class="v1-item">
+        <div class="v1-icon">⚡</div>
+        <div>
+          <h4>Dashboard en tiempo real</h4>
+          <p>Stock taller y NISSAN se actualiza en vivo con Pusher. Sin refrescar.</p>
+        </div>
+      </div>
+      <div class="v1-item">
+        <div class="v1-icon">📱</div>
+        <div>
+          <h4>Captura desde celular</h4>
+          <p>Forms de carga patio y campo optimizados para móvil. Funciona sin internet (PWA offline).</p>
+        </div>
+      </div>
+      <div class="v1-item">
+        <div class="v1-icon">📊</div>
+        <div>
+          <h4>Rendimientos automáticos</h4>
+          <p>Al cerrar el período semanal, el sistema calcula km/L y L/Hr de todas las unidades solo.</p>
+        </div>
+      </div>
+      <div class="v1-item">
+        <div class="v1-icon">⚖️</div>
+        <div>
+          <h4>Transferencias NISSAN</h4>
+          <p>Control de saldo cuando sale y regresa. Reconciliación con cuentalitros real.</p>
+        </div>
+      </div>
+      <div class="v1-item">
+        <div class="v1-icon">📋</div>
+        <div>
+          <h4>Catálogos completos</h4>
+          <p>Unidades, operadores y obras con alta/baja/edición. Roles por usuario.</p>
+        </div>
+      </div>
+      <div class="v1-item">
+        <div class="v1-icon">📁</div>
+        <div>
+          <h4>Reportes y exportación</h4>
+          <p>Export Excel del período, vista de impresión, historial de cargas con filtros.</p>
+        </div>
+      </div>
+    </div>
+    <div class="reveal" style="margin-top:1rem">
+      <p style="font-size:13px;color:var(--fg-muted);padding:1rem 1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;display:inline-block">
+        Otras empresas cotizaron este sistema entre <strong style="color:var(--fg)">$120,000 y $140,000 MXN</strong> con 2 meses de entrega.
+        Tu sistema fue entregado operando en producción desde el primer día.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── MEJORAS INCLUIDAS ─── -->
+<section id="mejoras">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Sin costo adicional</div>
+      <h2 class="section-title">Mejoras incluidas en v1.0</h2>
+      <p class="section-desc">Estos ajustes son refinamientos del sistema que ya tienes. Forman parte del compromiso de entrega inicial.</p>
+    </div>
+    <div class="mejoras-grid reveal">
+      <div class="mejora-card">
+        <div class="badge-included">✓ Incluido</div>
+        <h3>Historial completo 2025</h3>
+        <p>Migración de todos los datos de diesel de enero a diciembre 2025 al sistema. El historial nace con 12 meses de contexto real, no vacío.</p>
+      </div>
+      <div class="mejora-card">
+        <div class="badge-included">✓ Incluido</div>
+        <h3>Proveedor en recarga de pipa</h3>
+        <p>Al registrar que llega la pipa a rellenar el tanque, se captura proveedor, cuentalitros al momento y precio por litro. Historial de compras por proveedor.</p>
+      </div>
+      <div class="mejora-card">
+        <div class="badge-included">✓ Incluido</div>
+        <h3>Quién suministra / Quién recibe</h3>
+        <p>El form de carga en campo ahora pide quién entregó el diesel (operador NISSAN) y quién lo recibió (chofer de la unidad). Cadena de custodia completa.</p>
+      </div>
+      <div class="mejora-card">
+        <div class="badge-included">✓ Incluido</div>
+        <h3>Crear Obra sobre la marcha</h3>
+        <p>Al capturar una carga en campo, si la obra no está en el catálogo, se puede agregar en el momento sin salir del formulario. Para lugares irregulares u obras nuevas.</p>
+      </div>
+      <div class="mejora-card">
+        <div class="badge-included">✓ Incluido</div>
+        <h3>Validación inteligente de kilómetros</h3>
+        <p>El sistema bloquea km menores al anterior registrado. Si no hay lectura disponible, usa el último km para continuar. Si la diferencia supera 1,100 km, pide confirmación.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── MÓDULOS NUEVOS ─── -->
+<section id="modulos">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Desarrollo nuevo — v2.0</div>
+      <h2 class="section-title">Módulos que transforman<br>la operación completa</h2>
+      <p class="section-desc">Cada módulo resuelve un problema específico que hoy se gestiona con papel, memoria o no se gestiona. Haz clic en cada uno para ver los detalles.</p>
+    </div>
+
+    <div class="modulos-list">
+
+      <!-- B1 -->
+      <div class="modulo-card reveal" id="mod-b1">
+        <div class="modulo-header" onclick="toggleModulo('mod-b1')">
+          <div class="modulo-icon mod-b1">🚛</div>
+          <div class="modulo-meta">
+            <div class="num tag-b1">Módulo B1</div>
+            <h3>Ficha Completa de Unidad</h3>
+            <div class="tagline">Historial, rendimientos y análisis por camión o máquina</div>
+          </div>
+          <div class="modulo-right">
+            <div class="modulo-price">$18,000</div>
+            <div class="modulo-toggle">Ver detalle <span class="chevron">↓</span></div>
+          </div>
+        </div>
+        <div class="modulo-body">
+          <div class="modulo-body-inner">
+            <div class="modulo-cols">
+              <div>
+                <h4>¿Qué hace?</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico mod-b1" style="color:var(--indigo-bright)">📋</div>
+                    <span>Al hacer clic en cualquier unidad del catálogo se abre su ficha completa con 4 secciones: Cargas, Rendimiento, Taller y Consumibles.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b1" style="color:var(--indigo-bright)">📈</div>
+                    <span>Gráfica de rendimiento semana a semana. Se puede ver la tendencia de los últimos 4, 8 o 12 períodos.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b1" style="color:var(--indigo-bright)">🔍</div>
+                    <span>Análisis por período: cuántos litros consumió, cuántos km recorrió, cuánto costó. Selector de rango de fechas.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b1" style="color:var(--indigo-bright)">🛠</div>
+                    <span>Historial de entradas al taller (conectado con módulo B5) y consumibles utilizados (B6).</span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4>Casos de uso reales</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico" style="background:rgba(99,102,241,0.1);color:var(--indigo-bright)">1</div>
+                    <span>El CA17 lleva 3 semanas con rendimiento cayendo. Antes lo veías en el reporte del viernes. Ahora lo ves en su ficha cualquier día.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(99,102,241,0.1);color:var(--indigo-bright)">2</div>
+                    <span>El cliente pregunta cuánto diesel consumió la EX02 en los últimos 3 meses de obra. Un clic en la unidad, seleccionas el rango, tienes el número.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(99,102,241,0.1);color:var(--indigo-bright)">3</div>
+                    <span>Antes de mandar un camión a obra lejana, revisas si su rendimiento está dentro de lo esperado o si necesita revisión primero.</span>
+                  </li>
+                </ul>
+                <div class="mockup"><span class="hl">CA17 — Camión Volteo</span>
+Período actual  │  L consumidos │  km/L
+Sem 15 (7–13 Abr) │   320 L      │  <span class="ok">2.85 ✓</span>
+Sem 14 (31–6 Abr) │   345 L      │  <span class="warn">2.61 ↓</span>
+Sem 13 (24–30 Mar)│   290 L      │  <span class="ok">3.10 ✓</span>
+Sem 12 (17–23 Mar)│   380 L      │  <span class="bad">2.10 ✗</span>
+<span class="dim">Referencia: 2.80 km/L  Tolerancia: ±5%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B2 -->
+      <div class="modulo-card reveal" id="mod-b2">
+        <div class="modulo-header" onclick="toggleModulo('mod-b2')">
+          <div class="modulo-icon mod-b2">🏗️</div>
+          <div class="modulo-meta">
+            <div class="num tag-b2">Módulo B2</div>
+            <h3>Consumo de Diesel por Obra</h3>
+            <div class="tagline">Saber cuánto cuesta una obra en combustible, al centavo</div>
+          </div>
+          <div class="modulo-right">
+            <div class="modulo-price">$15,000</div>
+            <div class="modulo-toggle">Ver detalle <span class="chevron">↓</span></div>
+          </div>
+        </div>
+        <div class="modulo-body">
+          <div class="modulo-body-inner">
+            <div class="modulo-cols">
+              <div>
+                <h4>¿Qué hace?</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico mod-b2" style="color:var(--cyan)">📊</div>
+                    <span>Panel que muestra el consumo total de diesel por obra, desglosado por tipo de maquinaria y por período.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b2" style="color:var(--cyan)">💰</div>
+                    <span>Calcula el costo en pesos del diesel de cada obra usando el precio por litro del período.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b2" style="color:var(--cyan)">📅</div>
+                    <span>Compara obras similares entre sí. Si la siguiente obra del mismo tipo se presupuesta, ya tienes el referente real.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b2" style="color:var(--cyan)">🗂</div>
+                    <span>Separación entre diesel exacto (campo, con obra_id asignada) y diesel aproximado (patio, unidades asignadas a la obra en ese período).</span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4>Casos de uso reales</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico" style="background:rgba(6,182,212,0.1);color:var(--cyan)">1</div>
+                    <span>Al término de la obra Incasa (3 meses), saber el costo real en diesel sin tener que revisar registros de papel ni Excel.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(6,182,212,0.1);color:var(--cyan)">2</div>
+                    <span>El presupuesto de Roble dice $180,000 en diesel. El sistema muestra que Incasa (obra similar) costó $250,000. Se puede renegociar antes de arrancar.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(6,182,212,0.1);color:var(--cyan)">3</div>
+                    <span>Presentar ante el cliente o dueño el desglose exacto de cuánto costó la flota en una obra determinada.</span>
+                  </li>
+                </ul>
+                <div class="mockup"><span class="hl">OBRA: Incasa  |  Ene–Abr 2026</span>
+─────────────────────────────────────
+Maquinaria (campo — exacto)
+  EX02 Komatsu PC88       4,200 L
+  EX13 Komatsu PC210      3,100 L
+  R02  WB140                800 L
+  <span class="dim">─────────────────────────────</span>
+  Subtotal:               8,100 L   <span class="ok">$198,450</span>
+
+Camiones (patio — aprox.)
+  CA17 × 12 cargas        1,240 L
+  CA22 ×  8 cargas          880 L
+  <span class="dim">─────────────────────────────</span>
+  Subtotal:               2,120 L   <span class="warn"> $51,940</span>
+
+<span class="hl">TOTAL OBRA INCASA:       10,220 L   $250,390</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B3 -->
+      <div class="modulo-card reveal" id="mod-b3">
+        <div class="modulo-header" onclick="toggleModulo('mod-b3')">
+          <div class="modulo-icon mod-b3">🔔</div>
+          <div class="modulo-meta">
+            <div class="num tag-b3">Módulo B3</div>
+            <h3>Alertas de Mantenimiento Preventivo</h3>
+            <div class="tagline">El sistema avisa antes de que el camión falle, no después</div>
+          </div>
+          <div class="modulo-right">
+            <div class="modulo-price">$22,000</div>
+            <div class="modulo-toggle">Ver detalle <span class="chevron">↓</span></div>
+          </div>
+        </div>
+        <div class="modulo-body">
+          <div class="modulo-body-inner">
+            <div class="modulo-cols">
+              <div>
+                <h4>¿Qué hace?</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico mod-b3" style="color:var(--amber)">🛞</div>
+                    <span>Registra el km o las horas de cada mantenimiento realizado. El sistema calcula automáticamente cuándo toca el siguiente.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b3" style="color:var(--amber)">📍</div>
+                    <span>Cada vez que se registra una carga con km/hrs actuales, el sistema actualiza el contador de avance hacia el próximo servicio.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b3" style="color:var(--amber)">🚨</div>
+                    <span><strong>Camiones:</strong> alerta a 800 km del próximo servicio (80%) y alerta de vencido a 1,000 km. <strong>Maquinaria:</strong> alerta a 19 hrs y vencido a 24 hrs.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b3" style="color:var(--amber)">🔗</div>
+                    <span>Cada alerta se convierte en una Tarea persistente (módulo B4). Visible en el dashboard hasta que se atienda.</span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4>Casos de uso reales</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico" style="background:rgba(245,158,11,0.1);color:var(--amber)">1</div>
+                    <span>El CA28 tuvo su último cambio de aceite en km 99,200. Al llegar a 100,000 km, el sistema genera la alerta automáticamente, sin que nadie tenga que recordarlo.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(245,158,11,0.1);color:var(--amber)">2</div>
+                    <span>La EX02 lleva 21 horas desde su último servicio. El sistema avisa que en 3 horas más llega al límite de 24 hrs.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(245,158,11,0.1);color:var(--amber)">3</div>
+                    <span>Se elimina la libreta de mantenimiento que hoy existe físicamente y "a veces no se trae". Todo está en el sistema, siempre actualizado.</span>
+                  </li>
+                </ul>
+                <div class="mockup"><span class="hl">MANTENIMIENTOS PRÓXIMOS</span>
+─────────────────────────────────────────
+  CA28  km 99,870  <span class="warn">⚠ Faltan 130 km</span>
+  CA07  km 485,800 <span class="warn">⚠ Faltan 200 km</span>
+  EX02  21.4 hrs   <span class="warn">⚠ Faltan 2.6 hrs</span>
+─────────────────────────────────────────
+  CA12  km 483,100 <span class="ok">✓ Faltan 1,900 km</span>
+  CA17  km 476,500 <span class="ok">✓ Faltan 3,500 km</span>
+  R02   16.0 hrs   <span class="ok">✓ Faltan 8.0 hrs</span>
+─────────────────────────────────────────
+<span class="bad">VENCIDOS:</span>
+  CA16  km 488,200 <span class="bad">✗ +800 km sobre límite</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B4 -->
+      <div class="modulo-card reveal" id="mod-b4">
+        <div class="modulo-header" onclick="toggleModulo('mod-b4')">
+          <div class="modulo-icon mod-b4">✅</div>
+          <div class="modulo-meta">
+            <div class="num tag-b4">Módulo B4</div>
+            <h3>Sistema de Tareas y Checklist</h3>
+            <div class="tagline">El sistema lleva tu agenda. Ninguna alerta desaparece sin resolverse</div>
+          </div>
+          <div class="modulo-right">
+            <div class="modulo-price">$38,000</div>
+            <div class="modulo-toggle">Ver detalle <span class="chevron">↓</span></div>
+          </div>
+        </div>
+        <div class="modulo-body">
+          <div class="modulo-body-inner">
+            <div class="modulo-cols">
+              <div>
+                <h4>¿Qué hace?</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico mod-b4" style="color:var(--violet)">🔗</div>
+                    <span>Todas las alertas del sistema (stock bajo, rendimiento fuera de rango, mantenimiento vencido) se convierten en <strong>tareas persistentes</strong>. No desaparecen hasta que se atienden.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b4" style="color:var(--violet)">📋</div>
+                    <span>Lista de tareas con estado: <em>Pendiente → En proceso → Completada</em>. Pueden pasar días con la misma tarea abierta y siempre estará visible.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b4" style="color:var(--violet)">🏠</div>
+                    <span>El dashboard del admin muestra las tareas pendientes <strong>primero</strong>, antes que cualquier estadística. El día empieza con lo que hay que resolver.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b4" style="color:var(--violet)">📝</div>
+                    <span>También se pueden crear tareas manuales: "Llamar a proveedor de llantas", "Revisar CA22 por ruido en transmisión".</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b4" style="color:var(--violet)">📁</div>
+                    <span>Historial de tareas completadas con fecha, quién la cerró y notas de cierre. Bitácora de decisiones tomadas.</span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4>Casos de uso reales</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico" style="background:rgba(139,92,246,0.1);color:var(--violet)">1</div>
+                    <span>Lunes 7am: entras al sistema. El dashboard te muestra 3 tareas pendientes antes de cualquier stat. Sabes en 10 segundos qué resolver hoy.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(139,92,246,0.1);color:var(--violet)">2</div>
+                    <span>El CA28 tiene la alerta de mantenimiento hace 3 días. No puedes mandar al taller aún porque está en obra. La tarea sigue en "Pendiente" y la ves cada vez que entras, sin riesgo de olvidarla.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(139,92,246,0.1);color:var(--violet)">3</div>
+                    <span>Al terminar el mes, el historial de tareas completadas muestra qué mantenimientos se hicieron, qué problemas de stock se resolvieron, quién los atendió.</span>
+                  </li>
+                </ul>
+                <div class="mockup"><span class="hl">DASHBOARD — TAREAS PENDIENTES  (4)</span>
+─────────────────────────────────────────────
+<span class="bad">🔴 ALTA</span>  CA28 mantenimiento 100,000 km
+        Hace 3 días · Origen: alerta sistema
+        Estado: <span class="warn">Pendiente</span>  [Atender] [Posponer]
+
+<span class="warn">🟡 MED</span>  Stock taller bajo — pedir diesel
+        Hace 6 horas · 320L disponibles
+        Estado: <span class="warn">En proceso</span>  [Completar]
+
+<span class="warn">🟡 MED</span>  CA17 rendimiento -22% esta semana
+        Hace 2 días · Ref: 2.80 km/L · Real: 2.18
+        Estado: <span class="warn">Pendiente</span>  [Atender]
+
+<span class="ok">🟢 BAJA</span> EX02 próximo mantenimiento en 3 hrs
+        Hace 1 hora · Origen: alerta sistema
+        Estado: <span class="ok">Nuevo</span>  [Atender]</div>
+              </div>
+            </div>
+            <div class="impact-box" style="margin-top:1.5rem">
+              <div class="impact-title">⭐ Por qué este es el módulo más valioso</div>
+              <p>Los módulos B3, B5 y B6 generan información. Este módulo hace que esa información <strong>no se pierda</strong>. Sin él, una alerta aparece y puede ignorarse. Con él, cada alerta es una tarea que existe hasta que alguien la cierra. Es el sistema nervioso central de toda la operación.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B5 -->
+      <div class="modulo-card reveal" id="mod-b5">
+        <div class="modulo-header" onclick="toggleModulo('mod-b5')">
+          <div class="modulo-icon mod-b5">🔧</div>
+          <div class="modulo-meta">
+            <div class="num tag-b5">Módulo B5</div>
+            <h3>Bitácora del Taller</h3>
+            <div class="tagline">La libreta que nunca traes, siempre en el celular</div>
+          </div>
+          <div class="modulo-right">
+            <div class="modulo-price">$32,000</div>
+            <div class="modulo-toggle">Ver detalle <span class="chevron">↓</span></div>
+          </div>
+        </div>
+        <div class="modulo-body">
+          <div class="modulo-body-inner">
+            <div class="modulo-cols">
+              <div>
+                <h4>¿Qué hace?</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico mod-b5" style="color:var(--red)">📝</div>
+                    <span>Cada entrada de vehículo al taller se registra en el momento: qué unidad, por qué llegó (correctivo, preventivo, neumático, eléctrico, etc.), quién la atendió.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b5" style="color:var(--red)">📦</div>
+                    <span>Se registran los materiales usados: descripción, cantidad, costo y proveedor. El costo real del servicio queda capturado.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b5" style="color:var(--red)">📤</div>
+                    <span>Control de salida: si el vehículo salió el mismo día, si quedó en taller, si salió al día siguiente. Estado en tiempo real.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b5" style="color:var(--red)">🔗</div>
+                    <span>El historial de taller aparece en la Ficha de cada Unidad (B1). Se puede ver todo lo que le ha pasado a un camión en un solo lugar.</span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4>Casos de uso reales</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico" style="background:rgba(239,68,68,0.1);color:var(--red)">1</div>
+                    <span>Vienen 4 camiones al taller en la misma mañana. En lugar de intentar recordar o anotar en papel, el mecánico o el encargado abre el celular y registra cada uno en 30 segundos.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(239,68,68,0.1);color:var(--red)">2</div>
+                    <span>El CA17 entró 3 veces en el mismo mes por el mismo problema (fuga hidráulica). El historial lo muestra, y se puede tomar la decisión de hacer una reparación mayor.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(239,68,68,0.1);color:var(--red)">3</div>
+                    <span>¿Cuánto se gastó en refacciones en marzo? El sistema lo suma automáticamente. Dato que hoy no existe en ningún lado.</span>
+                  </li>
+                </ul>
+                <div class="mockup"><span class="hl">NUEVA ENTRADA — TALLER</span>
+─────────────────────────────────────
+Unidad:        CA17
+Motivo:        Correctivo
+Descripción:   Fuga en manguera hidráulica
+Atendió:       Juan Mecánico
+Hora entrada:  08:30
+
+Materiales usados:
+  Manguera hidráulica 3/4"  × 1  $450  Refac. Herrán
+  Abrazadera inox 1"         × 2  $ 45  Refac. Herrán
+<span class="dim">─────────────────────────────────────</span>
+Costo total servicio: <span class="ok">$495</span>
+¿Salió mismo día? <span class="ok">Sí</span> — 14:15 hrs</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B6 -->
+      <div class="modulo-card reveal" id="mod-b6">
+        <div class="modulo-header" onclick="toggleModulo('mod-b6')">
+          <div class="modulo-icon mod-b6">📦</div>
+          <div class="modulo-meta">
+            <div class="num tag-b6">Módulo B6</div>
+            <h3>Inventario de Consumibles</h3>
+            <div class="tagline">Control de llantas, rines y refacciones compradas por lote</div>
+          </div>
+          <div class="modulo-right">
+            <div class="modulo-price">$28,000</div>
+            <div class="modulo-toggle">Ver detalle <span class="chevron">↓</span></div>
+          </div>
+        </div>
+        <div class="modulo-body">
+          <div class="modulo-body-inner">
+            <div class="modulo-cols">
+              <div>
+                <h4>¿Qué hace?</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico mod-b6" style="color:var(--emerald)">📥</div>
+                    <span>Registra entradas al inventario: llegan 8 llantas R22.5 a $4,200 c/u del proveedor X. Se captura lote, costo y proveedor.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b6" style="color:var(--emerald)">📤</div>
+                    <span>Cada vez que se usa un consumible en el taller (módulo B5), sale del inventario. El stock se actualiza automáticamente.</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b6" style="color:var(--emerald)">⚠️</div>
+                    <span>Alerta de stock mínimo configurable: cuando las llantas R22.5 bajan de 2 piezas, el sistema avisa (y genera tarea en B4).</span>
+                  </li>
+                  <li>
+                    <div class="ico mod-b6" style="color:var(--emerald)">📊</div>
+                    <span>Trazabilidad completa: cada llanta o refacción tiene historial de en qué entrada al taller se usó y en qué unidad quedó.</span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4>Casos de uso reales</h4>
+                <ul class="uso-list">
+                  <li>
+                    <div class="ico" style="background:rgba(16,185,129,0.1);color:var(--emerald)">1</div>
+                    <span>Se compran 8 llantas R22.5 en lote. Se van usando una a una en diferentes servicios. En cualquier momento se sabe cuántas quedan, sin ir a contar físicamente.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(16,185,129,0.1);color:var(--emerald)">2</div>
+                    <span>Quedan 2 llantas. El sistema lanza alerta antes de que se acaben. Se pide el siguiente lote con tiempo, sin quedarse sin refacciones.</span>
+                  </li>
+                  <li>
+                    <div class="ico" style="background:rgba(16,185,129,0.1);color:var(--emerald)">3</div>
+                    <span>Al final del trimestre: ¿cuánto se gastó en llantas? ¿en aceite? ¿en refacciones? El sistema lo suma solo, desglosado por categoría y por proveedor.</span>
+                  </li>
+                </ul>
+                <div class="mockup"><span class="hl">INVENTARIO DE CONSUMIBLES</span>
+─────────────────────────────────────────
+Producto              │ Stock │ Mínimo │ Estado
+──────────────────────┼───────┼────────┼────────
+Llanta R22.5 Bridgest │   6   │   2    │ <span class="ok">✓ OK</span>
+Llanta R20  Michelin  │   2   │   4    │ <span class="bad">✗ BAJO</span>
+Rin 22.5 Acero        │   3   │   2    │ <span class="ok">✓ OK</span>
+Aceite 15W40 20L      │   4   │   2    │ <span class="ok">✓ OK</span>
+Filtro aceite CA-serie│   1   │   3    │ <span class="bad">✗ BAJO</span>
+Filtro diesel CA-serie│   5   │   2    │ <span class="ok">✓ OK</span>
+─────────────────────────────────────────
+<span class="warn">⚠ 2 productos por debajo del mínimo</span>
+  → Tareas generadas en lista de pendientes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /modulos-list -->
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── ROI ─── -->
+<section id="roi">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Por qué tiene sentido</div>
+      <h2 class="section-title">El número que importa</h2>
+    </div>
+    <div class="roi-section reveal">
+      <div class="roi-grid">
+        <div>
+          <p class="section-label" style="margin-bottom:1.5rem">El diesel que controla el sistema</p>
+          <div class="roi-stat">
+            <div class="label">Diesel controlado por semana</div>
+            <div class="value">11,173 L <span>promedio</span></div>
+          </div>
+          <div class="roi-stat">
+            <div class="label">Valor por semana (a $24.50/L)</div>
+            <div class="value">$273,739 <span>MXN</span></div>
+          </div>
+          <div class="roi-stat">
+            <div class="label">Valor anual estimado</div>
+            <div class="value">$13.1M <span>MXN / año</span></div>
+          </div>
+          <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:1.25rem;margin-top:1.5rem">
+            <p style="font-size:13px;color:var(--fg);line-height:1.7">
+              Un sistema que gestiona <strong style="color:var(--indigo-bright)">$13 millones anuales</strong> en diesel no debería costar más de lo que ahorra en el primer mes de operación eficiente.
+            </p>
+          </div>
+        </div>
+        <div>
+          <p class="section-label" style="margin-bottom:1.5rem">Eficiencias conservadoras que genera el sistema</p>
+          <div class="benefit-list">
+            <div class="benefit-item">
+              <div class="benefit-ico">🚛</div>
+              <div class="benefit-text">
+                <h5>Detectar 1 camión con rendimiento bajo por semana</h5>
+                <p>Un camión que consume 30% más de lo esperado (~$5,000 MXN extra por semana) detectado el lunes vs el viernes = $20,000 al mes en diesel evitado.</p>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-ico">🔧</div>
+              <div class="benefit-text">
+                <h5>Mantenimiento preventivo vs correctivo</h5>
+                <p>Una falla de motor por falta de mantenimiento puede costar $50,000–$200,000 MXN. Un cambio de aceite a tiempo cuesta $2,000. La diferencia es cuándo se hace.</p>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-ico">⏱</div>
+              <div class="benefit-text">
+                <h5>Tiempo recuperado en reportes y captura</h5>
+                <p>4 hrs/semana de trabajo manual que el sistema elimina. A $400 MXN/hr = $6,400 MXN/mes de tiempo del administrador devuelto a tareas de mayor valor.</p>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-ico">📊</div>
+              <div class="benefit-text">
+                <h5>Costeo real de obras para presupuestar mejor</h5>
+                <p>Si el módulo de consumo por obra evita subestimar el diesel de una obra en $50,000, se paga solo en la primera negociación.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── COTIZACIÓN ─── -->
+<section id="cotizacion">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Cotización</div>
+      <h2 class="section-title">Selecciona los módulos<br>que quieres implementar</h2>
+      <p class="section-desc">Puedes elegir uno, varios o todos. Cada módulo funciona de forma independiente, aunque algunos se potencian al combinarlos.</p>
+    </div>
+
+    <div class="cotizacion reveal">
+      <div class="cotizacion-header">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+          <div>
+            <h2>Configurador de propuesta</h2>
+            <p>Las mejoras de refinamiento (A1–A5) están incluidas sin costo adicional.</p>
+          </div>
+          <button class="select-all-btn" onclick="selectAll()">Seleccionar todos</button>
+        </div>
+      </div>
+
+      <div class="cotizacion-items">
+        <!-- Included -->
+        <div style="padding:0.75rem 0 0.5rem;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--emerald)">
+          ✓ Incluido sin costo
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.12);border-radius:12px;margin-bottom:1.5rem">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--fg)">Mejoras al sistema actual (A1–A5)</div>
+            <div style="font-size:12px;color:var(--fg-muted)">Historial 2025 · Proveedor pipa · Quien suministra/recibe · Obra on-the-fly · Validación kilométrica</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--emerald)">$0</div>
+        </div>
+
+        <div style="padding:0.75rem 0 0.5rem;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--indigo-bright)">
+          Módulos nuevos — selecciona los que necesitas
+        </div>
+
+        <div class="cot-item selected" data-price="18000" data-id="b1" onclick="toggleItem(this)">
+          <div class="cot-checkbox">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="cot-info">
+            <div class="cot-name">B1 · Ficha Completa de Unidad</div>
+            <div class="cot-desc">Historial de cargas, gráfica de rendimientos, análisis por período por camión o máquina</div>
+          </div>
+          <div class="cot-price">$18,000</div>
+        </div>
+
+        <div class="cot-item selected" data-price="15000" data-id="b2" onclick="toggleItem(this)">
+          <div class="cot-checkbox">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="cot-info">
+            <div class="cot-name">B2 · Consumo de Diesel por Obra</div>
+            <div class="cot-desc">Panel de consumo y costo en diesel por proyecto, con desglose por maquinaria y período</div>
+          </div>
+          <div class="cot-price">$15,000</div>
+        </div>
+
+        <div class="cot-item selected" data-price="22000" data-id="b3" onclick="toggleItem(this)">
+          <div class="cot-checkbox">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="cot-info">
+            <div class="cot-name">B3 · Alertas de Mantenimiento Preventivo</div>
+            <div class="cot-desc">Monitor de km/hrs por unidad. Alerta a 1,000 km (camiones) y 24 hrs (maquinaria) antes del próximo servicio</div>
+          </div>
+          <div class="cot-price">$22,000</div>
+        </div>
+
+        <div class="cot-item selected" data-price="38000" data-id="b4" onclick="toggleItem(this)">
+          <div class="cot-checkbox">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="cot-info">
+            <div class="cot-name">B4 · Sistema de Tareas y Checklist ⭐ Recomendado</div>
+            <div class="cot-desc">Alertas convertidas en tareas persistentes. Dashboard priorizado. Control de agenda de actividades pendientes</div>
+          </div>
+          <div class="cot-price">$38,000</div>
+        </div>
+
+        <div class="cot-item selected" data-price="32000" data-id="b5" onclick="toggleItem(this)">
+          <div class="cot-checkbox">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="cot-info">
+            <div class="cot-name">B5 · Bitácora del Taller</div>
+            <div class="cot-desc">Registro de entradas, motivo, diagnóstico, materiales usados y costos por servicio. Sin libreta física.</div>
+          </div>
+          <div class="cot-price">$32,000</div>
+        </div>
+
+        <div class="cot-item selected" data-price="28000" data-id="b6" onclick="toggleItem(this)">
+          <div class="cot-checkbox">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="cot-info">
+            <div class="cot-name">B6 · Inventario de Consumibles</div>
+            <div class="cot-desc">Control de llantas, rines, aceite y refacciones. Compras por lote, consumo por servicio, alertas de stock mínimo</div>
+          </div>
+          <div class="cot-price">$28,000</div>
+        </div>
+      </div>
+
+      <div class="cotizacion-footer">
+        <div class="discount-banner" id="discount-banner">
+          🎉 Al contratar los 6 módulos aplica descuento del 15% — ahorro de $18,150 MXN
+        </div>
+        <div class="total-row">
+          <span class="total-label">Módulos seleccionados</span>
+          <span class="total-val" id="selected-count">6 de 6</span>
+        </div>
+        <div class="total-row">
+          <span class="total-label">Subtotal módulos</span>
+          <span class="total-val" id="subtotal">$153,000</span>
+        </div>
+        <div class="total-row" id="discount-row">
+          <span class="total-label" style="color:var(--emerald)">Descuento por volumen (15%)</span>
+          <span class="total-val" style="color:var(--emerald)" id="discount-val">− $22,950</span>
+        </div>
+        <div class="total-row main" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+          <span class="total-label">Total de inversión</span>
+          <span class="total-val" id="total-price">$130,050</span>
+        </div>
+        <p style="font-size:12px;color:var(--fg-muted);margin-top:1rem;line-height:1.6">
+          * Precios en pesos mexicanos (MXN). No incluye IVA. El pago se estructura en 3 partes: 40% al inicio, 40% al avance, 20% al finalizar.
+          <br>* Las mejoras incluidas (A1–A5) se entregan en las primeras 2 semanas.
+        </p>
+      </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div style="margin-top:4rem" class="reveal">
+      <div class="section-label">Implementación</div>
+      <h2 class="section-title" style="margin-bottom:2.5rem">Plan de entrega</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem" class="timeline-grid">
+        <div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-period">Semana 1–2</div>
+              <h4>Mejoras incluidas (Grupo A)</h4>
+              <p>Historial 2025, validación km, proveedor en recargas, campos de campo, obra on-the-fly. Sistema actual mejorado.</p>
+            </div>
+            <div class="tl-item">
+              <div class="tl-period">Semana 3–4</div>
+              <h4>B1 Ficha de Unidad + B2 Consumo por Obra</h4>
+              <p>Cada unidad tiene su propia página. El análisis por obra empieza a tener datos desde el día 1.</p>
+            </div>
+            <div class="tl-item">
+              <div class="tl-period">Semana 5–6</div>
+              <h4>B3 Alertas de Mantenimiento</h4>
+              <p>Se registran los km/hrs de cada último servicio. El sistema empieza a monitorear y alertar desde ese momento.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-period">Semana 7–9</div>
+              <h4>B4 Sistema de Tareas y Checklist</h4>
+              <p>Las alertas de B3 y del sistema de stock se convierten en tareas. El dashboard cambia de forma. La operación se vuelve proactiva.</p>
+            </div>
+            <div class="tl-item">
+              <div class="tl-period">Semana 10–11</div>
+              <h4>B5 Bitácora del Taller</h4>
+              <p>Se empieza a registrar cada entrada. Desde el primer día hay historial. El historial en la Ficha de Unidad se activa.</p>
+            </div>
+            <div class="tl-item">
+              <div class="tl-period">Semana 12</div>
+              <h4>B6 Inventario de Consumibles</h4>
+              <p>Se carga el inventario inicial. Las salidas del taller (B5) empiezan a mover el stock automáticamente.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─── FOOTER CTA ─── -->
+<div class="divider"></div>
+<section class="footer-cta">
+  <div class="container">
+    <div class="reveal">
+      <h2>¿Continuamos?</h2>
+      <p>El siguiente paso es definir qué módulos arrancan primero y fijar la fecha de inicio.</p>
+      <div class="cta-btns">
+        <a href="mailto:torresdevmx@gmail.com?subject=WB%20Diesel%20v2.0%20—%20Aprobación" class="btn-primary">
+          Aprobar propuesta →
+        </a>
+        <a href="#cotizacion" class="btn-secondary">
+          Revisar cotización
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SCRIPTS ─── -->
+<script>
+// ─ Toggle módulos
+function toggleModulo(id) {
+  const card = document.getElementById(id);
+  card.classList.toggle('open');
+}
+
+// ─ Toggle cotización items
+function toggleItem(el) {
+  el.classList.toggle('selected');
+  updateTotal();
+}
+
+function selectAll() {
+  const items = document.querySelectorAll('.cot-item');
+  const allSelected = [...items].every(i => i.classList.contains('selected'));
+  items.forEach(i => {
+    if (allSelected) i.classList.remove('selected');
+    else i.classList.add('selected');
+  });
+  updateTotal();
+}
+
+function updateTotal() {
+  const items = document.querySelectorAll('.cot-item');
+  let subtotal = 0;
+  let selected = 0;
+  const total_modules = items.length;
+
+  items.forEach(item => {
+    if (item.classList.contains('selected')) {
+      subtotal += parseInt(item.dataset.price);
+      selected++;
+    }
+  });
+
+  const allSelected = selected === total_modules;
+  const discount = allSelected ? subtotal * 0.15 : 0;
+  const total = subtotal - discount;
+
+  document.getElementById('selected-count').textContent = `${selected} de ${total_modules}`;
+  document.getElementById('subtotal').textContent = `$${subtotal.toLocaleString()}`;
+  document.getElementById('discount-val').textContent = `− $${Math.round(discount).toLocaleString()}`;
+  document.getElementById('total-price').textContent = `$${Math.round(total).toLocaleString()}`;
+
+  const discountRow = document.getElementById('discount-row');
+  const discountBanner = document.getElementById('discount-banner');
+
+  if (allSelected && subtotal > 0) {
+    discountRow.style.display = 'flex';
+    discountBanner.classList.remove('hidden');
+  } else {
+    discountRow.style.display = 'none';
+    discountBanner.classList.add('hidden');
+  }
+}
+
+// ─ Reveal on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ─ Counter animation
+function animateCounter(el, target, suffix) {
+  const duration = 1400;
+  const steps = 50;
+  const increment = target / steps;
+  let current = 0;
+  let step = 0;
+
+  const timer = setInterval(() => {
+    step++;
+    current = Math.min(Math.round(increment * step), target);
+    el.textContent = current.toLocaleString() + (suffix || '');
+    if (step >= steps) clearInterval(timer);
+  }, duration / steps);
+}
+
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      const target = parseInt(el.dataset.target);
+      const suffix = el.dataset.suffix || '';
+      animateCounter(el, target, suffix);
+      counterObserver.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('[data-target]').forEach(el => counterObserver.observe(el));
+
+// ─ Init
+updateTotal();
+</script>
+
+</body>
+</html>

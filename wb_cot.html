@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotización Comercial | WB Control Diésel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Oswald', 'sans-serif'],
+                    },
+                    colors: {
+                        industrial: {
+                            900: '#111827', // Fondo principal muy oscuro
+                            800: '#1f2937', // Tarjetas
+                            700: '#374151', // Bordes
+                        },
+                        safety: {
+                            yellow: '#FBBF24', // Amarillo maquinaria
+                            orange: '#F97316', // Naranja alerta
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #111827; color: #f3f4f6; }
+        .hero-pattern {
+            background-image: linear-gradient(rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.95)), url('https://images.unsplash.com/photo-1541888081604-0b1d0337f717?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .yellow-accent-border {
+            border-left: 4px solid #FBBF24;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-safety-yellow selection:text-black">
+
+    <nav class="fixed w-full z-50 bg-industrial-900/90 backdrop-blur-md border-b border-industrial-700 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="font-heading text-2xl font-bold tracking-wider text-white">
+                <span class="text-safety-yellow">WB</span> DIESEL
+            </div>
+            <div class="hidden md:flex space-x-8 text-sm font-medium">
+                <a href="#diagnostico" class="hover:text-safety-yellow transition">El Problema</a>
+                <a href="#solucion" class="hover:text-safety-yellow transition">La Solución</a>
+                <a href="#alcance" class="hover:text-safety-yellow transition">Alcance y Fases</a>
+                <a href="#inversion" class="hover:text-safety-yellow transition">Inversión</a>
+            </div>
+            <a href="#inversion" class="bg-safety-yellow text-industrial-900 font-bold px-5 py-2 rounded uppercase text-sm tracking-wide hover:bg-yellow-400 transition">
+                Ver Presupuesto
+            </a>
+        </div>
+    </nav>
+
+    <header class="hero-pattern pt-40 pb-24 px-6 border-b border-industrial-800">
+        <div class="max-w-5xl mx-auto">
+            <div class="inline-block bg-industrial-800 border border-industrial-700 text-gray-300 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-6">
+                Propuesta Comercial • Marzo 2026
+            </div>
+            <h1 class="text-5xl md:text-7xl font-heading font-bold text-white mb-6 uppercase leading-none">
+                Sistema Inteligente de <br><span class="text-safety-yellow">Control Diésel</span>
+            </h1>
+            <p class="text-xl text-gray-400 max-w-3xl leading-relaxed mb-10">
+                Una solución de software a la medida diseñada exclusivamente para modernizar la gestión de combustible, eliminar el trabajo administrativo manual y brindar visibilidad financiera en tiempo real para la flota y maquinaria.
+            </p>
+            <div class="flex gap-4">
+                <a href="#alcance" class="bg-industrial-800 border border-industrial-700 text-white font-medium px-6 py-3 rounded hover:bg-industrial-700 transition flex items-center gap-2">
+                    <i class="fas fa-arrow-down"></i> Explorar Proyecto
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <section id="diagnostico" class="py-20 px-6 max-w-7xl mx-auto">
+        <div class="grid md:grid-cols-2 gap-16 items-center">
+            <div>
+                <h2 class="text-3xl font-heading font-bold uppercase mb-6 yellow-accent-border pl-4">El Cuello de Botella Actual</h2>
+                <p class="text-gray-400 mb-6 leading-relaxed">
+                    Actualmente, gestionar más de 11,000 litros semanales a través de hojas de cálculo de Excel y notas de papel está generando un retraso operativo. El control matemático existe, pero la logística de captura está saturada.
+                </p>
+                <ul class="space-y-4">
+                    <li class="flex items-start gap-4 p-4 bg-industrial-800 rounded-lg">
+                        <i class="fas fa-clock text-safety-orange text-xl mt-1"></i>
+                        <div>
+                            <strong class="text-white block mb-1">Información Desfasada</strong>
+                            <span class="text-sm text-gray-400">Los reportes tienen hasta 6 días de retraso. Las decisiones se toman sobre gastos que ya ocurrieron, impidiendo la reacción inmediata ante fugas o mermas.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-4 p-4 bg-industrial-800 rounded-lg">
+                        <i class="fas fa-copy text-safety-orange text-xl mt-1"></i>
+                        <div>
+                            <strong class="text-white block mb-1">Triple Captura Manual</strong>
+                            <span class="text-sm text-gray-400">Cada carga se anota en papel, se transcribe a un libro general y luego se reclasifica por unidad. Son horas de trabajo administrativo que no generan valor.</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="relative">
+                <div class="absolute inset-0 bg-safety-yellow translate-x-4 translate-y-4 rounded-lg"></div>
+                <img src="https://images.unsplash.com/photo-1504307651254-35680f356f12?q=80&w=1000&auto=format&fit=crop" alt="Maquinaria pesada" class="relative z-10 rounded-lg shadow-2xl grayscale hover:grayscale-0 transition duration-500">
+            </div>
+        </div>
+    </section>
+
+    <section id="solucion" class="py-20 bg-industrial-800 border-y border-industrial-700 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-heading font-bold uppercase mb-4 text-white">El Cambio de Paradigma</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">Mover la captura de datos desde la oficina de regreso al punto de origen: la bomba de diésel. Todo conectado en tiempo real.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-industrial-900 p-8 rounded-xl border border-industrial-700 hover:border-safety-yellow transition group">
+                    <div class="w-14 h-14 bg-industrial-800 flex items-center justify-center rounded-lg mb-6 group-hover:bg-safety-yellow group-hover:text-industrial-900 transition text-safety-yellow text-2xl">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Captura en Campo</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Los despachadores de patio y NISSAN registran las cargas desde una App en su celular. Cero papel. Los inventarios se descuentan en el segundo exacto en que sale el combustible.
+                    </p>
+                </div>
+                <div class="bg-industrial-900 p-8 rounded-xl border border-industrial-700 hover:border-safety-yellow transition group">
+                    <div class="w-14 h-14 bg-industrial-800 flex items-center justify-center rounded-lg mb-6 group-hover:bg-safety-yellow group-hover:text-industrial-900 transition text-safety-yellow text-2xl">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Rendimiento Automático</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        El sistema cruza odómetros, horómetros y litros cargados para calcular automáticamente la eficiencia (Km/L) de cada camión y máquina. Sin tocar una calculadora.
+                    </p>
+                </div>
+                <div class="bg-industrial-900 p-8 rounded-xl border border-industrial-700 hover:border-safety-yellow transition group">
+                    <div class="w-14 h-14 bg-industrial-800 flex items-center justify-center rounded-lg mb-6 group-hover:bg-safety-yellow group-hover:text-industrial-900 transition text-safety-yellow text-2xl">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Alertas y Semáforos</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Si una unidad consume 20% más de lo habitual, o si el nivel del tanque matriz baja críticamente, usted recibe una alerta en su panel de control para actuar de inmediato.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="alcance" class="py-20 px-6 max-w-5xl mx-auto">
+        <h2 class="text-3xl font-heading font-bold uppercase mb-2 yellow-accent-border pl-4">Plan de Implementación</h2>
+        <p class="text-gray-400 mb-10">Desarrollo e integración dividida en 6 fases estratégicas a lo largo de 12 semanas. Usted validará cada paso antes de abandonar el Excel.</p>
+
+        <div class="space-y-4" x-data="{ selected: 1 }">
+            
+            <div class="bg-industrial-800 border border-industrial-700 rounded-lg overflow-hidden">
+                <button @click="selected !== 1 ? selected = 1 : selected = null" class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-industrial-700/50 transition">
+                    <div class="flex items-center gap-4">
+                        <span class="text-safety-yellow font-mono font-bold">01.</span>
+                        <h4 class="text-lg font-bold text-white">Captura y Operación Cero Papel</h4>
+                    </div>
+                    <i class="fas fa-chevron-down text-gray-500 transition-transform" :class="selected === 1 ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="selected === 1" x-collapse>
+                    <div class="px-6 pb-6 pt-2 text-gray-400 text-sm border-t border-industrial-700/50 mt-2">
+                        <ul class="list-disc pl-5 space-y-2 mt-2">
+                            <li>Desarrollo de formularios web progresivos (PWA) para despachadores.</li>
+                            <li>Módulo de carga en Patio (Bomba Fija) y carga en Campo (NISSAN).</li>
+                            <li>Auto-completado de unidades, operadores y obras activas.</li>
+                            <li>Doble validación de odómetros y cuentalitros para evitar errores humanos.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-industrial-800 border border-industrial-700 rounded-lg overflow-hidden">
+                <button @click="selected !== 2 ? selected = 2 : selected = null" class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-industrial-700/50 transition">
+                    <div class="flex items-center gap-4">
+                        <span class="text-safety-yellow font-mono font-bold">02.</span>
+                        <h4 class="text-lg font-bold text-white">Tablero Gerencial y Control de Stock</h4>
+                    </div>
+                    <i class="fas fa-chevron-down text-gray-500 transition-transform" :class="selected === 2 ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="selected === 2" x-collapse>
+                    <div class="px-6 pb-6 pt-2 text-gray-400 text-sm border-t border-industrial-700/50 mt-2">
+                        <ul class="list-disc pl-5 space-y-2 mt-2">
+                            <li>Dashboard en tiempo real con niveles de tanques (Patio y NISSAN).</li>
+                            <li>Registro de entradas por proveedores (Normal, Externo, OxxoGas).</li>
+                            <li>Conciliación automática entre litros despachados y diferencias de cuentalitros.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-industrial-800 border border-industrial-700 rounded-lg overflow-hidden">
+                <button @click="selected !== 3 ? selected = 3 : selected = null" class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-industrial-700/50 transition">
+                    <div class="flex items-center gap-4">
+                        <span class="text-safety-yellow font-mono font-bold">03.</span>
+                        <h4 class="text-lg font-bold text-white">Inteligencia de Rendimientos</h4>
+                    </div>
+                    <i class="fas fa-chevron-down text-gray-500 transition-transform" :class="selected === 3 ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="selected === 3" x-collapse>
+                    <div class="px-6 pb-6 pt-2 text-gray-400 text-sm border-t border-industrial-700/50 mt-2">
+                        <ul class="list-disc pl-5 space-y-2 mt-2">
+                            <li>Cálculos automáticos de eficiencia (Km/L para camiones, L/Hr para maquinaria).</li>
+                            <li>Comparativa automática contra rendimientos de referencia del fabricante o periodo anterior.</li>
+                            <li>Semáforo de alertas para unidades con consumos anómalos o fuera del umbral del 5%.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-industrial-800 border border-industrial-700 rounded-lg overflow-hidden">
+                <button @click="selected !== 4 ? selected = 4 : selected = null" class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-industrial-700/50 transition">
+                    <div class="flex items-center gap-4">
+                        <span class="text-safety-yellow font-mono font-bold">04.</span>
+                        <h4 class="text-lg font-bold text-white">Reportes, Roles y Migración Histórica</h4>
+                    </div>
+                    <i class="fas fa-chevron-down text-gray-500 transition-transform" :class="selected === 4 ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="selected === 4" x-collapse>
+                    <div class="px-6 pb-6 pt-2 text-gray-400 text-sm border-t border-industrial-700/50 mt-2">
+                        <ul class="list-disc pl-5 space-y-2 mt-2">
+                            <li>Exportación de reportes PDF y Excel con un solo clic.</li>
+                            <li>Gestión de accesos: Administrador, Despachador, Encargado de Obra.</li>
+                            <li>Importación total de la base de datos de Excel (desde Junio 2023) al nuevo sistema para no perder historial.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="inversion" class="py-20 bg-industrial-800 border-t border-industrial-700 px-6">
+        <div class="max-w-5xl mx-auto">
+            <h2 class="text-3xl font-heading font-bold uppercase mb-2 text-center text-white">Inversión del Proyecto</h2>
+            <p class="text-gray-400 text-center mb-12 max-w-2xl mx-auto">Transparencia total. El desarrollo incluye la entrega llave en mano del software, configurado y listo para operar en sus dispositivos.</p>
+
+            <div class="bg-industrial-900 border border-industrial-700 rounded-xl overflow-hidden shadow-2xl">
+                <div class="grid grid-cols-12 bg-industrial-800 border-b border-industrial-700 text-white font-bold p-4">
+                    <div class="col-span-8">Concepto / Entregable</div>
+                    <div class="col-span-4 text-right">Monto (MXN)</div>
+                </div>
+                
+                <div class="grid grid-cols-12 border-b border-industrial-700/50 p-4 items-center hover:bg-industrial-800/30">
+                    <div class="col-span-8">
+                        <div class="font-bold text-gray-200">Desarrollo Core del Sistema (Fases 1 a 4)</div>
+                        <div class="text-sm text-gray-500 mt-1">Diseño UX/UI, Base de datos, Lógica de rendimientos, Alertas y Roles.</div>
+                    </div>
+                    <div class="col-span-4 text-right font-mono text-gray-300">
+                        $ 45,000.00 </div>
+                </div>
+
+                <div class="grid grid-cols-12 border-b border-industrial-700/50 p-4 items-center hover:bg-industrial-800/30">
+                    <div class="col-span-8">
+                        <div class="font-bold text-gray-200">Migración de Datos y Capacitación</div>
+                        <div class="text-sm text-gray-500 mt-1">Traspaso de registros desde 2023, limpieza de datos y sesión de entrenamiento al personal.</div>
+                    </div>
+                    <div class="col-span-4 text-right font-mono text-gray-300">
+                        $ 8,500.00 </div>
+                </div>
+
+                <div class="grid grid-cols-12 bg-safety-yellow text-industrial-900 p-6 items-center">
+                    <div class="col-span-8 font-heading font-bold text-xl uppercase tracking-wider">
+                        Inversión Total Inicial
+                    </div>
+                    <div class="col-span-4 text-right font-bold text-2xl font-mono">
+                        $ 53,500.00 </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex flex-col md:flex-row gap-6 justify-between items-center bg-industrial-900 border border-industrial-700 p-6 rounded-lg">
+                <div>
+                    <h4 class="text-white font-bold mb-1">Mantenimiento y Hosting Cloud</h4>
+                    <p class="text-sm text-gray-400">Alojamiento de base de datos segura, respaldos diarios y soporte técnico mensual continuo tras la entrega.</p>
+                </div>
+                <div class="text-right whitespace-nowrap">
+                    <span class="text-safety-yellow font-bold font-mono text-xl">$ 2,500.00</span>
+                    <span class="text-gray-500 text-sm">/ mes</span> </div>
+            </div>
+
+            <div class="mt-12 grid md:grid-cols-2 gap-8 text-sm text-gray-400">
+                <div>
+                    <h5 class="text-white font-bold mb-3 border-b border-industrial-700 pb-2">Tiempos y Pagos</h5>
+                    <ul class="space-y-2">
+                        <li>• <strong>Tiempo de entrega:</strong> 12 semanas hábiles.</li>
+                        <li>• <strong>Anticipo:</strong> 50% al aprobar la cotización.</li>
+                        <li>• <strong>Hitos:</strong> 25% al entregar captura en campo, 25% al liberar el proyecto completo.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="text-white font-bold mb-3 border-b border-industrial-700 pb-2">Notas Importantes</h5>
+                    <ul class="space-y-2">
+                        <li>• Los precios expresados no incluyen I.V.A.</li>
+                        <li>• Esta cotización tiene una vigencia de 30 días naturales.</li>
+                        <li>• No se requiere la compra de hardware especial; los operadores pueden usar sus propios smartphones Android o iOS.</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <footer class="bg-industrial-900 py-12 px-6 border-t-4 border-safety-yellow text-center">
+        <div class="max-w-3xl mx-auto">
+            <h2 class="text-2xl font-heading font-bold text-white uppercase mb-6">¿Listo para evolucionar su operación?</h2>
+            <p class="text-gray-400 mb-8">El ROI (Retorno de Inversión) de este sistema se paga solo al eliminar fugas no detectadas y automatizar horas de trabajo administrativo de su personal clave.</p>
+            
+            <a href="mailto:tu-correo@ejemplo.com" class="inline-block bg-safety-yellow text-industrial-900 font-bold px-8 py-4 rounded hover:bg-yellow-400 transition transform hover:scale-105 uppercase tracking-wider">
+                <i class="fas fa-check-circle mr-2"></i> Aprobar Cotización
+            </a>
+            
+            <div class="mt-12 text-sm text-gray-600 font-mono">
+                Propuesta elaborada confidencialmente para WB Constructora. <br>
+                © 2026 Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

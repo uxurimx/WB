@@ -10,9 +10,10 @@ import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
 export type RecargaTanqueInput = {
   tanqueId: number;
-  fecha: string;          // "YYYY-MM-DD"
+  fecha: string;              // "YYYY-MM-DD"
   litros: number;
-  cuentalitrosNuevo?: number;
+  cuentalitrosInicio?: number; // A2: lectura ANTES de que llegue la pipa (punto ancla de referencia)
+  cuentalitrosNuevo?: number;  // lectura DESPUÉS de la descarga completa
   proveedor?: string;
   folioFactura?: string;
   precioLitro?: number;
@@ -35,14 +36,15 @@ export async function addRecargaTanque(input: RecargaTanqueInput) {
   );
 
   await db.insert(recargasTanque).values({
-    tanqueId: input.tanqueId,
-    fecha: input.fecha,
-    litros: input.litros,
-    proveedor: input.proveedor ?? null,
-    folioFactura: input.folioFactura ?? null,
-    precioLitro: input.precioLitro ?? null,
-    registradoPorId: userId,
-    notas: input.notas ?? null,
+    tanqueId:          input.tanqueId,
+    fecha:             input.fecha,
+    litros:            input.litros,
+    proveedor:         input.proveedor         ?? null,
+    folioFactura:      input.folioFactura      ?? null,
+    precioLitro:       input.precioLitro       ?? null,
+    cuentalitrosInicio: input.cuentalitrosInicio ?? null,
+    registradoPorId:   userId,
+    notas:             input.notas             ?? null,
   });
 
   await db

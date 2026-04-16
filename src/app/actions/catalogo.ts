@@ -128,6 +128,22 @@ export async function createObra(data: {
   return nueva;
 }
 
+// Creación rápida desde el form de campo — sin requerir rol especial
+// La obra queda activa y disponible de inmediato
+export async function createObraRapida(nombre: string) {
+  const { userId } = await (await import("@clerk/nextjs/server")).auth();
+  if (!userId) throw new Error("No autenticado");
+  const nombreTrimmed = nombre.trim();
+  if (!nombreTrimmed) throw new Error("El nombre de la obra no puede estar vacío");
+  const [nueva] = await db
+    .insert(obras)
+    .values({ nombre: nombreTrimmed, activo: true })
+    .returning();
+  revalidatePath("/catalogo/obras");
+  revalidatePath("/cargas/campo");
+  return nueva;
+}
+
 export async function updateObra(
   id: number,
   data: Partial<typeof obras.$inferInsert>

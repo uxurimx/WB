@@ -2,15 +2,17 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, Fuel, Clock, Hash, AlertCircle } from "lucide-react";
+import { CheckCircle, Fuel, Hash, AlertCircle, Loader2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { createCargaPatio } from "@/app/actions/cargas";
+import { createCargaPatio, getUltimoOdometro } from "@/app/actions/cargas";
 import { cn } from "@/lib/utils";
+
+const KM_MAX_DIFERENCIA = 1100;
 
 type Unidad = { id: number; codigo: string; nombre: string | null; tipo: string };
 type Operador = { id: number; nombre: string; tipo: string };
@@ -40,6 +42,12 @@ export default function FormCargaPatio({
   const [success, setSuccess] = useState<{ folio: number; litros: number } | null>(null);
   const [error, setError] = useState("");
 
+  // Validación km (A5)
+  const [ultimoKm, setUltimoKm]     = useState<number | null>(null);
+  const [loadingKm, setLoadingKm]   = useState(false);
+  const [kmWarning, setKmWarning]   = useState("");
+  const [kmEstimado, setKmEstimado] = useState(false);
+
   const { fecha: fechaInit, hora: horaInit } = getNow();
 
   const [form, setForm] = useState({
@@ -54,6 +62,36 @@ export default function FormCargaPatio({
     tipoDiesel: "normal",
     notas: "",
   });
+
+  // Cargar último km al cambiar unidad
+  useEffect(() => {
+    if (!form.unidadId) {
+      setUltimoKm(null);
+      setKmWarning("");
+      setKmEstimado(false);
+      return;
+    }
+    setLoadingKm(true);
+    setKmWarning("");
+    getUltimoOdometro(parseInt(form.unidadId)).then((km) => {
+      setUltimoKm(km);
+      setLoadingKm(false);
+    });
+  }, [form.unidadId]);
+
+  // Validar km al cambiar
+  useEffect(() => {
+    const km = parseFloat(form.odometroHrs);
+    setKmEstimado(false);
+    if (!form.odometroHrs || isNaN(km)) { setKmWarning(""); return; }
+    if (ultimoKm !== null && km < ultimoKm) {
+      setKmWarning(`Menor al último registrado (${ultimoKm.toLocaleString()})`);
+    } else if (ultimoKm !== null && km - ultimoKm > KM_MAX_DIFERENCIA) {
+      setKmWarning(`Diferencia de ${(km - ultimoKm).toLocaleString()} km excede el límite de ${KM_MAX_DIFERENCIA} km`);
+    } else {
+      setKmWarning("");
+    }
+  }, [form.odometroHrs, ultimoKm]);
 
   // Auto-calcular cuenta LT fin cuando cambian litros o inicio
   useEffect(() => {
@@ -77,7 +115,30 @@ export default function FormCargaPatio({
     if (!form.unidadId) { setError("Selecciona una unidad"); return; }
     if (!form.litros || parseFloat(form.litros) <= 0) { setError("Ingresa los litros"); return; }
 
+    // Validación km
+    const kmVal = parseFloat(form.odometroHrs);
+    if (form.odometroHrs && !isNaN(kmVal)) {
+      if (ultimoKm !== null && kmVal < ultimoKm) {
+        setError(`El km (${kmVal.toLocaleString()}) no puede ser menor al anterior registrado (${ultimoKm.toLocaleString()})`);
+        return;
+      }
+      if (ultimoKm !== null && kmVal - ultimoKm > KM_MAX_DIFERENCIA) {
+        setError(`La diferencia de ${(kmVal - ultimoKm).toLocaleString()} km excede el límite de ${KM_MAX_DIFERENCIA} km. Revisa el odómetro.`);
+        return;
+      }
+    }
+
     const litros = parseFloat(form.litros);
+
+    // Si no hay km, usar estimado
+    let odometroFinal: number | undefined;
+    let estimado = false;
+    if (form.odometroHrs && !isNaN(parseFloat(form.odometroHrs))) {
+      odometroFinal = parseFloat(form.odometroHrs);
+    } else if (ultimoKm !== null) {
+      odometroFinal = ultimoKm;
+      estimado      = true;
+    }
 
     startTransition(async () => {
       try {
@@ -86,12 +147,13 @@ export default function FormCargaPatio({
           hora: form.hora,
           unidadId: parseInt(form.unidadId),
           litros,
-          odometroHrs: form.odometroHrs ? parseFloat(form.odometroHrs) : undefined,
+          odometroHrs:    odometroFinal,
+          kmEstimado:     estimado || kmEstimado,
           cuentaLtInicio: form.cuentaLtInicio ? parseFloat(form.cuentaLtInicio) : undefined,
-          cuentaLtFin: form.cuentaLtFin ? parseFloat(form.cuentaLtFin) : undefined,
-          operadorId: form.operadorId ? parseInt(form.operadorId) : undefined,
-          tipoDiesel: form.tipoDiesel,
-          notas: form.notas || undefined,
+          cuentaLtFin:    form.cuentaLtFin    ? parseFloat(form.cuentaLtFin)    : undefined,
+          operadorId:     form.operadorId     ? parseInt(form.operadorId)        : undefined,
+          tipoDiesel:     form.tipoDiesel,
+          notas:          form.notas || undefined,
         });
 
         setSuccess({ folio: result.folio, litros });
@@ -102,13 +164,15 @@ export default function FormCargaPatio({
           ...prev,
           fecha,
           hora,
-          unidadId: "",
-          litros: "",
+          unidadId:    "",
+          litros:      "",
           odometroHrs: "",
           cuentaLtInicio: nextCuentaLt,
           cuentaLtFin: "",
-          notas: "",
+          notas:       "",
         }));
+        setUltimoKm(null);
+        setKmEstimado(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al guardar");
       }
@@ -245,11 +309,44 @@ export default function FormCargaPatio({
           )}
         </div>
 
-        {/* Odómetro */}
+        {/* Odómetro con validación (A5) */}
         <div className="space-y-1.5">
-          <Label htmlFor="odometroHrs">Odómetro / Horas</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="odometroHrs">
+              Odómetro / Horas
+              {loadingKm && <Loader2 className="inline w-3 h-3 ml-1.5 animate-spin opacity-50" />}
+              {ultimoKm !== null && !loadingKm && (
+                <span className="ml-1.5 text-[10px] font-normal" style={{ color: "var(--fg-muted)" }}>
+                  (último: {ultimoKm.toLocaleString()})
+                </span>
+              )}
+            </Label>
+            {ultimoKm !== null && !form.odometroHrs && (
+              <button
+                type="button"
+                onClick={() => { setForm((p) => ({ ...p, odometroHrs: String(ultimoKm) })); setKmEstimado(true); setKmWarning(""); }}
+                className="text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors"
+                style={{ color: "var(--fg-muted)", borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}
+              >
+                Usar último ({ultimoKm.toLocaleString()})
+              </button>
+            )}
+          </div>
           <Input id="odometroHrs" name="odometroHrs" type="number" step="1"
-            value={form.odometroHrs} onChange={handleChange} placeholder="476767" />
+            value={form.odometroHrs} onChange={handleChange}
+            placeholder={ultimoKm ? String(ultimoKm) : "476767"}
+            className={kmWarning ? "border-amber-500/60" : ""} />
+          {kmEstimado && !form.odometroHrs && (
+            <p className="text-[10px] text-amber-500 flex items-center gap-1">
+              <TriangleAlert className="w-3 h-3" />
+              Se usará el último km registrado ({ultimoKm?.toLocaleString()}) — marcado como estimado
+            </p>
+          )}
+          {kmWarning && (
+            <p className="text-[10px] text-amber-500 flex items-center gap-1">
+              <TriangleAlert className="w-3 h-3" /> {kmWarning}
+            </p>
+          )}
         </div>
 
         {/* Cuentalitros */}
