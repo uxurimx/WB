@@ -7,6 +7,8 @@ import { getOverviewStats } from "@/app/actions/overview";
 import { getOrCreatePeriodoActual } from "@/app/actions/periodos";
 import StockCards from "@/components/dashboard/StockCards";
 import CargasRecientes from "@/components/dashboard/CargasRecientes";
+import AlertasPanel from "@/components/dashboard/AlertasPanel";
+import { UMBRAL_TALLER, UMBRAL_NISSAN } from "@/lib/alertas-config";
 
 function formatPeriodo(fechaInicio: string, fechaFin: string) {
   const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
@@ -34,8 +36,9 @@ export default async function OverviewPage() {
     : "Bienvenido.";
 
   const alertas =
-    (stats.taller.litros < 500 ? 1 : 0) +
-    (stats.nissan.litros < 100 ? 1 : 0);
+    (stats.taller.litros < UMBRAL_TALLER ? 1 : 0) +
+    (stats.nissan.litros < UMBRAL_NISSAN ? 1 : 0) +
+    stats.alertasRendimiento.length;
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
@@ -88,6 +91,14 @@ export default async function OverviewPage() {
           initialNissan={stats.nissan}
         />
       </div>
+
+      {/* Alertas proactivas */}
+      <AlertasPanel
+        taller={stats.taller}
+        nissan={stats.nissan}
+        alertasRendimiento={stats.alertasRendimiento}
+        ultimoPeriodo={stats.ultimoPeriodoCerrado}
+      />
 
       {/* KPI del día */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
