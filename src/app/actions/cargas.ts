@@ -311,6 +311,8 @@ export type UpdateCargaInput = {
   folio?: number;
   litros?: number;
   odometroHrs?: number | null;
+  cuentaLtInicio?: number | null;
+  cuentaLtFin?: number | null;
   operadorId?: number | null;
   obraId?: number | null;
   tipoDiesel?: string;

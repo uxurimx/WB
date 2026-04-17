@@ -151,14 +151,12 @@ export default function StockCards({
             </span>
           )}
         </p>
-        {taller.cuentalitros > 0 && (
-          <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
-            Cuentalitros:{" "}
-            <span className="font-mono font-semibold" style={{ color: "var(--fg)" }}>
-              {taller.cuentalitros.toLocaleString()}
-            </span>
-          </p>
-        )}
+        <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
+          Cuentalitros:{" "}
+          <span className="font-mono font-semibold" style={{ color: "var(--fg)" }}>
+            {taller.cuentalitros > 0 ? taller.cuentalitros.toLocaleString() : "—"}
+          </span>
+        </p>
       </div>
 
       {/* Tanque NISSAN */}
@@ -222,14 +220,12 @@ export default function StockCards({
             </span>
           )}
         </p>
-        {nissan.cuentalitros > 0 && (
-          <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
-            Cuentalitros:{" "}
-            <span className="font-mono font-semibold" style={{ color: "var(--fg)" }}>
-              {nissan.cuentalitros.toLocaleString()}
-            </span>
-          </p>
-        )}
+        <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
+          Cuentalitros:{" "}
+          <span className="font-mono font-semibold" style={{ color: "var(--fg)" }}>
+            {nissan.cuentalitros > 0 ? nissan.cuentalitros.toLocaleString() : "—"}
+          </span>
+        </p>
       </div>
     </div>
   );
