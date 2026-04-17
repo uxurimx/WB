@@ -5,10 +5,12 @@ import { currentUser } from "@clerk/nextjs/server";
 import { ClipboardList, PlusCircle, Fuel } from "lucide-react";
 import { getCargas } from "@/app/actions/cargas";
 import { getOperadores, getObras } from "@/app/actions/catalogo";
-import { getTransferencias } from "@/app/actions/tanques";
+import { getTransferencias, getRecargasTanque } from "@/app/actions/tanques";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import CargasTable, { type CargaItem, type TransferenciaItem, type HistorialItem } from "@/components/cargas/CargasTable";
+import CargasTable, {
+  type CargaItem, type TransferenciaItem, type RecargaItem, type HistorialItem,
+} from "@/components/cargas/CargasTable";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
@@ -19,23 +21,19 @@ export default async function HistorialCargasPage({
 }) {
   const params = await searchParams;
   const origen = params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined;
+  const soloCargas = !!origen;
 
-  const [cargas, operadores, obras, clerkUser, transferencias] = await Promise.all([
-    getCargas({
-      origen,
-      unidadId: params.unidadId ? parseInt(params.unidadId) : undefined,
-      limit: 150,
-    }),
+  const [cargas, operadores, obras, clerkUser, transferencias, recargas] = await Promise.all([
+    getCargas({ origen, unidadId: params.unidadId ? parseInt(params.unidadId) : undefined, limit: 150 }),
     getOperadores(false),
     getObras(false),
     currentUser(),
-    // Transferencias solo en vista "Todas" (sin filtro de origen)
-    origen ? Promise.resolve([] as Awaited<ReturnType<typeof getTransferencias>>) : getTransferencias(150),
+    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getTransferencias>>) : getTransferencias(150),
+    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getRecargasTanque>>) : getRecargasTanque(150),
   ]);
 
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
-  // Mapear a tipos del componente
   const cargaItems: CargaItem[] = cargas.map((c) => ({
     _tipo: "carga",
     id: c.id,
@@ -48,6 +46,7 @@ export default async function HistorialCargasPage({
     notas: c.notas,
     operadorId: c.operadorId,
     obraId: c.obraId,
+    odometroHrs: c.odometroHrs ?? null,
     unidad: c.unidad ? { codigo: c.unidad.codigo } : null,
     operador: c.operador ? { nombre: c.operador.nombre } : null,
     obra: c.obra ? { nombre: c.obra.nombre } : null,
@@ -64,15 +63,26 @@ export default async function HistorialCargasPage({
     notas: t.notas,
   }));
 
-  // Mezclar y ordenar por fecha desc
-  const items: HistorialItem[] = [...cargaItems, ...transfItems].sort(
+  const recargaItems: RecargaItem[] = recargas.map((r) => ({
+    _tipo: "recarga",
+    id: r.id,
+    fecha: r.fecha,
+    litros: r.litros,
+    tanqueNombre: r.tanqueNombre,
+    proveedor: r.proveedor,
+    folioFactura: r.folioFactura,
+    precioLitro: r.precioLitro,
+    cuentalitrosInicio: r.cuentalitrosInicio,
+    notas: r.notas,
+  }));
+
+  const items: HistorialItem[] = [...cargaItems, ...transfItems, ...recargaItems].sort(
     (a, b) => b.fecha.localeCompare(a.fecha)
   );
 
-  // Stats (sólo cargas)
-  const totalLitros = cargas.reduce((sum, c) => sum + (c.litros ?? 0), 0);
-  const cargasPatio = cargas.filter((c) => c.origen === "patio").length;
-  const cargasCampo = cargas.filter((c) => c.origen === "campo").length;
+  const totalLitros  = cargas.reduce((sum, c) => sum + (c.litros ?? 0), 0);
+  const cargasPatio  = cargas.filter((c) => c.origen === "patio").length;
+  const cargasCampo  = cargas.filter((c) => c.origen === "campo").length;
 
   return (
     <div className="p-6 md:p-8 max-w-6xl">
@@ -90,26 +100,21 @@ export default async function HistorialCargasPage({
           <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>Historial</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--fg-muted)" }}>
             {cargas.length} cargas · {totalLitros.toLocaleString()} L
-            {!origen && transferencias.length > 0 && (
-              <span> · {transferencias.length} transferencias</span>
-            )}
+            {!soloCargas && transferencias.length > 0 && <span> · {transferencias.length} transferencias</span>}
+            {!soloCargas && recargas.length > 0 && <span> · {recargas.length} recargas</span>}
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
           <Button asChild variant="secondary" size="sm">
-            <Link href="/cargas/campo">
-              <Fuel className="w-4 h-4" /> Campo
-            </Link>
+            <Link href="/cargas/campo"><Fuel className="w-4 h-4" /> Campo</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/cargas/nueva">
-              <PlusCircle className="w-4 h-4" /> Nueva Patio
-            </Link>
+            <Link href="/cargas/nueva"><PlusCircle className="w-4 h-4" /> Nueva Patio</Link>
           </Button>
         </div>
       </div>
 
-      {/* Filtros rápidos */}
+      {/* Filtros */}
       <div className="flex gap-2 mb-5 flex-wrap">
         {[
           { label: "Todas", href: "/cargas" },
@@ -121,9 +126,7 @@ export default async function HistorialCargasPage({
               variant={
                 (origen === "patio" && label === "Patio") ||
                 (origen === "campo" && label === "Campo") ||
-                (!origen && label === "Todas")
-                  ? "default"
-                  : "secondary"
+                (!origen && label === "Todas") ? "default" : "secondary"
               }
               className="cursor-pointer text-sm px-3 py-1"
             >
@@ -151,12 +154,7 @@ export default async function HistorialCargasPage({
         ))}
       </div>
 
-      <CargasTable
-        items={items}
-        operadores={operadores}
-        obras={obras}
-        canEdit={canEdit}
-      />
+      <CargasTable items={items} operadores={operadores} obras={obras} canEdit={canEdit} />
     </div>
   );
 }

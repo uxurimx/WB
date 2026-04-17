@@ -67,6 +67,12 @@ export async function createCargaPatio(input: CargaPatioInput) {
   const periodo = await getOrCreatePeriodoActual(new Date(input.fecha));
   const folio = await getSiguienteFolio();
   const tanqueTaller = await getTanquePorNombre("Taller");
+  if (!tanqueTaller) throw new Error("Tanque Taller no encontrado");
+  if (input.litros > (tanqueTaller.litrosActuales ?? 0)) {
+    throw new Error(
+      `Stock insuficiente. Taller tiene ${(tanqueTaller.litrosActuales ?? 0).toFixed(0)} L disponibles`
+    );
+  }
   const fuenteTaller = await getFuentePorTipo("taller");
 
   const [nueva] = await db
@@ -161,6 +167,12 @@ export async function createCargaCampo(input: CargaCampoInput) {
 
   const periodo = await getOrCreatePeriodoActual(new Date(input.fecha));
   const tanqueNissan = await getTanquePorNombre("NISSAN");
+  if (!tanqueNissan) throw new Error("Tanque NISSAN no encontrado");
+  if (input.litros > (tanqueNissan.litrosActuales ?? 0)) {
+    throw new Error(
+      `Stock insuficiente. NISSAN tiene ${(tanqueNissan.litrosActuales ?? 0).toFixed(0)} L disponibles`
+    );
+  }
   const fuenteNissan = await getFuentePorTipo("nissan");
 
   const [nueva] = await db

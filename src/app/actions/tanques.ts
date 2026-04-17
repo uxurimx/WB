@@ -177,6 +177,19 @@ export async function updateTanque(
   return { ok: true };
 }
 
+// ─── Historial de recargas ────────────────────────────────────────────────────
+export async function getRecargasTanque(limit = 150) {
+  const rows = await db.query.recargasTanque.findMany({
+    orderBy: (r, { desc }) => [desc(r.createdAt)],
+    limit,
+    with: { tanque: true },
+  });
+  return rows.map((r) => ({
+    ...r,
+    tanqueNombre: r.tanque?.nombre ?? `Tanque ${r.tanqueId}`,
+  }));
+}
+
 // ─────────────────────────────────────────────────────────────
 // HISTORIAL DE TRANSFERENCIAS
 // ─────────────────────────────────────────────────────────────
