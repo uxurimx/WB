@@ -52,8 +52,8 @@ export default function RecargaTanqueModal({
     setForm((prev) => ({
       ...prev,
       fecha: todayStr(),
-      // Pre-llenar con el último valor del cuentalitros almacenado
-      cuentalitrosNuevo: cuentalitrosActual > 0 ? String(cuentalitrosActual) : "",
+      cuentalitrosInicio: cuentalitrosActual > 0 ? String(cuentalitrosActual) : "",
+      cuentalitrosNuevo: "",
     }));
     setError("");
     setOpen(true);

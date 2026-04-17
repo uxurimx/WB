@@ -152,6 +152,31 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   };
 }
 
+// ─── Editar configuración de tanque ──────────────────────────────────────────
+export async function updateTanque(
+  id: number,
+  data: { nombre?: string; capacidadMax?: number; ajustePorcentaje?: number }
+) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("No autenticado");
+
+  const patch: Record<string, unknown> = {};
+  if (data.nombre !== undefined) patch.nombre = data.nombre.trim();
+  if (data.capacidadMax !== undefined) {
+    if (data.capacidadMax <= 0) throw new Error("La capacidad debe ser mayor a 0");
+    patch.capacidadMax = data.capacidadMax;
+  }
+  if (data.ajustePorcentaje !== undefined) patch.ajustePorcentaje = data.ajustePorcentaje;
+
+  if (Object.keys(patch).length === 0) return { ok: true };
+
+  await db.update(tanques).set(patch).where(eq(tanques.id, id));
+
+  revalidatePath("/overview");
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
 // ─────────────────────────────────────────────────────────────
 // HISTORIAL DE TRANSFERENCIAS
 // ─────────────────────────────────────────────────────────────

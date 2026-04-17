@@ -4,8 +4,17 @@ import { useEffect, useState } from "react";
 import { Fuel, Truck, AlertTriangle } from "lucide-react";
 import RecargaTanqueModal from "./RecargaTanqueModal";
 import TransferirNissanModal from "./TransferirNissanModal";
+import EditarTanqueModal, { type TanqueInfo } from "./EditarTanqueModal";
 
-type StockData = { id: number; litros: number; max: number; cuentalitros?: number };
+type StockData = {
+  id: number;
+  nombre: string;
+  litros: number;
+  max: number;
+  cuentalitros: number;
+  ajustePorcentaje: number;
+  ultimaActualizacion: string | null;
+};
 
 function StockBar({
   litros,
@@ -41,8 +50,8 @@ export default function StockCards({
   initialTaller: StockData;
   initialNissan: StockData;
 }) {
-  const [taller, setTaller] = useState(initialTaller);
-  const [nissan, setNissan] = useState(initialNissan);
+  const [taller, setTaller] = useState<StockData>(initialTaller);
+  const [nissan, setNissan] = useState<StockData>(initialNissan);
 
   useEffect(() => {
     const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
@@ -109,7 +118,8 @@ export default function StockCards({
             {alertaTaller && (
               <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
             )}
-            <RecargaTanqueModal tanqueId={taller.id} cuentalitrosActual={taller.cuentalitros ?? 0} />
+            <EditarTanqueModal tanque={taller as TanqueInfo} />
+            <RecargaTanqueModal tanqueId={taller.id} cuentalitrosActual={taller.cuentalitros} />
           </div>
         </div>
 
@@ -167,6 +177,7 @@ export default function StockCards({
             {alertaNissan && (
               <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
             )}
+            <EditarTanqueModal tanque={nissan as TanqueInfo} />
             <TransferirNissanModal
               tanqueOrigenId={taller.id}
               tanqueDestinoId={nissan.id}
