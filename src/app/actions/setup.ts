@@ -10,6 +10,28 @@ import {
 import { eq, sql } from "drizzle-orm";
 
 // ─── Folio base configurable ──────────────────────────────────────────────────
+export async function getCuentalitrosBases() {
+  const [taller, nissan] = await Promise.all([
+    db.query.tanques.findFirst({ where: eq(tanques.nombre, "Taller") }),
+    db.query.tanques.findFirst({ where: eq(tanques.nombre, "NISSAN") }),
+  ]);
+  return {
+    taller: taller?.cuentalitrosActual ?? 0,
+    nissan: nissan?.cuentalitrosActual ?? 0,
+  };
+}
+
+export async function setCuentalitros(tanqueNombre: "Taller" | "NISSAN", valor: number) {
+  await db
+    .update(tanques)
+    .set({ cuentalitrosActual: valor })
+    .where(eq(tanques.nombre, tanqueNombre));
+  revalidatePath("/overview");
+  revalidatePath("/cargas/nueva");
+  revalidatePath("/cargas/campo");
+  return { ok: true, msg: `Cuentalitros ${tanqueNombre} establecido en ${valor.toLocaleString()}` };
+}
+
 export async function getFoliosBases() {
   const [patio, campo] = await Promise.all([
     db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_base") }),

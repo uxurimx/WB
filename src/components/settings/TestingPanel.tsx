@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Trash2, RotateCcw, FlaskConical, Gauge, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, Trash2, RotateCcw, FlaskConical, Gauge, CheckCircle, ChevronDown, ChevronUp, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,8 @@ import {
   setFolioBase,
   setFolioBaseCampo,
   getFoliosBases,
+  getCuentalitrosBases,
+  setCuentalitros,
 } from "@/app/actions/setup";
 
 // ── Confirmation input ─────────────────────────────────────────
@@ -133,17 +135,13 @@ function FolioControl() {
   const [msg, setMsg] = useState("");
   const [folioPatio, setFolioPatio] = useState("");
   const [folioCampo, setFolioCampo] = useState("");
-  const [loaded, setLoaded] = useState(false);
 
-  // Cargar valores actuales desde BD al montar
-  if (!loaded) {
-    setLoaded(true);
-    startTransition(async () => {
-      const bases = await getFoliosBases();
+  useEffect(() => {
+    getFoliosBases().then((bases) => {
       setFolioPatio(String(bases.patio));
       setFolioCampo(String(bases.campo));
     });
-  }
+  }, []);
 
   function applyPatio(value: number) {
     startTransition(async () => {
@@ -197,6 +195,70 @@ function FolioControl() {
       </div>
       <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
         Solo aplica cuando no hay cargas en la DB. Con cargas existentes, el folio continúa desde el último.
+      </p>
+      {msg && <p className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{msg}</p>}
+    </div>
+  );
+}
+
+// ── Cuentalitros control ───────────────────────────────────────
+function CuentalitrosControl() {
+  const [isPending, startTransition] = useTransition();
+  const [msg, setMsg] = useState("");
+  const [clTaller, setClTaller] = useState("");
+  const [clNissan, setClNissan] = useState("");
+
+  useEffect(() => {
+    getCuentalitrosBases().then((bases) => {
+      setClTaller(String(bases.taller ?? 0));
+      setClNissan(String(bases.nissan ?? 0));
+    });
+  }, []);
+
+  function apply(tanque: "Taller" | "NISSAN", raw: string) {
+    startTransition(async () => {
+      const res = await setCuentalitros(tanque, parseFloat(raw) || 0);
+      setMsg(res.msg);
+      setTimeout(() => setMsg(""), 4000);
+    });
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Taller */}
+      <div>
+        <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--fg-muted)" }}>Cuentalitros Taller</p>
+        <div className="flex gap-2">
+          <Input value={clTaller} onChange={(e) => setClTaller(e.target.value)}
+            type="number" min="0" className="h-8 font-mono text-sm flex-1" />
+          <Button type="button" size="sm" className="h-8 shrink-0" disabled={isPending}
+            onClick={() => apply("Taller", clTaller)}>
+            Aplicar
+          </Button>
+          <Button type="button" variant="secondary" size="sm" className="h-8 shrink-0" disabled={isPending}
+            onClick={() => { setClTaller("0"); apply("Taller", "0"); }}>
+            Reset a 0
+          </Button>
+        </div>
+      </div>
+      {/* NISSAN */}
+      <div>
+        <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--fg-muted)" }}>Cuentalitros NISSAN</p>
+        <div className="flex gap-2">
+          <Input value={clNissan} onChange={(e) => setClNissan(e.target.value)}
+            type="number" min="0" className="h-8 font-mono text-sm flex-1" />
+          <Button type="button" size="sm" className="h-8 shrink-0" disabled={isPending}
+            onClick={() => apply("NISSAN", clNissan)}>
+            Aplicar
+          </Button>
+          <Button type="button" variant="secondary" size="sm" className="h-8 shrink-0" disabled={isPending}
+            onClick={() => { setClNissan("0"); apply("NISSAN", "0"); }}>
+            Reset a 0
+          </Button>
+        </div>
+      </div>
+      <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+        Fija el valor del cuentalitros físico de cada tanque. Solo usa esto para sincronizar con la lectura real del medidor.
       </p>
       {msg && <p className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{msg}</p>}
     </div>
@@ -303,6 +365,18 @@ export default function TestingPanel() {
               Define desde qué número inicia el folio cuando no hay cargas registradas (ej. después de un reset operacional).
             </p>
             <FolioControl />
+          </div>
+
+          {/* Control de cuentalitros */}
+          <div className="p-4 rounded-xl border" style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
+            <div className="flex items-center gap-2 mb-1">
+              <Hash className="w-4 h-4 text-cyan-400" />
+              <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>Control de cuentalitros</p>
+            </div>
+            <p className="text-xs mb-3" style={{ color: "var(--fg-muted)" }}>
+              Fija el valor actual del cuentalitros de cada tanque para que coincida con la lectura física del medidor.
+            </p>
+            <CuentalitrosControl />
           </div>
 
           {/* Reset operacional */}

@@ -268,7 +268,7 @@ function CargaRow({
   );
 }
 
-type SortCol = "fecha" | "litros";
+type SortCol = "fecha" | "litros" | "folio" | "unidad" | "operador" | "odometro";
 type TipoFiltro = "todos" | "patio" | "campo" | "recarga" | "transf";
 
 // ─── Componente principal ─────────────────────────────────────
@@ -321,8 +321,16 @@ export default function CargasTable({
     })
     .sort((a, b) => {
       const mul = sortDir === "asc" ? 1 : -1;
-      if (sortCol === "fecha") return mul * a.fecha.localeCompare(b.fecha);
-      if (sortCol === "litros") return mul * (a.litros - b.litros);
+      const getFolio    = (x: HistorialItem) => (x._tipo !== "recarga" ? (x.folio ?? 0) : 0);
+      const getUnidad   = (x: HistorialItem) => (x._tipo === "carga" ? (x.unidad?.codigo ?? "") : "");
+      const getOperador = (x: HistorialItem) => (x._tipo === "carga" ? (x.operador?.nombre ?? "") : "");
+      const getOdometro = (x: HistorialItem) => (x._tipo === "carga" ? (x.odometroHrs ?? 0) : 0);
+      if (sortCol === "fecha")    return mul * a.fecha.localeCompare(b.fecha);
+      if (sortCol === "litros")   return mul * (a.litros - b.litros);
+      if (sortCol === "folio")    return mul * (getFolio(a) - getFolio(b));
+      if (sortCol === "unidad")   return mul * getUnidad(a).localeCompare(getUnidad(b));
+      if (sortCol === "operador") return mul * getOperador(a).localeCompare(getOperador(b));
+      if (sortCol === "odometro") return mul * (getOdometro(a) - getOdometro(b));
       return 0;
     });
 
@@ -409,7 +417,7 @@ export default function CargasTable({
     { key: "transf",  label: "Transferencias" },
   ];
 
-  function SortBtn({ col, label }: { col: SortCol; label: string }) {
+  function SortBtn({ col, label, right }: { col: SortCol; label: string; right?: boolean }) {
     const active = sortCol === col;
     return (
       <button
@@ -484,21 +492,29 @@ export default function CargasTable({
             <thead>
               <tr style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--fg-muted)" }}>Folio</th>
+                  style={{ color: "var(--fg-muted)" }}>
+                  <SortBtn col="folio" label="Folio" />
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                   style={{ color: "var(--fg-muted)" }}>
                   <SortBtn col="fecha" label="Fecha" />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--fg-muted)" }}>Unidad</th>
+                  style={{ color: "var(--fg-muted)" }}>
+                  <SortBtn col="unidad" label="Unidad" />
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell"
-                  style={{ color: "var(--fg-muted)" }}>Operador</th>
+                  style={{ color: "var(--fg-muted)" }}>
+                  <SortBtn col="operador" label="Operador" />
+                </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider"
                   style={{ color: "var(--fg-muted)" }}>
-                  <SortBtn col="litros" label="Litros" />
+                  <SortBtn col="litros" label="Litros" right />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell"
-                  style={{ color: "var(--fg-muted)" }}>Odóm./HRS</th>
+                  style={{ color: "var(--fg-muted)" }}>
+                  <SortBtn col="odometro" label="Odóm./HRS" />
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell"
                   style={{ color: "var(--fg-muted)" }}>CuentaLT</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
