@@ -71,9 +71,13 @@ export default function StockCards({
       channel = client.subscribe("private-stock");
       channel.bind(
         "stock-actualizado",
-        (data: { tanque: string; litrosActuales: number }) => {
+        (data: { tanque: string; litrosActuales: number; cuentalitros?: number }) => {
           if (data.tanque === "Taller") {
-            setTaller((prev) => ({ ...prev, litros: data.litrosActuales }));
+            setTaller((prev) => ({
+              ...prev,
+              litros: data.litrosActuales,
+              ...(data.cuentalitros !== undefined && { cuentalitros: data.cuentalitros }),
+            }));
           } else if (data.tanque === "NISSAN") {
             setNissan((prev) => ({ ...prev, litros: data.litrosActuales }));
           }
@@ -188,8 +192,8 @@ export default function StockCards({
               tanqueOrigenId={taller.id}
               tanqueDestinoId={nissan.id}
               litrosDisponibles={taller.litros}
-              onTransferComplete={(origenLitros, destinoLitros) => {
-                setTaller((prev) => ({ ...prev, litros: origenLitros }));
+              onTransferComplete={(origenLitros, destinoLitros, origenCuentalitros) => {
+                setTaller((prev) => ({ ...prev, litros: origenLitros, cuentalitros: origenCuentalitros }));
                 setNissan((prev) => ({ ...prev, litros: destinoLitros }));
               }}
             />

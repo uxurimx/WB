@@ -30,7 +30,7 @@ export default function TransferirNissanModal({
   tanqueOrigenId: number;
   tanqueDestinoId: number;
   litrosDisponibles: number;
-  onTransferComplete?: (origenLitros: number, destinoLitros: number) => void;
+  onTransferComplete?: (origenLitros: number, destinoLitros: number, origenCuentalitros: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -79,7 +79,7 @@ export default function TransferirNissanModal({
           fecha: form.fecha,
           notas: form.notas || undefined,
         });
-        onTransferComplete?.(res.origen.litrosActuales, res.destino.litrosActuales);
+        onTransferComplete?.(res.origen.litrosActuales, res.destino.litrosActuales, res.origen.cuentalitros);
         setSuccess(
           `Folio #${res.folio} · ${litros.toLocaleString()} L transferidos → NISSAN. ` +
           `Taller: ${res.origen.litrosActuales.toFixed(0)} L | ` +

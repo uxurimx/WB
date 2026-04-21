@@ -105,6 +105,8 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
     destino.capacidadMax,
     (destino.litrosActuales ?? 0) + input.litros
   );
+  // El diesel transferido pasa por el cuentalitros del origen
+  const nuevoCuentalitrosOrigen = (origen.cuentalitrosActual ?? 0) + input.litros;
 
   // El folio de transferencia es parte de la misma secuencia que cargas patio
   const folio = await getSiguienteFolioPublic();
@@ -113,7 +115,11 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   await Promise.all([
     db
       .update(tanques)
-      .set({ litrosActuales: nuevosLitrosOrigen, ultimaActualizacion: new Date() })
+      .set({
+        litrosActuales: nuevosLitrosOrigen,
+        cuentalitrosActual: nuevoCuentalitrosOrigen,
+        ultimaActualizacion: new Date(),
+      })
       .where(eq(tanques.id, input.tanqueOrigenId)),
     db
       .update(tanques)
@@ -135,6 +141,7 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
     pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
       tanque: origen.nombre,
       litrosActuales: nuevosLitrosOrigen,
+      cuentalitros: nuevoCuentalitrosOrigen,
     }),
     pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
       tanque: destino.nombre,
@@ -147,7 +154,11 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   return {
     ok: true,
     folio,
-    origen: { nombre: origen.nombre, litrosActuales: nuevosLitrosOrigen },
+    origen: {
+      nombre: origen.nombre,
+      litrosActuales: nuevosLitrosOrigen,
+      cuentalitros: nuevoCuentalitrosOrigen,
+    },
     destino: { nombre: destino.nombre, litrosActuales: nuevosLitrosDestino },
   };
 }
