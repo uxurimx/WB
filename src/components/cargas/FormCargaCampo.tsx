@@ -30,17 +30,20 @@ export default function FormCargaCampo({
   operadores,
   obras: obrasProp,
   saldoNissan,
+  cuentalitrosNissan: cuentalitrosNissanProp = 0,
   siguienteFolio,
 }: {
   unidades:      Unidad[];
   operadores:    Operador[];
   obras:         Obra[];
   saldoNissan:   number;
+  cuentalitrosNissan?: number;
   siguienteFolio?: number;
 }) {
   const [isPending, setIsPending] = useState(false);
   const [success, setSuccess] = useState<{ litros: number; unidad: string } | null>(null);
   const [error, setError]     = useState("");
+  const [cuentalitrosNissan, setCuentalitrosNissan] = useState(cuentalitrosNissanProp);
 
   const [obras, setObras]             = useState<Obra[]>(obrasProp);
   const [creandoObra, setCreandoObra] = useState(false);
@@ -206,6 +209,9 @@ export default function FormCargaCampo({
         }
       }
 
+      if (result.nuevoCuentalitrosNissan !== undefined) {
+        setCuentalitrosNissan(result.nuevoCuentalitrosNissan);
+      }
       setSuccess({ litros, unidad: unidadSel?.codigo ?? "" });
       clearFoto();
       const { fecha, hora } = getNow();
@@ -252,6 +258,12 @@ export default function FormCargaCampo({
           <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>Saldo NISSAN</p>
           <p className="font-mono font-bold text-xl" style={{ color: "var(--fg)" }}>
             {saldoNissan > 0 ? `${saldoNissan.toLocaleString()} L` : "Sin datos"}
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
+            Cuentalitros:{" "}
+            <span className="font-mono font-semibold" style={{ color: "var(--fg)" }}>
+              {cuentalitrosNissan > 0 ? cuentalitrosNissan.toLocaleString() : "—"}
+            </span>
           </p>
         </div>
         {litrosNum > 0 && (

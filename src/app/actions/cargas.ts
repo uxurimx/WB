@@ -199,19 +199,19 @@ export async function createCargaCampo(input: CargaCampoInput) {
     })
     .returning();
 
-  // Descontar del saldo de la NISSAN
-  if (tanqueNissan) {
-    const nuevosLitros = Math.max(0, (tanqueNissan.litrosActuales ?? 0) - input.litros);
-    await db
-      .update(tanques)
-      .set({ litrosActuales: nuevosLitros, ultimaActualizacion: new Date() })
-      .where(eq(tanques.id, tanqueNissan.id));
+  // Descontar del saldo de la NISSAN e incrementar su cuentalitros
+  const nuevosLitrosNissan = Math.max(0, (tanqueNissan.litrosActuales ?? 0) - input.litros);
+  const nuevoCuentalitrosNissan = (tanqueNissan.cuentalitrosActual ?? 0) + input.litros;
+  await db
+    .update(tanques)
+    .set({ litrosActuales: nuevosLitrosNissan, cuentalitrosActual: nuevoCuentalitrosNissan, ultimaActualizacion: new Date() })
+    .where(eq(tanques.id, tanqueNissan.id));
 
-    await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
-      tanque: "NISSAN",
-      litrosActuales: nuevosLitros,
-    }).catch(() => {});
-  }
+  await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
+    tanque: "NISSAN",
+    litrosActuales: nuevosLitrosNissan,
+    cuentalitros: nuevoCuentalitrosNissan,
+  }).catch(() => {});
 
   // Actualizar odómetro/hrs de la unidad
   if (input.odometroHrs) {
@@ -232,7 +232,7 @@ export async function createCargaCampo(input: CargaCampoInput) {
   revalidatePath("/cargas");
   revalidatePath("/overview");
 
-  return { ok: true, cargaId: nueva.id };
+  return { ok: true, cargaId: nueva.id, nuevoCuentalitrosNissan };
 }
 
 // ─────────────────────────────────────────────────────────────

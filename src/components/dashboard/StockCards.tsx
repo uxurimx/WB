@@ -79,7 +79,11 @@ export default function StockCards({
               ...(data.cuentalitros !== undefined && { cuentalitros: data.cuentalitros }),
             }));
           } else if (data.tanque === "NISSAN") {
-            setNissan((prev) => ({ ...prev, litros: data.litrosActuales }));
+            setNissan((prev) => ({
+              ...prev,
+              litros: data.litrosActuales,
+              ...(data.cuentalitros !== undefined && { cuentalitros: data.cuentalitros }),
+            }));
           }
         }
       );

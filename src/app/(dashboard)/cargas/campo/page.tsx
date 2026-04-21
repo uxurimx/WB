@@ -8,21 +8,25 @@ import { tanques } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import FormCargaCampo from "@/components/cargas/FormCargaCampo";
 
-async function getSaldoNissan() {
+async function getNissanData() {
   const tanque = await db.query.tanques.findFirst({
     where: eq(tanques.nombre, "NISSAN"),
   });
-  return tanque?.litrosActuales ?? 0;
+  return {
+    saldo: tanque?.litrosActuales ?? 0,
+    cuentalitros: tanque?.cuentalitrosActual ?? 0,
+  };
 }
 
 export default async function NuevaCargaCampoPage() {
-  const [unidades, operadores, obras, saldoNissan, siguienteFolio] = await Promise.all([
+  const [unidades, operadores, obras, nissanData, siguienteFolio] = await Promise.all([
     getUnidades(true),
     getOperadores(true),
     getObras(true),
-    getSaldoNissan(),
+    getNissanData(),
     getSiguienteFolioCampoPublic(),
   ]);
+  const { saldo: saldoNissan, cuentalitros: cuentalitrosNissan } = nissanData;
 
   return (
     <div className="p-6 md:p-8">
@@ -60,6 +64,7 @@ export default async function NuevaCargaCampoPage() {
           operadores={operadores}
           obras={obras}
           saldoNissan={saldoNissan}
+          cuentalitrosNissan={cuentalitrosNissan}
           siguienteFolio={siguienteFolio}
         />
       )}
