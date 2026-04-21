@@ -4,65 +4,59 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  Fuel,
-  LayoutDashboard,
-  Settings,
-  ChevronRight,
-  ChevronDown,
-  PlusCircle,
-  ClipboardList,
-  Truck,
-  Users,
-  HardHat,
-  Menu,
-  X,
-  Wrench,
-  Calendar,
-  Shield,
+  Fuel, LayoutDashboard, Settings, ChevronRight, ChevronDown,
+  PlusCircle, ClipboardList, Truck, Users, HardHat, Menu, X,
+  Wrench, Calendar, Shield,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
 import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 
-// ─── Estructura de navegación ────────────────────────────────
+type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ className?: string }> };
+
 function getNavSections(isAdmin: boolean) {
   return [
     {
       label: null,
+      collapsible: false,
       items: [
         { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
       ],
     },
     {
       label: "Cargas",
+      collapsible: false,
       items: [
         { name: "Nueva Carga Patio", href: "/cargas/nueva", icon: PlusCircle },
         { name: "Nueva Carga Campo", href: "/cargas/campo", icon: Fuel },
-        { name: "Historial", href: "/cargas", icon: ClipboardList },
+        { name: "Historial",         href: "/cargas",       icon: ClipboardList },
       ],
     },
     {
       label: "Catálogos",
+      collapsible: true,
       items: [
-        { name: "Unidades", href: "/catalogo/unidades", icon: Truck },
+        { name: "Unidades",   href: "/catalogo/unidades",   icon: Truck },
         { name: "Operadores", href: "/catalogo/operadores", icon: Users },
-        { name: "Obras", href: "/catalogo/obras", icon: HardHat },
+        { name: "Obras",      href: "/catalogo/obras",      icon: HardHat },
       ],
     },
     {
       label: "Análisis",
+      collapsible: false,
       items: [
         { name: "Períodos", href: "/periodos", icon: Calendar },
       ],
     },
     {
       label: "Sistema",
+      collapsible: false,
       items: [
         ...(isAdmin
           ? [
-              { name: "Administración", href: "/admin", icon: Shield },
-              { name: "Importar Datos", href: "/admin/importar", icon: Wrench },
+              { name: "Administración", href: "/admin",           icon: Shield },
+              { name: "Importar Datos", href: "/admin/importar",  icon: Wrench },
             ]
           : []),
         { name: "Configuración", href: "/settings", icon: Settings },
@@ -71,13 +65,19 @@ function getNavSections(isAdmin: boolean) {
   ];
 }
 
-function NavItem({ name, href, icon: Icon }: { name: string; href: string; icon: React.ComponentType<{ className?: string }> }) {
-  const pathname = usePathname();
-  const isActive = pathname === href || (href !== "/overview" && pathname.startsWith(href));
+function NavItem({
+  name,
+  href,
+  icon: Icon,
+  onNavigate,
+}: NavItemDef & { onNavigate?: () => void }) {
+  const pathname  = usePathname();
+  const isActive  = pathname === href || (href !== "/overview" && pathname.startsWith(href));
 
   return (
     <Link
       href={href}
+      onClick={onNavigate}
       className={cn(
         "flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group",
         isActive
@@ -100,10 +100,26 @@ function NavItem({ name, href, icon: Icon }: { name: string; href: string; icon:
   );
 }
 
-function SidebarContent() {
-  const { user } = useUser();
-  const isAdmin = user?.publicMetadata?.role === "admin";
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const { user }    = useUser();
+  const isAdmin     = user?.publicMetadata?.role === "admin";
   const navSections = getNavSections(isAdmin);
+  const pathname    = usePathname();
+
+  // Catálogos abierto si la ruta actual está dentro
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
+    const inCatalogos = pathname.startsWith("/catalogo");
+    return inCatalogos ? new Set() : new Set(["Catálogos"]);
+  });
+
+  function toggleSection(label: string) {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  }
 
   return (
     <div className="h-full flex flex-col p-4">
@@ -124,26 +140,52 @@ function SidebarContent() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-5 overflow-y-auto">
-        {navSections.map((section, i) => (
-          <div key={i}>
-            {section.label && (
-              <p
-                className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest"
-                style={{ color: "var(--fg-muted)" }}
-              >
-                {section.label}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {section.items.map((item) => (
-                <NavItem key={item.href} {...item} />
-              ))}
+        {navSections.map((section, i) => {
+          const isCollapsed = section.label ? collapsedSections.has(section.label) : false;
+
+          return (
+            <div key={i}>
+              {section.label && (
+                section.collapsible ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.label!)}
+                    className="w-full flex items-center justify-between px-3 mb-1.5 group"
+                  >
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: "var(--fg-muted)" }}
+                    >
+                      {section.label}
+                    </span>
+                    {isCollapsed
+                      ? <ChevronDown className="w-3 h-3" style={{ color: "var(--fg-muted)" }} />
+                      : <ChevronDown className="w-3 h-3 rotate-180 transition-transform" style={{ color: "var(--fg-muted)" }} />
+                    }
+                  </button>
+                ) : (
+                  <p
+                    className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest"
+                    style={{ color: "var(--fg-muted)" }}
+                  >
+                    {section.label}
+                  </p>
+                )
+              )}
+
+              {!isCollapsed && (
+                <div className="space-y-0.5">
+                  {section.items.map((item) => (
+                    <NavItem key={item.href} {...item} onNavigate={onNavigate} />
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
-      {/* Footer: theme + user */}
+      {/* Footer */}
       <div className="mt-auto pt-4 space-y-3 border-t" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between px-2">
           <span className="text-xs" style={{ color: "var(--fg-muted)" }}>Tema</span>
@@ -171,27 +213,21 @@ function SidebarContent() {
 // ─── Desktop sidebar ─────────────────────────────────────────
 export default function SideNav() {
   return (
-    <>
-      {/* Desktop */}
-      <aside
-        className="hidden lg:flex h-screen w-64 flex-col fixed left-0 top-0 z-50 border-r"
-        style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-      >
-        <SidebarContent />
-      </aside>
-
-      {/* Mobile — se controla desde MobileHeader */}
-    </>
+    <aside
+      className="hidden lg:flex h-screen w-64 flex-col fixed left-0 top-0 z-50 border-r"
+      style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+    >
+      <SidebarContent />
+    </aside>
   );
 }
 
-// ─── Mobile header con menú ──────────────────────────────────
+// ─── Mobile header ───────────────────────────────────────────
 export function MobileHeader() {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      {/* Top bar */}
       <header
         className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4 border-b"
         style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
@@ -213,7 +249,6 @@ export function MobileHeader() {
         </button>
       </header>
 
-      {/* Drawer overlay */}
       {open && (
         <div className="lg:hidden fixed inset-0 z-[60] flex">
           <div
@@ -231,7 +266,8 @@ export function MobileHeader() {
             >
               <X className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />
             </button>
-            <SidebarContent />
+            {/* onNavigate cierra el drawer al pulsar cualquier enlace */}
+            <SidebarContent onNavigate={() => setOpen(false)} />
           </aside>
         </div>
       )}

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createObra, updateObra, toggleObraActiva, deleteObra } from "@/app/actions/catalogo";
+import CatalogoDetalleModal from "./CatalogoDetalleModal";
 
 type Obra = {
   id: number;
@@ -255,6 +256,7 @@ export default function ObrasTable({
                         </>
                       ) : (
                         <>
+                          <CatalogoDetalleModal tipo="obra" id={o.id} nombre={o.nombre} />
                           <button
                             onClick={() => startTransition(() => toggleObraActiva(o.id, !o.activo))}
                             className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"

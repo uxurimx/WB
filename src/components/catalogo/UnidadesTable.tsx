@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createUnidad, updateUnidad, toggleUnidadActivo, deleteUnidad } from "@/app/actions/catalogo";
+import CatalogoDetalleModal from "./CatalogoDetalleModal";
 
 type Unidad = {
   id: number;
@@ -385,6 +386,7 @@ export default function UnidadesTable({
                         </>
                       ) : (
                         <>
+                          <CatalogoDetalleModal tipo="unidad" id={u.id} nombre={u.codigo} />
                           <button
                             onClick={() => handleToggle(u.id, u.activo)}
                             className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"

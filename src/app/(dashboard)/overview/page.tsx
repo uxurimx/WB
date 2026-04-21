@@ -1,6 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
-import { PlusCircle, Fuel, Wrench, BarChart3 } from "lucide-react";
+import { PlusCircle, Fuel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getOverviewStats } from "@/app/actions/overview";
@@ -8,6 +8,7 @@ import { getOrCreatePeriodoActual } from "@/app/actions/periodos";
 import StockCards from "@/components/dashboard/StockCards";
 import CargasRecientes from "@/components/dashboard/CargasRecientes";
 import AlertasPanel from "@/components/dashboard/AlertasPanel";
+import DashboardKpis from "@/components/dashboard/DashboardKpis";
 import { UMBRAL_TALLER, UMBRAL_NISSAN } from "@/lib/alertas-config";
 
 function formatPeriodo(fechaInicio: string, fechaFin: string) {
@@ -100,64 +101,16 @@ export default async function OverviewPage() {
         ultimoPeriodo={stats.ultimoPeriodoCerrado}
       />
 
-      {/* KPI del día */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-        {[
-          {
-            label: "Cargas Hoy",
-            value: stats.cargasHoy,
-            unit: "eventos",
-            icon: Wrench,
-            color: "purple",
-          },
-          {
-            label: "Litros Hoy",
-            value: `${stats.litrosHoy.toLocaleString()}`,
-            unit: "despachados",
-            icon: Fuel,
-            color: "indigo",
-          },
-          {
-            label: "Período actual",
-            value: stats.recientes.length > 0
-              ? new Set(stats.recientes.map((c) => c.unidadId ?? 0)).size
-              : 0,
-            unit: "unidades activas",
-            icon: BarChart3,
-            color: "emerald",
-          },
-        ].map(({ label, value, unit, icon: Icon }) => (
-          <div
-            key={label}
-            className="p-4 rounded-2xl border"
-            style={{
-              backgroundColor: "var(--surface)",
-              borderColor: "var(--border)",
-            }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span
-                className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: "var(--fg-muted)" }}
-              >
-                {label}
-              </span>
-              <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                <Icon className="w-3.5 h-3.5 text-indigo-500" />
-              </div>
-            </div>
-            <p
-              className="font-outfit font-bold text-3xl"
-              style={{ color: "var(--fg)" }}
-            >
-              {value}
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-              {unit}
-            </p>
-          </div>
-        ))}
-      </div>
+      {/* KPI del día — real-time via Pusher */}
+      <DashboardKpis
+        initialCargasHoy={stats.cargasHoy}
+        initialLitrosHoy={stats.litrosHoy}
+        initialUnidadesActivas={
+          stats.recientes.length > 0
+            ? new Set(stats.recientes.map((c) => c.unidadId ?? 0)).size
+            : 0
+        }
+      />
 
       {/* Feed de cargas recientes — real-time via Pusher */}
       <CargasRecientes initialCargas={stats.recientes} />

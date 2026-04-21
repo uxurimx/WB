@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createOperador, updateOperador, toggleOperadorActivo, deleteOperador } from "@/app/actions/catalogo";
+import CatalogoDetalleModal from "./CatalogoDetalleModal";
 
 type Operador = {
   id: number;
@@ -267,6 +268,7 @@ export default function OperadoresTable({
                         </>
                       ) : (
                         <>
+                          <CatalogoDetalleModal tipo="operador" id={o.id} nombre={o.nombre} />
                           <button
                             onClick={() => startTransition(() => toggleOperadorActivo(o.id, !o.activo))}
                             className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"

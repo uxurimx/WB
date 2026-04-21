@@ -13,6 +13,7 @@ import {
   seedDatosPrueba,
   setFolioBase,
   setFolioBaseCampo,
+  getFoliosBases,
 } from "@/app/actions/setup";
 
 // ── Confirmation input ─────────────────────────────────────────
@@ -130,8 +131,19 @@ function StockAdjuster() {
 function FolioControl() {
   const [isPending, startTransition] = useTransition();
   const [msg, setMsg] = useState("");
-  const [folioPatio, setFolioPatio] = useState("1");
-  const [folioCampo, setFolioCampo] = useState("1");
+  const [folioPatio, setFolioPatio] = useState("");
+  const [folioCampo, setFolioCampo] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  // Cargar valores actuales desde BD al montar
+  if (!loaded) {
+    setLoaded(true);
+    startTransition(async () => {
+      const bases = await getFoliosBases();
+      setFolioPatio(String(bases.patio));
+      setFolioCampo(String(bases.campo));
+    });
+  }
 
   function applyPatio(value: number) {
     startTransition(async () => {

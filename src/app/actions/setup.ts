@@ -10,6 +10,17 @@ import {
 import { eq, sql } from "drizzle-orm";
 
 // ─── Folio base configurable ──────────────────────────────────────────────────
+export async function getFoliosBases() {
+  const [patio, campo] = await Promise.all([
+    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_base") }),
+    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_base_campo") }),
+  ]);
+  return {
+    patio: patio ? parseInt(patio.valor, 10) : 1,
+    campo: campo ? parseInt(campo.valor, 10) : 1,
+  };
+}
+
 export async function getFolioBase(): Promise<number> {
   const row = await db.query.configuracion.findFirst({
     where: eq(configuracion.clave, "folio_base"),

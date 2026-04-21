@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import {
   Pencil, Trash2, AlertCircle, ArrowRight, Fuel,
-  ChevronDown, ChevronUp, Gauge, Hash, MapPin, User, Clock,
+  ChevronDown, ChevronUp, Gauge, Hash, MapPin, User,
+  Search, X as XIcon, ArrowUpDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -267,6 +268,9 @@ function CargaRow({
   );
 }
 
+type SortCol = "fecha" | "litros";
+type TipoFiltro = "todos" | "patio" | "campo" | "recarga" | "transf";
+
 // ─── Componente principal ─────────────────────────────────────
 export default function CargasTable({
   items,
@@ -280,6 +284,47 @@ export default function CargasTable({
   canEdit: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
+
+  // ── Búsqueda / filtro / orden ──────────────────────────────
+  const [busqueda,    setBusqueda]    = useState("");
+  const [tipoFiltro,  setTipoFiltro]  = useState<TipoFiltro>("todos");
+  const [sortCol,     setSortCol]     = useState<SortCol>("fecha");
+  const [sortDir,     setSortDir]     = useState<"asc" | "desc">("desc");
+
+  function toggleSort(col: SortCol) {
+    if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortCol(col); setSortDir("desc"); }
+  }
+
+  const itemsFiltrados = items
+    .filter((item) => {
+      if (tipoFiltro === "patio")   return item._tipo === "carga" && item.origen === "patio";
+      if (tipoFiltro === "campo")   return item._tipo === "carga" && item.origen === "campo";
+      if (tipoFiltro === "recarga") return item._tipo === "recarga";
+      if (tipoFiltro === "transf")  return item._tipo === "transferencia";
+      return true;
+    })
+    .filter((item) => {
+      if (!busqueda) return true;
+      const q = busqueda.toLowerCase();
+      if (item._tipo === "carga") {
+        return (
+          (item.unidad?.codigo ?? "").toLowerCase().includes(q) ||
+          (item.operador?.nombre ?? "").toLowerCase().includes(q) ||
+          (item.obra?.nombre ?? "").toLowerCase().includes(q) ||
+          String(item.folio ?? "").includes(q)
+        );
+      }
+      if (item._tipo === "recarga")      return (item.proveedor ?? "").toLowerCase().includes(q) || (item.tanqueNombre).toLowerCase().includes(q);
+      if (item._tipo === "transferencia") return item.origenNombre.toLowerCase().includes(q) || item.destinoNombre.toLowerCase().includes(q);
+      return true;
+    })
+    .sort((a, b) => {
+      const mul = sortDir === "asc" ? 1 : -1;
+      if (sortCol === "fecha") return mul * a.fecha.localeCompare(b.fecha);
+      if (sortCol === "litros") return mul * (a.litros - b.litros);
+      return 0;
+    });
 
   const [editCarga, setEditCarga]   = useState<CargaItem | null>(null);
   const [editForm, setEditForm]     = useState({
@@ -356,6 +401,30 @@ export default function CargasTable({
     }
   }
 
+  const TIPO_OPTS: { key: TipoFiltro; label: string }[] = [
+    { key: "todos",   label: "Todos" },
+    { key: "patio",   label: "Patio" },
+    { key: "campo",   label: "Campo" },
+    { key: "recarga", label: "Recargas" },
+    { key: "transf",  label: "Transferencias" },
+  ];
+
+  function SortBtn({ col, label }: { col: SortCol; label: string }) {
+    const active = sortCol === col;
+    return (
+      <button
+        type="button"
+        onClick={() => toggleSort(col)}
+        className="flex items-center gap-1 group"
+      >
+        {label}
+        <ArrowUpDown
+          className={`w-3 h-3 transition-colors ${active ? "text-indigo-400" : "opacity-40 group-hover:opacity-70"}`}
+        />
+      </button>
+    );
+  }
+
   return (
     <>
       {deleteError && (
@@ -363,6 +432,50 @@ export default function CargasTable({
           <AlertCircle className="w-4 h-4 shrink-0" /> {deleteError}
         </p>
       )}
+
+      {/* Búsqueda + filtros */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        {/* Buscador */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--fg-muted)" }} />
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar unidad, operador, folio..."
+            className="w-full pl-9 pr-8 py-2 text-sm rounded-xl border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30"
+            style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+          />
+          {busqueda && (
+            <button
+              type="button"
+              onClick={() => setBusqueda("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              <XIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        {/* Tipo filtro */}
+        <div className="flex gap-1.5 flex-wrap">
+          {TIPO_OPTS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTipoFiltro(key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                tipoFiltro === key
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "hover:bg-[var(--surface-2)]"
+              }`}
+              style={tipoFiltro !== key ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Tabla — scroll horizontal en móvil */}
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
@@ -373,13 +486,17 @@ export default function CargasTable({
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                   style={{ color: "var(--fg-muted)" }}>Folio</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--fg-muted)" }}>Fecha</th>
+                  style={{ color: "var(--fg-muted)" }}>
+                  <SortBtn col="fecha" label="Fecha" />
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                   style={{ color: "var(--fg-muted)" }}>Unidad</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell"
                   style={{ color: "var(--fg-muted)" }}>Operador</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--fg-muted)" }}>Litros</th>
+                  style={{ color: "var(--fg-muted)" }}>
+                  <SortBtn col="litros" label="Litros" />
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell"
                   style={{ color: "var(--fg-muted)" }}>Odóm./HRS</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell"
@@ -390,15 +507,15 @@ export default function CargasTable({
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 && (
+              {itemsFiltrados.length === 0 && (
                 <tr>
                   <td colSpan={9} className="text-center py-16 text-sm" style={{ color: "var(--fg-muted)" }}>
-                    Sin registros.
+                    {busqueda || tipoFiltro !== "todos" ? "Sin resultados para esa búsqueda." : "Sin registros."}
                   </td>
                 </tr>
               )}
 
-              {items.map((item) => {
+              {itemsFiltrados.map((item) => {
                 const key = `${item._tipo}-${item.id}`;
 
                 // ─── Recarga ──────────────────────────────────

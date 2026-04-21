@@ -266,6 +266,54 @@ export async function getSiguienteFolioPublic() {
   return getSiguienteFolio();
 }
 
+// ─────────────────────────────────────────────────────────────
+// RESUMEN DE CATÁLOGO — historial y totales por unidad/operador/obra
+// ─────────────────────────────────────────────────────────────
+export async function getCatalogoResumen(
+  tipo: "unidad" | "operador" | "obra",
+  id: number
+) {
+  const where =
+    tipo === "unidad"   ? eq(cargas.unidadId, id)
+    : tipo === "operador" ? eq(cargas.operadorId, id)
+    : eq(cargas.obraId, id);
+
+  const rows = await db.query.cargas.findMany({
+    where,
+    orderBy: (c, { desc }) => [desc(c.createdAt)],
+    limit: 20,
+    with: {
+      unidad:   { columns: { codigo: true } },
+      operador: { columns: { nombre: true } },
+      obra:     { columns: { nombre: true } },
+    },
+    columns: { id: true, fecha: true, folio: true, litros: true, origen: true, odometroHrs: true },
+  });
+
+  const totalLitros  = rows.reduce((s, c) => s + c.litros, 0);
+  const cargasPatio  = rows.filter((c) => c.origen === "patio").length;
+  const cargasCampo  = rows.filter((c) => c.origen === "campo").length;
+
+  return {
+    totalCargas: rows.length,
+    totalLitros,
+    cargasPatio,
+    cargasCampo,
+    ultimaFecha: rows[0]?.fecha ?? null,
+    recientes: rows.map((c) => ({
+      id: c.id,
+      fecha: c.fecha,
+      folio: c.folio,
+      litros: c.litros,
+      origen: c.origen,
+      odometroHrs: c.odometroHrs ?? null,
+      unidadCodigo:    c.unidad?.codigo    ?? null,
+      operadorNombre:  c.operador?.nombre  ?? null,
+      obraNombre:      c.obra?.nombre      ?? null,
+    })),
+  };
+}
+
 export async function getUltimaCuentaLtPatio(): Promise<number | null> {
   // Fuente de verdad: cuentalitrosActual del tanque Taller (se actualiza en cargas y transferencias)
   const tanque = await db.query.tanques.findFirst({
