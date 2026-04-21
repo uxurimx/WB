@@ -267,12 +267,12 @@ export async function getSiguienteFolioPublic() {
 }
 
 export async function getUltimaCuentaLtPatio(): Promise<number | null> {
-  const ultima = await db.query.cargas.findFirst({
-    where: (c, { eq }) => eq(c.origen, "patio"),
-    orderBy: (c, { desc }) => [desc(c.createdAt)],
-    columns: { cuentaLtFin: true },
+  // Fuente de verdad: cuentalitrosActual del tanque Taller (se actualiza en cargas y transferencias)
+  const tanque = await db.query.tanques.findFirst({
+    where: eq(tanques.nombre, "Taller"),
+    columns: { cuentalitrosActual: true },
   });
-  return ultima?.cuentaLtFin ?? null;
+  return tanque?.cuentalitrosActual ?? null;
 }
 
 async function getSiguienteFolioCampo(): Promise<number> {
