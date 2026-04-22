@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import type PusherClient from "pusher-js";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
@@ -36,29 +37,33 @@ export default function CargasRecientes({
   initialCargas: Carga[];
 }) {
   const router = useRouter();
-  const channelRef = useRef<{ unbind_all: () => void } | null>(null);
+  const pusherRef = useRef<PusherClient | null>(null);
 
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const key     = process.env.NEXT_PUBLIC_PUSHER_KEY;
     const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
     if (!key || !cluster) return;
 
+    let cancelled = false;
+
     import("pusher-js").then(({ default: Pusher }) => {
-      const client = new Pusher(key, {
-        cluster,
-        authEndpoint: "/api/pusher/auth",
-      });
+      if (cancelled || pusherRef.current) return;
+
+      const client = new Pusher(key, { cluster, authEndpoint: "/api/pusher/auth" });
+      pusherRef.current = client;
 
       const ch = client.subscribe("private-cargas");
-      channelRef.current = ch;
-
-      ch.bind("nueva-carga", () => {
-        router.refresh();
-      });
+      ch.bind("nueva-carga", () => { router.refresh(); });
     });
 
+    // Cleanup REAL fuera del .then()
     return () => {
-      channelRef.current?.unbind_all();
+      cancelled = true;
+      if (pusherRef.current) {
+        pusherRef.current.unsubscribe("private-cargas");
+        pusherRef.current.disconnect();
+        pusherRef.current = null;
+      }
     };
   }, [router]);
 

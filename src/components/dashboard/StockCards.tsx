@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Fuel, Truck, AlertTriangle } from "lucide-react";
 import RecargaTanqueModal from "./RecargaTanqueModal";
 import TransferirNissanModal from "./TransferirNissanModal";
@@ -29,14 +29,9 @@ function StockBar({
 }) {
   const pct = Math.min(100, max > 0 ? (litros / max) * 100 : 0);
   return (
-    <div
-      className="h-2 rounded-full w-full mt-3"
-      style={{ backgroundColor: "var(--surface-2)" }}
-    >
+    <div className="h-2 rounded-full w-full mt-3" style={{ backgroundColor: "var(--surface-2)" }}>
       <div
-        className={`h-2 rounded-full transition-all duration-700 ${
-          alerta ? "bg-red-500" : color
-        }`}
+        className={`h-2 rounded-full transition-all duration-700 ${alerta ? "bg-red-500" : color}`}
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -53,22 +48,42 @@ export default function StockCards({
   const [taller, setTaller] = useState<StockData>(initialTaller);
   const [nissan, setNissan] = useState<StockData>(initialNissan);
 
+  // Sync cuando el servidor refresca con nuevos datos (router.refresh)
+  // Solo si el valor cambia para no pisar actualizaciones de Pusher innecesariamente
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    setTaller((prev) =>
+      prev.litros === initialTaller.litros && prev.cuentalitros === initialTaller.cuentalitros
+        ? prev
+        : initialTaller
+    );
+  }, [initialTaller.litros, initialTaller.cuentalitros, initialTaller.id]);
+
+  useEffect(() => {
+    setNissan((prev) =>
+      prev.litros === initialNissan.litros && prev.cuentalitros === initialNissan.cuentalitros
+        ? prev
+        : initialNissan
+    );
+  }, [initialNissan.litros, initialNissan.cuentalitros, initialNissan.id]);
+
+  // Pusher real-time — cliente almacenado en ref para cleanup correcto
+  const pusherRef = useRef<InstanceType<typeof import("pusher-js").default> | null>(null);
+
+  useEffect(() => {
+    const key     = process.env.NEXT_PUBLIC_PUSHER_KEY;
     const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
     if (!key || !cluster) return;
 
-    let channel: ReturnType<
-      InstanceType<typeof import("pusher-js").default>["subscribe"]
-    >;
+    // Flag sincrónico: si el cleanup corre antes de que el import termine, no conectar
+    let cancelled = false;
 
     import("pusher-js").then(({ default: Pusher }) => {
-      const client = new Pusher(key, {
-        cluster,
-        authEndpoint: "/api/pusher/auth",
-      });
+      if (cancelled || pusherRef.current) return;
 
-      channel = client.subscribe("private-stock");
+      const client = new Pusher(key, { cluster, authEndpoint: "/api/pusher/auth" });
+      pusherRef.current = client;
+
+      const channel = client.subscribe("private-stock");
       channel.bind(
         "stock-actualizado",
         (data: { tanque: string; litrosActuales: number; cuentalitros?: number }) => {
@@ -87,12 +102,17 @@ export default function StockCards({
           }
         }
       );
-
-      return () => {
-        channel?.unbind_all();
-        client.unsubscribe("private-stock");
-      };
     });
+
+    // Cleanup REAL de React — fuera del .then() para que funcione siempre
+    return () => {
+      cancelled = true;
+      if (pusherRef.current) {
+        pusherRef.current.unsubscribe("private-stock");
+        pusherRef.current.disconnect();
+        pusherRef.current = null;
+      }
+    };
   }, []);
 
   const alertaTaller = taller.litros < 500;
@@ -115,49 +135,27 @@ export default function StockCards({
             <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
               <Fuel className="w-3.5 h-3.5 text-indigo-500" />
             </div>
-            <span
-              className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: "var(--fg-muted)" }}
-            >
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
               Stock Taller
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {alertaTaller && (
-              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-            )}
+            {alertaTaller && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
             <EditarTanqueModal tanque={taller as TanqueInfo} />
             <RecargaTanqueModal tanqueId={taller.id} cuentalitrosActual={taller.cuentalitros} />
           </div>
         </div>
 
-        <p
-          className="font-outfit font-bold text-3xl mt-2"
-          style={{ color: alertaTaller ? "rgb(239 68 68)" : "var(--fg)" }}
-        >
+        <p className="font-outfit font-bold text-3xl mt-2" style={{ color: alertaTaller ? "rgb(239 68 68)" : "var(--fg)" }}>
           {taller.litros.toLocaleString()}
-          <span
-            className="text-base font-normal ml-1"
-            style={{ color: "var(--fg-muted)" }}
-          >
-            L
-          </span>
+          <span className="text-base font-normal ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
         </p>
 
-        <StockBar
-          litros={taller.litros}
-          max={taller.max}
-          color="bg-indigo-500"
-          alerta={alertaTaller}
-        />
+        <StockBar litros={taller.litros} max={taller.max} color="bg-indigo-500" alerta={alertaTaller} />
 
         <p className="text-xs mt-2" style={{ color: "var(--fg-muted)" }}>
           {pctTaller}% de {taller.max.toLocaleString()} L
-          {alertaTaller && (
-            <span className="ml-2 text-red-500 font-semibold">
-              Stock bajo
-            </span>
-          )}
+          {alertaTaller && <span className="ml-2 text-red-500 font-semibold">Stock bajo</span>}
         </p>
         <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
           Cuentalitros:{" "}
@@ -180,17 +178,12 @@ export default function StockCards({
             <div className="p-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
               <Truck className="w-3.5 h-3.5 text-violet-500" />
             </div>
-            <span
-              className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: "var(--fg-muted)" }}
-            >
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
               NISSAN
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {alertaNissan && (
-              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-            )}
+            {alertaNissan && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
             <EditarTanqueModal tanque={nissan as TanqueInfo} />
             <TransferirNissanModal
               tanqueOrigenId={taller.id}
@@ -204,33 +197,18 @@ export default function StockCards({
           </div>
         </div>
 
-        <p
-          className="font-outfit font-bold text-3xl mt-2"
-          style={{ color: alertaNissan ? "rgb(239 68 68)" : "var(--fg)" }}
-        >
+        <p className="font-outfit font-bold text-3xl mt-2" style={{ color: alertaNissan ? "rgb(239 68 68)" : "var(--fg)" }}>
           {nissan.litros.toLocaleString()}
-          <span
-            className="text-base font-normal ml-1"
-            style={{ color: "var(--fg-muted)" }}
-          >
+          <span className="text-base font-normal ml-1" style={{ color: "var(--fg-muted)" }}>
             / {nissan.max.toLocaleString()} L
           </span>
         </p>
 
-        <StockBar
-          litros={nissan.litros}
-          max={nissan.max}
-          color="bg-violet-500"
-          alerta={alertaNissan}
-        />
+        <StockBar litros={nissan.litros} max={nissan.max} color="bg-violet-500" alerta={alertaNissan} />
 
         <p className="text-xs mt-2" style={{ color: "var(--fg-muted)" }}>
           {pctNissan}% de capacidad
-          {alertaNissan && (
-            <span className="ml-2 text-red-500 font-semibold">
-              Stock bajo
-            </span>
-          )}
+          {alertaNissan && <span className="ml-2 text-red-500 font-semibold">Stock bajo</span>}
         </p>
         <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
           Cuentalitros:{" "}
