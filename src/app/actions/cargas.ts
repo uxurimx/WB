@@ -175,6 +175,11 @@ export async function createCargaCampo(input: CargaCampoInput) {
   }
   const fuenteNissan = await getFuentePorTipo("nissan");
 
+  // Cuentalitros antes de la carga (para registrarlo en el historial)
+  const cuentaLtInicioCampo = tanqueNissan.cuentalitrosActual ?? 0;
+  const nuevosLitrosNissan = Math.max(0, (tanqueNissan.litrosActuales ?? 0) - input.litros);
+  const nuevoCuentalitrosNissan = cuentaLtInicioCampo + input.litros;
+
   const [nueva] = await db
     .insert(cargas)
     .values({
@@ -190,6 +195,8 @@ export async function createCargaCampo(input: CargaCampoInput) {
       litros: input.litros,
       odometroHrs: input.odometroHrs ?? null,
       kmEstimado: input.kmEstimado ?? false,
+      cuentaLtInicio: cuentaLtInicioCampo,
+      cuentaLtFin: nuevoCuentalitrosNissan,
       quienSuministraId: input.quienSuministraId ?? null,
       quienRecibeId: input.quienRecibeId ?? null,
       origen: "campo",
@@ -198,10 +205,6 @@ export async function createCargaCampo(input: CargaCampoInput) {
       registradoPorId: userId,
     })
     .returning();
-
-  // Descontar del saldo de la NISSAN e incrementar su cuentalitros
-  const nuevosLitrosNissan = Math.max(0, (tanqueNissan.litrosActuales ?? 0) - input.litros);
-  const nuevoCuentalitrosNissan = (tanqueNissan.cuentalitrosActual ?? 0) + input.litros;
   await db
     .update(tanques)
     .set({ litrosActuales: nuevosLitrosNissan, cuentalitrosActual: nuevoCuentalitrosNissan, ultimaActualizacion: new Date() })

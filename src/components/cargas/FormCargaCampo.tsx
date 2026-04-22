@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle, Fuel, AlertCircle, Hash, Plus, Loader2, TriangleAlert, Camera, X,
 } from "lucide-react";
@@ -40,6 +41,7 @@ export default function FormCargaCampo({
   cuentalitrosNissan?: number;
   siguienteFolio?: number;
 }) {
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [success, setSuccess] = useState<{ litros: number; unidad: string } | null>(null);
   const [error, setError]     = useState("");
@@ -70,7 +72,7 @@ export default function FormCargaCampo({
   const [form, setForm] = useState({
     fecha: fechaInit,
     hora:  horaInit,
-    folioNissan:       siguienteFolio ? String(siguienteFolio) : "",
+    folioNissan:       siguienteFolio != null ? String(siguienteFolio) : "",
     unidadId:          "",
     litros:            "",
     odometroHrs:       "",
@@ -79,6 +81,13 @@ export default function FormCargaCampo({
     quienSuministraId: "",
     notas:             "",
   });
+
+  // Sync folio when server refreshes the prop
+  useEffect(() => {
+    if (siguienteFolio != null) {
+      setForm((prev) => ({ ...prev, folioNissan: String(siguienteFolio) }));
+    }
+  }, [siguienteFolio]);
 
   useEffect(() => {
     if (!form.unidadId) { setUltimoKm(null); setKmWarning(""); setKmEstimado(false); return; }
@@ -221,6 +230,7 @@ export default function FormCargaCampo({
       }));
       setUltimoKm(null);
       setKmEstimado(false);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar");
     } finally {

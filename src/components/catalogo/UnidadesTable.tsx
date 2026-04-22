@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { PlusCircle, Power, PowerOff, Pencil, Trash2, Check, X } from "lucide-react";
+import { PlusCircle, Power, PowerOff, Pencil, Trash2, Check, X, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,6 +64,38 @@ export default function UnidadesTable({
   // Delete confirm state
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
+
+  // Búsqueda / filtro / orden
+  const [busqueda,   setBusqueda]   = useState("");
+  const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
+  const [estadoFiltro, setEstadoFiltro] = useState<"todos" | "activo" | "inactivo">("todos");
+  const [sortCol,    setSortCol]    = useState<"codigo" | "tipo">("codigo");
+  const [sortDir,    setSortDir]    = useState<"asc" | "desc">("asc");
+
+  function toggleSort(col: "codigo" | "tipo") {
+    if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortCol(col); setSortDir("asc"); }
+  }
+
+  const unidadesFiltradas = unidades
+    .filter((u) => {
+      if (tipoFiltro !== "todos" && u.tipo !== tipoFiltro) return false;
+      if (estadoFiltro === "activo"   && !u.activo) return false;
+      if (estadoFiltro === "inactivo" && u.activo)  return false;
+      if (busqueda) {
+        const q = busqueda.toLowerCase();
+        return u.codigo.toLowerCase().includes(q) ||
+               (u.nombre ?? "").toLowerCase().includes(q) ||
+               (u.modelo ?? "").toLowerCase().includes(q);
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const mul = sortDir === "asc" ? 1 : -1;
+      if (sortCol === "codigo") return mul * a.codigo.localeCompare(b.codigo);
+      if (sortCol === "tipo")   return mul * a.tipo.localeCompare(b.tipo);
+      return 0;
+    });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -150,18 +182,60 @@ export default function UnidadesTable({
     });
   }
 
+  function SortBtn({ col, label }: { col: "codigo" | "tipo"; label: string }) {
+    return (
+      <button type="button" onClick={() => toggleSort(col)} className="flex items-center gap-1 group">
+        {label}
+        <ArrowUpDown className={`w-3 h-3 ${sortCol === col ? "text-indigo-400" : "opacity-40 group-hover:opacity-70"}`} />
+      </button>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {/* Add button */}
-      <div className="flex justify-end">
-        <Button
-          variant={showForm ? "secondary" : "default"}
-          size="sm"
-          onClick={() => setShowForm(!showForm)}
-        >
-          <PlusCircle className="w-4 h-4" />
-          {showForm ? "Cancelar" : "Nueva Unidad"}
-        </Button>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Búsqueda */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--fg-muted)" }} />
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar código, nombre, modelo..."
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30"
+            style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+          />
+        </div>
+        {/* Filtros */}
+        <div className="flex gap-2 flex-wrap">
+          {(["todos", "camion", "maquina", "nissan", "otro"] as const).map((t) => (
+            <button key={t} type="button" onClick={() => setTipoFiltro(t)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                tipoFiltro === t ? "bg-indigo-600 text-white border-indigo-600" : "hover:bg-[var(--surface-2)]"
+              }`}
+              style={tipoFiltro !== t ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}>
+              {t === "todos" ? "Todos" : TIPO_LABELS[t] ?? t}
+            </button>
+          ))}
+          <div className="w-px" style={{ backgroundColor: "var(--border)" }} />
+          {(["todos", "activo", "inactivo"] as const).map((e) => (
+            <button key={e} type="button" onClick={() => setEstadoFiltro(e)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                estadoFiltro === e ? "bg-indigo-600 text-white border-indigo-600" : "hover:bg-[var(--surface-2)]"
+              }`}
+              style={estadoFiltro !== e ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}>
+              {e === "todos" ? "Todos" : e === "activo" ? "Activos" : "Inactivos"}
+            </button>
+          ))}
+        </div>
+        {/* Add button */}
+        {canEdit && (
+          <Button variant={showForm ? "secondary" : "default"} size="sm" onClick={() => setShowForm(!showForm)}>
+            <PlusCircle className="w-4 h-4" />
+            {showForm ? "Cancelar" : "Nueva Unidad"}
+          </Button>
+        )}
       </div>
 
       {/* Create form */}
@@ -233,9 +307,9 @@ export default function UnidadesTable({
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: "var(--surface)" }}>
-              <TableHead>Código</TableHead>
+              <TableHead><SortBtn col="codigo" label="Código" /></TableHead>
               <TableHead>Nombre / Modelo</TableHead>
-              <TableHead>Tipo</TableHead>
+              <TableHead><SortBtn col="tipo" label="Tipo" /></TableHead>
               <TableHead className="text-right">Cap. L</TableHead>
               <TableHead className="text-right">Rend. Ref.</TableHead>
               <TableHead className="text-center">Estado</TableHead>
@@ -243,14 +317,16 @@ export default function UnidadesTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {unidades.length === 0 && (
+            {unidadesFiltradas.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-10" style={{ color: "var(--fg-muted)" }}>
-                  Sin unidades. Agrega la primera o usa "Seed WB" en Configuración.
+                  {busqueda || tipoFiltro !== "todos" || estadoFiltro !== "todos"
+                    ? "Sin resultados para esa búsqueda."
+                    : "Sin unidades. Agrega la primera o usa \"Seed WB\" en Configuración."}
                 </TableCell>
               </TableRow>
             )}
-            {unidades.map((u) => {
+            {unidadesFiltradas.map((u) => {
               const isEditing = editingId === u.id;
               const isDeleting = deletingId === u.id;
 

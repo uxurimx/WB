@@ -142,21 +142,6 @@ export default async function HistorialCargasPage({
         ))}
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {[
-          { label: "Total Cargas", value: cargas.length },
-          { label: "Litros Despachados", value: `${totalLitros.toLocaleString()} L` },
-          { label: "Unidades Distintas", value: new Set(cargas.map((c) => c.unidadId)).size },
-        ].map(({ label, value }) => (
-          <div key={label} className="p-4 rounded-2xl border text-center"
-            style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
-            <p className="font-outfit font-bold text-2xl" style={{ color: "var(--fg)" }}>{value}</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>{label}</p>
-          </div>
-        ))}
-      </div>
-
       <CargasTable items={items} operadores={operadores} obras={obras} canEdit={canEdit} />
     </div>
   );

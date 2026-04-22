@@ -433,6 +433,11 @@ export default function CargasTable({
     );
   }
 
+  // Stats reactivos al filtro activo
+  const cargasFiltradas = itemsFiltrados.filter((i): i is CargaItem => i._tipo === "carga");
+  const statsLitros = cargasFiltradas.reduce((s, c) => s + c.litros, 0);
+  const statsUnidades = new Set(cargasFiltradas.map((c) => c.unidad?.codigo ?? `id-${c.id}`)).size;
+
   return (
     <>
       {deleteError && (
@@ -440,6 +445,21 @@ export default function CargasTable({
           <AlertCircle className="w-4 h-4 shrink-0" /> {deleteError}
         </p>
       )}
+
+      {/* Mini dashboard reactivo */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        {[
+          { label: "Total Cargas", value: cargasFiltradas.length },
+          { label: "Litros Despachados", value: `${statsLitros.toLocaleString()} L` },
+          { label: "Unidades Distintas", value: statsUnidades },
+        ].map(({ label, value }) => (
+          <div key={label} className="p-4 rounded-2xl border text-center"
+            style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
+            <p className="font-outfit font-bold text-2xl" style={{ color: "var(--fg)" }}>{value}</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>{label}</p>
+          </div>
+        ))}
+      </div>
 
       {/* Búsqueda + filtros */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">

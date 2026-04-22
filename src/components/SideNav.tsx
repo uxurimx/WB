@@ -12,55 +12,58 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
 import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
+import { hasNavPermission } from "@/lib/permissions";
 
 type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ className?: string }> };
 
-function getNavSections(isAdmin: boolean) {
+function getNavSections(role: string | undefined) {
+  const has = (p: Parameters<typeof hasNavPermission>[1]) => hasNavPermission(role, p);
+
+  const cargasItems: NavItemDef[] = [
+    ...(has("cargas.nueva_patio") ? [{ name: "Nueva Carga Patio", href: "/cargas/nueva", icon: PlusCircle }] : []),
+    ...(has("cargas.nueva_campo") ? [{ name: "Nueva Carga Campo", href: "/cargas/campo", icon: Fuel }] : []),
+    ...(has("cargas.historial")   ? [{ name: "Historial",         href: "/cargas",       icon: ClipboardList }] : []),
+  ];
+
+  const catalogoItems: NavItemDef[] = has("catalogo") ? [
+    { name: "Unidades",   href: "/catalogo/unidades",   icon: Truck },
+    { name: "Operadores", href: "/catalogo/operadores", icon: Users },
+    { name: "Obras",      href: "/catalogo/obras",      icon: HardHat },
+  ] : [];
+
+  const sistemaItems: NavItemDef[] = [
+    ...(has("admin") ? [
+      { name: "Administración", href: "/admin",          icon: Shield },
+      { name: "Importar Datos", href: "/admin/importar", icon: Wrench },
+    ] : []),
+    { name: "Configuración", href: "/settings", icon: Settings },
+  ];
+
   return [
     {
       label: null,
       collapsible: false,
-      items: [
-        { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
-      ],
+      items: [{ name: "Dashboard", href: "/overview", icon: LayoutDashboard }],
     },
-    {
+    ...(cargasItems.length ? [{
       label: "Cargas",
       collapsible: false,
-      items: [
-        { name: "Nueva Carga Patio", href: "/cargas/nueva", icon: PlusCircle },
-        { name: "Nueva Carga Campo", href: "/cargas/campo", icon: Fuel },
-        { name: "Historial",         href: "/cargas",       icon: ClipboardList },
-      ],
-    },
-    {
+      items: cargasItems,
+    }] : []),
+    ...(catalogoItems.length ? [{
       label: "Catálogos",
       collapsible: true,
-      items: [
-        { name: "Unidades",   href: "/catalogo/unidades",   icon: Truck },
-        { name: "Operadores", href: "/catalogo/operadores", icon: Users },
-        { name: "Obras",      href: "/catalogo/obras",      icon: HardHat },
-      ],
-    },
-    {
+      items: catalogoItems,
+    }] : []),
+    ...(has("periodos") ? [{
       label: "Análisis",
       collapsible: false,
-      items: [
-        { name: "Períodos", href: "/periodos", icon: Calendar },
-      ],
-    },
+      items: [{ name: "Períodos", href: "/periodos", icon: Calendar }],
+    }] : []),
     {
       label: "Sistema",
       collapsible: false,
-      items: [
-        ...(isAdmin
-          ? [
-              { name: "Administración", href: "/admin",           icon: Shield },
-              { name: "Importar Datos", href: "/admin/importar",  icon: Wrench },
-            ]
-          : []),
-        { name: "Configuración", href: "/settings", icon: Settings },
-      ],
+      items: sistemaItems,
     },
   ];
 }
@@ -102,8 +105,8 @@ function NavItem({
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { user }    = useUser();
-  const isAdmin     = user?.publicMetadata?.role === "admin";
-  const navSections = getNavSections(isAdmin);
+  const role        = user?.publicMetadata?.role as string | undefined;
+  const navSections = getNavSections(role);
   const pathname    = usePathname();
 
   // Catálogos abierto si la ruta actual está dentro
