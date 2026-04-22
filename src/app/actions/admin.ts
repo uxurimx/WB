@@ -3,9 +3,10 @@
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, roles } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { VALID_ROLES, type Role } from "@/lib/roles";
+import { VALID_ROLES, type Role, ROLE_LABELS } from "@/lib/roles";
+import { ROLE_NAV_PERMISSIONS, type NavPermission } from "@/lib/permissions";
 
 // ─── Guard ────────────────────────────────────────────────────
 async function requireAdmin() {
@@ -82,6 +83,60 @@ export async function updateRolUsuario(targetUserId: string, newRole: string) {
     publicMetadata: { role: newRole },
   });
 
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+// ─── Roles CRUD ───────────────────────────────────────────────
+export async function getRoles() {
+  await requireAdmin();
+  let list = await db.select().from(roles);
+
+  if (list.length === 0) {
+    const defaults = Object.entries(ROLE_NAV_PERMISSIONS).map(([id, permisos]) => ({
+      id,
+      label: ROLE_LABELS[id as Role] ?? id,
+      permisos: JSON.stringify(permisos),
+      isSystem: true,
+    }));
+    await db.insert(roles).values(defaults);
+    list = await db.select().from(roles);
+  }
+
+  return list.map((r) => ({
+    ...r,
+    permisos: JSON.parse(r.permisos) as NavPermission[],
+  }));
+}
+
+export async function createRole(data: { id: string; label: string; permisos: NavPermission[] }) {
+  await requireAdmin();
+  const id = data.id.trim().toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  if (!id || !data.label.trim()) throw new Error("ID y nombre son requeridos");
+
+  await db.insert(roles).values({
+    id,
+    label: data.label.trim(),
+    permisos: JSON.stringify(data.permisos),
+    isSystem: false,
+  });
+  revalidatePath("/admin");
+  return { ok: true, id };
+}
+
+export async function updateRolePerms(id: string, permisos: NavPermission[]) {
+  await requireAdmin();
+  await db.update(roles).set({ permisos: JSON.stringify(permisos) }).where(eq(roles.id, id));
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+export async function deleteRole(id: string) {
+  await requireAdmin();
+  const rol = await db.query.roles.findFirst({ where: eq(roles.id, id) });
+  if (!rol) throw new Error("Rol no encontrado");
+  if (rol.isSystem) throw new Error("No se puede eliminar un rol del sistema");
+  await db.delete(roles).where(eq(roles.id, id));
   revalidatePath("/admin");
   return { ok: true };
 }

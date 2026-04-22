@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Fuel, LayoutDashboard, Settings, ChevronRight, ChevronDown,
   PlusCircle, ClipboardList, Truck, Users, HardHat, Menu, X,
@@ -12,12 +12,12 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
 import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
-import { hasNavPermission } from "@/lib/permissions";
+import { ROLE_NAV_PERMISSIONS, type NavPermission } from "@/lib/permissions";
 
 type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ className?: string }> };
 
-function getNavSections(role: string | undefined) {
-  const has = (p: Parameters<typeof hasNavPermission>[1]) => hasNavPermission(role, p);
+function getNavSections(permisos: NavPermission[]) {
+  const has = (p: NavPermission) => permisos.includes(p);
 
   const cargasItems: NavItemDef[] = [
     ...(has("cargas.nueva_patio") ? [{ name: "Nueva Carga Patio", href: "/cargas/nueva", icon: PlusCircle }] : []),
@@ -104,10 +104,22 @@ function NavItem({
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { user }    = useUser();
-  const role        = user?.publicMetadata?.role as string | undefined;
-  const navSections = getNavSections(role);
-  const pathname    = usePathname();
+  const { user } = useUser();
+  const role     = user?.publicMetadata?.role as string | undefined;
+  const pathname = usePathname();
+
+  const [permisos, setPermisos] = useState<NavPermission[]>(
+    role ? (ROLE_NAV_PERMISSIONS[role] ?? []) : []
+  );
+
+  useEffect(() => {
+    fetch("/api/me/perms")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data.permisos)) setPermisos(data.permisos); })
+      .catch(() => {});
+  }, []);
+
+  const navSections = getNavSections(permisos);
 
   // Catálogos abierto si la ruta actual está dentro
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {

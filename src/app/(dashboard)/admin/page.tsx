@@ -1,7 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Shield, Users } from "lucide-react";
-import { getUsuarios } from "@/app/actions/admin";
+import { getUsuarios, getRoles } from "@/app/actions/admin";
 import UsuariosTable from "@/components/admin/UsuariosTable";
 import RolesTab from "@/components/admin/RolesTab";
 import AdminTabsClient from "@/components/admin/AdminTabsClient";
@@ -13,7 +13,7 @@ export default async function AdminPage() {
   const clerkUser = await currentUser();
   if (clerkUser?.publicMetadata?.role !== "admin") redirect("/overview");
 
-  const usuariosList = await getUsuarios();
+  const [usuariosList, rolesList] = await Promise.all([getUsuarios(), getRoles()]);
   const activos = usuariosList.filter((u) => u.activo).length;
 
   return (
@@ -57,6 +57,7 @@ export default async function AdminPage() {
         }
         rolesTab={
           <RolesTab
+            initialRoles={rolesList}
             usuarios={usuariosList.map((u) => ({ id: u.id, name: u.name, role: u.role }))}
           />
         }

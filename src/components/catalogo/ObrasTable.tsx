@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { PlusCircle, CheckCircle, XCircle, Pencil, Trash2, Check, X, Search, ArrowUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, CheckCircle, XCircle, Pencil, Trash2, Check, X, Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +43,9 @@ export default function ObrasTable({
   const [busqueda,     setBusqueda]     = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState<"todos" | "activo" | "inactivo">("todos");
   const [sortDir,      setSortDir]      = useState<"asc" | "desc">("asc");
+  const [showFilters,  setShowFilters]  = useState(false);
+
+  const hasActiveFilters = estadoFiltro !== "todos";
 
   const obrasFiltradas = obras
     .filter((o) => {
@@ -124,39 +126,79 @@ export default function ObrasTable({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3">
+    <div className="space-y-3">
+      {/* Toolbar compacto */}
+      <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--fg-muted)" }} />
           <input type="text" value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar obra, cliente..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30"
+            className="w-full pl-9 pr-8 py-2 text-sm rounded-xl border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30"
             style={{ borderColor: "var(--border)", color: "var(--fg)" }} />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {(["todos", "activo", "inactivo"] as const).map((e) => (
-            <button key={e} type="button" onClick={() => setEstadoFiltro(e)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                estadoFiltro === e ? "bg-indigo-600 text-white border-indigo-600" : "hover:bg-[var(--surface-2)]"
-              }`}
-              style={estadoFiltro !== e ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}>
-              {e === "todos" ? "Todas" : e === "activo" ? "Activas" : "Terminadas"}
+          {busqueda && (
+            <button type="button" onClick={() => setBusqueda("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded"
+              style={{ color: "var(--fg-muted)" }}>
+              <X className="w-3.5 h-3.5" />
             </button>
-          ))}
-          <button type="button" onClick={() => setSortDir((d) => d === "asc" ? "desc" : "asc")}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border hover:bg-[var(--surface-2)] transition-colors"
-            style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>
-            <ArrowUpDown className="w-3 h-3" /> A-Z
-          </button>
+          )}
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          title="Filtros y orden"
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-all shrink-0 ${
+            hasActiveFilters ? "border-indigo-500/50 bg-indigo-500/5" : "hover:bg-[var(--surface-2)]"
+          }`}
+          style={hasActiveFilters ? { color: "var(--fg)" } : { borderColor: "var(--border)", color: "var(--fg-muted)" }}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          {hasActiveFilters && <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />}
+        </button>
+
         {canEdit && (
-          <Button variant={showForm ? "secondary" : "default"} size="sm" onClick={() => setShowForm(!showForm)}>
-            <PlusCircle className="w-4 h-4" />
-            {showForm ? "Cancelar" : "Nueva Obra"}
-          </Button>
+          <button
+            type="button"
+            onClick={() => setShowForm((v) => !v)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold shrink-0 transition-colors"
+            style={showForm
+              ? { backgroundColor: "var(--surface-2)", color: "var(--fg)" }
+              : { backgroundColor: "rgb(79 70 229)", color: "white" }}
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">{showForm ? "Cancelar" : "Nueva"}</span>
+          </button>
         )}
       </div>
+
+      {/* Panel de filtros colapsable */}
+      {showFilters && (
+        <div className="flex flex-wrap gap-x-5 gap-y-2 px-3 py-2 rounded-xl border"
+          style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-semibold shrink-0" style={{ color: "var(--fg-muted)" }}>Estado</span>
+            {(["todos", "activo", "inactivo"] as const).map((e) => (
+              <button key={e} type="button" onClick={() => setEstadoFiltro(e)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
+                  estadoFiltro === e ? "bg-indigo-600 text-white border-indigo-600" : "hover:bg-[var(--surface-2)]"
+                }`}
+                style={estadoFiltro !== e ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}>
+                {e === "todos" ? "Todas" : e === "activo" ? "Activas" : "Terminadas"}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold shrink-0" style={{ color: "var(--fg-muted)" }}>Orden</span>
+            <button type="button" onClick={() => setSortDir((d) => d === "asc" ? "desc" : "asc")}
+              className="px-2.5 py-1 rounded-lg text-xs font-semibold border hover:bg-[var(--surface-2)] transition-colors"
+              style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>
+              {sortDir === "asc" ? "A → Z" : "Z → A"}
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {showForm && (
         <form onSubmit={handleSubmit} className="p-5 rounded-2xl border space-y-4"
@@ -181,10 +223,15 @@ export default function ObrasTable({
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <div className="flex gap-2">
-            <Button type="submit" disabled={isPending}>
+            <button type="submit" disabled={isPending}
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60">
               {isPending ? "Guardando..." : "Guardar"}
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
+            </button>
+            <button type="button" onClick={() => setShowForm(false)}
+              className="px-4 py-2 rounded-xl text-sm hover:bg-[var(--surface-2)] transition-colors"
+              style={{ color: "var(--fg-muted)" }}>
+              Cancelar
+            </button>
           </div>
         </form>
       )}

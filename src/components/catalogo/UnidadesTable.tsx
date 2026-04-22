@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { PlusCircle, Power, PowerOff, Pencil, Trash2, Check, X, Search, ArrowUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, Power, PowerOff, Pencil, Trash2, Check, X, Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -66,11 +65,14 @@ export default function UnidadesTable({
   const [deleteError, setDeleteError] = useState("");
 
   // Búsqueda / filtro / orden
-  const [busqueda,   setBusqueda]   = useState("");
-  const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
+  const [busqueda,     setBusqueda]     = useState("");
+  const [tipoFiltro,   setTipoFiltro]   = useState<string>("todos");
   const [estadoFiltro, setEstadoFiltro] = useState<"todos" | "activo" | "inactivo">("todos");
-  const [sortCol,    setSortCol]    = useState<"codigo" | "tipo">("codigo");
-  const [sortDir,    setSortDir]    = useState<"asc" | "desc">("asc");
+  const [sortCol,      setSortCol]      = useState<"codigo" | "tipo">("codigo");
+  const [sortDir,      setSortDir]      = useState<"asc" | "desc">("asc");
+  const [showFilters,  setShowFilters]  = useState(false);
+
+  const hasActiveFilters = tipoFiltro !== "todos" || estadoFiltro !== "todos";
 
   function toggleSort(col: "codigo" | "tipo") {
     if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -183,19 +185,23 @@ export default function UnidadesTable({
   }
 
   function SortBtn({ col, label }: { col: "codigo" | "tipo"; label: string }) {
+    const active = sortCol === col;
     return (
-      <button type="button" onClick={() => toggleSort(col)} className="flex items-center gap-1 group">
+      <button type="button" onClick={() => toggleSort(col)}
+        className="flex items-center gap-1 group font-semibold text-xs uppercase tracking-wider"
+        style={{ color: active ? "var(--fg)" : "var(--fg-muted)" }}>
         {label}
-        <ArrowUpDown className={`w-3 h-3 ${sortCol === col ? "text-indigo-400" : "opacity-40 group-hover:opacity-70"}`} />
+        <span className={`text-[10px] ${active ? "text-indigo-400" : "opacity-40 group-hover:opacity-60"}`}>
+          {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
+        </span>
       </button>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Búsqueda */}
+    <div className="space-y-3">
+      {/* Toolbar compacto */}
+      <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--fg-muted)" }} />
           <input
@@ -203,40 +209,79 @@ export default function UnidadesTable({
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar código, nombre, modelo..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30"
+            className="w-full pl-9 pr-8 py-2 text-sm rounded-xl border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30"
             style={{ borderColor: "var(--border)", color: "var(--fg)" }}
           />
-        </div>
-        {/* Filtros */}
-        <div className="flex gap-2 flex-wrap">
-          {(["todos", "camion", "maquina", "nissan", "otro"] as const).map((t) => (
-            <button key={t} type="button" onClick={() => setTipoFiltro(t)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                tipoFiltro === t ? "bg-indigo-600 text-white border-indigo-600" : "hover:bg-[var(--surface-2)]"
-              }`}
-              style={tipoFiltro !== t ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}>
-              {t === "todos" ? "Todos" : TIPO_LABELS[t] ?? t}
+          {busqueda && (
+            <button type="button" onClick={() => setBusqueda("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded"
+              style={{ color: "var(--fg-muted)" }}>
+              <X className="w-3.5 h-3.5" />
             </button>
-          ))}
-          <div className="w-px" style={{ backgroundColor: "var(--border)" }} />
-          {(["todos", "activo", "inactivo"] as const).map((e) => (
-            <button key={e} type="button" onClick={() => setEstadoFiltro(e)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                estadoFiltro === e ? "bg-indigo-600 text-white border-indigo-600" : "hover:bg-[var(--surface-2)]"
-              }`}
-              style={estadoFiltro !== e ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}>
-              {e === "todos" ? "Todos" : e === "activo" ? "Activos" : "Inactivos"}
-            </button>
-          ))}
+          )}
         </div>
-        {/* Add button */}
+
+        <button
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          title="Filtros y orden"
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-all shrink-0 ${
+            hasActiveFilters
+              ? "border-indigo-500/50 bg-indigo-500/5"
+              : "hover:bg-[var(--surface-2)]"
+          }`}
+          style={hasActiveFilters ? { color: "var(--fg)" } : { borderColor: "var(--border)", color: "var(--fg-muted)" }}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          {hasActiveFilters && <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />}
+        </button>
+
         {canEdit && (
-          <Button variant={showForm ? "secondary" : "default"} size="sm" onClick={() => setShowForm(!showForm)}>
-            <PlusCircle className="w-4 h-4" />
-            {showForm ? "Cancelar" : "Nueva Unidad"}
-          </Button>
+          <button
+            type="button"
+            onClick={() => setShowForm((v) => !v)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold shrink-0 transition-colors"
+            style={showForm
+              ? { backgroundColor: "var(--surface-2)", color: "var(--fg)" }
+              : { backgroundColor: "rgb(79 70 229)", color: "white" }}
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">{showForm ? "Cancelar" : "Nueva"}</span>
+          </button>
         )}
       </div>
+
+      {/* Panel de filtros colapsable */}
+      {showFilters && (
+        <div className="flex flex-wrap gap-x-5 gap-y-2 px-1 py-2 rounded-xl border"
+          style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-semibold shrink-0" style={{ color: "var(--fg-muted)" }}>Tipo</span>
+            {(["todos", "camion", "maquina", "nissan", "otro"] as const).map((t) => (
+              <button key={t} type="button" onClick={() => setTipoFiltro(t)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
+                  tipoFiltro === t ? "bg-indigo-600 text-white border-indigo-600" : "hover:bg-[var(--surface-2)]"
+                }`}
+                style={tipoFiltro !== t ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}>
+                {t === "todos" ? "Todos" : TIPO_LABELS[t] ?? t}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-semibold shrink-0" style={{ color: "var(--fg-muted)" }}>Estado</span>
+            {(["todos", "activo", "inactivo"] as const).map((e) => (
+              <button key={e} type="button" onClick={() => setEstadoFiltro(e)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
+                  estadoFiltro === e ? "bg-indigo-600 text-white border-indigo-600" : "hover:bg-[var(--surface-2)]"
+                }`}
+                style={estadoFiltro !== e ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}>
+                {e === "todos" ? "Todos" : e === "activo" ? "Activos" : "Inactivos"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {/* Create form */}
       {showForm && (
@@ -288,12 +333,15 @@ export default function UnidadesTable({
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <div className="flex gap-2 pt-1">
-            <Button type="submit" disabled={isPending}>
+            <button type="submit" disabled={isPending}
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60">
               {isPending ? "Guardando..." : "Guardar Unidad"}
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
+            </button>
+            <button type="button" onClick={() => setShowForm(false)}
+              className="px-4 py-2 rounded-xl text-sm hover:bg-[var(--surface-2)] transition-colors"
+              style={{ color: "var(--fg-muted)" }}>
               Cancelar
-            </Button>
+            </button>
           </div>
         </form>
       )}

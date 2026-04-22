@@ -74,6 +74,16 @@ export const obras = pgTable("obras", {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ROLES — configuración de permisos por rol (editable desde Admin)
+// ─────────────────────────────────────────────────────────────────────────────
+export const roles = pgTable("roles", {
+  id: text("id").primaryKey(),
+  label: text("label").notNull(),
+  permisos: text("permisos").notNull().default("[]"), // JSON: NavPermission[]
+  isSystem: boolean("is_system").notNull().default(false),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // FUENTES DE DIESEL — origen del combustible
 // ─────────────────────────────────────────────────────────────────────────────
 export const fuentesDiesel = pgTable("fuentes_diesel", {
