@@ -36,15 +36,15 @@ function getNavSections(permisos: NavPermission[]) {
       { name: "Administración", href: "/admin",          icon: Shield },
       { name: "Importar Datos", href: "/admin/importar", icon: Wrench },
     ] : []),
-    { name: "Configuración", href: "/settings", icon: Settings },
+    ...(has("settings") ? [{ name: "Configuración", href: "/settings", icon: Settings }] : []),
   ];
 
   return [
-    {
-      label: null,
+    ...(has("dashboard") ? [{
+      label: null as null,
       collapsible: false,
       items: [{ name: "Dashboard", href: "/overview", icon: LayoutDashboard }],
-    },
+    }] : []),
     ...(cargasItems.length ? [{
       label: "Cargas",
       collapsible: false,
@@ -60,11 +60,11 @@ function getNavSections(permisos: NavPermission[]) {
       collapsible: false,
       items: [{ name: "Períodos", href: "/periodos", icon: Calendar }],
     }] : []),
-    {
+    ...(sistemaItems.length ? [{
       label: "Sistema",
       collapsible: false,
       items: sistemaItems,
-    },
+    }] : []),
   ];
 }
 

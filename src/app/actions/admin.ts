@@ -93,6 +93,7 @@ export async function getRoles() {
   let list = await db.select().from(roles);
 
   if (list.length === 0) {
+    // Seed inicial desde config estática
     const defaults = Object.entries(ROLE_NAV_PERMISSIONS).map(([id, permisos]) => ({
       id,
       label: ROLE_LABELS[id as Role] ?? id,
@@ -100,6 +101,18 @@ export async function getRoles() {
       isSystem: true,
     }));
     await db.insert(roles).values(defaults);
+    list = await db.select().from(roles);
+  } else {
+    // Migración: añadir nuevos permisos al config de roles sistema existentes
+    for (const rol of list.filter((r) => r.isSystem)) {
+      const staticPerms = ROLE_NAV_PERMISSIONS[rol.id] ?? [];
+      const currentPerms = JSON.parse(rol.permisos) as NavPermission[];
+      const missing = staticPerms.filter((p) => !currentPerms.includes(p));
+      if (missing.length > 0) {
+        const merged = JSON.stringify([...currentPerms, ...missing]);
+        await db.update(roles).set({ permisos: merged }).where(eq(roles.id, rol.id));
+      }
+    }
     list = await db.select().from(roles);
   }
 

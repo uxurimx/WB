@@ -6,6 +6,8 @@ import type { NavPermission } from "@/lib/permissions";
 import { updateRolePerms, createRole, deleteRole } from "@/app/actions/admin";
 
 const PERMISOS: { key: NavPermission; label: string; desc: string }[] = [
+  { key: "dashboard",          label: "Dashboard",            desc: "Vista general: stock, KPIs y cargas recientes" },
+  { key: "settings",           label: "Configuración",        desc: "Ajustes de la cuenta y preferencias" },
   { key: "cargas.historial",   label: "Ver Historial",        desc: "Accede al historial de cargas" },
   { key: "cargas.nueva_patio", label: "Carga Patio",          desc: "Registra cargas desde el tanque principal" },
   { key: "cargas.nueva_campo", label: "Carga Campo",          desc: "Registra cargas desde el tanque NISSAN" },
