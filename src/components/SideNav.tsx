@@ -254,9 +254,11 @@ export function MobileHeader() {
           <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
             <Fuel className="text-indigo-500 w-4 h-4" />
           </div>
+          <Link href="/overview">
           <span className="font-outfit font-bold text-sm" style={{ color: "var(--fg)" }}>
             {siteConfig.name}
           </span>
+          </Link>
         </div>
         <button
           onClick={() => setOpen(true)}
