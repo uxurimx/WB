@@ -2,12 +2,15 @@ export const dynamic = 'force-dynamic';
 
 import { currentUser } from "@clerk/nextjs/server";
 import { getObras } from "@/app/actions/catalogo";
+import { requirePermission } from "@/lib/server-guard";
 import ObrasTable from "@/components/catalogo/ObrasTable";
 import { HardHat } from "lucide-react";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
 export default async function ObrasPage() {
+  await requirePermission("catalogo");
+
   const [obras, clerkUser] = await Promise.all([getObras(false), currentUser()]);
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 

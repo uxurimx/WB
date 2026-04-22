@@ -102,24 +102,25 @@ export async function getRoles() {
     }));
     await db.insert(roles).values(defaults);
     list = await db.select().from(roles);
-  } else {
-    // Migración: añadir nuevos permisos al config de roles sistema existentes
-    for (const rol of list.filter((r) => r.isSystem)) {
-      const staticPerms = ROLE_NAV_PERMISSIONS[rol.id] ?? [];
-      const currentPerms = JSON.parse(rol.permisos) as NavPermission[];
-      const missing = staticPerms.filter((p) => !currentPerms.includes(p));
-      if (missing.length > 0) {
-        const merged = JSON.stringify([...currentPerms, ...missing]);
-        await db.update(roles).set({ permisos: merged }).where(eq(roles.id, rol.id));
-      }
-    }
-    list = await db.select().from(roles);
   }
 
   return list.map((r) => ({
     ...r,
     permisos: JSON.parse(r.permisos) as NavPermission[],
   }));
+}
+
+// Restaura los permisos de los roles sistema a los defaults del config
+export async function resetSystemRoles() {
+  await requireAdmin();
+  for (const [id, permisos] of Object.entries(ROLE_NAV_PERMISSIONS)) {
+    await db
+      .update(roles)
+      .set({ permisos: JSON.stringify(permisos) })
+      .where(eq(roles.id, id));
+  }
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 export async function createRole(data: { id: string; label: string; permisos: NavPermission[] }) {

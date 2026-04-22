@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Fuel } from "lucide-react";
+import { requirePermission } from "@/lib/server-guard";
 import { getUnidades, getOperadores, getObras } from "@/app/actions/catalogo";
 import { getSiguienteFolioCampoPublic } from "@/app/actions/cargas";
 import { db } from "@/db";
@@ -19,6 +20,8 @@ async function getNissanData() {
 }
 
 export default async function NuevaCargaCampoPage() {
+  await requirePermission("cargas.nueva_campo");
+
   const [unidades, operadores, obras, nissanData, siguienteFolio] = await Promise.all([
     getUnidades(true),
     getOperadores(true),

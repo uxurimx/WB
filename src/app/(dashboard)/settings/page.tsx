@@ -1,10 +1,13 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { requirePermission } from "@/lib/server-guard";
 import { UserButton } from "@clerk/nextjs";
 import ThemeToggle from "@/components/ThemeToggle";
 import SeedButton from "@/components/SeedButton";
 import TestingPanel from "@/components/settings/TestingPanel";
 
 export default async function SettingsPage() {
+  await requirePermission("settings");
+
   const user = await currentUser();
   const isAdmin = user?.publicMetadata?.role === "admin";
 

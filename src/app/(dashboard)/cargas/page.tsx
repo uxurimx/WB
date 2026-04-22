@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { ClipboardList, PlusCircle, Fuel } from "lucide-react";
+import { requirePermission } from "@/lib/server-guard";
 import { getCargas } from "@/app/actions/cargas";
 import { getOperadores, getObras } from "@/app/actions/catalogo";
 import { getTransferencias, getRecargasTanque } from "@/app/actions/tanques";
@@ -19,6 +20,8 @@ export default async function HistorialCargasPage({
 }: {
   searchParams: Promise<{ origen?: string; unidadId?: string }>;
 }) {
+  await requirePermission("cargas.historial");
+
   const params = await searchParams;
   const origen = params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined;
   const soloCargas = !!origen;
@@ -112,7 +115,7 @@ export default async function HistorialCargasPage({
             <Link href="/cargas/campo"><Fuel className="w-4 h-4" /> Campo</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/cargas/nueva"><PlusCircle className="w-4 h-4" /> Nueva Patio</Link>
+            <Link href="/cargas/nueva"><PlusCircle className="w-4 h-4" /> Patio</Link>
           </Button>
         </div>
       </div>

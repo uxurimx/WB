@@ -1,4 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { requirePermission } from "@/lib/server-guard";
 import Link from "next/link";
 import { PlusCircle, Fuel } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ function formatPeriodo(fechaInicio: string, fechaFin: string) {
 }
 
 export default async function OverviewPage() {
+  await requirePermission("dashboard");
+
   const [user, stats, periodo] = await Promise.all([
     currentUser(),
     getOverviewStats(),
@@ -79,7 +82,7 @@ export default async function OverviewPage() {
           </Button>
           <Button asChild size="sm">
             <Link href="/cargas/nueva">
-              <PlusCircle className="w-4 h-4" /> Nueva Carga
+              <PlusCircle className="w-4 h-4" /> Patio
             </Link>
           </Button>
         </div>

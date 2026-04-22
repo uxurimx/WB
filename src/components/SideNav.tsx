@@ -139,14 +139,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="h-full flex flex-col p-4">
       {/* Brand */}
+      
       <div className="flex items-center gap-3 px-2 mb-8 mt-2">
         <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
           <Fuel className="text-indigo-500 w-5 h-5" />
         </div>
         <div className="flex flex-col text-left">
-          <span className="font-outfit font-bold text-base leading-tight" style={{ color: "var(--fg)" }}>
-            {siteConfig.name}
-          </span>
+          <Link href="/overview">
+            <span className="font-outfit font-bold text-base leading-tight" style={{ color: "var(--fg)" }}>
+              {siteConfig.name}
+            </span>
+          </Link>
           <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--fg-muted)" }}>
             v{siteConfig.version}
           </span>

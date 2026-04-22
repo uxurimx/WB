@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import Link from "next/link";
+import { requirePermission } from "@/lib/server-guard";
 import { Calendar, ChevronRight, CheckCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getPeriodosConStats } from "@/app/actions/rendimientos";
@@ -17,6 +18,8 @@ function formatRango(inicio: string, fin: string) {
 }
 
 export default async function PeriodosPage() {
+  await requirePermission("periodos");
+
   const periodos = await getPeriodosConStats();
 
   return (

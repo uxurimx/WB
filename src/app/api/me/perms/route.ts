@@ -13,18 +13,12 @@ export async function GET() {
   const role = clerkUser?.publicMetadata?.role as string | undefined;
   if (!role) return NextResponse.json({ permisos: [] });
 
+  // DB es la fuente de verdad
   const rol = await db.query.roles.findFirst({ where: eq(roles.id, role) });
   if (rol) {
-    const dbPerms = JSON.parse(rol.permisos) as NavPermission[];
-    // Asegura que permisos nuevos del config estático estén presentes en roles sistema
-    if (rol.isSystem) {
-      const staticPerms = ROLE_NAV_PERMISSIONS[role] ?? [];
-      const merged = Array.from(new Set([...dbPerms, ...staticPerms]));
-      return NextResponse.json({ permisos: merged });
-    }
-    return NextResponse.json({ permisos: dbPerms });
+    return NextResponse.json({ permisos: JSON.parse(rol.permisos) as NavPermission[] });
   }
 
-  // Fallback: config estática
+  // Fallback solo si el rol no existe aún en DB (antes del primer seed)
   return NextResponse.json({ permisos: ROLE_NAV_PERMISSIONS[role] ?? [] });
 }

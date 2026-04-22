@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { PlusCircle } from "lucide-react";
+import { requirePermission } from "@/lib/server-guard";
 import { getUnidades, getOperadores } from "@/app/actions/catalogo";
 import { getSiguienteFolioPublic, getUltimaCuentaLtPatio } from "@/app/actions/cargas";
 import { db } from "@/db";
@@ -16,6 +17,8 @@ async function getStockTaller() {
 }
 
 export default async function NuevaCargaPatioPage() {
+  await requirePermission("cargas.nueva_patio");
+
   const [unidades, operadores, siguienteFolio, stockActual, ultimaCuentaLt] = await Promise.all([
     getUnidades(true),
     getOperadores(true),
