@@ -125,12 +125,12 @@ export async function GET(
   }
 
   // ── Serializar y devolver ─────────────────────────────────
-  const arr: Uint8Array = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-  const body = arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength);
+  const buf: Buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+  const body = new Uint8Array(buf);
 
   const filename = `reporte-${periodo.fechaInicio}-${periodo.fechaFin}.xlsx`;
 
-  return new Response(body as ArrayBuffer, {
+  return new Response(body, {
     headers: {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
