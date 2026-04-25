@@ -42,7 +42,8 @@ export default async function OverviewPage() {
   const alertas =
     (stats.taller.litros < UMBRAL_TALLER ? 1 : 0) +
     (stats.nissan.litros < UMBRAL_NISSAN ? 1 : 0) +
-    stats.alertasRendimiento.length;
+    (stats.alertasRendimiento.length > 0 ? 1 : 0) +
+    stats.anomaliasActivas.length;
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
@@ -101,7 +102,9 @@ export default async function OverviewPage() {
         taller={stats.taller}
         nissan={stats.nissan}
         alertasRendimiento={stats.alertasRendimiento}
-        ultimoPeriodo={stats.ultimoPeriodoCerrado}
+        anomaliasActivas={stats.anomaliasActivas}
+        ultimoPeriodoCerrado={stats.ultimoPeriodoCerrado}
+        periodoActivoId={stats.periodoActivoId}
       />
 
       {/* KPI del día — real-time via Pusher */}

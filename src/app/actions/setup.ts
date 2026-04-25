@@ -68,6 +68,30 @@ export async function setFolioBaseCampo(folio: number) {
   return { ok: true, msg: `Folio campo base establecido en ${folio}` };
 }
 
+// ─── Configuración de alertas ─────────────────────────────────────────────────
+import { ALERTA_RENDIMIENTO_DIAS_DEFAULT } from "@/lib/alertas-config";
+
+export async function getAlertaDias(): Promise<number> {
+  const row = await db.query.configuracion.findFirst({
+    where: eq(configuracion.clave, "alerta_rendimiento_dias"),
+  });
+  return row ? parseInt(row.valor, 10) : ALERTA_RENDIMIENTO_DIAS_DEFAULT;
+}
+
+export async function setAlertaDias(dias: number) {
+  const val = Math.max(1, Math.min(365, Math.round(dias)));
+  await db
+    .insert(configuracion)
+    .values({ clave: "alerta_rendimiento_dias", valor: String(val) })
+    .onConflictDoUpdate({
+      target: configuracion.clave,
+      set: { valor: String(val), updatedAt: new Date() },
+    });
+  revalidatePath("/overview");
+  revalidatePath("/settings");
+  return { ok: true, msg: `Alertas expirarán después de ${val} días` };
+}
+
 // Seed inicial — ejecutar una sola vez al configurar el sistema
 // Inserta tanques y fuentes de diesel base si no existen
 export async function seedInicial() {
