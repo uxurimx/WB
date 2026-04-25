@@ -23,7 +23,7 @@ export async function getOverviewStats() {
       db.select({ litros: cargas.litros }).from(cargas).where(eq(cargas.fecha, hoy)),
       db.query.cargas.findMany({
         with: { unidad: true, operador: true },
-        orderBy: [desc(cargas.createdAt)],
+        orderBy: [desc(cargas.fecha), desc(cargas.createdAt)],
         limit: 12,
       }),
       db.query.periodos.findFirst({
