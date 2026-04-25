@@ -8,10 +8,7 @@ import PrintClient from "./PrintClient";
 
 function fmtFecha(f: string) {
   return new Date(f + "T12:00:00").toLocaleDateString("es-MX", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+    weekday: "short", day: "numeric", month: "short", year: "numeric",
   });
 }
 
@@ -27,14 +24,21 @@ function fmtNum(n: number | null, d = 1) {
 
 export default async function PrintPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ unidades?: string }>;
 }) {
   const { id } = await params;
   const periodoId = parseInt(id);
   if (isNaN(periodoId)) notFound();
 
-  const [periodo, { rows: cargasData }, rends] = await Promise.all([
+  const sp = await searchParams;
+  const unidadIdsFilter = sp.unidades
+    ? new Set(sp.unidades.split(",").map(Number).filter(Boolean))
+    : null;
+
+  const [periodo, { rows: cargasAll }, rendsAll] = await Promise.all([
     db.query.periodos.findFirst({ where: eq(periodos.id, periodoId) }),
     getCargas({ periodoId, limit: 1000 }),
     getRendimientosPeriodo(periodoId),
@@ -42,15 +46,23 @@ export default async function PrintPage({
 
   if (!periodo) notFound();
 
+  const cargasData = unidadIdsFilter
+    ? cargasAll.filter((c) => unidadIdsFilter.has(c.unidadId))
+    : cargasAll;
+
+  const rends = unidadIdsFilter
+    ? rendsAll.filter((r) => unidadIdsFilter.has(r.unidadId))
+    : rendsAll;
+
   const totalLitros = cargasData.reduce((s, c) => s + (c.litros ?? 0), 0);
   const unidadesDistintas = new Set(cargasData.map((c) => c.unidadId)).size;
-  const hoy = new Date().toLocaleDateString("es-MX", {
-    day: "numeric", month: "long", year: "numeric",
-  });
+  const hoy = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+
+  // Detectar si hay registros con hora para mostrar esa columna
+  const tieneHora = cargasData.some((c) => c.hora);
 
   return (
     <>
-      {/* Print + screen styles */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -67,10 +79,15 @@ export default async function PrintPage({
         <div className="flex items-start justify-between mb-8 pb-6 border-b border-gray-200">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">
-              Reporte de Período
+              Reporte de Período{unidadIdsFilter ? " (filtrado)" : ""}
             </p>
             <h1 className="text-3xl font-bold mb-1">{periodo.nombre}</h1>
             <p className="text-sm text-gray-500">{fmtRango(periodo.fechaInicio, periodo.fechaFin)}</p>
+            {unidadIdsFilter && (
+              <p className="text-xs text-amber-600 mt-1">
+                Filtrado: {unidadIdsFilter.size} unidades seleccionadas
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-400 mb-3">Generado el {hoy}</p>
@@ -81,9 +98,9 @@ export default async function PrintPage({
         {/* Resumen stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
-            { label: "Total cargas", value: cargasData.length },
+            { label: "Total cargas",      value: cargasData.length },
             { label: "Litros despachados", value: `${totalLitros.toLocaleString()} L` },
-            { label: "Unidades activas", value: unidadesDistintas },
+            { label: "Unidades activas",   value: unidadesDistintas },
           ].map(({ label, value }) => (
             <div key={label} className="p-4 rounded-xl border border-gray-200 text-center">
               <p className="text-2xl font-bold">{value}</p>
@@ -132,9 +149,7 @@ export default async function PrintPage({
                         {r.rendimientoReferencia !== null ? `${fmtNum(r.rendimientoReferencia, 2)} ${unidad_km}` : "—"}
                       </td>
                       <td className="px-3 py-1.5 border border-gray-200 font-mono text-right">
-                        {r.diferencia !== null
-                          ? `${r.diferencia > 0 ? "+" : ""}${fmtNum(r.diferencia, 2)}`
-                          : "—"}
+                        {r.diferencia !== null ? `${r.diferencia > 0 ? "+" : ""}${fmtNum(r.diferencia, 2)}` : "—"}
                       </td>
                       <td className="px-3 py-1.5 border border-gray-200 text-center text-xs font-semibold">
                         {ok === true ? "✓ OK" : ok === false ? "✗ Fuera" : "—"}
@@ -158,7 +173,11 @@ export default async function PrintPage({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-gray-50 text-left">
-                {["Folio", "Fecha", "Unidad", "Operador", "Litros", "Origen", "Diesel", "Odo/Hrs"].map((h) => (
+                {[
+                  "Folio", "Fecha",
+                  ...(tieneHora ? ["Hora"] : []),
+                  "Unidad", "Operador", "Litros", "Origen", "Diesel", "Odo/Hrs",
+                ].map((h) => (
                   <th key={h} className="px-3 py-2 border border-gray-200 font-semibold text-xs">{h}</th>
                 ))}
               </tr>
@@ -170,8 +189,13 @@ export default async function PrintPage({
                     {c.folio ?? "—"}
                   </td>
                   <td className="px-3 py-1.5 border border-gray-200 text-xs">
-                    {fmtFecha(c.fecha)}{c.hora ? ` ${c.hora.slice(0, 5)}` : ""}
+                    {fmtFecha(c.fecha)}
                   </td>
+                  {tieneHora && (
+                    <td className="px-3 py-1.5 border border-gray-200 font-mono text-xs text-gray-500">
+                      {c.hora ? c.hora.slice(0, 5) : "—"}
+                    </td>
+                  )}
                   <td className="px-3 py-1.5 border border-gray-200 font-mono font-bold">
                     {c.unidad?.codigo ?? `#${c.unidadId}`}
                   </td>

@@ -7,7 +7,7 @@ import { getRendimientosPeriodo } from "@/app/actions/rendimientos";
 import * as XLSX from "xlsx";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ periodoId: string }> }
 ) {
   const { userId } = await auth();
@@ -17,13 +17,28 @@ export async function GET(
   const id = parseInt(periodoId);
   if (isNaN(id)) return new Response("Invalid id", { status: 400 });
 
-  const [periodo, { rows: cargasData }, rends] = await Promise.all([
+  // Filtro por unidades (opcional)
+  const url = new URL(req.url);
+  const unidadesParam = url.searchParams.get("unidades");
+  const unidadIdsFilter = unidadesParam
+    ? new Set(unidadesParam.split(",").map(Number).filter(Boolean))
+    : null;
+
+  const [periodo, { rows: cargasAll }, rendsAll] = await Promise.all([
     db.query.periodos.findFirst({ where: eq(periodos.id, id) }),
     getCargas({ periodoId: id, limit: 5000 }),
     getRendimientosPeriodo(id),
   ]);
 
   if (!periodo) return new Response("Período no encontrado", { status: 404 });
+
+  const cargasData = unidadIdsFilter
+    ? cargasAll.filter((c) => unidadIdsFilter.has(c.unidadId))
+    : cargasAll;
+
+  const rends = unidadIdsFilter
+    ? rendsAll.filter((r) => unidadIdsFilter.has(r.unidadId))
+    : rendsAll;
 
   const wb = XLSX.utils.book_new();
 
@@ -38,6 +53,7 @@ export async function GET(
     ["Inicio:", periodo.fechaInicio],
     ["Fin:", periodo.fechaFin],
     ["Estado:", periodo.cerrado ? "Cerrado" : "Activo"],
+    ...(unidadIdsFilter ? [["Filtro:", `${unidadIdsFilter.size} unidades seleccionadas`]] : []),
     [],
     ["Total cargas:", cargasData.length],
     ["Litros totales:", totalLitros],
@@ -53,17 +69,8 @@ export async function GET(
 
   // ── Sheet 2: Cargas ───────────────────────────────────────
   const cargasHeaders = [
-    "Folio",
-    "Fecha",
-    "Hora",
-    "Unidad",
-    "Operador",
-    "Obra",
-    "Litros",
-    "Origen",
-    "Tipo Diesel",
-    "Odómetro / Hrs",
-    "Notas",
+    "Folio", "Fecha", "Hora", "Unidad", "Operador", "Obra",
+    "Litros", "Origen", "Tipo Diesel", "Odómetro / Hrs", "Notas",
   ];
 
   const cargasRows = cargasData.map((c) => [
@@ -88,17 +95,11 @@ export async function GET(
   ];
   XLSX.utils.book_append_sheet(wb, wsCargas, "Cargas");
 
-  // ── Sheet 3: Rendimientos (si período cerrado) ────────────
+  // ── Sheet 3: Rendimientos ────────────────────────────────
   if (rends.length > 0) {
     const rendHeaders = [
-      "Unidad",
-      "Tipo",
-      "Litros Consumidos",
-      "Km Recorridos / Hrs Trabajadas",
-      "Rendimiento Actual",
-      "Referencia",
-      "Diferencia",
-      "Dentro Tolerancia (±20%)",
+      "Unidad", "Tipo", "Litros Consumidos", "Km Recorridos / Hrs Trabajadas",
+      "Rendimiento Actual", "Referencia", "Diferencia", "Dentro Tolerancia (±20%)",
     ];
 
     const rendRows = rends.map((r) => {
@@ -128,12 +129,12 @@ export async function GET(
   const buf: Buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
   const body = new Uint8Array(buf);
 
-  const filename = `reporte-${periodo.fechaInicio}-${periodo.fechaFin}.xlsx`;
+  const suffix = unidadIdsFilter ? `-filtrado` : "";
+  const filename = `reporte-${periodo.fechaInicio}-${periodo.fechaFin}${suffix}.xlsx`;
 
   return new Response(body, {
     headers: {
-      "Content-Type":
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });

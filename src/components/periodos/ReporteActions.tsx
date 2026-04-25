@@ -4,25 +4,37 @@ import { useState } from "react";
 import { Printer, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function ReporteActions({ periodoId }: { periodoId: number }) {
+export default function ReporteActions({
+  periodoId,
+  unidadIds,
+}: {
+  periodoId: number;
+  unidadIds?: number[];
+}) {
   const [downloading, setDownloading] = useState(false);
 
+  function buildQs() {
+    if (!unidadIds || unidadIds.length === 0) return "";
+    return `?unidades=${unidadIds.join(",")}`;
+  }
+
   function handlePrint() {
-    window.open(`/periodos/${periodoId}/print`, "_blank");
+    window.open(`/periodos/${periodoId}/print${buildQs()}`, "_blank");
   }
 
   async function handleExcel() {
     setDownloading(true);
     try {
-      const res = await fetch(`/api/reportes/${periodoId}/excel`);
+      const res = await fetch(`/api/reportes/${periodoId}/excel${buildQs()}`);
       if (!res.ok) throw new Error("Error al generar");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = res.headers.get("Content-Disposition")
-        ?.split("filename=")[1]
-        ?.replace(/"/g, "") ?? `reporte-${periodoId}.xlsx`;
+      a.download =
+        res.headers.get("Content-Disposition")
+          ?.split("filename=")[1]
+          ?.replace(/"/g, "") ?? `reporte-${periodoId}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
