@@ -39,6 +39,9 @@ export default function ObrasTable({
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
+  // Modal de detalle
+  const [selectedItem, setSelectedItem] = useState<{ id: number; nombre: string } | null>(null);
+
   // Búsqueda / filtro / orden
   const [busqueda,     setBusqueda]     = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState<"todos" | "activo" | "inactivo">("todos");
@@ -238,6 +241,17 @@ export default function ObrasTable({
 
       {deleteError && <p className="text-sm text-red-500 px-1">{deleteError}</p>}
 
+      {/* Modal de detalle */}
+      {selectedItem && (
+        <CatalogoDetalleModal
+          tipo="obra"
+          id={selectedItem.id}
+          nombre={selectedItem.nombre}
+          open={true}
+          onOpenChange={(v) => { if (!v) setSelectedItem(null); }}
+        />
+      )}
+
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
           <TableHeader>
@@ -315,7 +329,11 @@ export default function ObrasTable({
               }
 
               return (
-                <TableRow key={o.id}>
+                <TableRow
+                  key={o.id}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedItem({ id: o.id, nombre: o.nombre })}
+                >
                   <TableCell className="font-medium text-sm">{o.nombre}</TableCell>
                   <TableCell className="text-sm" style={{ color: "var(--fg-muted)" }}>{o.cliente ?? "—"}</TableCell>
                   <TableCell className="text-sm font-mono" style={{ color: "var(--fg-muted)" }}>
@@ -327,7 +345,7 @@ export default function ObrasTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-0.5 justify-end">
+                    <div className="flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
                       {isDeleting ? (
                         <>
                           <span className="text-xs text-red-500 mr-1">¿Eliminar?</span>
@@ -348,7 +366,6 @@ export default function ObrasTable({
                         </>
                       ) : (
                         <>
-                          <CatalogoDetalleModal tipo="obra" id={o.id} nombre={o.nombre} />
                           <button
                             onClick={() => startTransition(() => toggleObraActiva(o.id, !o.activo))}
                             className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"

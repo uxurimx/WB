@@ -9,6 +9,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import ReporteActions from "./ReporteActions";
+import CatalogoDetalleModal from "@/components/catalogo/CatalogoDetalleModal";
 import type { getRendimientosPeriodo } from "@/app/actions/rendimientos";
 
 type Rend = Awaited<ReturnType<typeof getRendimientosPeriodo>>[number];
@@ -54,6 +55,7 @@ export default function AnalisisPeriodoClient({
   const [sortCol, setSortCol]           = useState<SortCol>("codigo");
   const [sortDir, setSortDir]           = useState<"asc" | "desc">("asc");
   const [showFiltros, setShowFiltros]   = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState<{ id: number; nombre: string } | null>(null);
 
   const filtrados: Rend[] = useMemo(() => {
     let r = rends;
@@ -318,7 +320,11 @@ export default function AnalisisPeriodoClient({
                 const unidad_km = tipo === "camion" ? "km/L" : "L/Hr";
 
                 return (
-                  <TableRow key={r.id}>
+                  <TableRow
+                    key={r.id}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedUnit({ id: r.unidadId, nombre: unidad?.codigo ?? `#${r.unidadId}` })}
+                  >
                     <TableCell>
                       <span className="font-mono font-bold text-sm">
                         {unidad?.codigo ?? `#${r.unidadId}`}
@@ -376,6 +382,17 @@ export default function AnalisisPeriodoClient({
           Tolerancia aplicada: ±20% sobre rendimiento de referencia.
           Camiones: km/L · Maquinaria: L/Hr
         </p>
+      )}
+
+      {/* Modal de detalle de unidad */}
+      {selectedUnit && (
+        <CatalogoDetalleModal
+          tipo="unidad"
+          id={selectedUnit.id}
+          nombre={selectedUnit.nombre}
+          open={true}
+          onOpenChange={(v) => { if (!v) setSelectedUnit(null); }}
+        />
       )}
     </>
   );

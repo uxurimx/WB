@@ -64,6 +64,9 @@ export default function UnidadesTable({
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
+  // Modal de detalle
+  const [selectedUnit, setSelectedUnit] = useState<{ id: number; nombre: string } | null>(null);
+
   // Búsqueda / filtro / orden
   const [busqueda,     setBusqueda]     = useState("");
   const [tipoFiltro,   setTipoFiltro]   = useState<string>("todos");
@@ -350,6 +353,17 @@ export default function UnidadesTable({
         <p className="text-sm text-red-500 px-1">{deleteError}</p>
       )}
 
+      {/* Modal de detalle */}
+      {selectedUnit && (
+        <CatalogoDetalleModal
+          tipo="unidad"
+          id={selectedUnit.id}
+          nombre={selectedUnit.nombre}
+          open={true}
+          onOpenChange={(v) => { if (!v) setSelectedUnit(null); }}
+        />
+      )}
+
       {/* Table */}
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
@@ -458,7 +472,11 @@ export default function UnidadesTable({
               }
 
               return (
-                <TableRow key={u.id}>
+                <TableRow
+                  key={u.id}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedUnit({ id: u.id, nombre: u.codigo })}
+                >
                   <TableCell>
                     <span className="font-mono font-bold text-sm">{u.codigo}</span>
                   </TableCell>
@@ -489,7 +507,7 @@ export default function UnidadesTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-0.5 justify-end">
+                    <div className="flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
                       {isDeleting ? (
                         <>
                           <span className="text-xs text-red-500 mr-1">¿Eliminar?</span>
@@ -510,7 +528,6 @@ export default function UnidadesTable({
                         </>
                       ) : (
                         <>
-                          <CatalogoDetalleModal tipo="unidad" id={u.id} nombre={u.codigo} />
                           <button
                             onClick={() => handleToggle(u.id, u.activo)}
                             className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"

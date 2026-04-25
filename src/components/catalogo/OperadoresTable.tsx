@@ -43,6 +43,9 @@ export default function OperadoresTable({
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
 
+  // Modal de detalle
+  const [selectedItem, setSelectedItem] = useState<{ id: number; nombre: string } | null>(null);
+
   // Búsqueda / filtro / orden
   const [busqueda,     setBusqueda]     = useState("");
   const [tipoFiltro,   setTipoFiltro]   = useState<string>("todos");
@@ -259,6 +262,17 @@ export default function OperadoresTable({
 
       {deleteError && <p className="text-sm text-red-500 px-1">{deleteError}</p>}
 
+      {/* Modal de detalle */}
+      {selectedItem && (
+        <CatalogoDetalleModal
+          tipo="operador"
+          id={selectedItem.id}
+          nombre={selectedItem.nombre}
+          open={true}
+          onOpenChange={(v) => { if (!v) setSelectedItem(null); }}
+        />
+      )}
+
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
           <TableHeader>
@@ -339,7 +353,11 @@ export default function OperadoresTable({
               }
 
               return (
-                <TableRow key={o.id}>
+                <TableRow
+                  key={o.id}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedItem({ id: o.id, nombre: o.nombre })}
+                >
                   <TableCell className="font-medium text-sm">{o.nombre}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{TIPO_LABELS[o.tipo] ?? o.tipo}</Badge>
@@ -353,7 +371,7 @@ export default function OperadoresTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-0.5 justify-end">
+                    <div className="flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
                       {isDeleting ? (
                         <>
                           <span className="text-xs text-red-500 mr-1">¿Eliminar?</span>
@@ -374,7 +392,6 @@ export default function OperadoresTable({
                         </>
                       ) : (
                         <>
-                          <CatalogoDetalleModal tipo="operador" id={o.id} nombre={o.nombre} />
                           <button
                             onClick={() => startTransition(() => toggleOperadorActivo(o.id, !o.activo))}
                             className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"

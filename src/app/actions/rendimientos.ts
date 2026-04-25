@@ -150,6 +150,17 @@ export async function getRendimientosPeriodo(periodoId: number) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// HISTORIAL DE RENDIMIENTOS POR UNIDAD
+// ─────────────────────────────────────────────────────────────
+export async function getRendimientosUnidad(unidadId: number) {
+  return db.query.rendimientos.findMany({
+    where: eq(rendimientos.unidadId, unidadId),
+    with: { periodo: true, unidad: { columns: { tipo: true } } },
+    orderBy: (r, { desc }) => [desc(r.createdAt)],
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
 // PERÍODOS CON ESTADÍSTICAS
 // ─────────────────────────────────────────────────────────────
 export async function getPeriodosConStats() {
