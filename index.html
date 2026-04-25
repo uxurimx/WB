@@ -80,8 +80,10 @@ nav.up { box-shadow: 0 2px 24px rgba(13,27,62,.09); }
   height: 66px; display: flex; align-items: center; justify-content: space-between;
 }
 .logo {
-  display: flex; align-items: baseline; gap: 8px; text-decoration: none;
+  display: flex; align-items: center; gap: 8px; text-decoration: none;
 }
+.logo img { height: 36px; width: auto; display: block; }
+.fbrand img { height: 44px; width: auto; display: block; margin-bottom: .8rem; }
 .logo-mark {
   font-family: var(--fh); font-size: 2rem; font-weight: 900;
   letter-spacing: -.02em; color: var(--navy); line-height: 1;
@@ -470,6 +472,8 @@ footer { background: var(--navy); border-top: 2px solid var(--red); }
   .hero-logo-badge { display: none; }
 }
 @media (max-width: 700px) {
+  .logo img { height: 28px; }
+  .fbrand img { height: 36px; }
   .nlinks { display: none; flex-direction: column; gap: 0;
     position: fixed; top: 66px; inset-inline: 0;
     background: var(--white); border-bottom: 1px solid var(--bdr); padding: .5rem 5%; }
@@ -522,11 +526,11 @@ footer { background: var(--navy); border-top: 2px solid var(--red); }
   <div class="hline" aria-hidden="true"></div>
 
   <!-- Logo WB flotante esquina derecha -->
-  <div class="hero-logo-badge" aria-hidden="true">
+  <!-- <div class="hero-logo-badge" aria-hidden="true">
     <span class="hlb-mark"><span class="lw">W</span>B</span>
     <span class="hlb-tag">Construcción</span>
     <div class="hlb-line"></div>
-  </div>
+  </div> -->
 
   <div class="hc">
 
@@ -830,7 +834,8 @@ footer { background: var(--navy); border-top: 2px solid var(--red); }
   <div class="fmain">
 
     <div class="fbrand">
-      <a href="#hero" class="flogo"><em>W</em>B Construcción</a>
+      <!-- <a href="#hero" class="flogo"><em>W</em>B Construcción</a> -->
+      <img src="/logo.png" alt="">
       <p class="fdesc">
         Empresa especializada en <strong style="color:rgba(255,255,255,.55); font-weight:500;">construcción comercial</strong> y
         <strong style="color:rgba(255,255,255,.55); font-weight:500;">renta de maquinaria pesada</strong> en
