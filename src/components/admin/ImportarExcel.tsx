@@ -45,6 +45,19 @@ function parseOrigen(val: unknown): "patio" | "campo" {
   return "patio";
 }
 
+function parseHora(val: unknown): string | undefined {
+  if (val === null || val === undefined || val === "") return undefined;
+  // Excel stores time as fraction of a day: 0.372 ≈ 08:55
+  if (typeof val === "number" && val >= 0 && val < 1) {
+    const totalMinutes = Math.round(val * 24 * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+  const s = String(val).slice(0, 5);
+  return /^\d{1,2}:\d{2}$/.test(s) ? s : undefined;
+}
+
 function parseTipoDiesel(val: unknown): string {
   const s = String(val ?? "").toLowerCase();
   if (s.includes("amigo") || s.includes("verde")) return "amigo";
@@ -200,7 +213,7 @@ export default function ImportarExcel() {
 
       rows.push({
         fecha,
-        hora: colMap.hora !== -1 ? (String(row[colMap.hora] ?? "").slice(0, 5) || undefined) : undefined,
+        hora: colMap.hora !== -1 ? parseHora(row[colMap.hora]) : undefined,
         folio: colMap.folio !== -1 ? parseNum(row[colMap.folio]) : undefined,
         unidadCodigo,
         operadorNombre: colMap.operador !== -1 ? (String(row[colMap.operador] ?? "").trim() || undefined) : undefined,

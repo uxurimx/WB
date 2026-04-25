@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WB Diesel Control — Manual de Entrega</title>
+<style>
+:root {
+  --brand: #f59e0b;
+  --brand-dark: #d97706;
+  --brand-light: #fef3c7;
+  --accent: #1d4ed8;
+  --accent-light: #dbeafe;
+  --dark: #0f172a;
+  --dark2: #1e293b;
+  --dark3: #334155;
+  --mid: #64748b;
+  --light: #f1f5f9;
+  --lighter: #f8fafc;
+  --white: #ffffff;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warn: #f59e0b;
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.14);
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font);color:var(--dark);background:var(--lighter);line-height:1.7}
+
+/* ── NAV ── */
+.sidenav{position:fixed;top:0;left:0;width:260px;height:100vh;background:var(--dark);overflow-y:auto;z-index:100;padding:0 0 2rem}
+.sidenav-logo{padding:1.5rem 1.25rem 1rem;border-bottom:1px solid var(--dark3);margin-bottom:.5rem}
+.sidenav-logo .brand{font-size:.85rem;font-weight:700;color:var(--brand);letter-spacing:.12em;text-transform:uppercase}
+.sidenav-logo .proj{font-size:1.1rem;font-weight:700;color:var(--white);margin-top:.15rem}
+.sidenav-logo .tag{font-size:.75rem;color:var(--mid);margin-top:.1rem}
+.nav-section{padding:.5rem 1.25rem .25rem;font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mid)}
+.sidenav a{display:flex;align-items:center;gap:.6rem;padding:.55rem 1.25rem;color:#94a3b8;text-decoration:none;font-size:.85rem;transition:all .15s;border-left:3px solid transparent}
+.sidenav a:hover{color:var(--white);background:var(--dark2);border-left-color:var(--brand)}
+.sidenav a.active{color:var(--brand);background:rgba(245,158,11,.08);border-left-color:var(--brand)}
+.sidenav a .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ── LAYOUT ── */
+.page-wrap{margin-left:260px;min-height:100vh}
+
+/* ── COVER ── */
+.cover{background:linear-gradient(135deg,var(--dark) 0%,var(--dark2) 60%,#1a2744 100%);min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:4rem 5rem;position:relative;overflow:hidden}
+.cover::before{content:'';position:absolute;top:-80px;right:-80px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.18) 0%,transparent 70%)}
+.cover::after{content:'';position:absolute;bottom:-60px;left:20%;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(29,78,216,.15) 0%,transparent 70%)}
+.cover-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:var(--brand);font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .85rem;border-radius:999px;margin-bottom:2rem}
+.cover h1{font-size:3.2rem;font-weight:800;color:var(--white);line-height:1.15;margin-bottom:.75rem;position:relative;z-index:1}
+.cover h1 span{color:var(--brand)}
+.cover-sub{font-size:1.15rem;color:#94a3b8;margin-bottom:3rem;position:relative;z-index:1}
+.cover-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;position:relative;z-index:1;margin-bottom:3rem}
+.cover-meta-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:1.25rem 1.5rem}
+.cover-meta-card .label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mid);margin-bottom:.35rem}
+.cover-meta-card .value{font-size:1rem;font-weight:600;color:var(--white)}
+.cover-meta-card .value a{color:var(--brand);text-decoration:none}
+.cover-footer{display:flex;align-items:center;justify-content:space-between;padding-top:2rem;border-top:1px solid rgba(255,255,255,.08);position:relative;z-index:1}
+.cover-footer .poxelbit{font-size:.9rem;font-weight:700;color:var(--brand);letter-spacing:.05em}
+.cover-footer .version{font-size:.8rem;color:var(--mid)}
+.cover-status{display:inline-flex;align-items:center;gap:.4rem;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#4ade80;font-size:.78rem;font-weight:700;padding:.3rem .75rem;border-radius:999px;margin-top:1rem}
+.cover-status .dot-pulse{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 1.4s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── SECTIONS ── */
+.section{padding:4rem 5rem;border-bottom:1px solid var(--light)}
+.section:last-child{border-bottom:none}
+.section-header{margin-bottom:2.5rem}
+.section-tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-dark);background:var(--brand-light);padding:.2rem .65rem;border-radius:4px;margin-bottom:.6rem}
+.section h2{font-size:2rem;font-weight:800;color:var(--dark);line-height:1.2}
+.section-desc{font-size:1rem;color:var(--mid);margin-top:.5rem;max-width:600px}
+
+/* ── GRID CARDS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+
+.card{background:var(--white);border:1px solid #e2e8f0;border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow)}
+.card-accent{border-left:4px solid var(--brand)}
+.card-blue{border-left:4px solid var(--accent)}
+.card-green{border-left:4px solid var(--success)}
+.card-red{border-left:4px solid var(--danger)}
+.card h3{font-size:1rem;font-weight:700;color:var(--dark);margin-bottom:.5rem}
+.card p{font-size:.9rem;color:var(--mid)}
+.card .card-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;margin-bottom:1rem}
+.card .card-icon.yellow{background:var(--brand-light)}
+.card .card-icon.blue{background:var(--accent-light)}
+.card .card-icon.green{background:#dcfce7}
+
+/* ── ROLE CARDS ── */
+.role-card{background:var(--white);border:1px solid #e2e8f0;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.role-card-header{padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem}
+.role-avatar{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.role-card-header h3{font-size:1.05rem;font-weight:700;color:var(--white);margin:0}
+.role-card-header p{font-size:.8rem;color:rgba(255,255,255,.65);margin:0}
+.role-card-body{padding:1.25rem 1.5rem}
+.perm-list{list-style:none}
+.perm-list li{display:flex;align-items:center;gap:.5rem;font-size:.875rem;padding:.3rem 0;color:var(--dark3)}
+.perm-list li::before{content:'✓';color:var(--success);font-weight:700;flex-shrink:0}
+.perm-none::before{content:'✗' !important;color:var(--danger) !important}
+
+/* role colors */
+.role-admin .role-card-header{background:linear-gradient(135deg,#1d4ed8,#2563eb)}
+.role-gerente .role-card-header{background:linear-gradient(135deg,#7c3aed,#8b5cf6)}
+.role-despachador .role-card-header{background:linear-gradient(135deg,#d97706,#f59e0b)}
+.role-nissan .role-card-header{background:linear-gradient(135deg,#0f766e,#14b8a6)}
+.role-obra .role-card-header{background:linear-gradient(135deg,#c2410c,#ea580c)}
+.role-chofer .role-card-header{background:linear-gradient(135deg,#475569,#64748b)}
+
+/* ── FLOW ── */
+.flow-steps{display:flex;gap:0;flex-wrap:wrap}
+.flow-step{flex:1;min-width:180px;position:relative;padding:1.5rem;background:var(--white);border:1px solid #e2e8f0;margin-right:-1px}
+.flow-step:first-child{border-radius:var(--radius) 0 0 var(--radius)}
+.flow-step:last-child{border-radius:0 var(--radius) var(--radius) 0;margin-right:0}
+.flow-num{width:32px;height:32px;border-radius:50%;background:var(--brand);color:var(--white);font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:.75rem}
+.flow-step h4{font-size:.9rem;font-weight:700;color:var(--dark);margin-bottom:.35rem}
+.flow-step p{font-size:.8rem;color:var(--mid)}
+.flow-arrow{position:absolute;right:-12px;top:50%;transform:translateY(-50%);width:24px;height:24px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--white);font-size:.7rem;z-index:2}
+.flow-step:last-child .flow-arrow{display:none}
+
+/* ── INFO BOX ── */
+.info-box{background:var(--accent-light);border:1px solid #93c5fd;border-radius:var(--radius);padding:1.25rem 1.5rem;display:flex;gap:.75rem;align-items:flex-start;margin:1.5rem 0}
+.info-box.warn{background:#fffbeb;border-color:#fcd34d}
+.info-box.success{background:#f0fdf4;border-color:#86efac}
+.info-box.danger{background:#fff1f2;border-color:#fca5a5}
+.info-icon{font-size:1.1rem;flex-shrink:0;margin-top:.1rem}
+.info-box p{font-size:.875rem;color:var(--dark3);line-height:1.6}
+.info-box strong{color:var(--dark)}
+
+/* ── TABLE ── */
+.data-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.data-table th{background:var(--dark);color:var(--white);padding:.75rem 1rem;text-align:left;font-weight:600;font-size:.8rem;letter-spacing:.04em;text-transform:uppercase}
+.data-table td{padding:.75rem 1rem;border-bottom:1px solid #e2e8f0;color:var(--dark3)}
+.data-table tr:hover td{background:var(--lighter)}
+.data-table .badge{display:inline-block;font-size:.7rem;font-weight:700;padding:.15rem .55rem;border-radius:999px}
+.badge-yellow{background:var(--brand-light);color:var(--brand-dark)}
+.badge-blue{background:var(--accent-light);color:var(--accent)}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-gray{background:#f1f5f9;color:var(--mid)}
+.badge-red{background:#fee2e2;color:#b91c1c}
+.badge-purple{background:#f3e8ff;color:#7c3aed}
+
+/* ── CREDENTIALS ── */
+.cred-box{background:var(--dark);border-radius:var(--radius);padding:1.5rem;font-family:var(--font-mono);font-size:.85rem;line-height:2}
+.cred-line{display:flex;align-items:center;gap:1rem;padding:.35rem 0;border-bottom:1px solid var(--dark3)}
+.cred-line:last-child{border-bottom:none}
+.cred-key{color:#94a3b8;min-width:220px;flex-shrink:0;font-size:.8rem}
+.cred-val{color:#fbbf24;word-break:break-all}
+.cred-empty{color:#475569;font-style:italic}
+.cred-section-title{font-family:var(--font);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mid);margin:1.25rem 0 .5rem;padding-top:1rem;border-top:1px solid var(--dark3)}
+.cred-section-title:first-child{margin-top:0;padding-top:0;border-top:none}
+
+/* ── FAQ ── */
+.faq-item{border:1px solid #e2e8f0;border-radius:var(--radius);margin-bottom:.75rem;overflow:hidden;background:var(--white)}
+.faq-q{padding:1.1rem 1.5rem;font-weight:600;font-size:.95rem;color:var(--dark);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-q::after{content:'﹢';font-size:1.2rem;color:var(--brand);font-weight:700}
+.faq-a{padding:0 1.5rem 1.1rem;font-size:.875rem;color:var(--mid);line-height:1.7}
+
+/* ── ACCEPTANCE ── */
+.acceptance{background:var(--white);border:2px solid var(--brand);border-radius:var(--radius);padding:3rem;text-align:center}
+.acceptance h2{font-size:1.75rem;font-weight:800;color:var(--dark);margin-bottom:.5rem}
+.acceptance p{color:var(--mid);margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto}
+.sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-top:2rem;text-align:left}
+.sig-box{border-top:2px solid var(--dark3);padding-top:1rem}
+.sig-box .sig-name{font-weight:700;font-size:.95rem;color:var(--dark)}
+.sig-box .sig-role{font-size:.8rem;color:var(--mid)}
+.sig-box .sig-date{font-size:.8rem;color:var(--mid);margin-top:.25rem}
+.sig-line{height:60px;border-bottom:1px dashed #cbd5e1;margin-bottom:.75rem}
+
+/* ── DB TABLE ── */
+.db-table-wrap{overflow-x:auto;margin:1.5rem 0}
+.db-pill{display:inline-block;background:var(--brand-light);color:var(--brand-dark);font-size:.7rem;font-weight:700;padding:.1rem .45rem;border-radius:4px;font-family:var(--font-mono)}
+.db-pill.pk{background:#dbeafe;color:#1d4ed8}
+.db-pill.fk{background:#f3e8ff;color:#7c3aed}
+
+/* ── MISC ── */
+.divider{height:1px;background:var(--light);margin:2rem 0}
+.label-small{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mid)}
+.url-pill{display:inline-flex;align-items:center;gap:.4rem;background:var(--dark);color:var(--brand);font-family:var(--font-mono);font-size:.82rem;padding:.3rem .85rem;border-radius:6px;text-decoration:none;word-break:break-all}
+.url-pill:hover{background:var(--dark2)}
+.tag-list{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}
+.tech-tag{background:var(--lighter);border:1px solid #e2e8f0;font-size:.78rem;font-weight:600;padding:.25rem .7rem;border-radius:999px;color:var(--dark3)}
+.number-big{font-size:2.5rem;font-weight:800;color:var(--brand);line-height:1}
+.number-label{font-size:.78rem;color:var(--mid);margin-top:.2rem}
+.alert-rule{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:var(--lighter);border-radius:8px;margin-bottom:.5rem;font-size:.875rem}
+.alert-rule .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-red{background:var(--danger)}
+.dot-yellow{background:var(--warn)}
+.dot-green{background:var(--success)}
+
+/* ── PRINT ── */
+@media print{
+  .sidenav{display:none}
+  .page-wrap{margin-left:0}
+  .cover{min-height:auto;padding:3rem;page-break-after:always}
+  .section{padding:2.5rem 3rem;page-break-inside:avoid}
+  .flow-steps{flex-direction:column}
+  .flow-step{border-radius:var(--radius);margin:0 0 .5rem;margin-right:0}
+  .flow-arrow{display:none}
+  body{font-size:14px}
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .sidenav{display:none}
+  .page-wrap{margin-left:0}
+  .cover{padding:2rem}
+  .cover-meta{grid-template-columns:1fr}
+  .section{padding:2.5rem 1.5rem}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .sig-grid{grid-template-columns:1fr}
+  .cover h1{font-size:2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDENAV ═══ -->
+<nav class="sidenav">
+  <div class="sidenav-logo">
+    <div class="brand">PoxelBit · Entrega</div>
+    <div class="proj">WB Diesel Control</div>
+    <div class="tag">Manual completo del sistema</div>
+  </div>
+
+  <div class="nav-section">Inicio</div>
+  <a href="#cover"><span class="dot"></span>Portada</a>
+  <a href="#ficha"><span class="dot"></span>Ficha del proyecto</a>
+  <a href="#datos-sistema"><span class="dot"></span>Datos del sistema</a>
+
+  <div class="nav-section">Acceso</div>
+  <a href="#acceso"><span class="dot"></span>Cómo ingresar</a>
+  <a href="#perfiles"><span class="dot"></span>Perfiles y roles</a>
+
+  <div class="nav-section">Manual de uso</div>
+  <a href="#dashboard"><span class="dot"></span>Dashboard</a>
+  <a href="#cargas"><span class="dot"></span>Registro de cargas</a>
+  <a href="#catalogos"><span class="dot"></span>Catálogos</a>
+  <a href="#tanques"><span class="dot"></span>Tanques e inventario</a>
+  <a href="#periodos"><span class="dot"></span>Períodos y reportes</a>
+  <a href="#admin"><span class="dot"></span>Administración</a>
+
+  <div class="nav-section">Flujos</div>
+  <a href="#flujo-patio"><span class="dot"></span>Carga de patio</a>
+  <a href="#flujo-campo"><span class="dot"></span>Carga de campo</a>
+  <a href="#flujo-recarga"><span class="dot"></span>Recarga de tanque</a>
+  <a href="#flujo-cierre"><span class="dot"></span>Cierre de período</a>
+
+  <div class="nav-section">Soporte</div>
+  <a href="#alertas"><span class="dot"></span>Alertas del sistema</a>
+  <a href="#faq"><span class="dot"></span>Preguntas frecuentes</a>
+  <a href="#garantia"><span class="dot"></span>Garantía y soporte</a>
+  <a href="#aceptacion"><span class="dot"></span>Acta de aceptación</a>
+</nav>
+
+<div class="page-wrap">
+
+<!-- ═══ COVER ═══ -->
+<section class="cover" id="cover">
+  <div class="cover-badge">📄 Documento de entrega oficial</div>
+  <h1>WB <span>Diesel</span><br>Control</h1>
+  <p class="cover-sub">Manual completo del sistema · Acta de entrega-recepción<br>WB Construcción · Ing. Alberto Niebla</p>
+
+  <div class="cover-meta">
+    <div class="cover-meta-card">
+      <div class="label">Sistema</div>
+      <div class="value">WB Diesel Control v1.0</div>
+    </div>
+    <div class="cover-meta-card">
+      <div class="label">URL de acceso</div>
+      <div class="value"><a href="https://wbcontruccion.mx" target="_blank">wbcontruccion.mx</a></div>
+    </div>
+    <div class="cover-meta-card">
+      <div class="label">Panel administrativo</div>
+      <div class="value"><a href="https://wbcontruccion.mx/admin" target="_blank">wbcontruccion.mx/admin</a></div>
+    </div>
+    <div class="cover-meta-card">
+      <div class="label">Cliente</div>
+      <div class="value">WB Construcción</div>
+    </div>
+    <div class="cover-meta-card">
+      <div class="label">Fecha de entrega</div>
+      <div class="value">Abril 2026</div>
+    </div>
+    <div class="cover-meta-card">
+      <div class="label">Desarrollado por</div>
+      <div class="value">PoxelBit · Soluciones Digitales IA</div>
+    </div>
+  </div>
+
+  <div class="cover-status">
+    <div class="dot-pulse"></div>
+    Sistema activo y en producción
+  </div>
+
+  <div class="cover-footer">
+    <div>
+      <div class="poxelbit">PoxelBit · Soluciones Digitales IA</div>
+    </div>
+    <div class="version">v1.0.0 · Abril 2026</div>
+  </div>
+</section>
+
+<!-- ═══ FICHA ═══ -->
+<section class="section" id="ficha">
+  <div class="section-header">
+    <div class="section-tag">01 · Proyecto</div>
+    <h2>Ficha técnica del sistema</h2>
+    <p class="section-desc">Resumen ejecutivo de lo que se construyó, el alcance entregado y la tecnología utilizada.</p>
+  </div>
+
+  <div class="grid-4" style="margin-bottom:2.5rem">
+    <div class="card" style="text-align:center">
+      <div class="number-big">15</div>
+      <div class="number-label">Tablas en base de datos</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="number-big">6</div>
+      <div class="number-label">Perfiles de usuario</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="number-big">30+</div>
+      <div class="number-label">Rutas y pantallas</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="number-big">100%</div>
+      <div class="number-label">Tiempo real (Pusher)</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:2rem">
+    <div class="card card-accent">
+      <h3>¿Qué es WB Diesel Control?</h3>
+      <p style="margin-top:.75rem">Sistema web profesional para el control total del consumo de combustible diesel en unidades y maquinaria de construcción. Permite registrar cada suministro, monitorear inventarios en tiempo real, calcular rendimientos por unidad y generar reportes por período de trabajo.</p>
+    </div>
+    <div class="card card-blue">
+      <h3>Problema que resuelve</h3>
+      <p style="margin-top:.75rem">Elimina el registro manual en hojas de papel o Excel sin control. Centraliza toda la información de suministros, identifica consumos anómalos automáticamente, y da trazabilidad completa de quién suministró, quién recibió, cuándo y cuántos litros en cada operación.</p>
+    </div>
+  </div>
+
+  <div class="label-small" style="margin-bottom:1rem">Stack tecnológico utilizado</div>
+  <div class="tag-list">
+    <span class="tech-tag">Next.js 16</span>
+    <span class="tech-tag">React 19</span>
+    <span class="tech-tag">TypeScript</span>
+    <span class="tech-tag">Tailwind CSS 4</span>
+    <span class="tech-tag">PostgreSQL</span>
+    <span class="tech-tag">Drizzle ORM</span>
+    <span class="tech-tag">Clerk Auth</span>
+    <span class="tech-tag">Sockets</span>
+    <span class="tech-tag">Excel / xlsx</span>
+    <span class="tech-tag">Proton</span>
+    <span class="tech-tag">PWA (funciona offline)</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="label-small" style="margin-bottom:1.25rem">Módulos entregados</div>
+  <div class="grid-3">
+    <div class="card"><div class="card-icon yellow">🖥️</div><h3>Dashboard ejecutivo</h3><p>Stock en tiempo real, KPIs, alertas y feed de cargas recientes.</p></div>
+    <div class="card"><div class="card-icon yellow">⛽</div><h3>Registro de cargas</h3><p>Suministro en patio (Taller) y campo (NISSAN) con validaciones automáticas.</p></div>
+    <div class="card"><div class="card-icon yellow">📦</div><h3>Control de tanques</h3><p>Inventario Taller y NISSAN, recargas de pipa, transferencias entre tanques.</p></div>
+    <div class="card"><div class="card-icon blue">📋</div><h3>Catálogos</h3><p>Unidades, operadores y obras con habilitación/deshabilitación sin perder historial.</p></div>
+    <div class="card"><div class="card-icon blue">📊</div><h3>Períodos y rendimientos</h3><p>Semanas sábado-viernes, cierre automático, cálculo de rendimiento km/L y L/Hr.</p></div>
+    <div class="card"><div class="card-icon blue">📥</div><h3>Reportes Excel Y PDF</h3><p>Exportación por período con hojas de resumen, cargas y rendimientos.</p></div>
+    <div class="card"><div class="card-icon yellow">👥</div><h3>Gestión de usuarios</h3><p>Roles configurables, permisos granulares por perfil.</p></div>
+    <div class="card"><div class="card-icon yellow">🔔</div><h3>Alertas proactivas</h3><p>Notificaciones automáticas por stock bajo y rendimientos fuera de tolerancia.</p></div>
+    <div class="card"><div class="card-icon green">📤</div><h3>Importación Excel</h3><p>Migración de datos históricos desde Excel con deduplicación automática.</p></div>
+  </div>
+</section>
+
+<!-- ═══ DATOS DEL SISTEMA ═══ -->
+<section class="section" id="datos-sistema" style="background:var(--dark);color:var(--white)">
+  <div class="section-header">
+    <div class="section-tag" style="background:rgba(245,158,11,.2);color:var(--brand)">02 · Transparencia</div>
+    <h2 style="color:var(--white)">Sus datos del sistema</h2>
+    <p class="section-desc" style="color:#94a3b8">Como cliente de PoxelBit, usted tiene derecho y acceso completo a toda la información técnica de su sistema. Esta sección es su pasaporte digital — guárdela de forma segura.</p>
+  </div>
+
+  <div class="info-box warn" style="background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.3)">
+    <span class="info-icon">🔐</span>
+    <p style="color:#fcd34d"><strong style="color:var(--brand)">Información confidencial.</strong> Este documento contiene credenciales y datos técnicos de su sistema. Compártalo únicamente con personas de confianza o con su nuevo desarrollador en caso de transición.</p>
+  </div>
+
+  <div style="margin-top:2rem">
+    <div class="label-small" style="color:var(--mid);margin-bottom:1rem">Acceso y dominio</div>
+    <div class="cred-box">
+      <div class="cred-section-title">🌐 URLs del sistema</div>
+      <div class="cred-line"><span class="cred-key">Sistema principal</span><span class="cred-val">https://wbcontruccion.mx</span></div>
+      <div class="cred-line"><span class="cred-key">Panel administrador</span><span class="cred-val">https://wbcontruccion.mx/admin</span></div>
+      <div class="cred-line"><span class="cred-key">Inicio de sesión</span><span class="cred-val">https://wbcontruccion.mx/sign-in</span></div>
+
+      <div class="cred-section-title">☁️ Hosting — Proton</div>
+      <div class="cred-line"><span class="cred-key">Plataforma</span><span class="cred-val">AWS (17.3)</span></div>
+      <div class="cred-line"><span class="cred-key">Cuenta email</span><span class="cred-empty">[ entregar a cliente ]</span></div>
+      <div class="cred-line"><span class="cred-key">Proyecto en Dev</span><span class="cred-val">wb-diesel-control</span></div>
+      <div class="cred-line"><span class="cred-key">URL de deploy</span><span class="cred-empty">[ ver dashboard ]</span></div>
+
+      <div class="cred-section-title">🗄️ Base de datos</div>
+      <div class="cred-line"><span class="cred-key">Plataforma</span><span class="cred-val">Postgres 17.3</span></div>
+      <div class="cred-line"><span class="cred-key">Cuenta email</span><span class="cred-empty">[ entregar a cliente ]</span></div>
+      <div class="cred-line"><span class="cred-key">Proyecto / Base</span><span class="cred-empty">[ wb-diesel o similar ]</span></div>
+      <div class="cred-line"><span class="cred-key">DATABASE_URL</span><span class="cred-empty">[ variable de entorno ]</span></div>
+      <div class="cred-line"><span class="cred-key">Respaldo</span><span class="cred-val">Automático · diario</span></div>
+
+      <div class="cred-section-title">🔑 Autenticación</div>
+      <div class="cred-line"><span class="cred-key">Plataforma</span><span class="cred-val">Clerk (clerk.com)</span></div>
+      <div class="cred-line"><span class="cred-key">Cuenta email</span><span class="cred-empty">[ entregar a cliente ]</span></div>
+      <div class="cred-line"><span class="cred-key">Publishable Key</span><span class="cred-empty">[ pk_live_... ver env ]</span></div>
+      <div class="cred-line"><span class="cred-key">Dashboard usuarios</span><span class="cred-val">dashboard.clerk.com</span></div>
+
+      <div class="cred-section-title">⚡ Tiempo real</div>
+      <div class="cred-line"><span class="cred-key">Plataforma</span><span class="cred-val">Socket.io</span></div>
+      <div class="cred-line"><span class="cred-key">App ID</span><span class="cred-empty">[ ver variables ]</span></div>
+      <div class="cred-line"><span class="cred-key">Cluster</span><span class="cred-empty">[ us2 o mt1 — ver env ]</span></div>
+
+      <div class="cred-section-title">📁 Archivos</div>
+      <div class="cred-line"><span class="cred-key">Plataforma</span><span class="cred-val">S2</span></div>
+      <div class="cred-line"><span class="cred-key">Token</span><span class="cred-empty">[ S2_TOKEN ]</span></div>
+
+      <div class="cred-section-title">💻 Código fuente</div>
+      <div class="cred-line"><span class="cred-key">Repositorio</span><span class="cred-empty">[ GitHub / entregado en USB ]</span></div>
+      <div class="cred-line"><span class="cred-key">Branch principal</span><span class="cred-val">main</span></div>
+    </div>
+  </div>
+
+  <div class="info-box success" style="margin-top:1.5rem;background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25)">
+    <span class="info-icon">✅</span>
+    <p style="color:#4ade80"><strong style="color:#86efac">Política de propiedad PoxelBit:</strong> Usted es dueño 100% del sistema entregado. Esto incluye el código fuente, la base de datos, el dominio (si fue adquirido por usted), y todas las cuentas de servicios asociadas.</p>
+  </div>
+
+  <div style="margin-top:2.5rem">
+    <div class="label-small" style="color:var(--mid);margin-bottom:1.25rem">Tablas en su base de datos</div>
+    <div class="db-table-wrap">
+      <table class="data-table" style="background:var(--dark2)">
+        <thead><tr><th>Tabla</th><th>Contenido</th><th>Registros clave</th></tr></thead>
+        <tbody>
+          <tr><td><span class="db-pill pk">users</span></td><td style="color:#94a3b8">Usuarios del sistema (sincronizados con Clerk)</td><td style="color:#64748b">id, email, nombre, rol</td></tr>
+          <tr><td><span class="db-pill">operadores</span></td><td style="color:#94a3b8">Conductores y maquinistas del catálogo</td><td style="color:#64748b">nombre, tipo, teléfono</td></tr>
+          <tr><td><span class="db-pill">unidades</span></td><td style="color:#94a3b8">Camiones, máquinas y vehículos</td><td style="color:#64748b">código, tipo, capacidad, odómetro</td></tr>
+          <tr><td><span class="db-pill">obras</span></td><td style="color:#94a3b8">Proyectos y obras activas</td><td style="color:#64748b">nombre, cliente, fechas</td></tr>
+          <tr><td><span class="db-pill">tanques</span></td><td style="color:#94a3b8">Tanques de diesel (Taller y NISSAN)</td><td style="color:#64748b">litrosActuales, cuentalitros, capacidadMax</td></tr>
+          <tr><td><span class="db-pill pk">cargas</span></td><td style="color:#94a3b8">Registro principal — cada suministro de diesel</td><td style="color:#64748b">folio, litros, odómetro, obra, unidad, operador</td></tr>
+          <tr><td><span class="db-pill">recargasTanque</span></td><td style="color:#94a3b8">Entradas de combustible (recargas de pipa)</td><td style="color:#64748b">litros, proveedor, precio/L, factura</td></tr>
+          <tr><td><span class="db-pill">transferenciasTanque</span></td><td style="color:#94a3b8">Movimientos entre tanques</td><td style="color:#64748b">origen, destino, litros, folio</td></tr>
+          <tr><td><span class="db-pill">periodos</span></td><td style="color:#94a3b8">Semanas de trabajo (sáb → vie)</td><td style="color:#64748b">nombre, fechas, estado (abierto/cerrado)</td></tr>
+          <tr><td><span class="db-pill">rendimientos</span></td><td style="color:#94a3b8">Rendimiento calculado al cerrar período</td><td style="color:#64748b">km/L, L/Hr, tolerancia, diferencia</td></tr>
+          <tr><td><span class="db-pill">roles</span></td><td style="color:#94a3b8">Configuración de permisos por perfil</td><td style="color:#64748b">permisos JSON por rol</td></tr>
+          <tr><td><span class="db-pill">archivos</span></td><td style="color:#94a3b8">Fotos y documentos subidos al sistema</td><td style="color:#64748b">URL, tipo, carga asociada</td></tr>
+          <tr><td><span class="db-pill">auditLog</span></td><td style="color:#94a3b8">Bitácora de todas las acciones del sistema</td><td style="color:#64748b">usuario, acción, entidad, cambios</td></tr>
+          <tr><td><span class="db-pill">fuentesDiesel</span></td><td style="color:#94a3b8">Fuentes de suministro configuradas</td><td style="color:#64748b">nombre, tipo (taller/nissan/externo)</td></tr>
+          <tr><td><span class="db-pill">configuracion</span></td><td style="color:#94a3b8">Parámetros globales del sistema</td><td style="color:#64748b">clave, valor</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ACCESO ═══ -->
+<section class="section" id="acceso">
+  <div class="section-header">
+    <div class="section-tag">03 · Acceso</div>
+    <h2>Cómo ingresar al sistema</h2>
+    <p class="section-desc">Desde cualquier dispositivo con internet — computadora, tablet o celular.</p>
+  </div>
+
+  <div class="flow-steps" style="margin-bottom:2rem">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <h4>Abrir el navegador</h4>
+      <p>Chrome, Safari, Edge o Firefox. El sistema funciona en todos.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <h4>Ir a la URL</h4>
+      <p>Escribe <strong>wbcontruccion.mx/admin</strong> en la barra de dirección.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <h4>Iniciar sesión</h4>
+      <p>Ingresa tu correo y contraseña. Si es primera vez, usa el enlace de invitación.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <h4>Listo</h4>
+      <p>Verás el dashboard con el stock en tiempo real y las opciones de tu perfil.</p>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <span class="info-icon">📱</span>
+    <p><strong>PWA — Instala como app.</strong> En celular, abre el sistema en Chrome o Safari, toca el menú del navegador y selecciona "Agregar a pantalla de inicio". Funcionará como una aplicación nativa, incluso con funciones básicas sin internet.</p>
+  </div>
+
+  <!-- <div class="info-box warn">
+    <span class="info-icon">🔒</span>
+    <p><strong>Primer acceso de un usuario nuevo:</strong> El administrador debe enviar una invitación desde <strong>Administración → Invitaciones</strong>. El nuevo usuario recibirá un correo con un enlace para crear su cuenta. No es posible registrarse sin invitación.</p>
+  </div> -->
+
+  <div class="divider"></div>
+
+  <div class="label-small" style="margin-bottom:1.25rem">Rutas principales del sistema</div>
+  <table class="data-table">
+    <thead><tr><th>Ruta</th><th>Pantalla</th><th>Acceso</th></tr></thead>
+    <tbody>
+      <tr><td><span class="url-pill">/overview</span></td><td>Dashboard principal</td><td><span class="badge badge-yellow">Admin, Gerente</span></td></tr>
+      <tr><td><span class="url-pill">/cargas/nueva</span></td><td>Nueva carga de patio</td><td><span class="badge badge-blue">Admin, Gerente, Despachador</span></td></tr>
+      <tr><td><span class="url-pill">/cargas/campo</span></td><td>Nueva carga de campo (NISSAN)</td><td><span class="badge badge-green">Admin, Gerente, Op. NISSAN</span></td></tr>
+      <tr><td><span class="url-pill">/cargas</span></td><td>Historial de cargas</td><td><span class="badge badge-gray">Todos los perfiles</span></td></tr>
+      <tr><td><span class="url-pill">/catalogo/unidades</span></td><td>Gestión de unidades</td><td><span class="badge badge-yellow">Admin, Gerente</span></td></tr>
+      <tr><td><span class="url-pill">/catalogo/operadores</span></td><td>Gestión de operadores</td><td><span class="badge badge-yellow">Admin, Gerente</span></td></tr>
+      <tr><td><span class="url-pill">/catalogo/obras</span></td><td>Gestión de obras</td><td><span class="badge badge-yellow">Admin, Gerente</span></td></tr>
+      <tr><td><span class="url-pill">/periodos</span></td><td>Períodos y rendimientos</td><td><span class="badge badge-yellow">Admin, Gerente</span></td></tr>
+      <tr><td><span class="url-pill">/admin</span></td><td>Panel de administración</td><td><span class="badge badge-red">Solo Administrador</span></td></tr>
+      <tr><td><span class="url-pill">/settings</span></td><td>Configuración</td><td><span class="badge badge-yellow">Admin, Gerente</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ PERFILES ═══ -->
+<section class="section" id="perfiles">
+  <div class="section-header">
+    <div class="section-tag">04 · Perfiles</div>
+    <h2>Roles y permisos de usuario</h2>
+    <p class="section-desc">El sistema cuenta con 6 perfiles distintos. Cada usuario tiene acceso únicamente a las funciones que corresponden a su rol.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:2rem">
+
+    <div class="role-card role-admin">
+      <div class="role-card-header">
+        <div class="role-avatar" style="background:rgba(255,255,255,.15);font-size:1.3rem">🛡️</div>
+        <div><h3>Administrador</h3><p>Control total del sistema</p></div>
+      </div>
+      <div class="role-card-body">
+        <ul class="perm-list">
+          <li>Dashboard ejecutivo completo</li>
+          <li>Nueva carga patio y campo</li>
+          <li>Historial completo y edición</li>
+          <li>Catálogos (unidades, operadores, obras)</li>
+          <li>Períodos, cierre y rendimientos</li>
+          <li>Panel de administración</li>
+          <li>Gestión de usuarios y roles</li>
+          <li>Administracion y configuración</li>
+          <li>Importar datos desde Excel</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="role-card role-gerente">
+      <div class="role-card-header">
+        <div class="role-avatar" style="background:rgba(255,255,255,.15);font-size:1.3rem">📊</div>
+        <div><h3>Gerente</h3><p>Supervisión operativa y análisis</p></div>
+      </div>
+      <div class="role-card-body">
+        <ul class="perm-list">
+          <li>Dashboard ejecutivo completo</li>
+          <li>Nueva carga patio y campo</li>
+          <li>Historial completo y edición</li>
+          <li>Catálogos (unidades, operadores, obras)</li>
+          <li>Períodos, cierre y rendimientos</li>
+          <li>Configuración (ajustes básicos)</li>
+          <li class="perm-none">Panel de administración</li>
+          <li class="perm-none">Gestión de usuarios</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="role-card role-despachador">
+      <div class="role-card-header">
+        <div class="role-avatar" style="background:rgba(255,255,255,.15);font-size:1.3rem">⛽</div>
+        <div><h3>Despachador</h3><p>Registro de suministros en patio</p></div>
+      </div>
+      <div class="role-card-body">
+        <ul class="perm-list">
+          <li>Nueva carga patio (Taller)</li>
+          <li class="perm-none">Historial de cargas (solo lectura)</li>
+          <li class="perm-none">Dashboard ejecutivo</li>
+          <li class="perm-none">Carga de campo (NISSAN)</li>
+          <li class="perm-none">Catálogos y obras</li>
+          <li class="perm-none">Períodos y reportes</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="role-card role-nissan">
+      <div class="role-card-header">
+        <div class="role-avatar" style="background:rgba(255,255,255,.15);font-size:1.3rem">🚛</div>
+        <div><h3>Operador NISSAN</h3><p>Suministros en campo</p></div>
+      </div>
+      <div class="role-card-body">
+        <ul class="perm-list">
+          <li>Nueva carga campo (NISSAN)</li>
+          <li class="perm-none">Historial de cargas (solo lectura)</li>
+          <li class="perm-none">Dashboard ejecutivo</li>
+          <li class="perm-none">Carga de patio</li>
+          <li class="perm-none">Catálogos y obras</li>
+          <li class="perm-none">Períodos y reportes</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- <div class="role-card role-obra">
+      <div class="role-card-header">
+        <div class="role-avatar" style="background:rgba(255,255,255,.15);font-size:1.3rem">🏗️</div>
+        <div><h3>Encargado de Obra</h3><p>Supervisión en sitio de trabajo</p></div>
+      </div>
+      <div class="role-card-body">
+        <ul class="perm-list">
+          <li>Nueva carga campo (NISSAN)</li>
+          <li>Historial de cargas (solo lectura)</li>
+          <li>Catálogos (unidades, operadores, obras)</li>
+          <li class="perm-none">Dashboard ejecutivo</li>
+          <li class="perm-none">Carga de patio</li>
+          <li class="perm-none">Períodos y reportes</li>
+        </ul>
+      </div>
+    </div> -->
+
+    <!-- <div class="role-card role-chofer">
+      <div class="role-card-header">
+        <div class="role-avatar" style="background:rgba(255,255,255,.15);font-size:1.3rem">👨‍✈️</div>
+        <div><h3>Chofer</h3><p>Consulta de historial propio</p></div>
+      </div>
+      <div class="role-card-body">
+        <ul class="perm-list">
+          <li>Historial de cargas (solo lectura)</li>
+          <li class="perm-none">Dashboard ejecutivo</li>
+          <li class="perm-none">Registro de cargas</li>
+          <li class="perm-none">Catálogos y obras</li>
+          <li class="perm-none">Períodos y reportes</li>
+        </ul>
+      </div>
+    </div> -->
+
+  </div>
+
+  <div class="info-box">
+    <span class="info-icon">⚙️</span>
+    <p><strong>Los permisos son configurables.</strong> El Administrador puede ajustar qué acciones tiene cada rol desde <strong>Administración → Roles</strong>. Los cambios se aplican de forma inmediata sin necesidad de reiniciar el sistema.</p>
+  </div>
+</section>
+
+<!-- ═══ DASHBOARD ═══ -->
+<section class="section" id="dashboard">
+  <div class="section-header">
+    <div class="section-tag">05 · Módulos</div>
+    <h2>Dashboard ejecutivo</h2>
+    <p class="section-desc">Pantalla principal del sistema. Muestra el estado operativo en tiempo real sin necesidad de refrescar la página.</p>
+  </div>
+  <div class="grid-2" style="margin-bottom:1.5rem">
+    <div class="card card-accent">
+      <h3>📦 Tarjetas de stock</h3>
+      <p style="margin-top:.5rem">Muestra los litros actuales en el <strong>Tanque Taller</strong> y el <strong>Tanque NISSAN</strong>. Se actualizan automáticamente cuando se registra una carga, recarga o transferencia — sin recargar la página.</p>
+    </div>
+    <div class="card card-blue">
+      <h3>📈 KPIs del día</h3>
+      <p style="margin-top:.5rem">Contador de cargas realizadas hoy, litros totales suministrados y unidades activas en el período. Datos actualizados en tiempo real mediante Pusher.</p>
+    </div>
+    <div class="card card-green">
+      <h3>🔔 Panel de alertas</h3>
+      <p style="margin-top:.5rem">Lista de notificaciones automáticas: stock por debajo del umbral configurado o unidades con rendimientos fuera de la tolerancia del 20%.</p>
+    </div>
+    <div class="card">
+      <h3>📋 Cargas recientes</h3>
+      <p style="margin-top:.5rem">Feed en vivo de los últimos suministros registrados. Cada nueva carga aparece al instante en la lista, con folio, unidad, litros y obra.</p>
+    </div>
+  </div>
+  <div class="info-box">
+    <span class="info-icon">⚡</span>
+    <p><strong>Tiempo real con Pusher.</strong> El dashboard no requiere recargar la página. Cuando cualquier usuario del sistema registra una carga desde cualquier dispositivo, el stock y los KPIs se actualizan automáticamente en todas las pantallas abiertas.</p>
+  </div>
+</section>
+
+<!-- ═══ CARGAS ═══ -->
+<section class="section" id="cargas">
+  <div class="section-header">
+    <div class="section-tag">06 · Módulo central</div>
+    <h2>Registro de cargas de diesel</h2>
+    <p class="section-desc">Corazón del sistema. Todo suministro de combustible se registra aquí, con validaciones automáticas para evitar errores.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:2rem">
+    <div>
+      <h3 style="font-size:1.1rem;margin-bottom:1rem">⛽ Carga de Patio (Taller)</h3>
+      <p style="font-size:.875rem;color:var(--mid);margin-bottom:1.25rem">Suministro en el taller o patio. Se descuenta del <strong>Tanque Taller</strong>. Utilizado por Despachador, Gerente o Admin.</p>
+      <table class="data-table">
+        <thead><tr><th>Campo</th><th>Descripción</th><th>Obligatorio</th></tr></thead>
+        <tbody>
+          <!-- <tr><td>Obra</td><td>Proyecto al que se asigna el suministro</td><td><span class="badge badge-green">No</span></td></tr> -->
+          <tr><td>Unidad</td><td>Camión o máquina que recibe el diesel</td><td><span class="badge badge-red">Sí</span></td></tr>
+          <tr><td>Operador</td><td>Quien conduce o opera la unidad</td><td><span class="badge badge-red">Sí</span></td></tr>
+          <tr><td>Litros</td><td>Cantidad exacta suministrada</td><td><span class="badge badge-red">Sí</span></td></tr>
+          <!-- <tr><td>Cuentalitros inicio</td><td>Lectura del medidor al inicio</td><td><span class="badge badge-green">No</span></td></tr> -->
+          <!-- <tr><td>Cuentalitros fin</td><td>Lectura del medidor al final</td><td><span class="badge badge-green">No</span></td></tr> -->
+          <tr><td>Km / Horas</td><td>Odómetro del camión o contador de horas de máquina</td><td><span class="badge badge-red">Sí</span></td></tr>
+          <!-- <tr><td>Quien suministra</td><td>Operador que hace el despacho</td><td><span class="badge badge-red">Sí</span></td></tr> -->
+          <tr><td>Notas</td><td>Observaciones adicionales</td><td><span class="badge badge-gray">Opcional</span></td></tr>
+          <tr><td>Foto</td><td>Foto del suministro o ticket</td><td><span class="badge badge-gray">Opcional</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3 style="font-size:1.1rem;margin-bottom:1rem">🚛 Carga de Campo (NISSAN)</h3>
+      <p style="font-size:.875rem;color:var(--mid);margin-bottom:1.25rem">Suministro en campo con la pipa NISSAN. Se descuenta del <strong>Tanque NISSAN</strong>. Utilizado por Operador NISSAN.</p>
+      <table class="data-table">
+        <thead><tr><th>Campo</th><th>Descripción</th><th>Obligatorio</th></tr></thead>
+        <tbody>
+          <tr><td>Obra</td><td>Proyecto en campo donde se suministra</td><td><span class="badge badge-green">No</span></td></tr>
+          <tr><td>Unidad</td><td>Máquina o camión que recibe</td><td><span class="badge badge-red">Sí</span></td></tr>
+          <tr><td>Litros</td><td>Litros exactos despachados</td><td><span class="badge badge-red">Sí</span></td></tr>
+          <tr><td>Km / Horas</td><td>Lectura actual del vehículo o máquina</td><td><span class="badge badge-red">Sí</span></td></tr>
+          <tr><td>Quien suministra</td><td>Operador de la pipa NISSAN</td><td><span class="badge badge-red">Sí</span></td></tr>
+          <tr><td>Quien recibe</td><td>Operador que recibe el combustible</td><td><span class="badge badge-red">Sí</span></td></tr>
+          <!-- <tr><td>Tipo diesel</td><td>Normal / Amigo / OxxoGas</td><td><span class="badge badge-red">Sí</span></td></tr> -->
+          <tr><td>Notas</td><td>Observaciones</td><td><span class="badge badge-gray">Opcional</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3 style="font-size:1rem;margin-bottom:1rem">Validaciones automáticas del sistema</h3>
+  <div class="grid-2">
+    <div class="info-box danger">
+      <span class="info-icon">🛑</span>
+      <p><strong>Kilometraje inválido:</strong> Si el odómetro ingresado es menor al anterior registrado para esa unidad, el sistema bloquea el guardado y muestra un error. Evita capturas incorrectas.</p>
+    </div>
+    <div class="info-box danger">
+      <span class="info-icon">⚠️</span>
+      <p><strong>Rango lógico de km:</strong> Si el kilometraje supera el rango posible (ej. más de 1,100 km para un tanque lleno), el sistema emite una advertencia antes de permitir guardar.</p>
+    </div>
+    <div class="info-box warn">
+      <span class="info-icon">📊</span>
+      <p><strong>Stock insuficiente:</strong> Si los litros a registrar superan el stock disponible en el tanque, el sistema lo advierte. El registro puede forzarse con justificación.</p>
+    </div>
+    <div class="info-box success">
+      <span class="info-icon">✅</span>
+      <p><strong>Folio automático:</strong> Cada carga recibe un folio consecutivo generado automáticamente. No es necesario asignar número manualmente.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <h3 style="font-size:1rem;margin-bottom:1rem">Historial de cargas <span class="url-pill" style="font-size:.75rem;margin-left:.5rem">/cargas</span></h3>
+  <p style="font-size:.875rem;color:var(--mid);margin-bottom:1rem">Vista unificada de todos los movimientos: cargas de patio, cargas de campo, recargas de tanque y transferencias entre tanques. Se puede filtrar por tipo de origen y es editable por Admin y Gerente.</p>
+</section>
+
+<!-- ═══ CATÁLOGOS ═══ -->
+<section class="section" id="catalogos">
+  <div class="section-header">
+    <div class="section-tag">07 · Catálogos</div>
+    <h2>Unidades, operadores y obras</h2>
+    <p class="section-desc">Los catálogos son la base del sistema. Deben estar actualizados para que los registros de carga sean precisos.</p>
+  </div>
+  <div class="grid-3">
+    <div class="card card-accent">
+      <div class="card-icon yellow">🚚</div>
+      <h3>Unidades</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Camiones, máquinas, vehículos NISSAN y otros equipos. Cada unidad tiene código identificador, tipo, modelo, capacidad del tanque, odómetro actual y rendimiento de referencia (km/L o L/Hr). Se puede activar o desactivar sin perder el historial.</p>
+      <div style="margin-top:1rem">
+        <div class="badge badge-yellow" style="margin:.15rem">camion</div>
+        <div class="badge badge-blue" style="margin:.15rem">maquina</div>
+        <div class="badge badge-green" style="margin:.15rem">nissan</div>
+        <div class="badge badge-gray" style="margin:.15rem">otro</div>
+      </div>
+    </div>
+    <div class="card card-blue">
+      <div class="card-icon blue">👷</div>
+      <h3>Operadores</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Conductores y maquinistas autorizados. Son independientes de los usuarios del sistema — pueden existir operadores sin acceso digital. Se clasifican por tipo: chofer, maquinista o taller. Al desactivar un operador, su historial de cargas permanece intacto.</p>
+      <div style="margin-top:1rem">
+        <div class="badge badge-yellow" style="margin:.15rem">chofer</div>
+        <div class="badge badge-purple" style="margin:.15rem">maquinista</div>
+        <div class="badge badge-gray" style="margin:.15rem">taller</div>
+      </div>
+    </div>
+    <div class="card card-green">
+      <div class="card-icon green">🏗️</div>
+      <h3>Obras</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Proyectos y sitios de construcción activos. Cada carga se asocia a una obra, permitiendo análisis de consumo por proyecto. Incluye nombre, cliente y fechas de inicio y fin. Las obras cerradas mantienen su historial.</p>
+    </div>
+  </div>
+  <div class="info-box" style="margin-top:1.5rem">
+    <span class="info-icon">💡</span>
+    <p><strong>Desactivar vs. eliminar:</strong> El sistema nunca borra datos. Al "desactivar" una unidad u operador, deja de aparecer en los formularios de nueva carga, pero todo su historial permanece accesible en el historial y reportes. Esto protege la integridad de los datos históricos.</p>
+  </div>
+</section>
+
+<!-- ═══ TANQUES ═══ -->
+<section class="section" id="tanques">
+  <div class="section-header">
+    <div class="section-tag">08 · Inventario</div>
+    <h2>Tanques e inventario de diesel</h2>
+    <p class="section-desc">Control del combustible disponible en cada punto de suministro. El stock se actualiza automáticamente con cada operación.</p>
+  </div>
+  <div class="grid-2" style="margin-bottom:2rem">
+    <div class="card" style="border-top:4px solid var(--brand)">
+      <h3>🏭 Tanque Taller</h3>
+      <p style="margin-top:.5rem;font-size:.875rem;color:var(--mid)">Almacenamiento principal en patio. Se abastece directamente de la pipa proveedor. Se consume con cada carga de patio registrada.</p>
+      <div style="margin-top:1rem;padding:1rem;background:var(--lighter);border-radius:8px">
+        <div class="label-small">Umbral de alerta</div>
+        <div style="font-size:1.5rem;font-weight:800;color:var(--danger);margin-top:.25rem">500 L</div>
+        <div style="font-size:.78rem;color:var(--mid)">Por debajo de este nivel se activa una alerta</div>
+      </div>
+    </div>
+    <div class="card" style="border-top:4px solid var(--accent)">
+      <h3>🚛 Tanque NISSAN</h3>
+      <p style="margin-top:.5rem;font-size:.875rem;color:var(--mid)">Tanque de la pipa que opera en campo. Se abastece por transferencia desde el Tanque Taller. Se consume con cada carga de campo registrada.</p>
+      <div style="margin-top:1rem;padding:1rem;background:var(--lighter);border-radius:8px">
+        <div class="label-small">Umbral de alerta</div>
+        <div style="font-size:1.5rem;font-weight:800;color:var(--danger);margin-top:.25rem">100 L</div>
+        <div style="font-size:.78rem;color:var(--mid)">Por debajo de este nivel se activa una alerta</div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="font-size:1rem;margin-bottom:1.25rem">Operaciones disponibles sobre tanques</h3>
+  <div class="grid-3">
+    <div class="card">
+      <h3>➕ Recarga de tanque</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Registra la llegada de combustible de la pipa proveedor. Requiere: litros, proveedor, folio de factura, precio por litro y lectura del cuentalitros. El stock sube automáticamente, sin exceder la capacidad máxima.</p>
+    </div>
+    <div class="card">
+      <h3>🔄 Transferencia entre tanques</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Mueve diesel del Tanque Taller al NISSAN (o viceversa). Se genera un folio de transferencia. El stock del origen baja y el del destino sube en el mismo momento.</p>
+    </div>
+    <div class="card">
+      <h3>📉 Ajuste de merma</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Los tanques tienen un porcentaje de ajuste configurable para compensar la diferencia entre el cuentalitros de la bomba y el volumen real (merma por temperatura, evaporación, etc.).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PERÍODOS ═══ -->
+<section class="section" id="periodos">
+  <div class="section-header">
+    <div class="section-tag">09 · Análisis</div>
+    <h2>Períodos y rendimientos</h2>
+    <p class="section-desc">El sistema organiza el trabajo en semanas (sábado a viernes). Al cerrar cada período se calculan automáticamente los rendimientos por unidad.</p>
+  </div>
+  <div class="grid-2" style="margin-bottom:2rem">
+    <div class="card card-accent">
+      <h3>📅 ¿Qué es un período?</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Una semana de trabajo que va de <strong>sábado a viernes</strong>. El sistema crea el período automáticamente cuando se registra la primera carga de la semana. Cada carga queda vinculada a su período correspondiente.</p>
+    </div>
+    <div class="card card-green">
+      <h3>🔒 Cierre de período</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Al hacer clic en "Cerrar período", el sistema calcula el rendimiento de cada unidad activa: compara km/horas recorridos con litros consumidos y genera una alerta si el resultado está fuera del ±20% del rendimiento de referencia.</p>
+    </div>
+  </div>
+
+  <h3 style="font-size:1rem;margin-bottom:1rem">Datos calculados al cerrar un período</h3>
+  <table class="data-table" style="margin-bottom:1.5rem">
+    <thead><tr><th>Dato</th><th>Cómo se calcula</th><th>Aplicable a</th></tr></thead>
+    <tbody>
+      <tr><td>Litros consumidos</td><td>Suma de litros de todas las cargas de la unidad en el período</td><td>Camiones y máquinas</td></tr>
+      <tr><td>Km / Horas recorridos</td><td>Odómetro final menos odómetro inicial del período</td><td>Camiones (km) / Máquinas (hr)</td></tr>
+      <tr><td>Rendimiento actual</td><td>Km ÷ Litros (camiones) · Litros ÷ Horas (máquinas)</td><td>Ambos tipos</td></tr>
+      <tr><td>Diferencia vs. referencia</td><td>% de variación respecto al rendimiento base de la unidad</td><td>Ambos tipos</td></tr>
+      <tr><td>Dentro de tolerancia</td><td>Sí si la diferencia es ≤ 20%. No si supera ese margen</td><td>Ambos tipos</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid-2">
+    <div class="info-box warn">
+      <span class="info-icon">⚠️</span>
+      <p><strong>Unidad fuera de tolerancia:</strong> Cuando el rendimiento real se desvía más del 20% del rendimiento de referencia, el sistema genera una alerta visible en el dashboard para que el gerente pueda investigar la causa (fuga, carga incorrecta, desgaste, etc.).</p>
+    </div>
+    <div class="info-box success">
+      <span class="info-icon">📥</span>
+      <p><strong>Exportar a Excel:</strong> Cada período tiene un botón de descarga. El archivo incluye 3 hojas: <strong>Resumen</strong> (estadísticas generales), <strong>Cargas</strong> (detalle de cada suministro) y <strong>Rendimientos</strong> (análisis por unidad, si el período está cerrado).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ADMIN ═══ -->
+<section class="section" id="admin">
+  <div class="section-header">
+    <div class="section-tag">10 · Administración</div>
+    <h2>Panel de administración</h2>
+    <p class="section-desc">Acceso exclusivo para el rol Administrador. Gestiona usuarios, roles y credenciales de acceso.</p>
+  </div>
+  <div class="grid-3">
+    <div class="card card-accent">
+      <h3>👥 Usuarios</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Lista de todos los usuarios registrados. El Admin puede cambiar el rol de cualquier usuario (excepto el propio), desactivar cuentas y ver el correo y fecha de registro.</p>
+    </div>
+    <div class="card card-blue">
+      <h3>🔐 Roles</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Editor de permisos por rol. Cada rol tiene checkboxes para activar o desactivar cada permiso del sistema. Los cambios aplican de forma inmediata para todos los usuarios con ese rol.</p>
+    </div>
+    <!-- <div class="card card-green">
+      <h3>📧 Invitaciones</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Para agregar un nuevo usuario: ingresa su correo electrónico y el rol que tendrá. El sistema envía un correo de invitación. Las invitaciones pendientes pueden revocarse antes de que sean aceptadas.</p>
+    </div> -->
+  </div>
+
+  <div class="info-box" style="margin-top:1.5rem">
+    <span class="info-icon">📤</span>
+    <p><strong>Importación de datos históricos:</strong> Disponible en <span class="url-pill" style="font-size:.75rem">/admin/importar</span>. Permite subir un archivo Excel con cargas históricas. El sistema detecta automáticamente columnas (Fecha, Unidad, Litros, etc.), crea unidades y operadores que no existan, y omite registros duplicados.</p>
+  </div>
+</section>
+
+<!-- ═══ FLUJO PATIO ═══ -->
+<section class="section" id="flujo-patio" style="background:var(--lighter)">
+  <div class="section-header">
+    <div class="section-tag">11 · Flujos de trabajo</div>
+    <h2>Flujo: Carga de patio (Taller)</h2>
+    <p class="section-desc">Paso a paso del proceso estándar de suministro en taller.</p>
+  </div>
+  <div class="flow-steps" style="margin-bottom:2rem">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <h4>Verificar stock</h4>
+      <p>Consultar el Dashboard para confirmar que el Tanque Taller tiene litros suficientes.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <h4>Ir a Nueva Carga Patio</h4>
+      <p>Menú lateral → Cargas → Nueva Carga Patio, o directo: /cargas/nueva</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <h4>Llenar formulario</h4>
+      <p>Unidad, operador, litros, odómetro/horas.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <h4>Guardar</h4>
+      <p>El stock se descuenta del Taller. El dashboard se actualiza en tiempo real.</p>
+    </div>
+  </div>
+  <div class="info-box success">
+    <span class="info-icon">✅</span>
+    <p>El folio se asigna automáticamente. Si el sistema detecta una anomalía en el odómetro, mostrará un aviso antes de guardar. El registro queda disponible inmediatamente en el historial y en el dashboard del gerente.</p>
+  </div>
+</section>
+
+<!-- ═══ FLUJO CAMPO ═══ -->
+<section class="section" id="flujo-campo">
+  <div class="section-header">
+    <div class="section-tag">12 · Flujos de trabajo</div>
+    <h2>Flujo: Carga de campo (NISSAN)</h2>
+    <p class="section-desc">Proceso de suministro en campo con la pipa NISSAN.</p>
+  </div>
+  <div class="flow-steps" style="margin-bottom:2rem">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <h4>Verificar tanque NISSAN</h4>
+      <p>Confirmar que la pipa tiene litros disponibles antes de salir a campo.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <h4>Nueva Carga Campo</h4>
+      <p>Menú → Cargas → Nueva Carga Campo. Disponible desde celular en campo.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <h4>Capturar datos</h4>
+      <p>Obra, unidad, litros, km/horas, quien suministra, quien recibe.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <h4>Guardar</h4>
+      <p>Stock NISSAN se descuenta. Registro visible al instante en el dashboard.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FLUJO RECARGA ═══ -->
+<section class="section" id="flujo-recarga" style="background:var(--lighter)">
+  <div class="section-header">
+    <div class="section-tag">13 · Flujos de trabajo</div>
+    <h2>Flujo: Recarga de tanque (pipa proveedor)</h2>
+    <p class="section-desc">Registro de entrada de combustible al sistema cuando llega la pipa proveedora.</p>
+  </div>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <h4>Llega la pipa</h4>
+      <p>Anotar litros en el cuentalitros de la bomba al inicio y al final del traspaso.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <h4>Recargar</h4>
+      <p>Desde /dashboard, seleccionar "Recargar en stock taller".</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <h4>Capturar datos</h4>
+      <p>Litros, proveedor, folio de factura, precio/litro.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <h4>Guardar</h4>
+      <p>El stock del tanque sube automáticamente. Si supera la capacidad máxima, el sistema avisa.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FLUJO CIERRE ═══ -->
+<section class="section" id="flujo-cierre">
+  <div class="section-header">
+    <div class="section-tag">14 · Flujos de trabajo</div>
+    <h2>Flujo: Cierre de período semanal</h2>
+    <p class="section-desc">Proceso de análisis y cierre de cada semana de operación.</p>
+  </div>
+  <div class="flow-steps" style="margin-bottom:2rem">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <h4>Ir a Períodos</h4>
+      <p>Menú → Análisis → Períodos. Verás el período actual con sus estadísticas.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <h4>Revisar cargas</h4>
+      <p>Confirmar que todas las cargas de la semana están registradas correctamente.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <h4>Cerrar período</h4>
+      <p>Clic en "Cerrar período". El sistema calcula rendimientos para todas las unidades.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <h4>Revisar alertas</h4>
+      <p>Si alguna unidad está fuera de tolerancia, aparecerá en rojo para investigar.</p>
+      <div class="flow-arrow">→</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">5</div>
+      <h4>Exportar Excel Y PDF</h4>
+      <p>Descargar el reporte del período con todas las cargas y rendimientos.</p>
+    </div>
+  </div>
+  <div class="info-box warn">
+    <span class="info-icon">⚠️</span>
+    <p><strong>El cierre es permanente.</strong> Una vez cerrado un período, no se pueden agregar ni editar cargas en ese período. Asegúrese de que toda la información está correcta antes de cerrar.</p>
+  </div>
+</section>
+
+<!-- ═══ ALERTAS ═══ -->
+<section class="section" id="alertas" style="background:var(--lighter)">
+  <div class="section-header">
+    <div class="section-tag">15 · Alertas</div>
+    <h2>Sistema de alertas proactivas</h2>
+    <p class="section-desc">El sistema monitorea continuamente el estado operativo y emite alertas automáticas cuando detecta situaciones que requieren atención.</p>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h3 style="font-size:1rem;margin-bottom:1rem">Alertas de inventario</h3>
+      <div class="alert-rule"><div class="dot dot-red"></div><div><strong>Taller crítico:</strong> Stock Taller inferior a 500 litros</div></div>
+      <div class="alert-rule"><div class="dot dot-red"></div><div><strong>NISSAN crítico:</strong> Stock NISSAN inferior a 100 litros</div></div>
+      <div class="alert-rule"><div class="dot dot-yellow"></div><div><strong>Transferencia pendiente:</strong> NISSAN bajo sin transferencia programada</div></div>
+    </div>
+    <div>
+      <h3 style="font-size:1rem;margin-bottom:1rem">Alertas de rendimiento</h3>
+      <div class="alert-rule"><div class="dot dot-red"></div><div><strong>Rendimiento crítico:</strong> Unidad con variación > 20% sobre su referencia (posible fuga o error)</div></div>
+      <div class="alert-rule"><div class="dot dot-yellow"></div><div><strong>Rendimiento bajo:</strong> Variación entre 10-20% respecto a referencia</div></div>
+      <div class="alert-rule"><div class="dot dot-green"></div><div><strong>Rendimiento normal:</strong> Variación ≤ 10% — unidad operando correctamente</div></div>
+    </div>
+  </div>
+  <div class="info-box" style="margin-top:1.5rem">
+    <span class="info-icon">🔔</span>
+    <p>Las alertas se muestran en el <strong>Panel de alertas</strong> del Dashboard y se actualizan en tiempo real. El umbral de alerta de inventario puede ajustarse desde <strong>Configuración</strong>.</p>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section class="section" id="faq">
+  <div class="section-header">
+    <div class="section-tag">16 · Soporte</div>
+    <h2>Preguntas frecuentes</h2>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">¿Puedo acceder desde el celular?</div>
+    <div class="faq-a">Sí. El sistema es completamente responsivo y funciona en cualquier dispositivo móvil o tablet. En Chrome o Safari puede instalarse como app ("Agregar a pantalla de inicio") para acceso rápido sin abrir el navegador.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">¿Qué pasa si registro mal una carga?</div>
+    <div class="faq-a">El Administrador, Gerente puede editar cargas desde el Historial (/cargas), siempre y cuando el período no esté cerrado. Una vez cerrado el período, las cargas no se pueden modificar para preservar la integridad del reporte.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">¿Cómo agrego un nuevo camión o máquina?</div>
+    <div class="faq-a">Desde el menú lateral: Catálogos → Unidades → botón "Nueva unidad". Complete el código, nombre, tipo, capacidad del tanque y rendimiento de referencia. La unidad estará disponible de inmediato en el formulario de cargas.</div>
+  </div>
+  <!-- <div class="faq-item">
+    <div class="faq-q">¿Cómo invito a un nuevo usuario al sistema?</div>
+    <div class="faq-a">Solo el Administrador puede hacerlo. Ir a Administración → pestaña Invitaciones → "Nueva invitación". Ingrese el correo electrónico y el rol del usuario. El sistema envía un correo automático con un enlace para crear la cuenta.</div>
+  </div> -->
+  <div class="faq-item">
+    <div class="faq-q">¿Se pierden datos si desactivo un operador o unidad?</div>
+    <div class="faq-a">No. La desactivación es solo visual — el operador o unidad deja de aparecer en los formularios de nueva carga, pero todo su historial permanece accesible en reportes y en el historial de cargas. Puede reactivarse en cualquier momento.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">¿Qué significa que un período esté "fuera de tolerancia"?</div>
+    <div class="faq-a">Significa que el rendimiento real de una o más unidades se desvió más del 20% de su rendimiento de referencia. Puede indicar un error de captura (odómetro equivocado), una falla mecánica (mayor consumo de lo normal) o una fuga. El gerente debe investigar la causa y tomar acción.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">¿Puedo exportar los datos a Excel?</div>
+    <div class="faq-a">Sí. Desde Análisis → Períodos, seleccione un período y haga clic en "Exportar Excel". El archivo incluye tres hojas: Resumen, Cargas (cada suministro con todos sus datos) y Rendimientos (si el período está cerrado). También puede importar datos históricos desde Excel a través de Administración → Importar.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">¿Qué pasa si se va el internet durante un registro?</div>
+    <div class="faq-a">El sistema tiene soporte PWA (Progressive Web App) que permite cierta funcionalidad básica offline. Sin embargo, para registrar cargas se requiere conexión a internet, ya que los datos se guardan directamente en la base de datos en la nube. Se recomienda registrar las cargas en cuanto haya conexión disponible.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">¿Cómo cambio mi contraseña?</div>
+    <div class="faq-a">Desde cualquier pantalla, haz clic en tu nombre de usuario en la parte inferior del menú lateral → "Administrar cuenta". Esto abre el panel de Clerk donde puedes cambiar contraseña, nombre, foto de perfil y configurar verificación en dos pasos.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">¿Puedo cambiar el umbral de alerta de stock?</div>
+    <div class="faq-a">Sí. El Administrador y Gerente pueden ajustar los umbrales desde Configuración (/settings). Los nuevos valores aplican de forma inmediata al sistema de alertas del dashboard.</div>
+  </div>
+</section>
+
+<!-- ═══ GARANTÍA ═══ -->
+<section class="section" id="garantia">
+  <div class="section-header">
+    <div class="section-tag">17 · Soporte</div>
+    <h2>Garantía y soporte técnico</h2>
+  </div>
+  <div class="grid-3" style="margin-bottom:2rem">
+    <div class="card card-accent">
+      <div style="font-size:2rem;margin-bottom:.75rem">🛡️</div>
+      <h3>Garantía de 1 año</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">El sistema cuenta con garantía de buen funcionamiento por <strong>12 meses</strong> a partir de la fecha de entrega. Cualquier error o falla en el código original es corregida sin costo adicional.</p>
+      <div class="info-box warn" style="margin-top:1rem;padding:.75rem">
+        <p style="font-size:.78rem"><strong>Nota:</strong> La garantía se anula si se realizan modificaciones al código fuente por parte de un tercero no autorizado.</p>
+      </div>
+    </div>
+    <div class="card card-blue">
+      <div style="font-size:2rem;margin-bottom:.75rem">🧪</div>
+      <h3>Período de pruebas</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Se otorgan <strong>30 días</strong> a partir de la entrega para realizar pruebas exhaustivas, migrar información histórica y capacitar al equipo. Cualquier ajuste de configuración o corrección detectada en este período se atiende sin cargo.</p>
+    </div>
+    <div class="card card-green">
+      <div style="font-size:2rem;margin-bottom:.75rem">📞</div>
+      <h3>Atención de soporte</h3>
+      <p style="margin-top:.5rem;font-size:.875rem">Lunes a viernes de <strong>9:00 am a 6:00 pm</strong>. Soporte digital (WhatsApp / correo) o telefónico según se requiera. El tiempo de respuesta objetivo es de 4 horas en días hábiles.</p>
+    </div>
+  </div>
+
+  <table class="data-table">
+    <thead><tr><th>Contacto</th><th>Datos</th></tr></thead>
+    <tbody>
+      <tr><td>Empresa</td><td>PoxelBit · Soluciones Digitales IA</td></tr>
+      <tr><td>Responsable técnico</td><td>Max Rubio</td></tr>
+      <tr><td>Correo electrónico</td><td>soporte@poxelbit.mx</td></tr>
+      <tr><td>Horario de atención</td><td>Lun–Vie, 9:00 am – 6:00 pm</td></tr>
+      <tr><td>Canal preferido</td><td>WhatsApp: (667) 958 4054</td></tr>
+    </tbody>
+  </table>
+
+  <div class="info-box" style="margin-top:1.5rem">
+    <span class="info-icon">💡</span>
+    <p><strong>¿Necesitas nuevas funciones?</strong> El sistema fue construido para crecer. Cualquier módulo adicional, integración, o funcionalidad nueva puede ser cotizada y desarrollada. Contáctenos para una propuesta sin compromiso.</p>
+  </div>
+</section>
+
+<!-- ═══ ACEPTACIÓN ═══ -->
+<section class="section" id="aceptacion">
+  <div class="section-header">
+    <div class="section-tag">18 · Acta</div>
+    <h2>Acta de aceptación del proyecto</h2>
+    <p class="section-desc">Mediante la firma de este documento, el cliente confirma haber recibido el sistema completo, funcionando según las especificaciones acordadas.</p>
+  </div>
+
+  <div class="acceptance">
+    <div style="font-size:3rem;margin-bottom:1rem">✅</div>
+    <h2>Entrega — Recepción completada</h2>
+    <p>Yo, como representante de <strong>WB Construcción</strong>, declaro haber recibido el sistema <strong>WB Diesel Control</strong> en funcionamiento, haber revisado sus módulos principales, y aceptar la entrega como <strong>proyecto terminado y funcional</strong>, conforme a las especificaciones acordadas.</p>
+
+    <div style="background:var(--lighter);border-radius:var(--radius);padding:1.5rem;margin:2rem auto;max-width:600px;text-align:left">
+      <div class="label-small" style="margin-bottom:.75rem">Checklist de entrega</div>
+      <div style="font-size:.875rem;line-height:2.2">
+        <div>☐ &nbsp; Sistema accesible en <strong>wbcontruccion.mx/admin</strong></div>
+        <div>☐ &nbsp; Dashboard con stock en tiempo real funcionando</div>
+        <div>☐ &nbsp; Registro de cargas (patio y campo) probado</div>
+        <div>☐ &nbsp; Catálogos de unidades, operadores y obras configurados</div>
+        <div>☐ &nbsp; Control de tanques Taller y NISSAN activo</div>
+        <div>☐ &nbsp; Período y exportación Excel verificados</div>
+        <div>☐ &nbsp; Panel de administración (usuarios, roles)</div>
+        <div>☐ &nbsp; Datos del sistema recibidos (credenciales, accesos)</div>
+        <div>☐ &nbsp; Manual de usuario entregado y revisado</div>
+      </div>
+    </div>
+
+    <div class="sig-grid">
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-name">Ing. Alberto Niebla</div>
+        <div class="sig-role">Cliente · WB Construcción</div>
+        <div class="sig-date">Fecha: _____ / _____ / 2026</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-name">LEN. Diami Araiza</div>
+        <div class="sig-role">CEO · PoxelBit</div>
+        <div class="sig-date">Fecha: _____ / _____ / 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:3rem 0 1rem;color:var(--mid);font-size:.8rem">
+    <div style="font-weight:700;color:var(--brand);font-size:.95rem;margin-bottom:.35rem">PoxelBit · Soluciones Digitales IA</div>
+    <div>Documento generado digitalmente · WB Diesel Control v1.0 · Abril 2026</div>
+    <div style="margin-top:.35rem">Este documento es propiedad de WB Construcción. Todos los derechos reservados.</div>
+  </div>
+</section>
+
+</div><!-- /page-wrap -->
+
+<script>
+// Highlight active nav item on scroll
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.sidenav a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.sidenav a[href="#${entry.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
