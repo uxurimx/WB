@@ -17,7 +17,7 @@ export async function GET(
   const id = parseInt(periodoId);
   if (isNaN(id)) return new Response("Invalid id", { status: 400 });
 
-  const [periodo, cargasData, rends] = await Promise.all([
+  const [periodo, { rows: cargasData }, rends] = await Promise.all([
     db.query.periodos.findFirst({ where: eq(periodos.id, id) }),
     getCargas({ periodoId: id, limit: 5000 }),
     getRendimientosPeriodo(id),

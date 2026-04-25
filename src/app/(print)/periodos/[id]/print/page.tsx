@@ -34,7 +34,7 @@ export default async function PrintPage({
   const periodoId = parseInt(id);
   if (isNaN(periodoId)) notFound();
 
-  const [periodo, cargasData, rends] = await Promise.all([
+  const [periodo, { rows: cargasData }, rends] = await Promise.all([
     db.query.periodos.findFirst({ where: eq(periodos.id, periodoId) }),
     getCargas({ periodoId, limit: 1000 }),
     getRendimientosPeriodo(periodoId),

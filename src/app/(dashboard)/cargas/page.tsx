@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
-import { ClipboardList, PlusCircle, Fuel } from "lucide-react";
+import { ClipboardList, PlusCircle, Fuel, ChevronLeft, ChevronRight } from "lucide-react";
 import { requirePermission } from "@/lib/server-guard";
 import { getCargas } from "@/app/actions/cargas";
 import { getOperadores, getObras } from "@/app/actions/catalogo";
@@ -15,27 +15,32 @@ import CargasTable, {
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
+const PAGE_SIZE = 50;
+
 export default async function HistorialCargasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ origen?: string; unidadId?: string }>;
+  searchParams: Promise<{ origen?: string; unidadId?: string; page?: string }>;
 }) {
   await requirePermission("cargas.historial");
 
   const params = await searchParams;
   const origen = params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined;
   const soloCargas = !!origen;
+  const page = Math.max(1, parseInt(params.page ?? "1") || 1);
+  const offset = (page - 1) * PAGE_SIZE;
 
-  const [cargas, operadores, obras, clerkUser, transferencias, recargas] = await Promise.all([
-    getCargas({ origen, unidadId: params.unidadId ? parseInt(params.unidadId) : undefined, limit: 150 }),
+  const [{ rows: cargas, total: totalCargas }, operadores, obras, clerkUser, transferencias, recargas] = await Promise.all([
+    getCargas({ origen, unidadId: params.unidadId ? parseInt(params.unidadId) : undefined, limit: PAGE_SIZE, offset }),
     getOperadores(false),
     getObras(false),
     currentUser(),
-    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getTransferencias>>) : getTransferencias(150),
-    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getRecargasTanque>>) : getRecargasTanque(150),
+    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getTransferencias>>) : getTransferencias(500),
+    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getRecargasTanque>>) : getRecargasTanque(500),
   ]);
 
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
+  const totalPages = Math.ceil(totalCargas / PAGE_SIZE);
 
   const cargaItems: CargaItem[] = cargas.map((c) => ({
     _tipo: "carga",
@@ -86,9 +91,17 @@ export default async function HistorialCargasPage({
     (a, b) => b.fecha.localeCompare(a.fecha)
   );
 
-  const totalLitros  = cargas.reduce((sum, c) => sum + (c.litros ?? 0), 0);
-  const cargasPatio  = cargas.filter((c) => c.origen === "patio").length;
-  const cargasCampo  = cargas.filter((c) => c.origen === "campo").length;
+  const totalLitrosStr = cargas.reduce((sum, c) => sum + (c.litros ?? 0), 0).toLocaleString();
+
+  // Build URL preserving current filters but resetting/setting page
+  const pageUrl = (p: number) => {
+    const qs = new URLSearchParams();
+    if (origen) qs.set("origen", origen);
+    if (params.unidadId) qs.set("unidadId", params.unidadId);
+    if (p > 1) qs.set("page", String(p));
+    const str = qs.toString();
+    return `/cargas${str ? `?${str}` : ""}`;
+  };
 
   return (
     <div className="p-6 md:p-8 max-w-6xl">
@@ -105,7 +118,7 @@ export default async function HistorialCargasPage({
           </div>
           <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>Historial</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--fg-muted)" }}>
-            {cargas.length} cargas · {totalLitros.toLocaleString()} L
+            {totalCargas.toLocaleString()} cargas · {totalLitrosStr} L (pág. {page}/{totalPages})
             {!soloCargas && transferencias.length > 0 && <span> · {transferencias.length} transferencias</span>}
             {!soloCargas && recargas.length > 0 && <span> · {recargas.length} recargas</span>}
           </p>
@@ -123,29 +136,43 @@ export default async function HistorialCargasPage({
       {/* Filtros */}
       <div className="flex gap-2 mb-5 flex-wrap">
         {[
-          { label: "Todas", href: "/cargas" },
-          { label: "Patio", href: "/cargas?origen=patio" },
-          { label: "Campo", href: "/cargas?origen=campo" },
-        ].map(({ label, href }) => (
+          { label: "Todas", href: "/cargas", active: !origen },
+          { label: "Patio",  href: "/cargas?origen=patio",  active: origen === "patio" },
+          { label: "Campo",  href: "/cargas?origen=campo",  active: origen === "campo" },
+        ].map(({ label, href, active }) => (
           <Link key={label} href={href}>
-            <Badge
-              variant={
-                (origen === "patio" && label === "Patio") ||
-                (origen === "campo" && label === "Campo") ||
-                (!origen && label === "Todas") ? "default" : "secondary"
-              }
-              className="cursor-pointer text-sm px-3 py-1"
-            >
+            <Badge variant={active ? "default" : "secondary"} className="cursor-pointer text-sm px-3 py-1">
               {label}
-              {label === "Patio" && ` (${cargasPatio})`}
-              {label === "Campo" && ` (${cargasCampo})`}
-              {label === "Todas" && ` (${cargas.length})`}
             </Badge>
           </Link>
         ))}
       </div>
 
       <CargasTable items={items} operadores={operadores} obras={obras} canEdit={canEdit} />
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
+            Mostrando {offset + 1}–{Math.min(offset + PAGE_SIZE, totalCargas)} de {totalCargas.toLocaleString()}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="secondary" size="sm" disabled={page <= 1}>
+              <Link href={pageUrl(page - 1)} aria-disabled={page <= 1}>
+                <ChevronLeft className="w-4 h-4" /> Anterior
+              </Link>
+            </Button>
+            <span className="text-sm font-mono px-2" style={{ color: "var(--fg)" }}>
+              {page} / {totalPages}
+            </span>
+            <Button asChild variant="secondary" size="sm" disabled={page >= totalPages}>
+              <Link href={pageUrl(page + 1)} aria-disabled={page >= totalPages}>
+                Siguiente <ChevronRight className="w-4 h-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque } from "@/db/schema";
-import { eq, max, desc, and } from "drizzle-orm";
+import { eq, max, desc, and, count } from "drizzle-orm";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
@@ -246,23 +246,37 @@ export async function getCargas(opts?: {
   unidadId?: number;
   origen?: "patio" | "campo";
   limit?: number;
+  offset?: number;
 }) {
-  return db.query.cargas.findMany({
-    where: (c, { eq, and }) => {
-      const conditions = [];
-      if (opts?.periodoId) conditions.push(eq(c.periodoId, opts.periodoId));
-      if (opts?.unidadId)  conditions.push(eq(c.unidadId, opts.unidadId));
-      if (opts?.origen)    conditions.push(eq(c.origen, opts.origen));
-      return conditions.length ? and(...conditions) : undefined;
-    },
-    with: {
-      unidad: true,
-      operador: true,
-      obra: true,
-    },
-    orderBy: (c, { desc }) => [desc(c.createdAt)],
-    limit: opts?.limit ?? 100,
-  });
+  const buildWhere = () => {
+    const conds = [];
+    if (opts?.periodoId) conds.push(eq(cargas.periodoId, opts.periodoId));
+    if (opts?.unidadId)  conds.push(eq(cargas.unidadId, opts.unidadId));
+    if (opts?.origen)    conds.push(eq(cargas.origen, opts.origen));
+    return conds.length ? and(...conds) : undefined;
+  };
+
+  const lim = opts?.limit ?? 50;
+  const off = opts?.offset ?? 0;
+
+  const [rows, countRows] = await Promise.all([
+    db.query.cargas.findMany({
+      where: (c, { eq: _eq, and: _and }) => {
+        const conds = [];
+        if (opts?.periodoId) conds.push(_eq(c.periodoId, opts.periodoId!));
+        if (opts?.unidadId)  conds.push(_eq(c.unidadId, opts.unidadId!));
+        if (opts?.origen)    conds.push(_eq(c.origen, opts.origen!));
+        return conds.length ? _and(...conds) : undefined;
+      },
+      with: { unidad: true, operador: true, obra: true },
+      orderBy: (c, { desc: _desc }) => [_desc(c.fecha), _desc(c.createdAt)],
+      limit: lim,
+      offset: off,
+    }),
+    db.select({ total: count() }).from(cargas).where(buildWhere()),
+  ]);
+
+  return { rows, total: countRows[0]?.total ?? 0 };
 }
 
 export async function getSiguienteFolioPublic() {
