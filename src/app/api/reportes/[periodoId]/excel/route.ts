@@ -17,11 +17,11 @@ export async function GET(
   const id = parseInt(periodoId);
   if (isNaN(id)) return new Response("Invalid id", { status: 400 });
 
-  // Filtro por unidades (opcional)
+  // Orden + filtro por unidades (lista ordenada opcional)
   const url = new URL(req.url);
   const unidadesParam = url.searchParams.get("unidades");
-  const unidadIdsFilter = unidadesParam
-    ? new Set(unidadesParam.split(",").map(Number).filter(Boolean))
+  const orderedIds: number[] | null = unidadesParam
+    ? unidadesParam.split(",").map(Number).filter(Boolean)
     : null;
 
   const [periodo, { rows: cargasAll }, rendsAll] = await Promise.all([
@@ -32,13 +32,16 @@ export async function GET(
 
   if (!periodo) return new Response("Período no encontrado", { status: 404 });
 
-  const cargasData = unidadIdsFilter
-    ? cargasAll.filter((c) => unidadIdsFilter.has(c.unidadId))
-    : cargasAll;
+  function applyOrder<T extends { unidadId: number }>(arr: T[]): T[] {
+    if (!orderedIds) return arr;
+    const pos = new Map(orderedIds.map((id, i) => [id, i]));
+    return arr
+      .filter((x) => pos.has(x.unidadId))
+      .sort((a, b) => (pos.get(a.unidadId) ?? 0) - (pos.get(b.unidadId) ?? 0));
+  }
 
-  const rends = unidadIdsFilter
-    ? rendsAll.filter((r) => unidadIdsFilter.has(r.unidadId))
-    : rendsAll;
+  const cargasData = applyOrder(cargasAll);
+  const rends      = applyOrder(rendsAll);
 
   const wb = XLSX.utils.book_new();
 
@@ -53,7 +56,7 @@ export async function GET(
     ["Inicio:", periodo.fechaInicio],
     ["Fin:", periodo.fechaFin],
     ["Estado:", periodo.cerrado ? "Cerrado" : "Activo"],
-    ...(unidadIdsFilter ? [["Filtro:", `${unidadIdsFilter.size} unidades seleccionadas`]] : []),
+    ...(orderedIds ? [["Filtro/Orden:", `${orderedIds.length} unidades`]] : []),
     [],
     ["Total cargas:", cargasData.length],
     ["Litros totales:", totalLitros],
@@ -129,7 +132,7 @@ export async function GET(
   const buf: Buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
   const body = new Uint8Array(buf);
 
-  const suffix = unidadIdsFilter ? `-filtrado` : "";
+  const suffix = orderedIds ? `-filtrado` : "";
   const filename = `reporte-${periodo.fechaInicio}-${periodo.fechaFin}${suffix}.xlsx`;
 
   return new Response(body, {

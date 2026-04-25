@@ -34,8 +34,8 @@ export default async function PrintPage({
   if (isNaN(periodoId)) notFound();
 
   const sp = await searchParams;
-  const unidadIdsFilter = sp.unidades
-    ? new Set(sp.unidades.split(",").map(Number).filter(Boolean))
+  const orderedIds: number[] | null = sp.unidades
+    ? sp.unidades.split(",").map(Number).filter(Boolean)
     : null;
 
   const [periodo, { rows: cargasAll }, rendsAll] = await Promise.all([
@@ -46,13 +46,16 @@ export default async function PrintPage({
 
   if (!periodo) notFound();
 
-  const cargasData = unidadIdsFilter
-    ? cargasAll.filter((c) => unidadIdsFilter.has(c.unidadId))
-    : cargasAll;
+  function applyOrder<T extends { unidadId: number }>(arr: T[]): T[] {
+    if (!orderedIds) return arr;
+    const pos = new Map(orderedIds.map((id, i) => [id, i]));
+    return arr
+      .filter((x) => pos.has(x.unidadId))
+      .sort((a, b) => (pos.get(a.unidadId) ?? 0) - (pos.get(b.unidadId) ?? 0));
+  }
 
-  const rends = unidadIdsFilter
-    ? rendsAll.filter((r) => unidadIdsFilter.has(r.unidadId))
-    : rendsAll;
+  const cargasData = applyOrder(cargasAll);
+  const rends      = applyOrder(rendsAll);
 
   const totalLitros = cargasData.reduce((s, c) => s + (c.litros ?? 0), 0);
   const unidadesDistintas = new Set(cargasData.map((c) => c.unidadId)).size;
@@ -79,13 +82,13 @@ export default async function PrintPage({
         <div className="flex items-start justify-between mb-8 pb-6 border-b border-gray-200">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">
-              Reporte de Período{unidadIdsFilter ? " (filtrado)" : ""}
+              Reporte de Período{orderedIds ? " (filtrado)" : ""}
             </p>
             <h1 className="text-3xl font-bold mb-1">{periodo.nombre}</h1>
             <p className="text-sm text-gray-500">{fmtRango(periodo.fechaInicio, periodo.fechaFin)}</p>
-            {unidadIdsFilter && (
+            {orderedIds && (
               <p className="text-xs text-amber-600 mt-1">
-                Filtrado: {unidadIdsFilter.size} unidades seleccionadas
+                Filtrado: {orderedIds.length} unidades seleccionadas
               </p>
             )}
           </div>

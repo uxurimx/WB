@@ -116,8 +116,9 @@ export default function AnalisisPeriodoClient({
   const fueraTolerancia  = filtrados.filter((r) => r.dentroDeTolerancia === false).length;
   const sinReferencia    = filtrados.filter((r) => r.rendimientoReferencia === null).length;
 
-  const hayFiltros = busqueda.trim() || filtroTipo !== "todos" || filtroEstado !== "todos";
-  const filteredUnidadIds = hayFiltros ? filtrados.map((r) => r.unidadId) : undefined;
+  const hayFiltros = !!(busqueda.trim() || filtroTipo !== "todos" || filtroEstado !== "todos");
+  // Siempre pasar IDs en el orden actual (sort + filtro) para que print/excel respeten ambos
+  const sortedUnidadIds = filtrados.map((r) => r.unidadId);
 
   function clearFiltros() {
     setBusqueda(""); setFiltroTipo("todos"); setFiltroEstado("todos");
@@ -191,7 +192,7 @@ export default function AnalisisPeriodoClient({
         </button>
 
         {/* Acciones print/excel */}
-        <ReporteActions periodoId={periodoId} unidadIds={filteredUnidadIds} />
+        <ReporteActions periodoId={periodoId} unidadIds={sortedUnidadIds} />
       </div>
 
       {/* Panel de filtros */}
@@ -261,7 +262,7 @@ export default function AnalisisPeriodoClient({
       {hayFiltros && (
         <p className="text-xs mb-3" style={{ color: "var(--fg-muted)" }}>
           Mostrando {filtrados.length} de {rends.length} unidades
-          {filteredUnidadIds && " · Print y Excel usarán solo estos datos"}
+          {" · Print y Excel respetarán este orden y filtro"}
         </p>
       )}
 
