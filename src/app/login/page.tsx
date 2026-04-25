@@ -5,10 +5,8 @@ import { Fuel } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import ThemeToggle from "@/components/ThemeToggle";
 
-export default async function LandingPage() {
+export default async function LoginPage() {
   const { userId } = await auth();
-
-  // Usuario autenticado → directo al dashboard
   if (userId) redirect("/overview");
 
   return (
@@ -16,27 +14,21 @@ export default async function LandingPage() {
       className="min-h-screen flex flex-col items-center justify-center px-6"
       style={{ backgroundColor: "var(--bg)" }}
     >
-      {/* Theme toggle */}
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
 
-      {/* Card central */}
       <div
         className="w-full max-w-sm rounded-2xl border p-8 text-center"
         style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
       >
-        {/* Logo */}
         <div className="flex justify-center mb-6">
           <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
             <Fuel className="w-8 h-8 text-indigo-500" />
           </div>
         </div>
 
-        <h1
-          className="font-outfit font-bold text-2xl mb-1"
-          style={{ color: "var(--fg)" }}
-        >
+        <h1 className="font-outfit font-bold text-2xl mb-1" style={{ color: "var(--fg)" }}>
           {siteConfig.name}
         </h1>
         <p className="text-sm mb-8" style={{ color: "var(--fg-muted)" }}>
