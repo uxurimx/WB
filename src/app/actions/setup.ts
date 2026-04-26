@@ -69,7 +69,7 @@ export async function setFolioBaseCampo(folio: number) {
 }
 
 // ─── Tolerancia de rendimiento ────────────────────────────────────────────────
-export const TOLERANCIA_DEFAULT = 0.20; // 20%
+import { TOLERANCIA_DEFAULT } from "@/lib/alertas-config";
 
 export async function getTolerancia(): Promise<number> {
   const row = await db.query.configuracion.findFirst({

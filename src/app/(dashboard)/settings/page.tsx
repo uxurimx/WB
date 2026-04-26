@@ -5,7 +5,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import SeedButton from "@/components/SeedButton";
 import TestingPanel from "@/components/settings/TestingPanel";
 import AlertasConfig from "@/components/settings/AlertasConfig";
-import { getAlertaDias, getTolerancia, TOLERANCIA_DEFAULT } from "@/app/actions/setup";
+import { getAlertaDias, getTolerancia } from "@/app/actions/setup";
+import { TOLERANCIA_DEFAULT } from "@/lib/alertas-config";
 import ToleranciaConfig from "@/components/settings/ToleranciaConfig";
 
 export default async function SettingsPage() {
