@@ -5,14 +5,16 @@ import ThemeToggle from "@/components/ThemeToggle";
 import SeedButton from "@/components/SeedButton";
 import TestingPanel from "@/components/settings/TestingPanel";
 import AlertasConfig from "@/components/settings/AlertasConfig";
-import { getAlertaDias } from "@/app/actions/setup";
+import { getAlertaDias, getTolerancia, TOLERANCIA_DEFAULT } from "@/app/actions/setup";
+import ToleranciaConfig from "@/components/settings/ToleranciaConfig";
 
 export default async function SettingsPage() {
   await requirePermission("settings");
 
-  const [user, alertaDias] = await Promise.all([
+  const [user, alertaDias, tolerancia] = await Promise.all([
     currentUser(),
     getAlertaDias(),
+    getTolerancia(),
   ]);
   const isAdmin = user?.publicMetadata?.role === "admin";
 
@@ -76,6 +78,25 @@ export default async function SettingsPage() {
               Días que se muestran las alertas de rendimiento después de cerrar un período.
             </p>
             <AlertasConfig initialDias={alertaDias} />
+          </div>
+        </div>
+      </section>
+
+      {/* Rendimiento */}
+      <section className="mb-6">
+        <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--fg-muted)" }}>
+          Rendimiento
+        </h2>
+        <div className="p-5 rounded-2xl border space-y-3"
+          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
+          <div>
+            <p className="font-semibold text-sm mb-0.5" style={{ color: "var(--fg)" }}>
+              Tolerancia de rendimiento
+            </p>
+            <p className="text-xs mb-3" style={{ color: "var(--fg-muted)" }}>
+              Margen máximo de desviación permitido sobre el rendimiento de referencia. Por defecto {Math.round(TOLERANCIA_DEFAULT * 100)}%.
+            </p>
+            <ToleranciaConfig initialPct={Math.round(tolerancia * 100)} />
           </div>
         </div>
       </section>

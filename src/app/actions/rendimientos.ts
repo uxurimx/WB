@@ -10,6 +10,7 @@ import {
   rendimientos,
 } from "@/db/schema";
 import { eq, inArray, sql, desc } from "drizzle-orm";
+import { getTolerancia } from "@/app/actions/setup";
 
 // ─────────────────────────────────────────────────────────────
 // CERRAR PERÍODO Y CALCULAR RENDIMIENTOS
@@ -71,7 +72,7 @@ export async function cerrarPeriodo(periodoId: number) {
   const unidadesMap = new Map(unidadesData.map((u) => [u.id, u]));
 
   // 4 — Calcular rendimientos
-  const TOLERANCIA = 0.20; // 20%
+  const TOLERANCIA = await getTolerancia();
 
   const vals: typeof rendimientos.$inferInsert[] = [];
   for (const [unidadId, data] of porUnidad) {

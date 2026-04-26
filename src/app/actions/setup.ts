@@ -68,6 +68,30 @@ export async function setFolioBaseCampo(folio: number) {
   return { ok: true, msg: `Folio campo base establecido en ${folio}` };
 }
 
+// ─── Tolerancia de rendimiento ────────────────────────────────────────────────
+export const TOLERANCIA_DEFAULT = 0.20; // 20%
+
+export async function getTolerancia(): Promise<number> {
+  const row = await db.query.configuracion.findFirst({
+    where: eq(configuracion.clave, "tolerancia_rendimiento"),
+  });
+  return row ? parseFloat(row.valor) : TOLERANCIA_DEFAULT;
+}
+
+export async function setTolerancia(porcentaje: number) {
+  const val = Math.max(1, Math.min(100, Math.round(porcentaje)));
+  const stored = (val / 100).toFixed(4);
+  await db
+    .insert(configuracion)
+    .values({ clave: "tolerancia_rendimiento", valor: stored })
+    .onConflictDoUpdate({
+      target: configuracion.clave,
+      set: { valor: stored, updatedAt: new Date() },
+    });
+  revalidatePath("/settings");
+  return { ok: true, msg: `Tolerancia establecida en ±${val}%` };
+}
+
 // ─── Configuración de alertas ─────────────────────────────────────────────────
 import { ALERTA_RENDIMIENTO_DIAS_DEFAULT } from "@/lib/alertas-config";
 
