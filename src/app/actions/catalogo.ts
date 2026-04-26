@@ -3,8 +3,8 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { unidades, operadores, obras, cargas } from "@/db/schema";
-import { eq, count } from "drizzle-orm";
+import { unidades, operadores, obras, cargas, rendimientos, periodos } from "@/db/schema";
+import { eq, count, inArray, and, sql } from "drizzle-orm";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
@@ -21,6 +21,73 @@ export async function getUnidades(soloActivas = true) {
   return db.query.unidades.findMany({
     where: soloActivas ? eq(unidades.activo, true) : undefined,
     orderBy: (u, { asc }) => [asc(u.tipo), asc(u.codigo)],
+  });
+}
+
+export async function getUnidadesConStats() {
+  const all = await db.query.unidades.findMany({
+    orderBy: (u, { asc }) => [asc(u.tipo), asc(u.codigo)],
+  });
+
+  if (all.length === 0) return [];
+  const ids = all.map((u) => u.id);
+
+  const [cargasStats, rendStats] = await Promise.all([
+    db
+      .select({
+        unidadId:   cargas.unidadId,
+        totalLitros: sql<number>`coalesce(sum(${cargas.litros}), 0)::real`,
+        totalCargas: sql<number>`count(*)::int`,
+        ultimaFecha: sql<string>`max(${cargas.fecha})`,
+      })
+      .from(cargas)
+      .where(inArray(cargas.unidadId, ids))
+      .groupBy(cargas.unidadId),
+    db
+      .select({
+        unidadId:             rendimientos.unidadId,
+        periodoNombre:        periodos.nombre,
+        rendimientoActual:    rendimientos.rendimientoActual,
+        rendimientoReferencia: rendimientos.rendimientoReferencia,
+        diferencia:           rendimientos.diferencia,
+        dentroDeTolerancia:   rendimientos.dentroDeTolerancia,
+        litrosConsumidos:     rendimientos.litrosConsumidos,
+        fechaFin:             periodos.fechaFin,
+      })
+      .from(rendimientos)
+      .innerJoin(periodos, eq(rendimientos.periodoId, periodos.id))
+      .where(and(inArray(rendimientos.unidadId, ids), eq(periodos.cerrado, true))),
+  ]);
+
+  // Último período por unidad (mayor fechaFin)
+  const rendMap = new Map<number, typeof rendStats[0]>();
+  for (const r of rendStats) {
+    const prev = rendMap.get(r.unidadId);
+    if (!prev || (r.fechaFin && (!prev.fechaFin || r.fechaFin > prev.fechaFin))) {
+      rendMap.set(r.unidadId, r);
+    }
+  }
+
+  const cargasMap = new Map(cargasStats.map((s) => [s.unidadId, s]));
+
+  return all.map((u) => {
+    const cs   = cargasMap.get(u.id);
+    const rend = rendMap.get(u.id);
+    return {
+      ...u,
+      totalLitros: cs?.totalLitros ?? 0,
+      totalCargas: cs?.totalCargas ?? 0,
+      ultimaFecha: cs?.ultimaFecha ?? null,
+      ultimoPeriodo: rend
+        ? {
+            nombre:               rend.periodoNombre,
+            rendimientoActual:    rend.rendimientoActual,
+            rendimientoReferencia: rend.rendimientoReferencia,
+            diferencia:           rend.diferencia,
+            dentroDeTolerancia:   rend.dentroDeTolerancia,
+          }
+        : null,
+    };
   });
 }
 

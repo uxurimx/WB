@@ -790,3 +790,218 @@ REPORTE COMPLETO — ANÁLISIS Y PLAN DE SISTEMA DE CONTROL DIESEL WB
   │
   └─ FASE 6 ──── Migración histórica + modo offline PWA                                                       
                  ↓ Sistema completo y autónomo
+
+
+
+
+
+
+======================== UPDATE v1.1
+
+Análisis WB Diesel Control — Perspectiva de Dueño/Encargado                                                            
+                                                                                                                         
+  ---                                                                                                                    
+  Lo que funciona bien (base sólida)                                                                                     
+                                                                                                                         
+  El sistema tiene una arquitectura real. El schema es más sofisticado de lo que aparece en pantalla: audit_log,         
+  archivos, recargasTanque con precio/factura, cadena de custodia campo, validación kilométrica con foto de odómetro,    
+  cuentalitros para reconciliación. Eso no es común en sistemas de este tipo. La base de datos ya tiene todo lo que un
+  sistema maduro necesita — el problema es que el UI no lo aprovecha.                                                    
+                                                            
+  ---
+  1. Datos ricos, reportes pobres
+                                                                                                                         
+  El gap más crítico del sistema.
+                                                                                                                         
+  Tienes precioLitro en recargasTanque pero cero reportes de costo. Sabes cuántos litros consume CA12 pero no cuánto te  
+  cuesta. Para una empresa constructora, el costo de diesel por obra/semana es información de gerencia, no de bodega.    
+                                                                                                                         
+  Lo que falta:                                             
+  - Costo por km / costo por hora por unidad y período
+  - Costo por obra — cuánto diesel (en pesos) consumió cada proyecto                                                     
+  - Tendencia de costo — el precio del diesel fluctúa, ¿cuánto pagaste este mes vs el anterior?
+  - Comparativa entre períodos — ¿el período 48 consumió más que el 47? ¿por qué?                                        
+  - Top 5 consumidores — qué unidades representan el 80% del costo                                                       
+                                                                                                                         
+  Sin esto, el sistema registra pero no informa. Un gerente no puede tomar decisiones solo con "CA12 está fuera de       
+  tolerancia".                                                                                                           
+                                                                                                                         
+  ---                                                                                                                    
+  2. Rendimiento: el análisis llega tarde                   
+                                                                                                                         
+  El rendimiento se calcula al cerrar el período. Si el período es semanal, un camión puede estar consumiendo diesel en
+  exceso 6 días antes de que alguien se entere.                                                                          
+                                                            
+  Problemas concretos:                                                                                                   
+  - No hay tendencia multi-período visible. ¿CA12 lleva 3 períodos deteriorándose? El sistema no lo muestra. El modal de
+  rendimiento en el catálogo sí lo tiene ahora, pero no hay una vista consolidada de "unidades en tendencia negativa".   
+  - La tolerancia es fija al ±20% — pero no todos los tipos de trabajo son iguales. Una semana con terreno difícil    
+  naturalmente baja el rendimiento. No hay contexto de obra en el rendimiento.                                           
+  - Operador no aparece en el análisis de rendimiento. La misma unidad puede tener rendimientos muy diferentes según     
+  quien la maneje. Ese dato existe en el schema (operadorId en rendimientos) pero no se usa en el análisis.
+                                                                                                                         
+  ---                                                       
+  3. Cuentalitros: herramienta sin pantalla                                                                              
+                                                            
+  El cuentalitros es tu herramienta de control más confiable — mide físicamente lo que sale del tanque. Está en el schema
+   (inicio/fin por carga, y el actual del tanque), pero:                                                                 
+   
+  - No hay pantalla de reconciliación — ¿cuánto dice el cuentalitros que salió vs. cuánto registra el sistema?           
+  - No hay alerta cuando la diferencia supera X litros      
+  - Si hay robo o desperdicio, el cuentalitros lo detecta antes que el rendimiento de la unidad                          
+                                                                                                                         
+  Esta debería ser la pantalla más importante para el encargado de tanques.                                              
+                                                                                                                         
+  ---                                                                                                                    
+  4. Recargas de tanque: proceso invisible                  
+                                                                                                                         
+  Cuando llega una pipa de diesel, eso afecta todo el sistema pero apenas tiene UI. El schema tiene folioFactura,
+  precioLitro, proveedor, cuentalitrosInicio — pero probablemente el flujo actual es:                                    
+  1. Alguien llama para decir que llegó la pipa             
+  2. El encargado registra "X litros al tanque Taller"                                                                   
+  3. El sistema actualiza el stock                          
+                                                                                                                         
+  Lo que debería pasar:                                     
+  - Foto de factura adjunta (UploadThing ya existe)                                                                      
+  - Validación con cuentalitros antes/después de la recarga                                                              
+  - Historial de proveedores y precios para comparar       
+  - Alerta al gerente cuando el precio supera X pesos/litro                                                              
+                                                                                                                         
+  ---                                                                                                                    
+  5. Obras: catálogo sin valor analítico                                                                                 
+                                                                                                                         
+  Las obras están en el schema y se puede vincular cada carga a una obra, pero no hay ninguna vista de consumo por obra.
+  Para una constructora, esto es fundamental: ¿cuánto diesel consumió la obra "Urbanización Sauceda" este mes? ¿Está     
+  dentro del presupuesto?                                   
+                                                                                                                         
+  El catálogo de obras tiene fechaInicio, fechaFin, cliente pero ningún presupuesto de diesel. No hay forma de saber si  
+  una obra está consumiendo más de lo estimado.
+                                                                                                                         
+  ---                                                       
+  6. Flujo campo: dependencia de conectividad
+                                             
+  El formulario de campo (NISSAN) requiere internet. Los operadores de campo en zonas sin señal no pueden registrar. El
+  sistema tiene kmEstimado = true como flag, que ya asume que puede haber problemas de precisión, pero no hay solución   
+  offline.
+                                                                                                                         
+  Esto significa que probablemente hay cargas que se registran horas o días después del evento real, con odómetros       
+  recordados de memoria — la fuente de error más común en sistemas de este tipo.
+                                                                                                                         
+  ---                                                       
+  7. Validación de odómetro: existe pero incompleta
+                                                                                                                         
+  El sistema valida KM_MAX_DIFERENCIA = 1100 — si el odómetro subió más de 1100 km desde la última carga, lanza alerta.
+  Esto está bien. Pero:                                                                                                  
+                                                            
+  - No valida que el odómetro no baje — si alguien escribe un número menor al anterior, debería bloquearlo               
+  - No actualiza odometroActual en la tabla unidades automáticamente al registrar una carga (ese campo existe en el
+  schema pero probablemente no se usa)                                                                                   
+  - No hay reporte de "unidades sin lectura de odómetro esta semana"
+                                                                                                                         
+  ---                                                       
+  8. Audit log: tabla sin UI                                                                                             
+                                                            
+  El schema tiene audit_log completo — usuario, acción, entidad, snapshot JSON. Esto es profesional. Pero aparentemente
+  no hay pantalla para consultarlo. Para el dueño, esto es crítico: ¿quién eliminó una carga? ¿quién cambió un odómetro? 
+  Sin una pantalla de auditoría, el log existe pero no protege.
+                                                                                                                         
+  ---                                                       
+  9. Roles: sofisticados en definición, limitados en práctica
+                                                                                                                         
+  Tienes 6 roles (admin, gerente, despachador, operador_nissan, encargado_obra, chofer). Pero si el flujo real es:
+                                                                                                                         
+  - Despachador → registra cargas en patio                  
+  - Operador NISSAN → registra cargas campo                                                                              
+  - Gerente → revisa y cierra períodos                                                                                   
+  - Admin → todo
+                                                                                                                         
+  ¿Los choferes tienen acceso al sistema? ¿O solo el despachador registra por ellos? Si los choferes no tienen acceso, el
+   rol chofer existe pero no se usa. Si sí tienen acceso, ¿qué ven?                                                      
+                                                                                                                         
+  ---                                                       
+  10. Dashboard: reactivo, no proactivo
+                                                                                                                         
+  El dashboard actual muestra estado en tiempo real (stock, cargas de hoy, alertas). Eso está bien. Pero un encargado
+  necesita también:                                                                                                      
+                                                            
+  - ¿Cómo vamos esta semana vs la semana pasada? — litros consumidos, cargas registradas                                 
+  - ¿Cuándo se acaba el diesel? — con el ritmo de consumo actual, ¿en cuántos días se vacía el tanque?
+  - ¿Hay unidades sin cargar esta semana? — si CA20 no ha cargado en 4 días y normalmente carga diario, algo está raro   
+  (no está trabajando, o cargaron sin registrar)                                                                         
+  - Mini-calendario de actividad — qué días tuvieron más cargas, detectar patrones                                       
+                                                                                                                         
+  ---                                                       
+  11. Períodos: fijo semanal, inflexible                                                                                 
+                                                            
+  Los períodos parecen ser siempre sábado-viernes. Eso funciona si la operación es constante, pero:
+                                                                                                                         
+  - ¿Qué pasa en semanas festivas o paros de obra?                                                                       
+  - ¿Puedes cerrar un período manualmente antes del viernes si necesitas el reporte?                                     
+  - No hay períodos mensuales para reportes contables                                                                    
+                                                                                                                         
+  Una vez cerrado un período, ¿se puede reabrir si hay un error de captura? Aparentemente no. Eso es rígido — errores    
+  humanos existen y el proceso de corrección no está definido.                                                           
+                                                                                                                         
+  ---                                                       
+  12. Importación Excel: puerta de entrada sin validación completa
+                                                                                                                         
+  La importación de Excel existe y ya se corrigió el bug de hora. Pero importar historial masivo es una operación de alto
+   riesgo: si alguien importa 200 cargas con errores, contamina el sistema. No hay:                                      
+                                                            
+  - Vista previa antes de confirmar la importación                                                                       
+  - Detección de duplicados (mismo folio, misma fecha, misma unidad)
+  - Rollback si la importación falla a la mitad                                                                          
+  - Log de qué se importó y quién lo hizo                   
+                                                                                                                         
+  ---                                                       
+  13. UX: formularios para escritorio en operación de campo                                                              
+                                                                                                                         
+  Los formularios de registro son buenos para escritorio pero el uso real es:
+  - Un despachador de pie en el taller con tableta o teléfono                                                            
+  - Un operador de campo con el celular bajo el sol                                                                      
+                                                                                                                         
+  Los dropdowns largos para seleccionar unidad/operador son lentos en móvil. Lo natural sería:                           
+  - Autocompletado por código — escribir "CA1" y que filtre                                                              
+  - Unidad frecuente primero — mostrar las últimas 5 unidades cargadas arriba de la lista                                
+  - "Carga rápida" — si el mismo operador con la misma unidad carga casi todos los días, proponer: "¿CA12 con Juan       
+  García, igual que ayer?"                                                                                               
+                                                                                                                         
+  ---                                                                                                                    
+  14. Archivos: infraestructura sin adopción                                                                             
+                                                                                                                         
+  UploadThing está integrado, la foto de odómetro existe en ambos formularios, la tabla archivos tiene la estructura.
+  Pero si la foto no es obligatoria, no se toma. Y si no hay pantalla para revisar las fotos por carga, nadie las revisa.
+   La evidencia fotográfica solo tiene valor si está en el flujo de verificación, no como campo opcional.
+                                                                                                                         
+  ---                                                       
+  Resumen por prioridad de impacto
+                                                                                                                         
+  Alto impacto inmediato:
+  1. Reconciliación cuentalitros → primer módulo de control real                                                         
+  2. Costo por período/obra → convierte el sistema en herramienta gerencial                                              
+  3. Rendimiento por operador → detecta el factor humano                   
+  4. Pantalla de auditoría → transparencia y control                                                                     
+                                                                                                                         
+  Medio plazo:                                                                                                           
+  5. Tendencia multi-período en alerta (no solo el último)                                                               
+  6. Proyección de stock: "diesel para X días"                                                                           
+  7. Presupuesto de diesel por obra                                                                                      
+  8. Validación estricta de odómetro (no retroceso)                                                                      
+                                                                                                                         
+  Estratégico:                                              
+  9. Modo offline para campo (PWA con queue)                                                                             
+  10. QR en cada unidad para identificación rápida                                                                       
+  11. Notificaciones por WhatsApp al cierre de período
+  12. API para conectar con sistema contable de la empresa                                                               
+                                                                                                                         
+  ---                                                                                                                    
+  Opinión directa                                                                                                        
+                                                                                                                         
+  El sistema está en un punto intermedio peligroso: es suficientemente completo para usarse, pero no suficientemente
+  analítico para justificar que el gerente lo abra todos los días. El registro ya existe. El reto ahora es convertir esos
+   datos en información que cambie decisiones — ¿qué unidad necesita mantenimiento?, ¿qué obra se está pasando de
+  presupuesto?, ¿hay alguien robando diesel?                                                                             
+                                                            
+  El cuentalitros y el precio por litro ya están en el sistema. Monetizar esos datos (costo real de operación) es el     
+  siguiente nivel lógico.
+
