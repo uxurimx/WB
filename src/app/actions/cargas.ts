@@ -49,6 +49,7 @@ async function getFuentePorTipo(tipo: string) {
 export type CargaPatioInput = {
   fecha: string;          // "YYYY-MM-DD"
   hora: string;           // "HH:MM"
+  folioManual?: number;   // Si se proporciona, se usa en lugar del auto-generado
   unidadId: number;
   litros: number;
   odometroHrs?: number;
@@ -65,7 +66,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
   if (!userId) throw new Error("No autenticado");
 
   const periodo = await getOrCreatePeriodoActual(new Date(input.fecha));
-  const folio = await getSiguienteFolio();
+  const folio = input.folioManual ?? await getSiguienteFolio();
   const tanqueTaller = await getTanquePorNombre("Taller");
   if (!tanqueTaller) throw new Error("Tanque Taller no encontrado");
   if (input.litros > (tanqueTaller.litrosActuales ?? 0)) {

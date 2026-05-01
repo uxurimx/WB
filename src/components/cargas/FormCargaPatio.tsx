@@ -41,6 +41,8 @@ export default function FormCargaPatio({
   const [isPending, setIsPending] = useState(false);
   const [success, setSuccess] = useState<{ folio: number; litros: number } | null>(null);
   const [error, setError] = useState("");
+  const [folioManual, setFolioManual] = useState<string>(String(siguienteFolio));
+  const [folioEditando, setFolioEditando] = useState(false);
 
   // Km validation
   const [ultimoKm, setUltimoKm]   = useState<number | null>(null);
@@ -68,6 +70,10 @@ export default function FormCargaPatio({
     operadorId: "",
     notas: "",
   });
+
+  useEffect(() => {
+    setFolioManual(String(siguienteFolio));
+  }, [siguienteFolio]);
 
   useEffect(() => {
     if (!form.unidadId) { setUltimoKm(null); setKmWarning(""); setKmEstimado(false); return; }
@@ -151,9 +157,11 @@ export default function FormCargaPatio({
 
     setIsPending(true);
     try {
+      const folioNum = parseInt(folioManual);
       const result = await createCargaPatio({
         fecha: form.fecha,
         hora: form.hora,
+        folioManual: !isNaN(folioNum) ? folioNum : undefined,
         unidadId: parseInt(form.unidadId),
         litros,
         odometroHrs:    odometroFinal,
@@ -220,10 +228,41 @@ export default function FormCargaPatio({
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border"
             style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
             <Hash className="w-4 h-4 text-indigo-500 shrink-0" />
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>Folio</p>
-              <p className="font-mono font-bold text-lg" style={{ color: "var(--fg)" }}>{siguienteFolio}</p>
+              {folioEditando ? (
+                <input
+                  type="number"
+                  value={folioManual}
+                  onChange={(e) => setFolioManual(e.target.value)}
+                  onBlur={() => setFolioEditando(false)}
+                  autoFocus
+                  className="font-mono font-bold text-lg w-full bg-transparent outline-none border-b border-indigo-400"
+                  style={{ color: "var(--fg)" }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setFolioEditando(true)}
+                  className="font-mono font-bold text-lg leading-tight text-left hover:text-indigo-500 transition-colors"
+                  style={{ color: parseInt(folioManual) !== siguienteFolio ? "var(--color-indigo-400, #818cf8)" : "var(--fg)" }}
+                  title="Clic para editar folio"
+                >
+                  {folioManual || "—"}
+                </button>
+              )}
             </div>
+            {parseInt(folioManual) !== siguienteFolio && (
+              <button
+                type="button"
+                onClick={() => setFolioManual(String(siguienteFolio))}
+                className="text-[9px] px-1.5 py-0.5 rounded border font-medium shrink-0 hover:bg-[var(--surface)] transition-colors"
+                style={{ color: "var(--fg-muted)", borderColor: "var(--border)" }}
+                title="Restaurar folio secuencial"
+              >
+                ↺
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border"
             style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>

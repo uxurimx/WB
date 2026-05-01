@@ -140,8 +140,13 @@ export default function CatalogoDetalleModal({
                         backgroundColor: "var(--surface)",
                       }}
                     >
-                      <span className="font-mono text-xs w-14 shrink-0" style={{ color: "var(--fg-muted)" }}>
+                      <span className="font-mono text-xs shrink-0 flex items-center gap-1.5" style={{ color: "var(--fg-muted)" }}>
                         {c.fecha}
+                        {c.folio != null && (
+                          <span className="text-[10px] px-1 rounded" style={{ backgroundColor: "var(--surface-2)", color: "var(--fg-muted)" }}>
+                            #{c.folio}
+                          </span>
+                        )}
                       </span>
                       {tipo !== "unidad" && c.unidadCodigo && (
                         <span className="font-mono font-bold text-xs w-12 shrink-0" style={{ color: "var(--fg)" }}>

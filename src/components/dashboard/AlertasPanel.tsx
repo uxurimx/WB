@@ -31,9 +31,11 @@ export default function AlertasPanel({
   ultimoPeriodoCerrado,
   periodoActivoId,
 }: AlertasPanelProps) {
-  const [dismissedId, setDismissedId]   = useState<number | null>(null);
-  const [rendExpanded, setRendExpanded] = useState(false);
-  const [mounted, setMounted]           = useState(false);
+  const [dismissedId, setDismissedId]         = useState<number | null>(null);
+  const [rendExpanded, setRendExpanded]       = useState(false);
+  const [mounted, setMounted]                 = useState(false);
+  const [dismissedStock, setDismissedStock]   = useState<Set<string>>(new Set());
+  const [dismissedAnomalias, setDismissedAnomalias] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     setMounted(true);
@@ -57,7 +59,9 @@ export default function AlertasPanel({
   const rendDismissed = mounted && dismissedId === ultimoPeriodoCerrado?.id;
   const showRend      = alertasRendimiento.length > 0 && !rendDismissed;
 
-  const totalVisible = stockAlertas.length + anomaliasActivas.length + (showRend ? 1 : 0);
+  const visibleStockAlertas  = stockAlertas.filter((a) => !dismissedStock.has(a.label));
+  const visibleAnomalias     = anomaliasActivas.filter((_, i) => !dismissedAnomalias.has(i));
+  const totalVisible = visibleStockAlertas.length + visibleAnomalias.length + (showRend ? 1 : 0);
 
   return (
     <section className="mb-6">
@@ -88,7 +92,7 @@ export default function AlertasPanel({
       ) : (
         <div className="space-y-2">
           {/* ── Stock ───────────────────────────────────────── */}
-          {stockAlertas.map(({ label, litros, umbral, max }) => {
+          {visibleStockAlertas.map(({ label, litros, umbral, max }) => {
             const critico = litros < umbral * 0.5;
             const barPct  = Math.min(100, Math.round((litros / max) * 100));
             return (
@@ -118,6 +122,14 @@ export default function AlertasPanel({
                   >
                     Registrar recarga
                   </Link>
+                  <button
+                    onClick={() => setDismissedStock((prev) => new Set([...prev, label]))}
+                    className="p-1 rounded-lg hover:bg-black/10 transition-colors shrink-0"
+                    style={{ color: "var(--fg-muted)" }}
+                    aria-label="Cerrar alerta"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
                 {/* progress bar */}
                 <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border)" }}>
@@ -131,36 +143,47 @@ export default function AlertasPanel({
           })}
 
           {/* ── Anomalías del período activo ────────────────── */}
-          {anomaliasActivas.map((a, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-3 px-4 py-3 rounded-2xl border"
-              style={{
-                backgroundColor: "rgb(245 158 11 / 0.06)",
-                borderColor:     "rgb(245 158 11 / 0.25)",
-              }}
-            >
-              <div className="mt-0.5 p-1.5 rounded-lg shrink-0 bg-amber-500/10 border border-amber-500/20">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-amber-600">
-                  {a.unidadCodigo} — anomalía detectada
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-                  {a.detalle} · {a.fecha}
-                </p>
-              </div>
-              {periodoActivoId && (
-                <Link
-                  href={`/cargas?periodoId=${periodoActivoId}`}
-                  className="text-xs font-semibold shrink-0 text-amber-500 underline underline-offset-2"
+          {visibleAnomalias.map((a, visIdx) => {
+            const origIdx = anomaliasActivas.indexOf(a);
+            return (
+              <div
+                key={origIdx}
+                className="flex items-start gap-3 px-4 py-3 rounded-2xl border"
+                style={{
+                  backgroundColor: "rgb(245 158 11 / 0.06)",
+                  borderColor:     "rgb(245 158 11 / 0.25)",
+                }}
+              >
+                <div className="mt-0.5 p-1.5 rounded-lg shrink-0 bg-amber-500/10 border border-amber-500/20">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-600">
+                    {a.unidadCodigo} — anomalía detectada
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
+                    {a.detalle} · {a.fecha}
+                  </p>
+                </div>
+                {periodoActivoId && (
+                  <Link
+                    href={`/cargas?periodoId=${periodoActivoId}`}
+                    className="text-xs font-semibold shrink-0 text-amber-500 underline underline-offset-2"
+                  >
+                    Ver cargas
+                  </Link>
+                )}
+                <button
+                  onClick={() => setDismissedAnomalias((prev) => new Set([...prev, origIdx]))}
+                  className="p-1 rounded-lg hover:bg-amber-500/10 transition-colors shrink-0"
+                  style={{ color: "var(--fg-muted)" }}
+                  aria-label="Cerrar anomalía"
                 >
-                  Ver cargas
-                </Link>
-              )}
-            </div>
-          ))}
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
 
           {/* ── Rendimiento — tarjeta resumen colapsable ────── */}
           {showRend && ultimoPeriodoCerrado && (
