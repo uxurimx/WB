@@ -16,6 +16,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
 import { updateCarga, deleteCarga } from "@/app/actions/cargas";
+import {
+  updateRecargaTanque, deleteRecargaTanque,
+  updateTransferencia, deleteTransferencia,
+} from "@/app/actions/tanques";
 
 // ─── Types ───────────────────────────────────────────────────
 export type CargaItem = {
@@ -87,6 +91,52 @@ function DetailPill({ label, value, mono = false }: { label: string; value: stri
   );
 }
 
+// ─── Botones de acción reutilizables ─────────────────────────
+function ActionButtons({
+  id,
+  deletingId,
+  isPending,
+  onEdit,
+  onDelete,
+}: {
+  id: number;
+  deletingId: number | null;
+  isPending: boolean;
+  onEdit: () => void;
+  onDelete: (id: number) => void;
+}) {
+  if (deletingId === id) {
+    return (
+      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <span className="text-xs text-red-500">¿Eliminar?</span>
+        <button
+          onClick={() => onDelete(id)}
+          disabled={isPending}
+          className="px-2 py-0.5 rounded text-xs font-semibold bg-red-600 text-white"
+        >
+          Sí
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={onEdit}
+        className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"
+      >
+        <Pencil className="w-3.5 h-3.5 text-indigo-400" />
+      </button>
+      <button
+        onClick={() => onDelete(id)}
+        className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"
+      >
+        <Trash2 className="w-3.5 h-3.5 text-red-400" />
+      </button>
+    </div>
+  );
+}
+
 // ─── Fila de carga expandible ─────────────────────────────────
 function CargaRow({
   item,
@@ -118,45 +168,38 @@ function CargaRow({
 
   return (
     <>
-      {/* Fila principal */}
       <tr
         className="border-b transition-colors hover:bg-[rgba(0,0,0,0.02)] cursor-pointer"
         style={{ borderColor: "var(--border)" }}
         onClick={() => hasDetails && setExpanded((v) => !v)}
       >
-        {/* Folio */}
         <td className="px-4 py-3 whitespace-nowrap">
           <span className="font-mono text-sm font-semibold" style={{ color: "var(--fg)" }}>
             {item.folio ?? "—"}
           </span>
         </td>
-        {/* Fecha */}
         <td className="px-4 py-3 whitespace-nowrap">
           <p className="text-sm" style={{ color: "var(--fg)" }}>{formatFecha(item.fecha)}</p>
           {item.hora && (
             <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>{item.hora.slice(0, 5)}</p>
           )}
         </td>
-        {/* Unidad */}
         <td className="px-4 py-3 whitespace-nowrap">
           <span className="font-mono font-bold text-sm" style={{ color: "var(--fg)" }}>
             {item.unidad?.codigo ?? "—"}
           </span>
         </td>
-        {/* Operador */}
         <td className="px-4 py-3 hidden sm:table-cell">
           <span className="text-sm" style={{ color: "var(--fg-muted)" }}>
             {item.operador?.nombre ?? "—"}
           </span>
         </td>
-        {/* Litros */}
         <td className="px-4 py-3 text-right whitespace-nowrap">
           <span className="font-mono font-semibold text-sm" style={{ color: "var(--fg)" }}>
             {item.litros.toLocaleString()}
           </span>
           <span className="text-xs ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
         </td>
-        {/* Odómetro — visible en md+ */}
         <td className="px-4 py-3 hidden md:table-cell whitespace-nowrap">
           {item.odometroHrs != null ? (
             <span className="font-mono text-sm" style={{ color: "var(--fg)" }}>
@@ -169,7 +212,6 @@ function CargaRow({
             <span style={{ color: "var(--fg-muted)" }}>—</span>
           )}
         </td>
-        {/* CuentaLT */}
         <td className="px-4 py-3 hidden lg:table-cell whitespace-nowrap">
           {item.cuentaLtInicio != null || item.cuentaLtFin != null ? (
             <span className="font-mono text-xs" style={{ color: "var(--fg)" }}>
@@ -181,13 +223,11 @@ function CargaRow({
             <span className="text-sm" style={{ color: "var(--fg-muted)" }}>—</span>
           )}
         </td>
-        {/* Origen */}
         <td className="px-4 py-3 whitespace-nowrap">
           <Badge variant={item.origen === "campo" ? "warning" : "default"}>
             {item.origen === "campo" ? "Campo" : "Patio"}
           </Badge>
         </td>
-        {/* Expander + acciones */}
         <td className="px-4 py-3 whitespace-nowrap">
           <div className="flex items-center gap-1 justify-end">
             {hasDetails && (
@@ -196,32 +236,18 @@ function CargaRow({
               </span>
             )}
             {canEdit && (
-              <>
-                {isDeleting ? (
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    <span className="text-xs text-red-500">¿Eliminar?</span>
-                    <button onClick={() => onDelete(item.id)} disabled={isPending}
-                      className="px-2 py-0.5 rounded text-xs font-semibold bg-red-600 text-white">Sí</button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => onEdit(item)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors">
-                      <Pencil className="w-3.5 h-3.5 text-indigo-400" />
-                    </button>
-                    <button onClick={() => onDelete(item.id)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors">
-                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                    </button>
-                  </div>
-                )}
-              </>
+              <ActionButtons
+                id={item.id}
+                deletingId={isDeleting ? item.id : null}
+                isPending={isPending}
+                onEdit={() => onEdit(item)}
+                onDelete={onDelete}
+              />
             )}
           </div>
         </td>
       </tr>
 
-      {/* Fila expandida con detalles */}
       {expanded && hasDetails && (
         <tr style={{ backgroundColor: "var(--surface-2)" }}>
           <td colSpan={9} className="px-4 py-3">
@@ -248,7 +274,6 @@ function CargaRow({
                   <DetailPill label="Obra" value={item.obra.nombre} />
                 </div>
               )}
-              {/* Operador — visible en detail para mobile */}
               {item.operador != null && (
                 <div className="flex items-center gap-1.5 sm:hidden">
                   <User className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--fg-muted)" }} />
@@ -315,7 +340,7 @@ export default function CargasTable({
           String(item.folio ?? "").includes(q)
         );
       }
-      if (item._tipo === "recarga")      return (item.proveedor ?? "").toLowerCase().includes(q) || (item.tanqueNombre).toLowerCase().includes(q);
+      if (item._tipo === "recarga")       return (item.proveedor ?? "").toLowerCase().includes(q) || item.tanqueNombre.toLowerCase().includes(q);
       if (item._tipo === "transferencia") return item.origenNombre.toLowerCase().includes(q) || item.destinoNombre.toLowerCase().includes(q);
       return true;
     })
@@ -334,20 +359,39 @@ export default function CargasTable({
       return 0;
     });
 
-  const [editCarga, setEditCarga]   = useState<CargaItem | null>(null);
-  const [editForm, setEditForm]     = useState({
+  // ── Estado: edición/eliminación de cargas ──────────────────
+  const [editCarga,    setEditCarga]    = useState<CargaItem | null>(null);
+  const [editCargaForm, setEditCargaForm] = useState({
     fecha: "", hora: "", folio: "", litros: "", odometroHrs: "",
     cuentaLtInicio: "", cuentaLtFin: "",
     operadorId: "", obraId: "", notas: "",
   });
-  const [editError, setEditError]   = useState("");
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [deleteError, setDeleteError] = useState("");
+  const [editCargaError,  setEditCargaError]  = useState("");
+  const [deletingCargaId, setDeletingCargaId] = useState<number | null>(null);
+  const [deleteCargaError, setDeleteCargaError] = useState("");
 
-  function openEdit(c: CargaItem) {
+  // ── Estado: edición/eliminación de recargas ────────────────
+  const [editRecarga,    setEditRecarga]    = useState<RecargaItem | null>(null);
+  const [editRecargaForm, setEditRecargaForm] = useState({
+    fecha: "", litros: "", proveedor: "", folioFactura: "",
+    precioLitro: "", cuentalitrosInicio: "", notas: "",
+  });
+  const [editRecargaError,   setEditRecargaError]   = useState("");
+  const [deletingRecargaId,  setDeletingRecargaId]  = useState<number | null>(null);
+  const [deleteRecargaError, setDeleteRecargaError] = useState("");
+
+  // ── Estado: edición/eliminación de transferencias ──────────
+  const [editTransf,    setEditTransf]    = useState<TransferenciaItem | null>(null);
+  const [editTransfForm, setEditTransfForm] = useState({ fecha: "", litros: "", notas: "" });
+  const [editTransfError,   setEditTransfError]   = useState("");
+  const [deletingTransfId,  setDeletingTransfId]  = useState<number | null>(null);
+  const [deleteTransfError, setDeleteTransfError] = useState("");
+
+  // ── Handlers: cargas ───────────────────────────────────────
+  function openEditCarga(c: CargaItem) {
     setEditCarga(c);
-    setEditError("");
-    setEditForm({
+    setEditCargaError("");
+    setEditCargaForm({
       fecha:          c.fecha,
       hora:           c.hora?.slice(0, 5) ?? "",
       folio:          c.folio ? String(c.folio) : "",
@@ -361,51 +405,160 @@ export default function CargasTable({
     });
   }
 
-  function handleEditChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
-    setEditForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  function handleCargaFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
+    setEditCargaForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   }
 
-  function saveEdit() {
+  function saveEditCarga() {
     if (!editCarga) return;
-    if (!editForm.litros || parseFloat(editForm.litros) <= 0) {
-      setEditError("Los litros deben ser mayores a 0"); return;
+    if (!editCargaForm.litros || parseFloat(editCargaForm.litros) <= 0) {
+      setEditCargaError("Los litros deben ser mayores a 0"); return;
     }
     startTransition(async () => {
       try {
         await updateCarga(editCarga.id, {
-          fecha:          editForm.fecha,
-          hora:           editForm.hora || undefined,
-          folio:          editForm.folio ? parseInt(editForm.folio) : undefined,
-          litros:         parseFloat(editForm.litros),
-          odometroHrs:    editForm.odometroHrs ? parseFloat(editForm.odometroHrs) : null,
-          cuentaLtInicio: editForm.cuentaLtInicio ? parseFloat(editForm.cuentaLtInicio) : null,
-          cuentaLtFin:    editForm.cuentaLtFin ? parseFloat(editForm.cuentaLtFin) : null,
-          operadorId:     editForm.operadorId ? parseInt(editForm.operadorId) : null,
-          obraId:         editForm.obraId ? parseInt(editForm.obraId) : null,
-          notas:          editForm.notas || null,
+          fecha:          editCargaForm.fecha,
+          hora:           editCargaForm.hora || undefined,
+          folio:          editCargaForm.folio ? parseInt(editCargaForm.folio) : undefined,
+          litros:         parseFloat(editCargaForm.litros),
+          odometroHrs:    editCargaForm.odometroHrs ? parseFloat(editCargaForm.odometroHrs) : null,
+          cuentaLtInicio: editCargaForm.cuentaLtInicio ? parseFloat(editCargaForm.cuentaLtInicio) : null,
+          cuentaLtFin:    editCargaForm.cuentaLtFin ? parseFloat(editCargaForm.cuentaLtFin) : null,
+          operadorId:     editCargaForm.operadorId ? parseInt(editCargaForm.operadorId) : null,
+          obraId:         editCargaForm.obraId ? parseInt(editCargaForm.obraId) : null,
+          notas:          editCargaForm.notas || null,
         });
         setEditCarga(null);
       } catch (err) {
-        setEditError(err instanceof Error ? err.message : "Error al guardar");
+        setEditCargaError(err instanceof Error ? err.message : "Error al guardar");
       }
     });
   }
 
-  function handleDeleteClick(id: number) {
-    if (deletingId === id) {
-      // Segunda vez = confirmar
+  function handleDeleteCarga(id: number) {
+    if (deletingCargaId === id) {
       startTransition(async () => {
         try {
           await deleteCarga(id);
-          setDeletingId(null);
+          setDeletingCargaId(null);
         } catch (err) {
-          setDeleteError(err instanceof Error ? err.message : "Error al eliminar");
-          setDeletingId(null);
+          setDeleteCargaError(err instanceof Error ? err.message : "Error al eliminar");
+          setDeletingCargaId(null);
         }
       });
     } else {
-      setDeletingId(id);
-      setDeleteError("");
+      setDeletingCargaId(id);
+      setDeleteCargaError("");
+    }
+  }
+
+  // ── Handlers: recargas ─────────────────────────────────────
+  function openEditRecarga(r: RecargaItem) {
+    setEditRecarga(r);
+    setEditRecargaError("");
+    setEditRecargaForm({
+      fecha:              r.fecha,
+      litros:             String(r.litros),
+      proveedor:          r.proveedor ?? "",
+      folioFactura:       r.folioFactura ?? "",
+      precioLitro:        r.precioLitro != null ? String(r.precioLitro) : "",
+      cuentalitrosInicio: r.cuentalitrosInicio != null ? String(r.cuentalitrosInicio) : "",
+      notas:              r.notas ?? "",
+    });
+  }
+
+  function handleRecargaFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setEditRecargaForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  }
+
+  function saveEditRecarga() {
+    if (!editRecarga) return;
+    if (!editRecargaForm.litros || parseFloat(editRecargaForm.litros) <= 0) {
+      setEditRecargaError("Los litros deben ser mayores a 0"); return;
+    }
+    startTransition(async () => {
+      try {
+        await updateRecargaTanque(editRecarga.id, {
+          fecha:              editRecargaForm.fecha,
+          litros:             parseFloat(editRecargaForm.litros),
+          proveedor:          editRecargaForm.proveedor || null,
+          folioFactura:       editRecargaForm.folioFactura || null,
+          precioLitro:        editRecargaForm.precioLitro ? parseFloat(editRecargaForm.precioLitro) : null,
+          cuentalitrosInicio: editRecargaForm.cuentalitrosInicio ? parseFloat(editRecargaForm.cuentalitrosInicio) : null,
+          notas:              editRecargaForm.notas || null,
+        });
+        setEditRecarga(null);
+      } catch (err) {
+        setEditRecargaError(err instanceof Error ? err.message : "Error al guardar");
+      }
+    });
+  }
+
+  function handleDeleteRecarga(id: number) {
+    if (deletingRecargaId === id) {
+      startTransition(async () => {
+        try {
+          await deleteRecargaTanque(id);
+          setDeletingRecargaId(null);
+        } catch (err) {
+          setDeleteRecargaError(err instanceof Error ? err.message : "Error al eliminar");
+          setDeletingRecargaId(null);
+        }
+      });
+    } else {
+      setDeletingRecargaId(id);
+      setDeleteRecargaError("");
+    }
+  }
+
+  // ── Handlers: transferencias ───────────────────────────────
+  function openEditTransf(t: TransferenciaItem) {
+    setEditTransf(t);
+    setEditTransfError("");
+    setEditTransfForm({
+      fecha:  t.fecha,
+      litros: String(t.litros),
+      notas:  t.notas ?? "",
+    });
+  }
+
+  function handleTransfFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setEditTransfForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  }
+
+  function saveEditTransf() {
+    if (!editTransf) return;
+    if (!editTransfForm.litros || parseFloat(editTransfForm.litros) <= 0) {
+      setEditTransfError("Los litros deben ser mayores a 0"); return;
+    }
+    startTransition(async () => {
+      try {
+        await updateTransferencia(editTransf.id, {
+          fecha:  editTransfForm.fecha,
+          litros: parseFloat(editTransfForm.litros),
+          notas:  editTransfForm.notas || null,
+        });
+        setEditTransf(null);
+      } catch (err) {
+        setEditTransfError(err instanceof Error ? err.message : "Error al guardar");
+      }
+    });
+  }
+
+  function handleDeleteTransf(id: number) {
+    if (deletingTransfId === id) {
+      startTransition(async () => {
+        try {
+          await deleteTransferencia(id);
+          setDeletingTransfId(null);
+        } catch (err) {
+          setDeleteTransfError(err instanceof Error ? err.message : "Error al eliminar");
+          setDeletingTransfId(null);
+        }
+      });
+    } else {
+      setDeletingTransfId(id);
+      setDeleteTransfError("");
     }
   }
 
@@ -417,14 +570,10 @@ export default function CargasTable({
     { key: "transf",  label: "Transferencias" },
   ];
 
-  function SortBtn({ col, label, right }: { col: SortCol; label: string; right?: boolean }) {
+  function SortBtn({ col, label }: { col: SortCol; label: string }) {
     const active = sortCol === col;
     return (
-      <button
-        type="button"
-        onClick={() => toggleSort(col)}
-        className="flex items-center gap-1 group"
-      >
+      <button type="button" onClick={() => toggleSort(col)} className="flex items-center gap-1 group">
         {label}
         <ArrowUpDown
           className={`w-3 h-3 transition-colors ${active ? "text-indigo-400" : "opacity-40 group-hover:opacity-70"}`}
@@ -433,23 +582,24 @@ export default function CargasTable({
     );
   }
 
-  // Stats reactivos al filtro activo
   const cargasFiltradas = itemsFiltrados.filter((i): i is CargaItem => i._tipo === "carga");
-  const statsLitros = cargasFiltradas.reduce((s, c) => s + c.litros, 0);
+  const statsLitros  = cargasFiltradas.reduce((s, c) => s + c.litros, 0);
   const statsUnidades = new Set(cargasFiltradas.map((c) => c.unidad?.codigo ?? `id-${c.id}`)).size;
+
+  const anyDeleteError = deleteCargaError || deleteRecargaError || deleteTransfError;
 
   return (
     <>
-      {deleteError && (
+      {anyDeleteError && (
         <p className="text-sm text-red-500 flex items-center gap-1.5 mb-3">
-          <AlertCircle className="w-4 h-4 shrink-0" /> {deleteError}
+          <AlertCircle className="w-4 h-4 shrink-0" /> {anyDeleteError}
         </p>
       )}
 
       {/* Mini dashboard reactivo */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: "Total Cargas", value: cargasFiltradas.length },
+          { label: "Total Cargas",       value: cargasFiltradas.length },
           { label: "Litros Despachados", value: `${statsLitros.toLocaleString()} L` },
           { label: "Unidades Distintas", value: statsUnidades },
         ].map(({ label, value }) => (
@@ -463,7 +613,6 @@ export default function CargasTable({
 
       {/* Búsqueda + filtros */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        {/* Buscador */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--fg-muted)" }} />
           <input
@@ -485,7 +634,6 @@ export default function CargasTable({
             </button>
           )}
         </div>
-        {/* Tipo filtro */}
         <div className="flex gap-1.5 flex-wrap">
           {TIPO_OPTS.map(({ key, label }) => (
             <button
@@ -505,36 +653,25 @@ export default function CargasTable({
         </div>
       </div>
 
-      {/* Tabla — scroll horizontal en móvil */}
+      {/* Tabla */}
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--fg-muted)" }}>
-                  <SortBtn col="folio" label="Folio" />
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--fg-muted)" }}>
-                  <SortBtn col="fecha" label="Fecha" />
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--fg-muted)" }}>
-                  <SortBtn col="unidad" label="Unidad" />
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell"
-                  style={{ color: "var(--fg-muted)" }}>
-                  <SortBtn col="operador" label="Operador" />
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--fg-muted)" }}>
-                  <SortBtn col="litros" label="Litros" right />
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell"
-                  style={{ color: "var(--fg-muted)" }}>
-                  <SortBtn col="odometro" label="Odóm./HRS" />
-                </th>
+                {[
+                  { col: "folio"    as SortCol, label: "Folio",      cls: "" },
+                  { col: "fecha"    as SortCol, label: "Fecha",      cls: "" },
+                  { col: "unidad"   as SortCol, label: "Unidad",     cls: "" },
+                  { col: "operador" as SortCol, label: "Operador",   cls: "hidden sm:table-cell" },
+                  { col: "litros"   as SortCol, label: "Litros",     cls: "text-right" },
+                  { col: "odometro" as SortCol, label: "Odóm./HRS",  cls: "hidden md:table-cell" },
+                ].map(({ col, label, cls }) => (
+                  <th key={col} className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${cls}`}
+                    style={{ color: "var(--fg-muted)" }}>
+                    <SortBtn col={col} label={label} />
+                  </th>
+                ))}
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell"
                   style={{ color: "var(--fg-muted)" }}>CuentaLT</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
@@ -598,7 +735,19 @@ export default function CargasTable({
                           <Fuel className="w-2.5 h-2.5" /> Recarga
                         </span>
                       </td>
-                      <td className="px-4 py-3" />
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {canEdit && (
+                          <div className="flex justify-end">
+                            <ActionButtons
+                              id={item.id}
+                              deletingId={deletingRecargaId}
+                              isPending={isPending}
+                              onEdit={() => openEditRecarga(item)}
+                              onDelete={handleDeleteRecarga}
+                            />
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   );
                 }
@@ -627,16 +776,28 @@ export default function CargasTable({
                         <span className="text-xs ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell" />
-                      <td className="px-4 py-3 hidden lg:table-cell" />
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        {item.notas && (
+                          <span className="text-xs" style={{ color: "var(--fg-muted)" }}>{item.notas}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
                           style={{ backgroundColor: "rgba(139,92,246,0.15)", color: "rgb(139,92,246)" }}>
                           <ArrowRight className="w-2.5 h-2.5" /> Transf.
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        {item.notas && (
-                          <span className="text-xs" style={{ color: "var(--fg-muted)" }}>{item.notas}</span>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {canEdit && (
+                          <div className="flex justify-end">
+                            <ActionButtons
+                              id={item.id}
+                              deletingId={deletingTransfId}
+                              isPending={isPending}
+                              onEdit={() => openEditTransf(item)}
+                              onDelete={handleDeleteTransf}
+                            />
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -651,9 +812,9 @@ export default function CargasTable({
                     canEdit={canEdit}
                     operadores={operadores}
                     obras={obras}
-                    onEdit={openEdit}
-                    onDelete={handleDeleteClick}
-                    isDeleting={deletingId === item.id}
+                    onEdit={openEditCarga}
+                    onDelete={handleDeleteCarga}
+                    isDeleting={deletingCargaId === item.id}
                     isPending={isPending}
                   />
                 );
@@ -663,14 +824,13 @@ export default function CargasTable({
         </div>
       </div>
 
-      {/* Modal de edición */}
+      {/* ─── Modal: editar carga ────────────────────────────────── */}
       <Dialog open={!!editCarga} onOpenChange={(open) => { if (!open) setEditCarga(null); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar carga #{editCarga?.folio ?? editCarga?.id}</DialogTitle>
           </DialogHeader>
 
-          {/* Info de sólo lectura */}
           {editCarga && (
             <div className="rounded-xl border p-3 grid grid-cols-3 gap-3 text-xs"
               style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
@@ -693,26 +853,24 @@ export default function CargasTable({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Fecha</Label>
-                <Input name="fecha" type="date" value={editForm.fecha} onChange={handleEditChange} />
+                <Input name="fecha" type="date" value={editCargaForm.fecha} onChange={handleCargaFormChange} />
               </div>
               <div className="space-y-1.5">
                 <Label>Hora</Label>
-                <Input name="hora" type="time" value={editForm.hora} onChange={handleEditChange} />
+                <Input name="hora" type="time" value={editCargaForm.hora} onChange={handleCargaFormChange} />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Folio</Label>
-                <Input name="folio" type="number" value={editForm.folio} onChange={handleEditChange} className="font-mono" />
+                <Input name="folio" type="number" value={editCargaForm.folio} onChange={handleCargaFormChange} className="font-mono" />
               </div>
               <div className="space-y-1.5">
                 <Label>Litros *</Label>
-                <Input name="litros" type="number" step="0.5" value={editForm.litros} onChange={handleEditChange}
+                <Input name="litros" type="number" step="0.5" value={editCargaForm.litros} onChange={handleCargaFormChange}
                   className="font-mono font-bold" />
               </div>
             </div>
-
             <div className="space-y-1.5">
               <Label>
                 Odómetro / Horas
@@ -720,53 +878,47 @@ export default function CargasTable({
                   <span className="ml-2 text-[10px] text-amber-500 font-normal">fue estimado</span>
                 )}
               </Label>
-              <Input name="odometroHrs" type="number" step="1" value={editForm.odometroHrs}
-                onChange={handleEditChange} className="font-mono"
-                placeholder="Sin registro" />
+              <Input name="odometroHrs" type="number" step="1" value={editCargaForm.odometroHrs}
+                onChange={handleCargaFormChange} className="font-mono" placeholder="Sin registro" />
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>CuentaLT inicio</Label>
-                <Input name="cuentaLtInicio" type="number" step="1" value={editForm.cuentaLtInicio}
-                  onChange={handleEditChange} className="font-mono" placeholder="—" />
+                <Input name="cuentaLtInicio" type="number" step="1" value={editCargaForm.cuentaLtInicio}
+                  onChange={handleCargaFormChange} className="font-mono" placeholder="—" />
               </div>
               <div className="space-y-1.5">
                 <Label>CuentaLT fin</Label>
-                <Input name="cuentaLtFin" type="number" step="1" value={editForm.cuentaLtFin}
-                  onChange={handleEditChange} className="font-mono" placeholder="—" />
+                <Input name="cuentaLtFin" type="number" step="1" value={editCargaForm.cuentaLtFin}
+                  onChange={handleCargaFormChange} className="font-mono" placeholder="—" />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Operador</Label>
-                <Select name="operadorId" value={editForm.operadorId} onChange={handleEditChange}>
+                <Select name="operadorId" value={editCargaForm.operadorId} onChange={handleCargaFormChange}>
                   <option value="">— Ninguno —</option>
                   {operadores.map((o) => (<option key={o.id} value={o.id}>{o.nombre}</option>))}
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Obra</Label>
-                <Select name="obraId" value={editForm.obraId} onChange={handleEditChange}>
+                <Select name="obraId" value={editCargaForm.obraId} onChange={handleCargaFormChange}>
                   <option value="">— Sin obra —</option>
                   {obras.map((o) => (<option key={o.id} value={o.id}>{o.nombre}</option>))}
                 </Select>
               </div>
             </div>
-
             <div className="space-y-1.5">
               <Label>Notas</Label>
-              <Textarea name="notas" value={editForm.notas} onChange={handleEditChange}
+              <Textarea name="notas" value={editCargaForm.notas} onChange={handleCargaFormChange}
                 placeholder="Observaciones..." rows={2} />
             </div>
-
-            {editError && (
+            {editCargaError && (
               <p className="text-sm text-red-500 flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 shrink-0" /> {editError}
+                <AlertCircle className="w-4 h-4 shrink-0" /> {editCargaError}
               </p>
             )}
-
             <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
               Cambiar litros ajusta automáticamente el stock del tanque.
             </p>
@@ -776,7 +928,138 @@ export default function CargasTable({
             <DialogClose asChild>
               <Button variant="ghost" size="sm">Cancelar</Button>
             </DialogClose>
-            <Button size="sm" disabled={isPending} onClick={saveEdit}>
+            <Button size="sm" disabled={isPending} onClick={saveEditCarga}>
+              {isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Modal: editar recarga ──────────────────────────────── */}
+      <Dialog open={!!editRecarga} onOpenChange={(open) => { if (!open) setEditRecarga(null); }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar recarga — {editRecarga?.tanqueNombre}</DialogTitle>
+          </DialogHeader>
+
+          {editRecarga && (
+            <div className="rounded-xl border px-3 py-2 text-xs flex items-center gap-2"
+              style={{ backgroundColor: "rgba(16,185,129,0.06)", borderColor: "rgba(16,185,129,0.3)" }}>
+              <Fuel className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span style={{ color: "var(--fg-muted)" }}>
+                Actual: <strong className="font-mono">{editRecarga.litros.toLocaleString()} L</strong>.
+                Cambiar litros ajustará el stock del tanque por la diferencia.
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-4 py-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Fecha</Label>
+                <Input name="fecha" type="date" value={editRecargaForm.fecha} onChange={handleRecargaFormChange} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Litros *</Label>
+                <Input name="litros" type="number" step="1" value={editRecargaForm.litros}
+                  onChange={handleRecargaFormChange} className="font-mono font-bold" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Proveedor</Label>
+                <Input name="proveedor" value={editRecargaForm.proveedor}
+                  onChange={handleRecargaFormChange} placeholder="Ej. PEMEX" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Folio factura</Label>
+                <Input name="folioFactura" value={editRecargaForm.folioFactura}
+                  onChange={handleRecargaFormChange} className="font-mono" placeholder="—" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Precio / litro</Label>
+                <Input name="precioLitro" type="number" step="0.01" value={editRecargaForm.precioLitro}
+                  onChange={handleRecargaFormChange} className="font-mono" placeholder="—" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>CuentaLT inicio</Label>
+                <Input name="cuentalitrosInicio" type="number" step="1" value={editRecargaForm.cuentalitrosInicio}
+                  onChange={handleRecargaFormChange} className="font-mono" placeholder="—" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Notas</Label>
+              <Textarea name="notas" value={editRecargaForm.notas} onChange={handleRecargaFormChange}
+                placeholder="Observaciones..." rows={2} />
+            </div>
+            {editRecargaError && (
+              <p className="text-sm text-red-500 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" /> {editRecargaError}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost" size="sm">Cancelar</Button>
+            </DialogClose>
+            <Button size="sm" disabled={isPending} onClick={saveEditRecarga}>
+              {isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Modal: editar transferencia ───────────────────────── */}
+      <Dialog open={!!editTransf} onOpenChange={(open) => { if (!open) setEditTransf(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar transferencia #{editTransf?.folio ?? editTransf?.id}</DialogTitle>
+          </DialogHeader>
+
+          {editTransf && (
+            <div className="rounded-xl border px-3 py-2 text-xs flex items-center gap-2"
+              style={{ backgroundColor: "rgba(139,92,246,0.06)", borderColor: "rgba(139,92,246,0.3)" }}>
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" style={{ color: "rgb(139,92,246)" }} />
+              <span style={{ color: "var(--fg-muted)" }}>
+                {editTransf.origenNombre} → {editTransf.destinoNombre} &nbsp;|&nbsp;
+                Actual: <strong className="font-mono">{editTransf.litros.toLocaleString()} L</strong>.
+                Cambiar litros ajustará ambos tanques.
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-4 py-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Fecha</Label>
+                <Input name="fecha" type="date" value={editTransfForm.fecha} onChange={handleTransfFormChange} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Litros *</Label>
+                <Input name="litros" type="number" step="1" value={editTransfForm.litros}
+                  onChange={handleTransfFormChange} className="font-mono font-bold" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Notas</Label>
+              <Textarea name="notas" value={editTransfForm.notas} onChange={handleTransfFormChange}
+                placeholder="Observaciones..." rows={2} />
+            </div>
+            {editTransfError && (
+              <p className="text-sm text-red-500 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" /> {editTransfError}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost" size="sm">Cancelar</Button>
+            </DialogClose>
+            <Button size="sm" disabled={isPending} onClick={saveEditTransf}>
               {isPending ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>
