@@ -51,6 +51,7 @@ export type TransferenciaItem = {
   litros: number;
   origenNombre: string;
   destinoNombre: string;
+  cuentalitrosDestino: number | null;
   notas: string | null;
 };
 
@@ -382,7 +383,7 @@ export default function CargasTable({
 
   // ── Estado: edición/eliminación de transferencias ──────────
   const [editTransf,    setEditTransf]    = useState<TransferenciaItem | null>(null);
-  const [editTransfForm, setEditTransfForm] = useState({ fecha: "", litros: "", notas: "" });
+  const [editTransfForm, setEditTransfForm] = useState({ fecha: "", litros: "", cuentalitrosDestino: "", notas: "" });
   const [editTransfError,   setEditTransfError]   = useState("");
   const [deletingTransfId,  setDeletingTransfId]  = useState<number | null>(null);
   const [deleteTransfError, setDeleteTransfError] = useState("");
@@ -516,9 +517,10 @@ export default function CargasTable({
     setEditTransf(t);
     setEditTransfError("");
     setEditTransfForm({
-      fecha:  t.fecha,
-      litros: String(t.litros),
-      notas:  t.notas ?? "",
+      fecha:               t.fecha,
+      litros:              String(t.litros),
+      cuentalitrosDestino: t.cuentalitrosDestino != null ? String(t.cuentalitrosDestino) : "",
+      notas:               t.notas ?? "",
     });
   }
 
@@ -534,9 +536,10 @@ export default function CargasTable({
     startTransition(async () => {
       try {
         await updateTransferencia(editTransf.id, {
-          fecha:  editTransfForm.fecha,
-          litros: parseFloat(editTransfForm.litros),
-          notas:  editTransfForm.notas || null,
+          fecha:               editTransfForm.fecha,
+          litros:              parseFloat(editTransfForm.litros),
+          notas:               editTransfForm.notas || null,
+          cuentalitrosDestino: editTransfForm.cuentalitrosDestino !== "" ? parseFloat(editTransfForm.cuentalitrosDestino) : null,
         });
         setEditTransf(null);
       } catch (err) {
@@ -777,8 +780,12 @@ export default function CargasTable({
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell" />
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        {item.notas && (
-                          <span className="text-xs" style={{ color: "var(--fg-muted)" }}>{item.notas}</span>
+                        {item.cuentalitrosDestino != null ? (
+                          <span className="font-mono text-xs" style={{ color: "var(--fg)" }}>
+                            {item.cuentalitrosDestino.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--fg-muted)" }}>—</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -1042,6 +1049,20 @@ export default function CargasTable({
                 <Input name="litros" type="number" step="1" value={editTransfForm.litros}
                   onChange={handleTransfFormChange} className="font-mono font-bold" />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>
+                Cuentalitros {editTransf?.destinoNombre ?? "NISSAN"}
+                {editTransf?.cuentalitrosDestino != null && (
+                  <span className="ml-1.5 font-normal text-xs" style={{ color: "var(--fg-muted)" }}>
+                    (actual: {editTransf.cuentalitrosDestino.toLocaleString()})
+                  </span>
+                )}
+              </Label>
+              <Input name="cuentalitrosDestino" type="number" step="1" min="0"
+                value={editTransfForm.cuentalitrosDestino}
+                onChange={handleTransfFormChange}
+                className="font-mono" placeholder="—" />
             </div>
             <div className="space-y-1.5">
               <Label>Notas</Label>

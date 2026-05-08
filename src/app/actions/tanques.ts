@@ -75,6 +75,7 @@ export type TransferenciaInput = {
   litros: number;
   fecha: string; // "YYYY-MM-DD"
   notas?: string;
+  cuentalitrosDestino?: number; // Corrección manual del cuentalitros del destino (NISSAN)
 };
 
 export async function transferirEntreTanques(input: TransferenciaInput) {
@@ -123,7 +124,11 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
       .where(eq(tanques.id, input.tanqueOrigenId)),
     db
       .update(tanques)
-      .set({ litrosActuales: nuevosLitrosDestino, ultimaActualizacion: new Date() })
+      .set({
+        litrosActuales: nuevosLitrosDestino,
+        ...(input.cuentalitrosDestino !== undefined ? { cuentalitrosActual: input.cuentalitrosDestino } : {}),
+        ultimaActualizacion: new Date(),
+      })
       .where(eq(tanques.id, input.tanqueDestinoId)),
     db.insert(transferenciasTanque).values({
       folio,
@@ -131,6 +136,7 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
       litros: input.litros,
       tanqueOrigenId: input.tanqueOrigenId,
       tanqueDestinoId: input.tanqueDestinoId,
+      cuentalitrosDestino: input.cuentalitrosDestino ?? null,
       registradoPorId: userId,
       notas: input.notas ?? null,
     }),
@@ -306,6 +312,7 @@ export async function updateTransferencia(
     fecha?: string;
     litros?: number;
     notas?: string | null;
+    cuentalitrosDestino?: number | null;
   }
 ) {
   const { userId } = await auth();
@@ -357,12 +364,14 @@ export async function updateTransferencia(
       }).where(eq(tanques.id, transferencia.tanqueOrigenId)),
       db.update(tanques).set({
         litrosActuales: litrosDestinoFinal,
+        ...(data.cuentalitrosDestino !== undefined ? { cuentalitrosActual: data.cuentalitrosDestino } : {}),
         ultimaActualizacion: new Date(),
       }).where(eq(tanques.id, transferencia.tanqueDestinoId)),
       db.update(transferenciasTanque).set({
-        fecha:  data.fecha !== undefined ? data.fecha : transferencia.fecha,
-        litros: litrosNuevos,
-        notas:  data.notas !== undefined ? data.notas : transferencia.notas,
+        fecha:               data.fecha !== undefined ? data.fecha : transferencia.fecha,
+        litros:              litrosNuevos,
+        notas:               data.notas !== undefined ? data.notas : transferencia.notas,
+        cuentalitrosDestino: data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,
       }).where(eq(transferenciasTanque.id, id)),
     ]);
 
@@ -375,11 +384,18 @@ export async function updateTransferencia(
       }),
     ]);
   } else {
-    // Solo fecha/notas cambian, sin tocar tanques
+    // Solo fecha/notas/cuentalitros cambian, sin tocar litros de tanques
     await db.update(transferenciasTanque).set({
-      fecha: data.fecha !== undefined ? data.fecha : transferencia.fecha,
-      notas: data.notas !== undefined ? data.notas : transferencia.notas,
+      fecha:               data.fecha !== undefined ? data.fecha : transferencia.fecha,
+      notas:               data.notas !== undefined ? data.notas : transferencia.notas,
+      cuentalitrosDestino: data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,
     }).where(eq(transferenciasTanque.id, id));
+
+    if (data.cuentalitrosDestino !== undefined) {
+      await db.update(tanques)
+        .set({ cuentalitrosActual: data.cuentalitrosDestino ?? undefined, ultimaActualizacion: new Date() })
+        .where(eq(tanques.id, transferencia.tanqueDestinoId));
+    }
   }
 
   revalidatePath("/overview");

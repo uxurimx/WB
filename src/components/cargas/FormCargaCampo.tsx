@@ -4,13 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle, Fuel, AlertCircle, Hash, Plus, Loader2, TriangleAlert, Camera, X,
+  Clock, MapPin, User, History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createCargaCampo, getUltimoOdometro } from "@/app/actions/cargas";
+import { createCargaCampo, getUltimoOdometro, getUltimaCargaUnidad } from "@/app/actions/cargas";
 import { saveArchivoFoto } from "@/app/actions/archivos";
 import { createObraRapida } from "@/app/actions/catalogo";
 import { useUploadThing } from "@/lib/uploadthing";
@@ -54,6 +55,11 @@ export default function FormCargaCampo({
   const [savingObra, setSavingObra]   = useState(false);
   const nuevaObraInputRef = useRef<HTMLInputElement>(null);
 
+  // Última carga de la unidad (anti-fraude)
+  type UltimaCarga = Awaited<ReturnType<typeof getUltimaCargaUnidad>>;
+  const [ultimaCarga,      setUltimaCarga]      = useState<UltimaCarga>(null);
+  const [loadingUltima,    setLoadingUltima]    = useState(false);
+
   // Km validation
   const [ultimoKm, setUltimoKm]     = useState<number | null>(null);
   const [loadingKm, setLoadingKm]   = useState(false);
@@ -76,6 +82,8 @@ export default function FormCargaCampo({
     unidadId:          "",
     litros:            "",
     odometroHrs:       "",
+    cuentaLtInicio:    cuentalitrosNissanProp > 0 ? String(cuentalitrosNissanProp) : "",
+    cuentaLtFin:       "",
     obraId:            "",
     operadorId:        "",
     quienSuministraId: "",
@@ -90,10 +98,17 @@ export default function FormCargaCampo({
   }, [siguienteFolio]);
 
   useEffect(() => {
-    if (!form.unidadId) { setUltimoKm(null); setKmWarning(""); setKmEstimado(false); return; }
+    if (!form.unidadId) {
+      setUltimoKm(null); setKmWarning(""); setKmEstimado(false);
+      setUltimaCarga(null);
+      return;
+    }
+    const id = parseInt(form.unidadId);
     setLoadingKm(true);
+    setLoadingUltima(true);
     setKmWarning("");
-    getUltimoOdometro(parseInt(form.unidadId)).then((km) => { setUltimoKm(km); setLoadingKm(false); });
+    getUltimoOdometro(id).then((km) => { setUltimoKm(km); setLoadingKm(false); });
+    getUltimaCargaUnidad(id).then((uc) => { setUltimaCarga(uc); setLoadingUltima(false); });
   }, [form.unidadId]);
 
   useEffect(() => {
@@ -108,6 +123,16 @@ export default function FormCargaCampo({
       setKmWarning("");
     }
   }, [form.odometroHrs, ultimoKm]);
+
+  useEffect(() => {
+    const inicio = parseFloat(form.cuentaLtInicio);
+    const litros = parseFloat(form.litros);
+    if (!isNaN(inicio) && !isNaN(litros) && litros > 0) {
+      setForm((prev) => ({ ...prev, cuentaLtFin: String(inicio + litros) }));
+    } else {
+      setForm((prev) => ({ ...prev, cuentaLtFin: "" }));
+    }
+  }, [form.cuentaLtInicio, form.litros]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -170,6 +195,10 @@ export default function FormCargaCampo({
       setError(`Stock insuficiente. NISSAN tiene ${saldoNissan.toLocaleString()} L disponibles`);
       return;
     }
+    const cuentaInicio = parseFloat(form.cuentaLtInicio);
+    if (!form.cuentaLtInicio || isNaN(cuentaInicio)) {
+      setError("El cuentalitros inicial es requerido"); return;
+    }
 
     const kmVal = parseFloat(form.odometroHrs);
     if (form.odometroHrs && !isNaN(kmVal)) {
@@ -203,6 +232,7 @@ export default function FormCargaCampo({
         litros,
         odometroHrs:       odometroFinal,
         kmEstimado:        estimado || kmEstimado,
+        cuentaLtInicio:    cuentaInicio,
         obraId:            form.obraId        ? parseInt(form.obraId)        : undefined,
         operadorId:        form.operadorId    ? parseInt(form.operadorId)    : undefined,
         quienSuministraId: form.quienSuministraId ? parseInt(form.quienSuministraId) : undefined,
@@ -223,9 +253,11 @@ export default function FormCargaCampo({
       }
       setSuccess({ litros, unidad: unidadSel?.codigo ?? "" });
       clearFoto();
+      const nextCuentaLt = form.cuentaLtFin;
       const { fecha, hora } = getNow();
       setForm((prev) => ({
         ...prev, fecha, hora, unidadId: "", litros: "", odometroHrs: "",
+        cuentaLtInicio: nextCuentaLt, cuentaLtFin: "",
         obraId: "", operadorId: "", quienSuministraId: "", notas: "",
       }));
       setUltimoKm(null);
@@ -241,6 +273,26 @@ export default function FormCargaCampo({
   const litrosNum    = parseFloat(form.litros) || 0;
   const saldoDespues = saldoNissan - litrosNum;
   const superaStock  = litrosNum > 0 && litrosNum > saldoNissan;
+
+  // Calcula horas transcurridas desde la última carga
+  function horasDesde(createdAt: string | null, fecha: string, hora: string | null): number | null {
+    try {
+      const dt = hora
+        ? new Date(`${fecha}T${hora}`)
+        : new Date(`${fecha}T12:00:00`);
+      return (Date.now() - dt.getTime()) / 3_600_000;
+    } catch { return null; }
+  }
+
+  const unidadSel = form.unidadId
+    ? unidades.find((u) => u.id === parseInt(form.unidadId))
+    : null;
+  const esMaquinaria = unidadSel?.tipo === "maquina" || unidadSel?.tipo === "otro";
+  const horasUltima = ultimaCarga
+    ? horasDesde(ultimaCarga.createdAt, ultimaCarga.fecha, ultimaCarga.hora)
+    : null;
+  // Alerta si fue hace menos de 4 horas
+  const alertaFrecuencia = horasUltima !== null && horasUltima < 4;
 
   return (
     <div className="max-w-lg w-full mx-auto">
@@ -331,6 +383,92 @@ export default function FormCargaCampo({
           </Select>
         </div>
 
+        {/* Última carga — visible para cualquier unidad con historial */}
+        {form.unidadId && (loadingUltima || ultimaCarga) && (
+          <div className={`rounded-xl border p-3 space-y-2 text-xs transition-colors ${
+            alertaFrecuencia
+              ? "border-red-500/40 bg-red-500/5"
+              : "border-amber-500/30 bg-amber-500/5"
+          }`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 font-semibold"
+                style={{ color: alertaFrecuencia ? "rgb(239 68 68)" : "rgb(245 158 11)" }}>
+                <History className="w-3.5 h-3.5 shrink-0" />
+                Última carga registrada
+              </div>
+              {loadingUltima && <Loader2 className="w-3 h-3 animate-spin" style={{ color: "var(--fg-muted)" }} />}
+              {!loadingUltima && ultimaCarga && horasUltima !== null && (
+                <span className={`font-mono font-bold ${alertaFrecuencia ? "text-red-500" : ""}`}
+                  style={!alertaFrecuencia ? { color: "var(--fg-muted)" } : undefined}>
+                  {horasUltima < 1
+                    ? `hace ${Math.round(horasUltima * 60)} min`
+                    : `hace ${horasUltima.toFixed(1)} h`}
+                </span>
+              )}
+            </div>
+
+            {!loadingUltima && ultimaCarga && (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pt-0.5">
+                <div className="flex items-center gap-1.5">
+                  <Hash className="w-3 h-3 shrink-0" style={{ color: "var(--fg-muted)" }} />
+                  <span style={{ color: "var(--fg-muted)" }}>Folio</span>
+                  <span className="font-mono font-semibold ml-auto" style={{ color: "var(--fg)" }}>
+                    {ultimaCarga.folio ?? "—"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 shrink-0" style={{ color: "var(--fg-muted)" }} />
+                  <span style={{ color: "var(--fg-muted)" }}>
+                    {ultimaCarga.fecha} {ultimaCarga.hora?.slice(0, 5) ?? ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Fuel className="w-3 h-3 shrink-0" style={{ color: "var(--fg-muted)" }} />
+                  <span style={{ color: "var(--fg-muted)" }}>Litros</span>
+                  <span className="font-mono font-bold ml-auto" style={{ color: "var(--fg)" }}>
+                    {ultimaCarga.litros.toLocaleString()} L
+                  </span>
+                </div>
+                {ultimaCarga.odometroHrs != null && (
+                  <div className="flex items-center gap-1.5">
+                    <span style={{ color: "var(--fg-muted)" }}>Odóm./HRS</span>
+                    <span className="font-mono ml-auto" style={{ color: "var(--fg)" }}>
+                      {ultimaCarga.odometroHrs.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {ultimaCarga.operadorNombre && (
+                  <div className="flex items-center gap-1.5 col-span-2">
+                    <User className="w-3 h-3 shrink-0" style={{ color: "var(--fg-muted)" }} />
+                    <span style={{ color: "var(--fg-muted)" }}>{ultimaCarga.operadorNombre}</span>
+                  </div>
+                )}
+                {ultimaCarga.obraNombre && (
+                  <div className="flex items-center gap-1.5 col-span-2">
+                    <MapPin className="w-3 h-3 shrink-0" style={{ color: "var(--fg-muted)" }} />
+                    <span style={{ color: "var(--fg-muted)" }}>{ultimaCarga.obraNombre}</span>
+                  </div>
+                )}
+                {ultimaCarga.notas && (
+                  <div className="col-span-2 text-[10px] px-1 py-0.5 rounded"
+                    style={{ color: "var(--fg-muted)", backgroundColor: "var(--surface-2)" }}>
+                    {ultimaCarga.notas}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {alertaFrecuencia && (
+              <div className="flex items-start gap-1.5 pt-1 border-t border-red-500/20">
+                <TriangleAlert className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-red-500 font-semibold">
+                  Recarga reciente — verifica que sea necesaria
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Litros */}
         <div className="space-y-1.5">
           <Label htmlFor="litros">Litros *</Label>
@@ -407,6 +545,32 @@ export default function FormCargaCampo({
               <TriangleAlert className="w-3 h-3" /> {kmWarning}
             </p>
           )}
+        </div>
+
+        {/* Cuentalitros NISSAN */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="cuentaLtInicio">
+              Cuenta LT Inicio *
+              {cuentalitrosNissan > 0 && (
+                <span className="ml-1.5 font-normal text-xs" style={{ color: "var(--fg-muted)" }}>
+                  (actual: {cuentalitrosNissan.toLocaleString()})
+                </span>
+              )}
+            </Label>
+            <Input id="cuentaLtInicio" name="cuentaLtInicio" type="number" step="1"
+              value={form.cuentaLtInicio} onChange={handleChange}
+              placeholder={cuentalitrosNissan > 0 ? String(cuentalitrosNissan) : "0"}
+              className={`font-mono${!form.cuentaLtInicio ? " border-amber-500/50" : ""}`} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cuentaLtFin">Cuenta LT Fin</Label>
+            <Input id="cuentaLtFin" name="cuentaLtFin" type="number" step="1"
+              value={form.cuentaLtFin} readOnly
+              placeholder="Auto-calculado"
+              className="font-mono bg-[var(--surface-2)]" />
+            <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>Inicio + litros</p>
+          </div>
         </div>
 
         {/* Obra */}

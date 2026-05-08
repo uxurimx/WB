@@ -71,6 +71,7 @@ export default async function HistorialCargasPage({
     litros: t.litros,
     origenNombre: t.origenNombre,
     destinoNombre: t.destinoNombre,
+    cuentalitrosDestino: t.cuentalitrosDestino ?? null,
     notas: t.notas,
   }));
 

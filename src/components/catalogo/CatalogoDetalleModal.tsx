@@ -131,48 +131,78 @@ export default function CatalogoDetalleModal({
                 <p className="text-xs font-semibold uppercase tracking-wider mb-2"
                   style={{ color: "var(--fg-muted)" }}>Cargas recientes</p>
                 <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
-                  {datos.recientes.map((c, i) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center gap-3 px-3 py-2.5 text-sm"
-                      style={{
-                        borderTop: i > 0 ? "1px solid var(--border)" : undefined,
-                        backgroundColor: "var(--surface)",
-                      }}
-                    >
-                      <span className="font-mono text-xs shrink-0 flex items-center gap-1.5" style={{ color: "var(--fg-muted)" }}>
-                        {c.fecha}
-                        {c.folio != null && (
-                          <span className="text-[10px] px-1 rounded" style={{ backgroundColor: "var(--surface-2)", color: "var(--fg-muted)" }}>
-                            #{c.folio}
-                          </span>
-                        )}
-                      </span>
-                      {tipo !== "unidad" && c.unidadCodigo && (
-                        <span className="font-mono font-bold text-xs w-12 shrink-0" style={{ color: "var(--fg)" }}>
-                          {c.unidadCodigo}
-                        </span>
-                      )}
-                      {tipo !== "operador" && c.operadorNombre && (
-                        <span className="text-xs truncate flex-1" style={{ color: "var(--fg-muted)" }}>
-                          {c.operadorNombre}
-                        </span>
-                      )}
-                      {tipo !== "obra" && c.obraNombre && (
-                        <span className="text-xs truncate flex-1" style={{ color: "var(--fg-muted)" }}>
-                          {c.obraNombre}
-                        </span>
-                      )}
-                      <span className="flex-1" />
-                      <Badge variant={c.origen === "campo" ? "warning" : "default"} className="text-[10px] shrink-0">
-                        {c.origen === "campo" ? "Campo" : "Patio"}
-                      </Badge>
-                      <span className="font-mono font-semibold text-xs w-14 text-right shrink-0"
-                        style={{ color: "var(--fg)" }}>
-                        {c.litros.toLocaleString()} L
-                      </span>
-                    </div>
-                  ))}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs" style={{ minWidth: "480px" }}>
+                      <thead>
+                        <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
+                          <th className="px-3 py-2 text-left font-semibold whitespace-nowrap"
+                            style={{ color: "var(--fg-muted)" }}>Fecha</th>
+                          <th className="px-3 py-2 text-left font-semibold whitespace-nowrap"
+                            style={{ color: "var(--fg-muted)" }}>Folio</th>
+                          {tipo !== "unidad" && (
+                            <th className="px-3 py-2 text-left font-semibold whitespace-nowrap"
+                              style={{ color: "var(--fg-muted)" }}>Unidad</th>
+                          )}
+                          {tipo !== "operador" && (
+                            <th className="px-3 py-2 text-left font-semibold whitespace-nowrap"
+                              style={{ color: "var(--fg-muted)" }}>Operador</th>
+                          )}
+                          {tipo !== "obra" && (
+                            <th className="px-3 py-2 text-left font-semibold whitespace-nowrap"
+                              style={{ color: "var(--fg-muted)" }}>Obra</th>
+                          )}
+                          <th className="px-3 py-2 text-right font-semibold whitespace-nowrap"
+                            style={{ color: "var(--fg-muted)" }}>Odóm./HRS</th>
+                          <th className="px-3 py-2 text-right font-semibold whitespace-nowrap"
+                            style={{ color: "var(--fg-muted)" }}>Litros</th>
+                          <th className="px-3 py-2 text-center font-semibold whitespace-nowrap"
+                            style={{ color: "var(--fg-muted)" }}>Tipo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {datos.recientes.map((c, i) => (
+                          <tr key={c.id}
+                            style={{
+                              borderTop: i > 0 ? "1px solid var(--border)" : undefined,
+                              backgroundColor: "var(--surface)",
+                            }}>
+                            <td className="px-3 py-2 font-mono whitespace-nowrap" style={{ color: "var(--fg-muted)" }}>
+                              {c.fecha}
+                            </td>
+                            <td className="px-3 py-2 font-mono whitespace-nowrap" style={{ color: "var(--fg-muted)" }}>
+                              {c.folio != null ? `#${c.folio}` : "—"}
+                            </td>
+                            {tipo !== "unidad" && (
+                              <td className="px-3 py-2 font-mono font-bold whitespace-nowrap" style={{ color: "var(--fg)" }}>
+                                {c.unidadCodigo ?? "—"}
+                              </td>
+                            )}
+                            {tipo !== "operador" && (
+                              <td className="px-3 py-2 whitespace-nowrap" style={{ color: "var(--fg-muted)" }}>
+                                {c.operadorNombre ?? "—"}
+                              </td>
+                            )}
+                            {tipo !== "obra" && (
+                              <td className="px-3 py-2 whitespace-nowrap" style={{ color: "var(--fg-muted)" }}>
+                                {c.obraNombre ?? "—"}
+                              </td>
+                            )}
+                            <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: "var(--fg)" }}>
+                              {c.odometroHrs != null ? c.odometroHrs.toLocaleString() : "—"}
+                            </td>
+                            <td className="px-3 py-2 font-mono font-semibold text-right whitespace-nowrap" style={{ color: "var(--fg)" }}>
+                              {c.litros.toLocaleString()} L
+                            </td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">
+                              <Badge variant={c.origen === "campo" ? "warning" : "default"} className="text-[10px]">
+                                {c.origen === "campo" ? "Campo" : "Patio"}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             ) : (

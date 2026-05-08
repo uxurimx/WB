@@ -181,6 +181,7 @@ export const transferenciasTanque = pgTable("transferencias_tanque", {
   litros: real("litros").notNull(),
   tanqueOrigenId: integer("tanque_origen_id").notNull(),
   tanqueDestinoId: integer("tanque_destino_id").notNull(),
+  cuentalitrosDestino: real("cuentalitros_destino"),
   registradoPorId: text("registrado_por_id"),
   notas: text("notas"),
   createdAt: timestamp("created_at").defaultNow(),

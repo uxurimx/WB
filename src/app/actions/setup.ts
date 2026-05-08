@@ -267,6 +267,12 @@ export async function ajustarStockTanques(litrosTaller: number, litrosNissan: nu
   return { ok: true, msg: `Taller: ${litrosTaller} L | NISSAN: ${litrosNissan} L` };
 }
 
+export async function ajustarStockTanque(nombre: "Taller" | "NISSAN", litros: number) {
+  await db.execute(sql`UPDATE tanques SET litros_actuales = ${litros} WHERE nombre = ${nombre}`);
+  revalidatePath("/overview");
+  return { ok: true, msg: `${nombre}: ${litros} L` };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SEED DATOS DE PRUEBA — genera cargas realistas para los últimos 14 días
 // Requiere que existan unidades (corre seedUnidadesWB si no hay)

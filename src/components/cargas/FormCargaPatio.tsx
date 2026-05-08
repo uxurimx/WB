@@ -43,6 +43,7 @@ export default function FormCargaPatio({
   const [error, setError] = useState("");
   const [folioManual, setFolioManual] = useState<string>(String(siguienteFolio));
   const [folioEditando, setFolioEditando] = useState(false);
+  const skipFolioEffect = useRef(false);
 
   // Km validation
   const [ultimoKm, setUltimoKm]   = useState<number | null>(null);
@@ -72,6 +73,10 @@ export default function FormCargaPatio({
   });
 
   useEffect(() => {
+    if (skipFolioEffect.current) {
+      skipFolioEffect.current = false;
+      return;
+    }
     setFolioManual(String(siguienteFolio));
   }, [siguienteFolio]);
 
@@ -191,6 +196,8 @@ export default function FormCargaPatio({
       }));
       setUltimoKm(null);
       setKmEstimado(false);
+      skipFolioEffect.current = true;
+      setFolioManual(String(result.folio + 1));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar");

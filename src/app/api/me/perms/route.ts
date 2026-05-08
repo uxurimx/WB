@@ -13,12 +13,15 @@ export async function GET() {
   const role = clerkUser?.publicMetadata?.role as string | undefined;
   if (!role) return NextResponse.json({ permisos: [] });
 
-  // DB es la fuente de verdad
-  const rol = await db.query.roles.findFirst({ where: eq(roles.id, role) });
-  if (rol) {
-    return NextResponse.json({ permisos: JSON.parse(rol.permisos) as NavPermission[] });
+  try {
+    // DB es la fuente de verdad
+    const rol = await db.query.roles.findFirst({ where: eq(roles.id, role) });
+    if (rol) {
+      return NextResponse.json({ permisos: JSON.parse(rol.permisos) as NavPermission[] });
+    }
+  } catch {
+    // Neon transient error — usar config estática
   }
 
-  // Fallback solo si el rol no existe aún en DB (antes del primer seed)
   return NextResponse.json({ permisos: ROLE_NAV_PERMISSIONS[role] ?? [] });
 }

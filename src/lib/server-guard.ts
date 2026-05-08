@@ -23,11 +23,14 @@ export async function getServerPermisos(): Promise<NavPermission[]> {
   const role = clerkUser?.publicMetadata?.role as string | undefined;
   if (!role) return [];
 
-  // DB es la fuente de verdad
-  const rolData = await db.query.roles.findFirst({ where: eq(roles.id, role) });
-  if (rolData) return JSON.parse(rolData.permisos) as NavPermission[];
+  try {
+    // DB es la fuente de verdad
+    const rolData = await db.query.roles.findFirst({ where: eq(roles.id, role) });
+    if (rolData) return JSON.parse(rolData.permisos) as NavPermission[];
+  } catch {
+    // Neon transient error — usar config estática para no bloquear el acceso
+  }
 
-  // Fallback solo si el rol no existe aún en DB (antes del primer acceso al panel admin)
   return ROLE_NAV_PERMISSIONS[role] ?? [];
 }
 

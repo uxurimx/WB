@@ -25,11 +25,13 @@ export default function TransferirNissanModal({
   tanqueOrigenId,
   tanqueDestinoId,
   litrosDisponibles,
+  cuentalitrosNissan,
   onTransferComplete,
 }: {
   tanqueOrigenId: number;
   tanqueDestinoId: number;
   litrosDisponibles: number;
+  cuentalitrosNissan?: number;
   onTransferComplete?: (origenLitros: number, destinoLitros: number, origenCuentalitros: number) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -38,14 +40,14 @@ export default function TransferirNissanModal({
   const [success, setSuccess] = useState("");
   const [folioPreview, setFolioPreview] = useState<number | null>(null);
 
-  const [form, setForm] = useState({ fecha: todayStr(), litros: "", notas: "" });
+  const [form, setForm] = useState({ fecha: todayStr(), litros: "", notas: "", cuentalitros: "" });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
   function handleOpen() {
-    setForm({ fecha: todayStr(), litros: "", notas: "" });
+    setForm({ fecha: todayStr(), litros: "", notas: "", cuentalitros: "" });
     setError("");
     setSuccess("");
     setFolioPreview(null);
@@ -72,12 +74,14 @@ export default function TransferirNissanModal({
 
     startTransition(async () => {
       try {
+        const cuentalitrosVal = form.cuentalitros !== "" ? parseFloat(form.cuentalitros) : undefined;
         const res = await transferirEntreTanques({
           tanqueOrigenId,
           tanqueDestinoId,
           litros,
           fecha: form.fecha,
           notas: form.notas || undefined,
+          cuentalitrosDestino: cuentalitrosVal !== undefined && !isNaN(cuentalitrosVal) ? cuentalitrosVal : undefined,
         });
         onTransferComplete?.(res.origen.litrosActuales, res.destino.litrosActuales, res.origen.cuentalitros);
         setSuccess(
@@ -85,7 +89,7 @@ export default function TransferirNissanModal({
           `Taller: ${res.origen.litrosActuales.toFixed(0)} L | ` +
           `NISSAN: ${res.destino.litrosActuales.toFixed(0)} L`
         );
-        setForm({ fecha: todayStr(), litros: "", notas: "" });
+        setForm({ fecha: todayStr(), litros: "", notas: "", cuentalitros: "" });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al transferir");
       }
@@ -163,6 +167,26 @@ export default function TransferirNissanModal({
                     autoFocus
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="t-cuentalitros">
+                  Cuentalitros NISSAN <span className="font-normal opacity-60">(opc.)</span>
+                </Label>
+                <Input
+                  id="t-cuentalitros"
+                  name="cuentalitros"
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={form.cuentalitros}
+                  onChange={handleChange}
+                  placeholder={cuentalitrosNissan != null ? String(cuentalitrosNissan) : "—"}
+                  className="font-mono"
+                />
+                <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>
+                  Actual: {cuentalitrosNissan != null && cuentalitrosNissan > 0 ? cuentalitrosNissan.toLocaleString() : "—"}. Edita si el medidor físico difiere.
+                </p>
               </div>
 
               <div className="space-y-1.5">

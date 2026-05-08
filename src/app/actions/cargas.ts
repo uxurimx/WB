@@ -154,6 +154,7 @@ export type CargaCampoInput = {
   litros: number;
   odometroHrs?: number;
   kmEstimado?: boolean;       // A5: true si se usó el último km conocido
+  cuentaLtInicio?: number;   // Lectura física del cuentalitros NISSAN antes de cargar
   obraId?: number;
   operadorId?: number;
   quienSuministraId?: number; // A3: quién despacha desde la NISSAN
@@ -176,8 +177,8 @@ export async function createCargaCampo(input: CargaCampoInput) {
   }
   const fuenteNissan = await getFuentePorTipo("nissan");
 
-  // Cuentalitros antes de la carga (para registrarlo en el historial)
-  const cuentaLtInicioCampo = tanqueNissan.cuentalitrosActual ?? 0;
+  // Usa el valor físico ingresado por el despachador; si no viene, cae al valor del tanque en DB
+  const cuentaLtInicioCampo = input.cuentaLtInicio ?? (tanqueNissan.cuentalitrosActual ?? 0);
   const nuevosLitrosNissan = Math.max(0, (tanqueNissan.litrosActuales ?? 0) - input.litros);
   const nuevoCuentalitrosNissan = cuentaLtInicioCampo + input.litros;
 
@@ -353,6 +354,39 @@ async function getSiguienteFolioCampo(): Promise<number> {
 
 export async function getSiguienteFolioCampoPublic() {
   return getSiguienteFolioCampo();
+}
+
+// ─────────────────────────────────────────────────────────────
+// ÚLTIMA CARGA DE UNIDAD — para alertas anti-fraude en campo
+// ─────────────────────────────────────────────────────────────
+export async function getUltimaCargaUnidad(unidadId: number) {
+  const ultima = await db.query.cargas.findFirst({
+    where: (c, { eq }) => eq(c.unidadId, unidadId),
+    orderBy: (c, { desc }) => [desc(c.createdAt)],
+    columns: {
+      id: true, fecha: true, hora: true, litros: true,
+      odometroHrs: true, folio: true, origen: true, notas: true,
+      createdAt: true,
+    },
+    with: {
+      obra:     { columns: { nombre: true } },
+      operador: { columns: { nombre: true } },
+    },
+  });
+  if (!ultima) return null;
+  return {
+    id:             ultima.id,
+    fecha:          ultima.fecha,
+    hora:           ultima.hora,
+    litros:         ultima.litros,
+    odometroHrs:    ultima.odometroHrs,
+    folio:          ultima.folio,
+    origen:         ultima.origen,
+    notas:          ultima.notas,
+    createdAt:      ultima.createdAt?.toISOString() ?? null,
+    obraNombre:     ultima.obra?.nombre     ?? null,
+    operadorNombre: ultima.operador?.nombre ?? null,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────

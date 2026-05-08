@@ -10,6 +10,7 @@ import {
   resetOperacional,
   resetTotal,
   ajustarStockTanques,
+  ajustarStockTanque,
   seedDatosPrueba,
   setFolioBase,
   setFolioBaseCampo,
@@ -68,7 +69,9 @@ function ConfirmAction({
 
 // ── Stock adjuster ─────────────────────────────────────────────
 function StockAdjuster() {
-  const [isPending, startTransition] = useTransition();
+  const [pendingBoth, startBoth] = useTransition();
+  const [pendingTaller, startTaller] = useTransition();
+  const [pendingNissan, startNissan] = useTransition();
   const [msg, setMsg] = useState("");
   const [taller, setTaller] = useState("6500");
   const [nissan, setNissan] = useState("450");
@@ -81,9 +84,27 @@ function StockAdjuster() {
     { label: "Vacío", t: 0, n: 0 },
   ];
 
-  function run(t: number, n: number) {
-    startTransition(async () => {
+  const anyPending = pendingBoth || pendingTaller || pendingNissan;
+
+  function runBoth(t: number, n: number) {
+    startBoth(async () => {
       const res = await ajustarStockTanques(t, n);
+      setMsg(res.msg);
+      setTimeout(() => setMsg(""), 4000);
+    });
+  }
+
+  function runTaller() {
+    startTaller(async () => {
+      const res = await ajustarStockTanque("Taller", parseFloat(taller) || 0);
+      setMsg(res.msg);
+      setTimeout(() => setMsg(""), 4000);
+    });
+  }
+
+  function runNissan() {
+    startNissan(async () => {
+      const res = await ajustarStockTanque("NISSAN", parseFloat(nissan) || 0);
       setMsg(res.msg);
       setTimeout(() => setMsg(""), 4000);
     });
@@ -96,8 +117,8 @@ function StockAdjuster() {
           <button
             key={p.label}
             type="button"
-            disabled={isPending}
-            onClick={() => { setTaller(String(p.t)); setNissan(String(p.n)); run(p.t, p.n); }}
+            disabled={anyPending}
+            onClick={() => { setTaller(String(p.t)); setNissan(String(p.n)); runBoth(p.t, p.n); }}
             className="px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-indigo-500/10 hover:border-indigo-500/40 disabled:opacity-50"
             style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
           >
@@ -110,6 +131,17 @@ function StockAdjuster() {
           <Label className="text-xs">Taller (L)</Label>
           <Input value={taller} onChange={(e) => setTaller(e.target.value)} type="number" className="h-8 font-mono text-sm" />
         </div>
+        <Button
+          type="button"
+          size="sm"
+          className="h-8 shrink-0"
+          disabled={anyPending}
+          onClick={runTaller}
+        >
+          {pendingTaller ? "..." : "Aplicar"}
+        </Button>
+      </div>
+      <div className="flex gap-2 items-end">
         <div className="space-y-1 flex-1">
           <Label className="text-xs">NISSAN (L)</Label>
           <Input value={nissan} onChange={(e) => setNissan(e.target.value)} type="number" className="h-8 font-mono text-sm" />
@@ -118,10 +150,10 @@ function StockAdjuster() {
           type="button"
           size="sm"
           className="h-8 shrink-0"
-          disabled={isPending}
-          onClick={() => run(parseFloat(taller) || 0, parseFloat(nissan) || 0)}
+          disabled={anyPending}
+          onClick={runNissan}
         >
-          Aplicar
+          {pendingNissan ? "..." : "Aplicar"}
         </Button>
       </div>
       {msg && <p className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{msg}</p>}

@@ -189,6 +189,7 @@ export default function StockCards({
               tanqueOrigenId={taller.id}
               tanqueDestinoId={nissan.id}
               litrosDisponibles={taller.litros}
+              cuentalitrosNissan={nissan.cuentalitros}
               onTransferComplete={(origenLitros, destinoLitros, origenCuentalitros) => {
                 setTaller((prev) => ({ ...prev, litros: origenLitros, cuentalitros: origenCuentalitros }));
                 setNissan((prev) => ({ ...prev, litros: destinoLitros }));
