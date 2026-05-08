@@ -75,7 +75,7 @@ export type TransferenciaInput = {
   litros: number;
   fecha: string; // "YYYY-MM-DD"
   notas?: string;
-  cuentalitrosDestino?: number; // Corrección manual del cuentalitros del destino (NISSAN)
+  cuentalitrosOrigen?: number; // Lectura inicial de NISSAN antes de la transferencia
 };
 
 export async function transferirEntreTanques(input: TransferenciaInput) {
@@ -109,6 +109,10 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   // Solo el tanque origen (Taller) registra la salida en su cuentalitros
   const nuevoCuentalitrosOrigen = (origen.cuentalitrosActual ?? 0) + input.litros;
 
+  // Cuentalitros NISSAN: inicio (lectura física) → fin (inicio + litros)
+  const cuentaInicio = input.cuentalitrosOrigen ?? null;
+  const cuentaFin    = cuentaInicio !== null ? cuentaInicio + input.litros : null;
+
   // El folio de transferencia es parte de la misma secuencia que cargas patio
   const folio = await getSiguienteFolioPublic();
 
@@ -126,7 +130,7 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
       .update(tanques)
       .set({
         litrosActuales: nuevosLitrosDestino,
-        ...(input.cuentalitrosDestino !== undefined ? { cuentalitrosActual: input.cuentalitrosDestino } : {}),
+        ...(cuentaFin !== null ? { cuentalitrosActual: cuentaFin } : {}),
         ultimaActualizacion: new Date(),
       })
       .where(eq(tanques.id, input.tanqueDestinoId)),
@@ -136,7 +140,8 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
       litros: input.litros,
       tanqueOrigenId: input.tanqueOrigenId,
       tanqueDestinoId: input.tanqueDestinoId,
-      cuentalitrosDestino: input.cuentalitrosDestino ?? null,
+      cuentalitrosNissanInicio: cuentaInicio,
+      cuentalitrosDestino:      cuentaFin,
       registradoPorId: userId,
       notas: input.notas ?? null,
     }),
@@ -312,6 +317,7 @@ export async function updateTransferencia(
     fecha?: string;
     litros?: number;
     notas?: string | null;
+    cuentalitrosNissanInicio?: number | null;
     cuentalitrosDestino?: number | null;
   }
 ) {
@@ -368,10 +374,11 @@ export async function updateTransferencia(
         ultimaActualizacion: new Date(),
       }).where(eq(tanques.id, transferencia.tanqueDestinoId)),
       db.update(transferenciasTanque).set({
-        fecha:               data.fecha !== undefined ? data.fecha : transferencia.fecha,
-        litros:              litrosNuevos,
-        notas:               data.notas !== undefined ? data.notas : transferencia.notas,
-        cuentalitrosDestino: data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,
+        fecha:                    data.fecha !== undefined ? data.fecha : transferencia.fecha,
+        litros:                   litrosNuevos,
+        notas:                    data.notas !== undefined ? data.notas : transferencia.notas,
+        cuentalitrosNissanInicio: data.cuentalitrosNissanInicio !== undefined ? data.cuentalitrosNissanInicio : transferencia.cuentalitrosNissanInicio,
+        cuentalitrosDestino:      data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,
       }).where(eq(transferenciasTanque.id, id)),
     ]);
 
@@ -386,9 +393,10 @@ export async function updateTransferencia(
   } else {
     // Solo fecha/notas/cuentalitros cambian, sin tocar litros de tanques
     await db.update(transferenciasTanque).set({
-      fecha:               data.fecha !== undefined ? data.fecha : transferencia.fecha,
-      notas:               data.notas !== undefined ? data.notas : transferencia.notas,
-      cuentalitrosDestino: data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,
+      fecha:                    data.fecha !== undefined ? data.fecha : transferencia.fecha,
+      notas:                    data.notas !== undefined ? data.notas : transferencia.notas,
+      cuentalitrosNissanInicio: data.cuentalitrosNissanInicio !== undefined ? data.cuentalitrosNissanInicio : transferencia.cuentalitrosNissanInicio,
+      cuentalitrosDestino:      data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,
     }).where(eq(transferenciasTanque.id, id));
 
     if (data.cuentalitrosDestino !== undefined) {

@@ -52,6 +52,7 @@ export type TransferenciaItem = {
   litros: number;
   origenNombre: string;
   destinoNombre: string;
+  cuentalitrosNissanInicio: number | null;
   cuentalitrosDestino: number | null;
   notas: string | null;
 };
@@ -397,7 +398,7 @@ export default function CargasTable({
 
   // ── Estado: edición/eliminación de transferencias ──────────
   const [editTransf,    setEditTransf]    = useState<TransferenciaItem | null>(null);
-  const [editTransfForm, setEditTransfForm] = useState({ fecha: "", litros: "", cuentalitrosDestino: "", notas: "" });
+  const [editTransfForm, setEditTransfForm] = useState({ fecha: "", litros: "", cuentalitrosNissanInicio: "", cuentalitrosDestino: "", notas: "" });
   const [editTransfError,   setEditTransfError]   = useState("");
   const [deletingTransfId,  setDeletingTransfId]  = useState<number | null>(null);
   const [deleteTransfError, setDeleteTransfError] = useState("");
@@ -531,10 +532,11 @@ export default function CargasTable({
     setEditTransf(t);
     setEditTransfError("");
     setEditTransfForm({
-      fecha:               t.fecha,
-      litros:              String(t.litros),
-      cuentalitrosDestino: t.cuentalitrosDestino != null ? String(t.cuentalitrosDestino) : "",
-      notas:               t.notas ?? "",
+      fecha:                    t.fecha,
+      litros:                   String(t.litros),
+      cuentalitrosNissanInicio: t.cuentalitrosNissanInicio != null ? String(t.cuentalitrosNissanInicio) : "",
+      cuentalitrosDestino:      t.cuentalitrosDestino != null ? String(t.cuentalitrosDestino) : "",
+      notas:                    t.notas ?? "",
     });
   }
 
@@ -550,10 +552,11 @@ export default function CargasTable({
     startTransition(async () => {
       try {
         await updateTransferencia(editTransf.id, {
-          fecha:               editTransfForm.fecha,
-          litros:              parseFloat(editTransfForm.litros),
-          notas:               editTransfForm.notas || null,
-          cuentalitrosDestino: editTransfForm.cuentalitrosDestino !== "" ? parseFloat(editTransfForm.cuentalitrosDestino) : null,
+          fecha:                    editTransfForm.fecha,
+          litros:                   parseFloat(editTransfForm.litros),
+          notas:                    editTransfForm.notas || null,
+          cuentalitrosNissanInicio: editTransfForm.cuentalitrosNissanInicio !== "" ? parseFloat(editTransfForm.cuentalitrosNissanInicio) : null,
+          cuentalitrosDestino:      editTransfForm.cuentalitrosDestino !== "" ? parseFloat(editTransfForm.cuentalitrosDestino) : null,
         });
         setEditTransf(null);
       } catch (err) {
@@ -794,9 +797,11 @@ export default function CargasTable({
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell" />
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        {item.cuentalitrosDestino != null ? (
+                        {item.cuentalitrosNissanInicio != null || item.cuentalitrosDestino != null ? (
                           <span className="font-mono text-xs" style={{ color: "var(--fg)" }}>
-                            {item.cuentalitrosDestino.toLocaleString()}
+                            {item.cuentalitrosNissanInicio?.toLocaleString() ?? "—"}
+                            {" → "}
+                            {item.cuentalitrosDestino?.toLocaleString() ?? "—"}
                           </span>
                         ) : (
                           <span style={{ color: "var(--fg-muted)" }}>—</span>
@@ -1098,19 +1103,21 @@ export default function CargasTable({
                   onChange={handleTransfFormChange} className="font-mono font-bold" />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>
-                Cuentalitros {editTransf?.destinoNombre ?? "NISSAN"}
-                {editTransf?.cuentalitrosDestino != null && (
-                  <span className="ml-1.5 font-normal text-xs" style={{ color: "var(--fg-muted)" }}>
-                    (actual: {editTransf.cuentalitrosDestino.toLocaleString()})
-                  </span>
-                )}
-              </Label>
-              <Input name="cuentalitrosDestino" type="number" step="1" min="0"
-                value={editTransfForm.cuentalitrosDestino}
-                onChange={handleTransfFormChange}
-                className="font-mono" placeholder="—" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Cuenta LT Inicio</Label>
+                <Input name="cuentalitrosNissanInicio" type="number" step="1" min="0"
+                  value={editTransfForm.cuentalitrosNissanInicio}
+                  onChange={handleTransfFormChange}
+                  className="font-mono" placeholder="—" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Cuenta LT Fin</Label>
+                <Input name="cuentalitrosDestino" type="number" step="1" min="0"
+                  value={editTransfForm.cuentalitrosDestino}
+                  onChange={handleTransfFormChange}
+                  className="font-mono" placeholder="—" />
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Notas</Label>

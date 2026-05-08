@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { ArrowRight, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,14 +40,33 @@ export default function TransferirNissanModal({
   const [success, setSuccess] = useState("");
   const [folioPreview, setFolioPreview] = useState<number | null>(null);
 
-  const [form, setForm] = useState({ fecha: todayStr(), litros: "", notas: "", cuentalitros: "" });
+  const [form, setForm] = useState({
+    fecha: todayStr(), litros: "", notas: "",
+    cuentaLtInicio: cuentalitrosNissan != null ? String(cuentalitrosNissan) : "",
+    cuentaLtFin: "",
+  });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
+  // Auto-calcular cuentaLtFin = inicio + litros
+  useEffect(() => {
+    const inicio = parseFloat(form.cuentaLtInicio);
+    const litros = parseFloat(form.litros);
+    if (!isNaN(inicio) && !isNaN(litros) && litros > 0) {
+      setForm((prev) => ({ ...prev, cuentaLtFin: String(inicio + litros) }));
+    } else {
+      setForm((prev) => ({ ...prev, cuentaLtFin: "" }));
+    }
+  }, [form.cuentaLtInicio, form.litros]);
+
   function handleOpen() {
-    setForm({ fecha: todayStr(), litros: "", notas: "", cuentalitros: "" });
+    setForm({
+      fecha: todayStr(), litros: "", notas: "",
+      cuentaLtInicio: cuentalitrosNissan != null ? String(cuentalitrosNissan) : "",
+      cuentaLtFin: "",
+    });
     setError("");
     setSuccess("");
     setFolioPreview(null);
@@ -74,14 +93,14 @@ export default function TransferirNissanModal({
 
     startTransition(async () => {
       try {
-        const cuentalitrosVal = form.cuentalitros !== "" ? parseFloat(form.cuentalitros) : undefined;
+        const inicioVal = form.cuentaLtInicio !== "" ? parseFloat(form.cuentaLtInicio) : undefined;
         const res = await transferirEntreTanques({
           tanqueOrigenId,
           tanqueDestinoId,
           litros,
           fecha: form.fecha,
           notas: form.notas || undefined,
-          cuentalitrosDestino: cuentalitrosVal !== undefined && !isNaN(cuentalitrosVal) ? cuentalitrosVal : undefined,
+          cuentalitrosOrigen: inicioVal !== undefined && !isNaN(inicioVal) ? inicioVal : undefined,
         });
         onTransferComplete?.(res.origen.litrosActuales, res.destino.litrosActuales, res.origen.cuentalitros);
         setSuccess(
@@ -89,7 +108,7 @@ export default function TransferirNissanModal({
           `Taller: ${res.origen.litrosActuales.toFixed(0)} L | ` +
           `NISSAN: ${res.destino.litrosActuales.toFixed(0)} L`
         );
-        setForm({ fecha: todayStr(), litros: "", notas: "", cuentalitros: "" });
+        setForm({ fecha: todayStr(), litros: "", notas: "", cuentaLtInicio: "", cuentaLtFin: "" });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al transferir");
       }
@@ -169,24 +188,42 @@ export default function TransferirNissanModal({
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="t-cuentalitros">
-                  Cuentalitros NISSAN <span className="font-normal opacity-60">(opc.)</span>
-                </Label>
-                <Input
-                  id="t-cuentalitros"
-                  name="cuentalitros"
-                  type="number"
-                  step="1"
-                  min="0"
-                  value={form.cuentalitros}
-                  onChange={handleChange}
-                  placeholder={cuentalitrosNissan != null ? String(cuentalitrosNissan) : "—"}
-                  className="font-mono"
-                />
-                <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>
-                  Actual: {cuentalitrosNissan != null && cuentalitrosNissan > 0 ? cuentalitrosNissan.toLocaleString() : "—"}. Edita si el medidor físico difiere.
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="t-cuentaLtInicio">
+                    Cuenta LT Inicio
+                    {cuentalitrosNissan != null && cuentalitrosNissan > 0 && (
+                      <span className="ml-1 font-normal text-[10px]" style={{ color: "var(--fg-muted)" }}>
+                        (actual: {cuentalitrosNissan.toLocaleString()})
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    id="t-cuentaLtInicio"
+                    name="cuentaLtInicio"
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={form.cuentaLtInicio}
+                    onChange={handleChange}
+                    placeholder={cuentalitrosNissan != null ? String(cuentalitrosNissan) : "0"}
+                    className="font-mono"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="t-cuentaLtFin">Cuenta LT Fin</Label>
+                  <Input
+                    id="t-cuentaLtFin"
+                    name="cuentaLtFin"
+                    type="number"
+                    step="1"
+                    value={form.cuentaLtFin}
+                    readOnly
+                    placeholder="Auto-calculado"
+                    className="font-mono bg-[var(--surface-2)]"
+                  />
+                  <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>Inicio + litros</p>
+                </div>
               </div>
 
               <div className="space-y-1.5">
