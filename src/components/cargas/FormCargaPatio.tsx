@@ -56,7 +56,19 @@ export default function FormCargaPatio({
   const [odometroFoto, setOdometroFoto] = useState<File | null>(null);
   const [odometroFotoPreview, setOdometroFotoPreview] = useState<string | null>(null);
 
-  const { startUpload, isUploading } = useUploadThing("notaFoto");
+  const [fotoWarning, setFotoWarning] = useState("");
+  // cargaIdRef permite pasar el ID al callback onClientUploadComplete
+  // que se dispara al llegar al CDN (sin depender del webhook del servidor)
+  const cargaIdRef = useRef<number | null>(null);
+  const { startUpload, isUploading } = useUploadThing("notaFoto", {
+    onClientUploadComplete: (files) => {
+      if (!files?.[0] || cargaIdRef.current === null) return;
+      const fotoUrl = files[0].ufsUrl || files[0].url;
+      saveArchivoFoto(cargaIdRef.current, fotoUrl, files[0].key, "odometroFoto")
+        .catch(() => setFotoWarning("Foto subida pero no se pudo guardar en BD"));
+    },
+    onUploadError: (err) => setFotoWarning(`Error al subir foto: ${err.message}`),
+  });
 
   const { fecha: fechaInit, hora: horaInit } = getNow();
 
@@ -178,12 +190,10 @@ export default function FormCargaPatio({
         notas:          form.notas || undefined,
       });
 
-      // Subir foto de odómetro si hay
+      // Subir foto — onClientUploadComplete maneja el guardado en DB
       if (odometroFoto) {
-        const uploaded = await startUpload([odometroFoto]);
-        if (uploaded?.[0]) {
-          await saveArchivoFoto(result.cargaId, uploaded[0].url, uploaded[0].key, "odometroFoto");
-        }
+        cargaIdRef.current = result.cargaId;
+        startUpload([odometroFoto]); // no await — el guardado ocurre en onClientUploadComplete
       }
 
       setSuccess({ folio: result.folio, litros });
@@ -213,7 +223,7 @@ export default function FormCargaPatio({
   return (
     <div className="max-w-lg w-full mx-auto">
       {success && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl border mb-6"
+        <div className="flex items-center gap-3 p-4 rounded-2xl border mb-4"
           style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
           <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
           <div>
@@ -226,6 +236,14 @@ export default function FormCargaPatio({
           </div>
           <button onClick={() => setSuccess(null)} className="ml-auto text-xs px-2 py-1 rounded-lg hover:bg-[var(--surface-2)]"
             style={{ color: "var(--fg-muted)" }}>×</button>
+        </div>
+      )}
+
+      {fotoWarning && (
+        <div className="flex items-center gap-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 mb-4">
+          <TriangleAlert className="w-4 h-4 text-amber-500 shrink-0" />
+          <p className="text-xs text-amber-600 flex-1">{fotoWarning}</p>
+          <button onClick={() => setFotoWarning("")} className="text-amber-500 hover:text-amber-700">×</button>
         </div>
       )}
 

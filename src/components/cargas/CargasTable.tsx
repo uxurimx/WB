@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import {
   Pencil, Trash2, AlertCircle, ArrowRight, Fuel,
   ChevronDown, ChevronUp, Gauge, Hash, MapPin, User,
-  Search, X as XIcon, ArrowUpDown,
+  Search, X as XIcon, ArrowUpDown, Camera,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ export type CargaItem = {
   unidad: { codigo: string } | null;
   operador: { nombre: string } | null;
   obra: { nombre: string } | null;
+  fotoUrl?: string | null;
 };
 
 export type TransferenciaItem = {
@@ -146,6 +147,7 @@ function CargaRow({
   obras,
   onEdit,
   onDelete,
+  onFoto,
   isDeleting,
   isPending,
 }: {
@@ -155,6 +157,7 @@ function CargaRow({
   obras: Obra[];
   onEdit: (c: CargaItem) => void;
   onDelete: (id: number) => void;
+  onFoto: (url: string, folio: number | null) => void;
   isDeleting: boolean;
   isPending: boolean;
 }) {
@@ -236,6 +239,16 @@ function CargaRow({
                 {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </span>
             )}
+            {item.fotoUrl && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onFoto(item.fotoUrl!, item.folio); }}
+                className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors"
+                title="Ver foto odómetro"
+              >
+                <Camera className="w-3.5 h-3.5 text-violet-400" />
+              </button>
+            )}
             {canEdit && (
               <ActionButtons
                 id={item.id}
@@ -310,6 +323,7 @@ export default function CargasTable({
   canEdit: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [fotoViewer, setFotoViewer] = useState<{ url: string; folio: number | null } | null>(null);
 
   // ── Búsqueda / filtro / orden ──────────────────────────────
   const [busqueda,    setBusqueda]    = useState("");
@@ -821,6 +835,7 @@ export default function CargasTable({
                     obras={obras}
                     onEdit={openEditCarga}
                     onDelete={handleDeleteCarga}
+                    onFoto={(url, folio) => setFotoViewer({ url, folio })}
                     isDeleting={deletingCargaId === item.id}
                     isPending={isPending}
                   />
@@ -1016,6 +1031,39 @@ export default function CargasTable({
               {isPending ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Lightbox: foto odómetro ────────────────────────────── */}
+      <Dialog open={!!fotoViewer} onOpenChange={(open) => { if (!open) setFotoViewer(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="w-4 h-4 text-violet-400" />
+              Foto odómetro{fotoViewer?.folio != null ? ` — Folio #${fotoViewer.folio}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          {fotoViewer && (
+            <div className="space-y-3">
+              <img
+                src={fotoViewer.url}
+                alt="Foto odómetro"
+                className="w-full rounded-xl object-contain max-h-[65vh] border"
+                style={{ borderColor: "var(--border)" }}
+              />
+              <div className="flex justify-end">
+                <a
+                  href={fotoViewer.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:bg-[var(--surface-2)]"
+                  style={{ color: "var(--fg-muted)", borderColor: "var(--border)" }}
+                >
+                  Abrir original ↗
+                </a>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

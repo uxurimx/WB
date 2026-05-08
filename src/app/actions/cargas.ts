@@ -270,7 +270,7 @@ export async function getCargas(opts?: {
         if (opts?.origen)    conds.push(_eq(c.origen, opts.origen!));
         return conds.length ? _and(...conds) : undefined;
       },
-      with: { unidad: true, operador: true, obra: true },
+      with: { unidad: true, operador: true, obra: true, archivos: { columns: { url: true }, limit: 1 } },
       orderBy: (c, { desc: _desc }) => [_desc(c.fecha), _desc(c.createdAt)],
       limit: lim,
       offset: off,

@@ -61,6 +61,7 @@ export default async function HistorialCargasPage({
     unidad: c.unidad ? { codigo: c.unidad.codigo } : null,
     operador: c.operador ? { nombre: c.operador.nombre } : null,
     obra: c.obra ? { nombre: c.obra.nombre } : null,
+    fotoUrl: c.archivos?.[0]?.url ?? null,
   }));
 
   const transfItems: TransferenciaItem[] = transferencias.map((t) => ({

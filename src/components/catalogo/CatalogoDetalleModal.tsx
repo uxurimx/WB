@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
-import { Fuel, BarChart3, Calendar, Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Fuel, BarChart3, Calendar, Loader2, TrendingUp, TrendingDown, Minus, Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getCatalogoResumen } from "@/app/actions/cargas";
 import { getRendimientosUnidad } from "@/app/actions/rendimientos";
+import { getArchivosUnidad } from "@/app/actions/archivos";
 
-type Resumen    = Awaited<ReturnType<typeof getCatalogoResumen>>;
-type RendUnidad = Awaited<ReturnType<typeof getRendimientosUnidad>>;
+type Resumen      = Awaited<ReturnType<typeof getCatalogoResumen>>;
+type RendUnidad   = Awaited<ReturnType<typeof getRendimientosUnidad>>;
+type FotosUnidad  = Awaited<ReturnType<typeof getArchivosUnidad>>;
 
 function formatFecha(f: string) {
   return new Date(f + "T12:00:00").toLocaleDateString("es-MX", {
@@ -34,9 +36,11 @@ export default function CatalogoDetalleModal({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"cargas" | "rendimiento">("cargas");
+  const [activeTab, setActiveTab] = useState<"cargas" | "rendimiento" | "fotos">("cargas");
   const [datos, setDatos]         = useState<Resumen | null>(null);
   const [rends, setRends]         = useState<RendUnidad | null>(null);
+  const [fotos, setFotos]         = useState<FotosUnidad>([]);
+  const [fotoLightbox, setFotoLightbox] = useState<FotosUnidad[number] | null>(null);
   const [isPending, startTx]      = useTransition();
   const fetchedForId              = useRef<number | null>(null);
 
@@ -48,17 +52,23 @@ export default function CatalogoDetalleModal({
     setRends(null);
     setActiveTab("cargas");
     startTx(async () => {
-      const [resumen, rendUnidad] = await Promise.all([
+      const [resumen, rendUnidad, archivosUnidad] = await Promise.all([
         getCatalogoResumen(tipo, id),
         tipo === "unidad" ? getRendimientosUnidad(id) : Promise.resolve(null),
+        tipo === "unidad" ? getArchivosUnidad(id) : Promise.resolve([] as FotosUnidad),
       ]);
       setDatos(resumen);
       if (rendUnidad) setRends(rendUnidad);
+      setFotos(archivosUnidad);
     });
   }, [open, id, tipo]);
 
   const tabs = tipo === "unidad"
-    ? [{ key: "cargas", label: "Cargas" }, { key: "rendimiento", label: "Rendimiento" }] as const
+    ? [
+        { key: "cargas",      label: "Cargas" },
+        { key: "rendimiento", label: "Rendimiento" },
+        { key: "fotos",       label: `Fotos${fotos.length > 0 ? ` (${fotos.length})` : ""}` },
+      ] as const
     : [{ key: "cargas", label: "Cargas" }] as const;
 
   return (
@@ -305,7 +315,84 @@ export default function CatalogoDetalleModal({
             )}
           </div>
         )}
+        {/* ── Tab: Fotos (solo unidades) ──────────────────────── */}
+        {tipo === "unidad" && activeTab === "fotos" && !isPending && (
+          <div className="space-y-3">
+            {fotos.length === 0 ? (
+              <p className="text-sm text-center py-6" style={{ color: "var(--fg-muted)" }}>
+                Sin fotos registradas para esta unidad.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+                  {fotos.length} foto{fotos.length !== 1 ? "s" : ""} · click para ampliar
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {fotos.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFotoLightbox(f)}
+                      className="group text-left space-y-1 focus:outline-none"
+                    >
+                      <div className="relative overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)" }}>
+                        <img
+                          src={f.url}
+                          alt={`Folio #${f.cargaFolio}`}
+                          className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                        <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                          style={{ backgroundColor: "rgba(0,0,0,0.55)", color: "#fff" }}>
+                          {f.cargaOrigen === "campo" ? "Campo" : "Patio"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] font-mono px-0.5" style={{ color: "var(--fg-muted)" }}>
+                        {f.cargaFecha}
+                        {f.cargaFolio != null ? ` · #${f.cargaFolio}` : ""}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </DialogContent>
+
+      {/* Lightbox de foto ampliada */}
+      <Dialog open={!!fotoLightbox} onOpenChange={(open) => { if (!open) setFotoLightbox(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="w-4 h-4 text-violet-400" />
+              Foto odómetro{fotoLightbox?.cargaFolio != null ? ` — Folio #${fotoLightbox.cargaFolio}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          {fotoLightbox && (
+            <div className="space-y-3">
+              <img
+                src={fotoLightbox.url}
+                alt="Foto odómetro"
+                className="w-full rounded-xl object-contain max-h-[65vh] border"
+                style={{ borderColor: "var(--border)" }}
+              />
+              <div className="flex items-center justify-between text-xs" style={{ color: "var(--fg-muted)" }}>
+                <span className="font-mono">{fotoLightbox.cargaFecha} · {fotoLightbox.cargaOrigen === "campo" ? "Campo" : "Patio"}</span>
+                <a
+                  href={fotoLightbox.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:bg-[var(--surface-2)]"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  Abrir original ↗
+                </a>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
