@@ -538,7 +538,7 @@ export default function FormCargaCampo({
                 <><Camera className="w-4 h-4" /> Foto</>
               )}
             </button>
-            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment"
+            <input ref={cameraInputRef} type="file" accept="image/*"
               className="hidden" onChange={handleFotoChange} />
           </div>
           {odometroFotoPreview && (
