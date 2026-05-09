@@ -72,14 +72,7 @@ export default function FormCargaCampo({
   const [odometroFotoPreview, setOdometroFotoPreview] = useState<string | null>(null);
 
   const [fotoWarning, setFotoWarning] = useState("");
-  const cargaIdRef = useRef<number | null>(null);
   const { startUpload, isUploading } = useUploadThing("notaFoto", {
-    onClientUploadComplete: (files) => {
-      if (!files?.[0] || cargaIdRef.current === null) return;
-      const fotoUrl = files[0].ufsUrl || files[0].url;
-      saveArchivoFoto(cargaIdRef.current, fotoUrl, files[0].key, "odometroFoto")
-        .catch(() => setFotoWarning("Foto subida pero no se pudo guardar en BD"));
-    },
     onUploadError: (err) => setFotoWarning(`Error al subir foto: ${err.message}`),
   });
 
@@ -251,10 +244,17 @@ export default function FormCargaCampo({
         notas:             form.notas || undefined,
       });
 
-      // Subir foto — onClientUploadComplete maneja el guardado en DB
+      // Subir foto y guardar referencia en DB
       if (odometroFoto) {
-        cargaIdRef.current = result.cargaId;
-        startUpload([odometroFoto]); // no await — el guardado ocurre en onClientUploadComplete
+        try {
+          const uploaded = await startUpload([odometroFoto]);
+          if (uploaded?.[0]) {
+            const fotoUrl = uploaded[0].ufsUrl || uploaded[0].url;
+            await saveArchivoFoto(result.cargaId, fotoUrl, uploaded[0].key, "odometroFoto");
+          }
+        } catch {
+          // onUploadError ya maneja el mensaje visible
+        }
       }
 
       if (result.nuevoCuentalitrosNissan !== undefined) {
