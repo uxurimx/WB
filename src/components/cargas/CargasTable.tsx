@@ -6,6 +6,7 @@ import {
   Pencil, Trash2, AlertCircle, ArrowRight, Fuel,
   ChevronDown, ChevronUp, Gauge, Hash, MapPin, User,
   Search, X as XIcon, ArrowUpDown, Camera, CalendarRange,
+  AlertTriangle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,8 @@ export type CargaItem = {
   cuentaLtInicio: number | null;
   cuentaLtFin: number | null;
   kmEstimado: boolean;
+  periodoId: number | null;
+  periodoCerrado: boolean;
   unidad: { codigo: string } | null;
   operador: { nombre: string } | null;
   obra: { nombre: string } | null;
@@ -417,6 +420,7 @@ export default function CargasTable({
   const [editCargaError,  setEditCargaError]  = useState("");
   const [deletingCargaId, setDeletingCargaId] = useState<number | null>(null);
   const [deleteCargaError, setDeleteCargaError] = useState("");
+  const [deleteNoteState, setDeleteNoteState] = useState<{ cargaId: number; nota: string } | null>(null);
 
   // ── Estado: edición/eliminación de recargas ────────────────
   const [editRecarga,    setEditRecarga]    = useState<RecargaItem | null>(null);
@@ -484,6 +488,14 @@ export default function CargasTable({
   }
 
   function handleDeleteCarga(id: number) {
+    const item = items.find((i) => i._tipo === "carga" && i.id === id) as CargaItem | undefined;
+    if (item?.periodoCerrado) {
+      // Período cerrado: exige nota antes de eliminar
+      setDeleteNoteState({ cargaId: id, nota: "" });
+      setDeleteCargaError("");
+      return;
+    }
+    // Período abierto: confirmación inline
     if (deletingCargaId === id) {
       startTransition(async () => {
         try {
@@ -498,6 +510,18 @@ export default function CargasTable({
       setDeletingCargaId(id);
       setDeleteCargaError("");
     }
+  }
+
+  function confirmDeleteConNota() {
+    if (!deleteNoteState?.nota.trim()) return;
+    startTransition(async () => {
+      try {
+        await deleteCarga(deleteNoteState.cargaId, deleteNoteState.nota);
+        setDeleteNoteState(null);
+      } catch (err) {
+        setDeleteCargaError(err instanceof Error ? err.message : "Error al eliminar");
+      }
+    });
   }
 
   // ── Handlers: recargas ─────────────────────────────────────
@@ -638,9 +662,9 @@ export default function CargasTable({
   const recargasFiltradas = itemsFiltrados.filter((i): i is RecargaItem       => i._tipo === "recarga");
   const transfFiltradas   = itemsFiltrados.filter((i): i is TransferenciaItem => i._tipo === "transferencia");
 
-  // Usar globalStats solo cuando no hay filtros activos (búsqueda, tipo o fecha)
-  // para mostrar el total real de todo el historial
-  const anyFilter = busqueda || tipoFiltro !== "todos" || hasFiltroFecha;
+  // Sin filtros activos → muestra totales reales de toda la DB (globalStats)
+  // Con filtros → computa desde los items filtrados (todo ya cargado en memoria, sin paginación)
+  const anyFilter = !!(busqueda || tipoFiltro !== "todos" || hasFiltroFecha);
   const displayStats = anyFilter
     ? {
         cargas:         { total: cargasFiltradas.length,   litros: cargasFiltradas.reduce((s, c) => s + c.litros, 0) },
@@ -664,7 +688,7 @@ export default function CargasTable({
       {/* Mini dashboard reactivo — totales globales o filtrados */}
       <div className="mb-2">
         <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--fg-muted)" }}>
-          {anyFilter ? "Resultados filtrados" : "Total historial"}
+          {anyFilter ? "Resultados según filtros activos" : "Totales — todo el historial"}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           {[
@@ -804,7 +828,7 @@ export default function CargasTable({
         </div>
         {!hasFiltroFecha && (
           <p className="text-[10px] hidden sm:block shrink-0" style={{ color: "var(--fg-muted)" }}>
-            Al aplicar, la búsqueda incluye todo el rango
+            Filtra por rango y busca en todos los registros del período
           </p>
         )}
       </div>
@@ -1205,6 +1229,58 @@ export default function CargasTable({
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Modal: eliminar carga de período cerrado ──────────── */}
+      <Dialog open={!!deleteNoteState} onOpenChange={(open) => { if (!open) setDeleteNoteState(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              Eliminar de período cerrado
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-1">
+            <div className="rounded-xl border px-3 py-2.5 text-xs space-y-1"
+              style={{ backgroundColor: "rgba(239,68,68,0.06)", borderColor: "rgba(239,68,68,0.25)" }}>
+              <p className="font-semibold" style={{ color: "var(--fg)" }}>Atención: período cerrado</p>
+              <p style={{ color: "var(--fg-muted)" }}>
+                Esta carga pertenece a un período cerrado. Al eliminarla, el rendimiento
+                de la unidad será recalculado automáticamente.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Motivo de la eliminación *</Label>
+              <Textarea
+                value={deleteNoteState?.nota ?? ""}
+                onChange={(e) =>
+                  setDeleteNoteState((prev) => prev ? { ...prev, nota: e.target.value } : prev)
+                }
+                placeholder="Ej. Folio duplicado, error de captura, carga registrada en unidad incorrecta…"
+                rows={3}
+                autoFocus
+              />
+            </div>
+            {deleteCargaError && (
+              <p className="text-sm text-red-500 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" /> {deleteCargaError}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost" size="sm">Cancelar</Button>
+            </DialogClose>
+            <Button
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={isPending || !deleteNoteState?.nota.trim()}
+              onClick={confirmDeleteConNota}
+            >
+              {isPending ? "Eliminando…" : "Confirmar eliminación"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

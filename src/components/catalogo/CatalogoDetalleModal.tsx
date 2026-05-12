@@ -1,16 +1,31 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
-import { Fuel, BarChart3, Calendar, Loader2, TrendingUp, TrendingDown, Minus, Camera } from "lucide-react";
+import {
+  Fuel, BarChart3, Calendar, Loader2, TrendingUp, TrendingDown, Minus,
+  Camera, Pencil, Trash2, AlertCircle, AlertTriangle, ClipboardList,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getCatalogoResumen } from "@/app/actions/cargas";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
+} from "@/components/ui/dialog";
+import { getCatalogoResumen, updateCarga, deleteCarga, getAuditLogCargasUnidad } from "@/app/actions/cargas";
 import { getRendimientosUnidad } from "@/app/actions/rendimientos";
 import { getArchivosUnidad } from "@/app/actions/archivos";
+import { getOperadores, getObras } from "@/app/actions/catalogo";
 
 type Resumen      = Awaited<ReturnType<typeof getCatalogoResumen>>;
 type RendUnidad   = Awaited<ReturnType<typeof getRendimientosUnidad>>;
 type FotosUnidad  = Awaited<ReturnType<typeof getArchivosUnidad>>;
+type AuditLog     = Awaited<ReturnType<typeof getAuditLogCargasUnidad>>;
+type CargaReciente = Resumen["recientes"][number];
+type Operador = { id: number; nombre: string };
+type Obra     = { id: number; nombre: string };
 
 function formatFecha(f: string) {
   return new Date(f + "T12:00:00").toLocaleDateString("es-MX", {
@@ -36,14 +51,34 @@ export default function CatalogoDetalleModal({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"cargas" | "rendimiento" | "fotos">("cargas");
+  const [activeTab, setActiveTab] = useState<"cargas" | "rendimiento" | "fotos" | "cambios">("cargas");
   const [datos, setDatos]         = useState<Resumen | null>(null);
   const [rends, setRends]         = useState<RendUnidad | null>(null);
   const [fotos, setFotos]         = useState<FotosUnidad>([]);
+  const [audits, setAudits]       = useState<AuditLog>([]);
   const [fotoLightbox, setFotoLightbox] = useState<FotosUnidad[number] | null>(null);
+  const [operadores, setOperadores] = useState<Operador[]>([]);
+  const [obras, setObras]           = useState<Obra[]>([]);
   const [isPending, startTx]      = useTransition();
   const fetchedForId              = useRef<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
+  // ── Edit carga state ─────────────────────────────────────────
+  const [editCarga, setEditCarga] = useState<CargaReciente | null>(null);
+  const [editForm, setEditForm]   = useState({
+    fecha: "", hora: "", folio: "", litros: "", odometroHrs: "",
+    cuentaLtInicio: "", cuentaLtFin: "", operadorId: "", obraId: "", notas: "",
+  });
+  const [editError, setEditError]   = useState("");
+  const [editPending, startEditTx]  = useTransition();
+
+  // ── Delete + nota state ──────────────────────────────────────
+  const [deleteNoteState, setDeleteNoteState] = useState<{ cargaId: number; nota: string } | null>(null);
+  const [deletingOpenId, setDeletingOpenId]   = useState<number | null>(null);
+  const [deleteError, setDeleteError]         = useState("");
+  const [deletePending, startDeleteTx]        = useTransition();
+
+  // ── Load data ────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     if (fetchedForId.current === id) return;
@@ -52,22 +87,121 @@ export default function CatalogoDetalleModal({
     setRends(null);
     setActiveTab("cargas");
     startTx(async () => {
-      const [resumen, rendUnidad, archivosUnidad] = await Promise.all([
+      const [resumen, rendUnidad, archivosUnidad, auditEntries, ops, obs] = await Promise.all([
         getCatalogoResumen(tipo, id),
         tipo === "unidad" ? getRendimientosUnidad(id) : Promise.resolve(null),
         tipo === "unidad" ? getArchivosUnidad(id) : Promise.resolve([] as FotosUnidad),
+        tipo === "unidad" ? getAuditLogCargasUnidad(id) : Promise.resolve([] as AuditLog),
+        getOperadores(true),
+        getObras(true),
       ]);
       setDatos(resumen);
       if (rendUnidad) setRends(rendUnidad);
       setFotos(archivosUnidad);
+      setAudits(auditEntries);
+      setOperadores(ops.map((o) => ({ id: o.id, nombre: o.nombre })));
+      setObras(obs.map((o) => ({ id: o.id, nombre: o.nombre })));
     });
-  }, [open, id, tipo]);
+  }, [open, id, tipo, refreshKey]);
+
+  // refresh() invalida el cache de fetchedForId para forzar re-fetch
+  function refresh() {
+    fetchedForId.current = null;
+    setRefreshKey((k) => k + 1);
+  }
+
+  // ── Edit handlers ────────────────────────────────────────────
+  function openEdit(c: CargaReciente) {
+    setEditCarga(c);
+    setEditError("");
+    setEditForm({
+      fecha:          c.fecha,
+      hora:           c.hora?.slice(0, 5) ?? "",
+      folio:          c.folio ? String(c.folio) : "",
+      litros:         String(c.litros),
+      odometroHrs:    c.odometroHrs != null ? String(c.odometroHrs) : "",
+      cuentaLtInicio: c.cuentaLtInicio != null ? String(c.cuentaLtInicio) : "",
+      cuentaLtFin:    c.cuentaLtFin != null ? String(c.cuentaLtFin) : "",
+      operadorId:     c.operadorId ? String(c.operadorId) : "",
+      obraId:         c.obraId ? String(c.obraId) : "",
+      notas:          c.notas ?? "",
+    });
+  }
+
+  function handleEditFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
+    setEditForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  }
+
+  function saveEdit() {
+    if (!editCarga) return;
+    const litros = parseFloat(editForm.litros);
+    if (!editForm.litros || litros <= 0) { setEditError("Los litros deben ser mayores a 0"); return; }
+    startEditTx(async () => {
+      try {
+        await updateCarga(editCarga.id, {
+          fecha:          editForm.fecha,
+          hora:           editForm.hora || undefined,
+          folio:          editForm.folio ? parseInt(editForm.folio) : undefined,
+          litros,
+          odometroHrs:    editForm.odometroHrs ? parseFloat(editForm.odometroHrs) : null,
+          cuentaLtInicio: editForm.cuentaLtInicio ? parseFloat(editForm.cuentaLtInicio) : null,
+          cuentaLtFin:    editForm.cuentaLtFin ? parseFloat(editForm.cuentaLtFin) : null,
+          operadorId:     editForm.operadorId ? parseInt(editForm.operadorId) : null,
+          obraId:         editForm.obraId ? parseInt(editForm.obraId) : null,
+          notas:          editForm.notas || null,
+        });
+        setEditCarga(null);
+        refresh();
+      } catch (err) {
+        setEditError(err instanceof Error ? err.message : "Error al guardar");
+      }
+    });
+  }
+
+  // ── Delete handlers ──────────────────────────────────────────
+  function handleDelete(c: CargaReciente) {
+    setDeleteError("");
+    if (c.periodoCerrado) {
+      setDeleteNoteState({ cargaId: c.id, nota: "" });
+    } else {
+      setDeletingOpenId(c.id);
+    }
+  }
+
+  function confirmDeleteOpen(id: number) {
+    startDeleteTx(async () => {
+      try {
+        await deleteCarga(id);
+        setDeletingOpenId(null);
+        refresh();
+      } catch (err) {
+        setDeleteError(err instanceof Error ? err.message : "Error al eliminar");
+        setDeletingOpenId(null);
+      }
+    });
+  }
+
+  function confirmDeleteConNota() {
+    if (!deleteNoteState?.nota.trim()) return;
+    startDeleteTx(async () => {
+      try {
+        await deleteCarga(deleteNoteState.cargaId, deleteNoteState.nota);
+        setDeleteNoteState(null);
+        refresh();
+      } catch (err) {
+        setDeleteError(err instanceof Error ? err.message : "Error al eliminar");
+      }
+    });
+  }
+
+  const canEditRows = tipo === "unidad";
 
   const tabs = tipo === "unidad"
     ? [
         { key: "cargas",      label: "Cargas" },
         { key: "rendimiento", label: "Rendimiento" },
         { key: "fotos",       label: `Fotos${fotos.length > 0 ? ` (${fotos.length})` : ""}` },
+        { key: "cambios",     label: `Cambios${audits.length > 0 ? ` (${audits.length})` : ""}` },
       ] as const
     : [{ key: "cargas", label: "Cargas" }] as const;
 
@@ -136,13 +270,19 @@ export default function CatalogoDetalleModal({
               </p>
             )}
 
+            {deleteError && (
+              <p className="text-xs text-red-500 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {deleteError}
+              </p>
+            )}
+
             {datos.recientes.length > 0 ? (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider mb-2"
                   style={{ color: "var(--fg-muted)" }}>Cargas recientes</p>
                 <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs" style={{ minWidth: "480px" }}>
+                    <table className="w-full text-xs" style={{ minWidth: canEditRows ? "520px" : "480px" }}>
                       <thead>
                         <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
                           <th className="px-3 py-2 text-left font-semibold whitespace-nowrap"
@@ -167,6 +307,7 @@ export default function CatalogoDetalleModal({
                             style={{ color: "var(--fg-muted)" }}>Litros</th>
                           <th className="px-3 py-2 text-center font-semibold whitespace-nowrap"
                             style={{ color: "var(--fg-muted)" }}>Tipo</th>
+                          {canEditRows && <th className="px-3 py-2 w-16" />}
                         </tr>
                       </thead>
                       <tbody>
@@ -178,6 +319,12 @@ export default function CatalogoDetalleModal({
                             }}>
                             <td className="px-3 py-2 font-mono whitespace-nowrap" style={{ color: "var(--fg-muted)" }}>
                               {c.fecha}
+                              {c.periodoCerrado && (
+                                <span className="ml-1 text-[9px] font-semibold px-1 py-0.5 rounded"
+                                  style={{ backgroundColor: "rgba(239,68,68,0.1)", color: "rgb(239,68,68)" }}>
+                                  cerrado
+                                </span>
+                              )}
                             </td>
                             <td className="px-3 py-2 font-mono whitespace-nowrap" style={{ color: "var(--fg-muted)" }}>
                               {c.folio != null ? `#${c.folio}` : "—"}
@@ -208,6 +355,42 @@ export default function CatalogoDetalleModal({
                                 {c.origen === "campo" ? "Campo" : "Patio"}
                               </Badge>
                             </td>
+                            {canEditRows && (
+                              <td className="px-3 py-2 whitespace-nowrap">
+                                {deletingOpenId === c.id ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[10px] text-red-500">¿Eliminar?</span>
+                                    <button
+                                      onClick={() => confirmDeleteOpen(c.id)}
+                                      disabled={deletePending}
+                                      className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-600 text-white disabled:opacity-50"
+                                    >Sí</button>
+                                    <button
+                                      onClick={() => setDeletingOpenId(null)}
+                                      className="px-1.5 py-0.5 rounded text-[10px] border"
+                                      style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+                                    >No</button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-0.5 justify-end">
+                                    <button
+                                      onClick={() => openEdit(c)}
+                                      className="p-1 rounded-lg hover:bg-[var(--surface-2)] transition-colors"
+                                      title="Editar"
+                                    >
+                                      <Pencil className="w-3 h-3 text-indigo-400" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(c)}
+                                      className="p-1 rounded-lg hover:bg-[var(--surface-2)] transition-colors"
+                                      title="Eliminar"
+                                    >
+                                      <Trash2 className="w-3 h-3 text-red-400" />
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -250,7 +433,6 @@ export default function CatalogoDetalleModal({
                           backgroundColor: "var(--surface)",
                         }}
                       >
-                        {/* Período */}
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-semibold" style={{ color: "var(--fg)" }}>
                             {r.periodo?.nombre ?? `Período #${r.periodoId}`}
@@ -264,7 +446,6 @@ export default function CatalogoDetalleModal({
                           )}
                         </div>
 
-                        {/* Métricas */}
                         <div className="grid grid-cols-3 gap-2">
                           <div>
                             <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: "var(--fg-muted)" }}>Litros</p>
@@ -288,7 +469,6 @@ export default function CatalogoDetalleModal({
                           </div>
                         </div>
 
-                        {/* Delta vs referencia */}
                         {r.rendimientoReferencia !== null && r.diferencia !== null && (
                           <div className="flex items-center gap-2 mt-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
                             <span className="text-xs" style={{ color: "var(--fg-muted)" }}>
@@ -315,6 +495,7 @@ export default function CatalogoDetalleModal({
             )}
           </div>
         )}
+
         {/* ── Tab: Fotos (solo unidades) ──────────────────────── */}
         {tipo === "unidad" && activeTab === "fotos" && !isPending && (
           <div className="space-y-3">
@@ -358,9 +539,253 @@ export default function CatalogoDetalleModal({
             )}
           </div>
         )}
+
+        {/* ── Tab: Cambios / Auditoría (solo unidades) ─────────── */}
+        {tipo === "unidad" && activeTab === "cambios" && !isPending && (
+          <div className="space-y-3">
+            {audits.length === 0 ? (
+              <p className="text-sm text-center py-6" style={{ color: "var(--fg-muted)" }}>
+                Sin cambios registrados en períodos cerrados.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+                  Historial de modificaciones en períodos cerrados · más reciente primero
+                </p>
+                <div className="space-y-2">
+                  {audits.map((a) => {
+                    const periodoNombre = rends?.find((r) => r.periodoId === a.periodoId)?.periodo?.nombre
+                      ?? (a.periodoId ? `Período #${a.periodoId}` : "—");
+                    const esEliminacion = a.motivo === "delete_carga";
+                    return (
+                      <div key={a.id} className="rounded-xl border overflow-hidden"
+                        style={{ borderColor: "var(--border)" }}>
+                        {/* Header del evento */}
+                        <div className="flex items-center justify-between px-3 py-2"
+                          style={{ backgroundColor: esEliminacion ? "rgba(239,68,68,0.06)" : "rgba(99,102,241,0.06)" }}>
+                          <div className="flex items-center gap-2">
+                            {esEliminacion
+                              ? <Trash2 className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                              : <Pencil className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                            }
+                            <span className="text-xs font-semibold"
+                              style={{ color: esEliminacion ? "rgb(239,68,68)" : "rgb(99,102,241)" }}>
+                              {esEliminacion ? "Carga eliminada" : "Carga modificada"}
+                            </span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-mono"
+                              style={{ backgroundColor: "var(--surface-2)", color: "var(--fg-muted)" }}>
+                              {periodoNombre}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono" style={{ color: "var(--fg-muted)" }}>
+                            {a.createdAt
+                              ? new Date(a.createdAt).toLocaleDateString("es-MX", {
+                                  day: "numeric", month: "short", year: "numeric",
+                                }) + " " + new Date(a.createdAt).toLocaleTimeString("es-MX", {
+                                  hour: "2-digit", minute: "2-digit",
+                                })
+                              : "—"
+                            }
+                          </span>
+                        </div>
+
+                        {/* Cuerpo: nota + usuario */}
+                        <div className="px-3 py-2.5 space-y-1.5" style={{ backgroundColor: "var(--surface)" }}>
+                          {a.nota ? (
+                            <div className="flex gap-2">
+                              <ClipboardList className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />
+                              <p className="text-xs leading-relaxed" style={{ color: "var(--fg)" }}>
+                                {a.nota}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-xs italic" style={{ color: "var(--fg-muted)" }}>
+                              Sin nota de motivo
+                            </p>
+                          )}
+                          <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>
+                            Por: <span className="font-semibold">{a.usuarioNombre}</span>
+                            {a.cargaId && (
+                              <span className="ml-2 font-mono">· carga #{a.cargaId}</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </DialogContent>
 
-      {/* Lightbox de foto ampliada */}
+      {/* ── Modal: editar carga ─────────────────────────────────── */}
+      <Dialog open={!!editCarga} onOpenChange={(open) => { if (!open) setEditCarga(null); }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar carga #{editCarga?.folio ?? editCarga?.id}</DialogTitle>
+          </DialogHeader>
+
+          {editCarga && (
+            <div className="rounded-xl border p-3 grid grid-cols-2 gap-3 text-xs"
+              style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
+              <div>
+                <p className="font-semibold uppercase tracking-wider text-[10px]" style={{ color: "var(--fg-muted)" }}>Origen</p>
+                <p className="mt-0.5" style={{ color: "var(--fg)" }}>{editCarga.origen === "campo" ? "Campo" : "Patio"}</p>
+              </div>
+              <div>
+                <p className="font-semibold uppercase tracking-wider text-[10px]" style={{ color: "var(--fg-muted)" }}>Tipo diesel</p>
+                <p className="mt-0.5" style={{ color: "var(--fg)" }}>{editCarga.tipoDiesel ?? "normal"}</p>
+              </div>
+              {editCarga.periodoCerrado && (
+                <div className="col-span-2 flex items-center gap-1.5 text-amber-600 text-[10px] font-semibold">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  Período cerrado — el rendimiento se recalculará al guardar
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-4 py-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Fecha</Label>
+                <Input name="fecha" type="date" value={editForm.fecha} onChange={handleEditFormChange} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Hora</Label>
+                <Input name="hora" type="time" value={editForm.hora} onChange={handleEditFormChange} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Folio</Label>
+                <Input name="folio" type="number" value={editForm.folio} onChange={handleEditFormChange} className="font-mono" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Litros *</Label>
+                <Input name="litros" type="number" step="0.5" value={editForm.litros} onChange={handleEditFormChange}
+                  className="font-mono font-bold" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>
+                Odómetro / Horas
+                {editCarga?.kmEstimado && (
+                  <span className="ml-2 text-[10px] text-amber-500 font-normal">fue estimado</span>
+                )}
+              </Label>
+              <Input name="odometroHrs" type="number" step="1" value={editForm.odometroHrs}
+                onChange={handleEditFormChange} className="font-mono" placeholder="Sin registro" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>CuentaLT inicio</Label>
+                <Input name="cuentaLtInicio" type="number" step="1" value={editForm.cuentaLtInicio}
+                  onChange={handleEditFormChange} className="font-mono" placeholder="—" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>CuentaLT fin</Label>
+                <Input name="cuentaLtFin" type="number" step="1" value={editForm.cuentaLtFin}
+                  onChange={handleEditFormChange} className="font-mono" placeholder="—" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Operador</Label>
+                <Select name="operadorId" value={editForm.operadorId} onChange={handleEditFormChange}>
+                  <option value="">— Ninguno —</option>
+                  {operadores.map((o) => (<option key={o.id} value={o.id}>{o.nombre}</option>))}
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Obra</Label>
+                <Select name="obraId" value={editForm.obraId} onChange={handleEditFormChange}>
+                  <option value="">— Sin obra —</option>
+                  {obras.map((o) => (<option key={o.id} value={o.id}>{o.nombre}</option>))}
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Notas</Label>
+              <Textarea name="notas" value={editForm.notas} onChange={handleEditFormChange}
+                placeholder="Observaciones..." rows={2} />
+            </div>
+            {editError && (
+              <p className="text-sm text-red-500 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" /> {editError}
+              </p>
+            )}
+            <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+              Cambiar litros ajusta automáticamente el stock del tanque.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost" size="sm">Cancelar</Button>
+            </DialogClose>
+            <Button size="sm" disabled={editPending} onClick={saveEdit}>
+              {editPending ? "Guardando…" : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Modal: eliminar de período cerrado ─────────────────── */}
+      <Dialog open={!!deleteNoteState} onOpenChange={(open) => { if (!open) setDeleteNoteState(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              Eliminar de período cerrado
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-1">
+            <div className="rounded-xl border px-3 py-2.5 text-xs space-y-1"
+              style={{ backgroundColor: "rgba(239,68,68,0.06)", borderColor: "rgba(239,68,68,0.25)" }}>
+              <p className="font-semibold" style={{ color: "var(--fg)" }}>Atención: período cerrado</p>
+              <p style={{ color: "var(--fg-muted)" }}>
+                Esta carga pertenece a un período cerrado. Al eliminarla, el rendimiento
+                de la unidad será recalculado automáticamente.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Motivo de la eliminación *</Label>
+              <Textarea
+                value={deleteNoteState?.nota ?? ""}
+                onChange={(e) =>
+                  setDeleteNoteState((prev) => prev ? { ...prev, nota: e.target.value } : prev)
+                }
+                placeholder="Ej. Folio duplicado, error de captura, carga en unidad incorrecta…"
+                rows={3}
+                autoFocus
+              />
+            </div>
+            {deleteError && (
+              <p className="text-sm text-red-500 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" /> {deleteError}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost" size="sm">Cancelar</Button>
+            </DialogClose>
+            <Button
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={deletePending || !deleteNoteState?.nota.trim()}
+              onClick={confirmDeleteConNota}
+            >
+              {deletePending ? "Eliminando…" : "Confirmar eliminación"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Lightbox: foto ampliada ─────────────────────────────── */}
       <Dialog open={!!fotoLightbox} onOpenChange={(open) => { if (!open) setFotoLightbox(null); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

@@ -3,8 +3,9 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque, recargasTanque } from "@/db/schema";
-import { eq, max, desc, and, count, sum, gte, lte } from "drizzle-orm";
+import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque, recargasTanque, rendimientos, periodos, auditLog, users } from "@/db/schema";
+import { eq, max, desc, and, count, sum, gte, lte, like } from "drizzle-orm";
+import { getTolerancia } from "@/app/actions/setup";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
@@ -121,11 +122,20 @@ export async function createCargaPatio(input: CargaPatioInput) {
   // Actualizar stock del tanque taller
   const nuevosLitros = Math.max(0, (tanqueTaller.litrosActuales ?? 0) - input.litros);
   const ajuste = tanqueTaller.ajustePorcentaje ?? 2;
+  // Solo actualizar cuentalitros si el nuevo valor es mayor al actual.
+  // Esto evita que una carga ingresada de forma retroactiva sobreescriba
+  // la lectura más reciente (ej. de una transferencia registrada antes).
+  const currentCuentalitros = tanqueTaller.cuentalitrosActual ?? 0;
+  const nuevoCuentalitros =
+    input.cuentaLtFin != null && input.cuentaLtFin > currentCuentalitros
+      ? input.cuentaLtFin
+      : currentCuentalitros;
+
   await db
     .update(tanques)
     .set({
       litrosActuales: nuevosLitros,
-      cuentalitrosActual: input.cuentaLtFin ?? tanqueTaller.cuentalitrosActual,
+      cuentalitrosActual: nuevoCuentalitros,
       ultimaActualizacion: new Date(),
     })
     .where(eq(tanques.id, tanqueTaller.id));
@@ -133,6 +143,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
   await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
     tanque: "Taller",
     litrosActuales: nuevosLitros,
+    cuentalitros: nuevoCuentalitros,
     ajuste,
   }).catch(() => {});
 
@@ -311,7 +322,7 @@ export async function getCargas(opts?: {
         if (opts?.fechaHasta) conds.push(_lte(c.fecha, opts.fechaHasta!));
         return conds.length ? _and(...conds) : undefined;
       },
-      with: { unidad: true, operador: true, obra: true, archivos: { columns: { url: true }, limit: 1 } },
+      with: { unidad: true, operador: true, obra: true, archivos: { columns: { url: true }, limit: 1 }, periodo: { columns: { cerrado: true } } },
       orderBy: (c, { desc: _desc }) => [_desc(c.fecha), _desc(c.createdAt)],
       limit: lim,
       offset: off,
@@ -359,8 +370,13 @@ export async function getCatalogoResumen(
       unidad:   { columns: { codigo: true } },
       operador: { columns: { nombre: true } },
       obra:     { columns: { nombre: true } },
+      periodo:  { columns: { cerrado: true } },
     },
-    columns: { id: true, fecha: true, folio: true, litros: true, origen: true, odometroHrs: true },
+    columns: {
+      id: true, fecha: true, hora: true, folio: true, litros: true, origen: true,
+      odometroHrs: true, periodoId: true, operadorId: true, obraId: true,
+      cuentaLtInicio: true, cuentaLtFin: true, tipoDiesel: true, notas: true, kmEstimado: true,
+    },
   });
 
   const totalLitros  = rows.reduce((s, c) => s + c.litros, 0);
@@ -374,15 +390,25 @@ export async function getCatalogoResumen(
     cargasCampo,
     ultimaFecha: rows[0]?.fecha ?? null,
     recientes: rows.map((c) => ({
-      id: c.id,
-      fecha: c.fecha,
-      folio: c.folio,
-      litros: c.litros,
-      origen: c.origen,
-      odometroHrs: c.odometroHrs ?? null,
-      unidadCodigo:    c.unidad?.codigo    ?? null,
-      operadorNombre:  c.operador?.nombre  ?? null,
-      obraNombre:      c.obra?.nombre      ?? null,
+      id:             c.id,
+      fecha:          c.fecha,
+      hora:           c.hora ?? null,
+      folio:          c.folio,
+      litros:         c.litros,
+      origen:         c.origen,
+      tipoDiesel:     c.tipoDiesel ?? null,
+      notas:          c.notas ?? null,
+      odometroHrs:    c.odometroHrs ?? null,
+      kmEstimado:     c.kmEstimado ?? false,
+      periodoId:      c.periodoId ?? null,
+      periodoCerrado: c.periodo?.cerrado ?? false,
+      operadorId:     c.operadorId ?? null,
+      obraId:         c.obraId ?? null,
+      cuentaLtInicio: c.cuentaLtInicio ?? null,
+      cuentaLtFin:    c.cuentaLtFin ?? null,
+      unidadCodigo:   c.unidad?.codigo    ?? null,
+      operadorNombre: c.operador?.nombre  ?? null,
+      obraNombre:     c.obra?.nombre      ?? null,
     })),
   };
 }
@@ -457,6 +483,66 @@ export async function getUltimoOdometro(unidadId: number): Promise<number | null
 }
 
 // ─────────────────────────────────────────────────────────────
+// RECALCULAR RENDIMIENTO DE PERÍODO CERRADO (helper interno)
+// ─────────────────────────────────────────────────────────────
+async function recalcularRendimientosForUnit(periodoId: number, unidadId: number) {
+  const [cargasDelPeriodo, unidad, TOLERANCIA] = await Promise.all([
+    db
+      .select({ litros: cargas.litros, odometroHrs: cargas.odometroHrs })
+      .from(cargas)
+      .where(and(eq(cargas.periodoId, periodoId), eq(cargas.unidadId, unidadId))),
+    db.query.unidades.findFirst({ where: eq(unidades.id, unidadId) }),
+    getTolerancia(),
+  ]);
+
+  // Eliminar snapshot existente para esta unidad+período
+  await db.delete(rendimientos)
+    .where(and(eq(rendimientos.periodoId, periodoId), eq(rendimientos.unidadId, unidadId)));
+
+  if (!unidad || unidad.tipo === "nissan" || cargasDelPeriodo.length === 0) return;
+
+  const litrosConsumidos = cargasDelPeriodo.reduce((s, c) => s + (c.litros ?? 0), 0);
+  const odometros = cargasDelPeriodo
+    .filter((c) => c.odometroHrs != null && c.odometroHrs > 0)
+    .map((c) => c.odometroHrs as number);
+  const odometroInicial = odometros.length > 0 ? Math.min(...odometros) : null;
+  const odometroFinal   = odometros.length > 0 ? Math.max(...odometros) : null;
+  const kmHrsRecorridos =
+    odometroInicial !== null && odometroFinal !== null && odometroFinal > odometroInicial
+      ? odometroFinal - odometroInicial
+      : null;
+
+  let rendimientoActual: number | null = null;
+  if (kmHrsRecorridos && kmHrsRecorridos > 0 && litrosConsumidos > 0) {
+    rendimientoActual =
+      unidad.tipo === "camion"
+        ? kmHrsRecorridos / litrosConsumidos
+        : litrosConsumidos / kmHrsRecorridos;
+  }
+
+  const rRef = unidad.rendimientoReferencia ?? null;
+  let diferencia: number | null = null;
+  let dentroDeTolerancia: boolean | null = null;
+  if (rendimientoActual !== null && rRef) {
+    diferencia = rendimientoActual - rRef;
+    dentroDeTolerancia = Math.abs(diferencia / rRef) <= TOLERANCIA;
+  }
+
+  await db.insert(rendimientos).values({
+    periodoId,
+    unidadId,
+    odometroInicial,
+    odometroFinal,
+    kmHrsRecorridos,
+    litrosConsumidos,
+    rendimientoActual,
+    rendimientoReferencia: rRef,
+    diferencia,
+    dentroDeTolerancia,
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
 // EDITAR CARGA
 // ─────────────────────────────────────────────────────────────
 export type UpdateCargaInput = {
@@ -474,30 +560,49 @@ export type UpdateCargaInput = {
 };
 
 export async function updateCarga(id: number, data: UpdateCargaInput) {
+  const { userId } = await auth();
   await requireManageRole();
 
+  const carga = await db.query.cargas.findFirst({ where: eq(cargas.id, id) });
+  if (!carga) throw new Error("Carga no encontrada");
+
   // Si cambia litros, ajustar stock y cuentalitros del tanque
-  if (data.litros !== undefined) {
-    const carga = await db.query.cargas.findFirst({ where: eq(cargas.id, id) });
-    if (carga?.tanqueId) {
-      const tanque = await db.query.tanques.findFirst({ where: eq(tanques.id, carga.tanqueId) });
-      if (tanque) {
-        const diff = data.litros - carga.litros; // positivo = más consumo
-        const nuevosLitros = Math.max(0, (tanque.litrosActuales ?? 0) - diff);
-        const nuevoCuentalitros = (tanque.cuentalitrosActual ?? 0) + diff;
-        await db.update(tanques)
-          .set({ litrosActuales: nuevosLitros, cuentalitrosActual: nuevoCuentalitros, ultimaActualizacion: new Date() })
-          .where(eq(tanques.id, tanque.id));
-        await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
-          tanque: tanque.nombre,
-          litrosActuales: nuevosLitros,
-          cuentalitros: nuevoCuentalitros,
-        }).catch(() => {});
-      }
+  if (data.litros !== undefined && data.litros !== carga.litros && carga.tanqueId) {
+    const tanque = await db.query.tanques.findFirst({ where: eq(tanques.id, carga.tanqueId) });
+    if (tanque) {
+      const diff = data.litros - carga.litros;
+      const nuevosLitros = Math.max(0, (tanque.litrosActuales ?? 0) - diff);
+      const nuevoCuentalitros = (tanque.cuentalitrosActual ?? 0) + diff;
+      await db.update(tanques)
+        .set({ litrosActuales: nuevosLitros, cuentalitrosActual: nuevoCuentalitros, ultimaActualizacion: new Date() })
+        .where(eq(tanques.id, tanque.id));
+      await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
+        tanque: tanque.nombre,
+        litrosActuales: nuevosLitros,
+        cuentalitros: nuevoCuentalitros,
+      }).catch(() => {});
     }
   }
 
   const [updated] = await db.update(cargas).set(data).where(eq(cargas.id, id)).returning();
+
+  // Si el período está cerrado y cambiaron campos que afectan rendimiento, recalcular snapshot
+  const afectaRendimiento = data.litros !== undefined || data.odometroHrs !== undefined;
+  if (afectaRendimiento && carga.periodoId) {
+    const periodo = await db.query.periodos.findFirst({ where: eq(periodos.id, carga.periodoId) });
+    if (periodo?.cerrado) {
+      await recalcularRendimientosForUnit(carga.periodoId, carga.unidadId);
+      await db.insert(auditLog).values({
+        usuarioId: userId,
+        accion: "recalc_rendimiento",
+        entidad: "rendimiento",
+        entidadId: `${carga.periodoId}:${carga.unidadId}`,
+        datosJson: JSON.stringify({ motivo: "update_carga", cargaId: id, cambios: data }),
+      });
+      revalidatePath("/periodos");
+    }
+  }
+
   revalidatePath("/cargas");
   revalidatePath("/overview");
   return updated;
@@ -506,7 +611,8 @@ export async function updateCarga(id: number, data: UpdateCargaInput) {
 // ─────────────────────────────────────────────────────────────
 // ELIMINAR CARGA (revierte stock del tanque)
 // ─────────────────────────────────────────────────────────────
-export async function deleteCarga(id: number) {
+export async function deleteCarga(id: number, notaModificacion?: string) {
+  const { userId } = await auth();
   await requireManageRole();
 
   const carga = await db.query.cargas.findFirst({ where: eq(cargas.id, id) });
@@ -529,7 +635,65 @@ export async function deleteCarga(id: number) {
     }
   }
 
+  const { periodoId, unidadId } = carga;
   await db.delete(cargas).where(eq(cargas.id, id));
+
+  // Si el período está cerrado, recalcular el snapshot de rendimiento para esta unidad
+  if (periodoId) {
+    const periodo = await db.query.periodos.findFirst({ where: eq(periodos.id, periodoId) });
+    if (periodo?.cerrado) {
+      await recalcularRendimientosForUnit(periodoId, unidadId);
+      await db.insert(auditLog).values({
+        usuarioId: userId,
+        accion: "recalc_rendimiento",
+        entidad: "rendimiento",
+        entidadId: `${periodoId}:${unidadId}`,
+        datosJson: JSON.stringify({ motivo: "delete_carga", cargaId: id, periodoId, unidadId, nota: notaModificacion ?? null }),
+      });
+      revalidatePath("/periodos");
+    }
+  }
+
   revalidatePath("/cargas");
   revalidatePath("/overview");
+}
+
+// ─────────────────────────────────────────────────────────────
+// HISTORIAL DE CAMBIOS EN RENDIMIENTOS (para auditoría)
+// ─────────────────────────────────────────────────────────────
+export async function getAuditLogCargasUnidad(unidadId: number) {
+  // entidadId format: "periodoId:unidadId"
+  const rows = await db
+    .select({
+      id:             auditLog.id,
+      accion:         auditLog.accion,
+      entidadId:      auditLog.entidadId,
+      datosJson:      auditLog.datosJson,
+      createdAt:      auditLog.createdAt,
+      usuarioNombre:  users.name,
+    })
+    .from(auditLog)
+    .leftJoin(users, eq(auditLog.usuarioId, users.id))
+    .where(and(
+      eq(auditLog.entidad, "rendimiento"),
+      like(auditLog.entidadId, `%:${unidadId}`),
+    ))
+    .orderBy(desc(auditLog.createdAt))
+    .limit(100);
+
+  return rows.map((r) => {
+    let parsed: Record<string, unknown> = {};
+    try { parsed = JSON.parse(r.datosJson ?? "{}"); } catch {}
+    const periodoIdStr = (r.entidadId ?? "").split(":")[0];
+    return {
+      id:             r.id,
+      createdAt:      r.createdAt,
+      usuarioNombre:  r.usuarioNombre ?? "Sistema",
+      periodoId:      periodoIdStr ? parseInt(periodoIdStr, 10) : null,
+      motivo:         (parsed.motivo as string) ?? null,
+      nota:           (parsed.nota as string) ?? null,
+      cargaId:        (parsed.cargaId as number) ?? null,
+      folioCarga:     (parsed.folioCarga as number) ?? null,
+    };
+  });
 }
