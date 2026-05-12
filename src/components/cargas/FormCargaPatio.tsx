@@ -30,12 +30,16 @@ export default function FormCargaPatio({
   siguienteFolio,
   stockActual,
   ultimaCuentaLt,
+  folioMin = 0,
+  folioMax = 0,
 }: {
   unidades: Unidad[];
   operadores: Operador[];
   siguienteFolio: number;
   stockActual: number;
   ultimaCuentaLt?: number | null;
+  folioMin?: number;
+  folioMax?: number;
 }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
@@ -141,6 +145,10 @@ export default function FormCargaPatio({
       setError(`Stock insuficiente. Taller tiene ${stockActual.toLocaleString()} L disponibles`);
       return;
     }
+    const folioNum = parseInt(folioManual);
+    if (isNaN(folioNum) || folioNum <= 0) { setError("Folio inválido"); return; }
+    if (folioMin > 0 && folioNum < folioMin) { setError(`Folio mínimo para patio: ${folioMin}`); return; }
+    if (folioMax > 0 && folioNum > folioMax) { setError(`Folio máximo para patio: ${folioMax}`); return; }
 
     const kmVal = parseFloat(form.odometroHrs);
     if (form.odometroHrs && !isNaN(kmVal)) {
@@ -165,11 +173,10 @@ export default function FormCargaPatio({
 
     setIsPending(true);
     try {
-      const folioNum = parseInt(folioManual);
       const result = await createCargaPatio({
         fecha: form.fecha,
         hora: form.hora,
-        folioManual: !isNaN(folioNum) ? folioNum : undefined,
+        folioManual: folioNum,
         unidadId: parseInt(form.unidadId),
         litros,
         odometroHrs:    odometroFinal,
@@ -204,8 +211,9 @@ export default function FormCargaPatio({
       }));
       setUltimoKm(null);
       setKmEstimado(false);
+      // nextFolio viene directo del server tras el insert — autoritativo, sin race condition
       skipFolioEffect.current = true;
-      setFolioManual(String(result.folio + 1));
+      setFolioManual(String(result.nextFolio));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar");

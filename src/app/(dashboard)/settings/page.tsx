@@ -5,17 +5,19 @@ import ThemeToggle from "@/components/ThemeToggle";
 import SeedButton from "@/components/SeedButton";
 import TestingPanel from "@/components/settings/TestingPanel";
 import AlertasConfig from "@/components/settings/AlertasConfig";
-import { getAlertaDias, getTolerancia } from "@/app/actions/setup";
+import { getAlertaDias, getTolerancia, getFolioRangos } from "@/app/actions/setup";
 import { TOLERANCIA_DEFAULT } from "@/lib/alertas-config";
 import ToleranciaConfig from "@/components/settings/ToleranciaConfig";
+import FolioRangoConfig from "@/components/settings/FolioRangoConfig";
 
 export default async function SettingsPage() {
   await requirePermission("settings");
 
-  const [user, alertaDias, tolerancia] = await Promise.all([
+  const [user, alertaDias, tolerancia, folioRangos] = await Promise.all([
     currentUser(),
     getAlertaDias(),
     getTolerancia(),
+    getFolioRangos(),
   ]);
   const isAdmin = user?.publicMetadata?.role === "admin";
 
@@ -98,6 +100,31 @@ export default async function SettingsPage() {
               Margen máximo de desviación permitido sobre el rendimiento de referencia. Por defecto {Math.round(TOLERANCIA_DEFAULT * 100)}%.
             </p>
             <ToleranciaConfig initialPct={Math.round(tolerancia * 100)} />
+          </div>
+        </div>
+      </section>
+
+      {/* Folios */}
+      <section className="mb-6">
+        <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--fg-muted)" }}>
+          Folios
+        </h2>
+        <div className="p-5 rounded-2xl border space-y-3"
+          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
+          <div>
+            <p className="font-semibold text-sm mb-0.5" style={{ color: "var(--fg)" }}>
+              Rango válido de folios
+            </p>
+            <p className="text-xs mb-4" style={{ color: "var(--fg-muted)" }}>
+              El sistema rechazará cualquier folio fuera del rango al registrar una carga.
+              Usa 0 en ambos campos para deshabilitar la validación de esa secuencia.
+            </p>
+            <FolioRangoConfig
+              initialPatioMin={folioRangos.patioMin}
+              initialPatioMax={folioRangos.patioMax}
+              initialCampoMin={folioRangos.campoMin}
+              initialCampoMax={folioRangos.campoMax}
+            />
           </div>
         </div>
       </section>

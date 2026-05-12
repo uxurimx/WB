@@ -4,7 +4,7 @@ import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { ClipboardList, PlusCircle, Fuel, ChevronLeft, ChevronRight } from "lucide-react";
 import { requirePermission } from "@/lib/server-guard";
-import { getCargas } from "@/app/actions/cargas";
+import { getCargas, getHistorialGlobalStats } from "@/app/actions/cargas";
 import { getOperadores, getObras } from "@/app/actions/catalogo";
 import { getTransferencias, getRecargasTanque } from "@/app/actions/tanques";
 import { Button } from "@/components/ui/button";
@@ -20,27 +20,36 @@ const PAGE_SIZE = 50;
 export default async function HistorialCargasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ origen?: string; unidadId?: string; page?: string }>;
+  searchParams: Promise<{ origen?: string; unidadId?: string; page?: string; desde?: string; hasta?: string }>;
 }) {
   await requirePermission("cargas.historial");
 
   const params = await searchParams;
   const origen = params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined;
   const soloCargas = !!origen;
-  const page = Math.max(1, parseInt(params.page ?? "1") || 1);
-  const offset = (page - 1) * PAGE_SIZE;
+  const desde = params.desde ?? "";
+  const hasta = params.hasta ?? "";
+  const hasFiltroFecha = !!(desde || hasta);
 
-  const [{ rows: cargas, total: totalCargas }, operadores, obras, clerkUser, transferencias, recargas] = await Promise.all([
-    getCargas({ origen, unidadId: params.unidadId ? parseInt(params.unidadId) : undefined, limit: PAGE_SIZE, offset }),
+  // Con filtro de fecha: carga todo sin paginación para que la búsqueda funcione en todos los registros
+  const page = hasFiltroFecha ? 1 : Math.max(1, parseInt(params.page ?? "1") || 1);
+  const limit = hasFiltroFecha ? 9999 : PAGE_SIZE;
+  const offset = hasFiltroFecha ? 0 : (page - 1) * PAGE_SIZE;
+
+  const dateOpts = { fechaDesde: desde || undefined, fechaHasta: hasta || undefined };
+
+  const [{ rows: cargas, total: totalCargas }, operadores, obras, clerkUser, transferencias, recargas, globalStats] = await Promise.all([
+    getCargas({ origen, unidadId: params.unidadId ? parseInt(params.unidadId) : undefined, limit, offset, ...dateOpts }),
     getOperadores(false),
     getObras(false),
     currentUser(),
-    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getTransferencias>>) : getTransferencias(500),
-    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getRecargasTanque>>) : getRecargasTanque(500),
+    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getTransferencias>>) : getTransferencias(9999, dateOpts),
+    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getRecargasTanque>>) : getRecargasTanque(9999, dateOpts),
+    getHistorialGlobalStats(),
   ]);
 
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
-  const totalPages = Math.ceil(totalCargas / PAGE_SIZE);
+  const totalPages = hasFiltroFecha ? 1 : Math.ceil(totalCargas / PAGE_SIZE);
 
   const cargaItems: CargaItem[] = cargas.map((c) => ({
     _tipo: "carga",
@@ -101,6 +110,8 @@ export default async function HistorialCargasPage({
     const qs = new URLSearchParams();
     if (origen) qs.set("origen", origen);
     if (params.unidadId) qs.set("unidadId", params.unidadId);
+    if (desde) qs.set("desde", desde);
+    if (hasta) qs.set("hasta", hasta);
     if (p > 1) qs.set("page", String(p));
     const str = qs.toString();
     return `/cargas${str ? `?${str}` : ""}`;
@@ -151,7 +162,16 @@ export default async function HistorialCargasPage({
         ))}
       </div>
 
-      <CargasTable items={items} operadores={operadores} obras={obras} canEdit={canEdit} />
+      <CargasTable
+    items={items}
+    operadores={operadores}
+    obras={obras}
+    canEdit={canEdit}
+    globalStats={globalStats}
+    hasFiltroFecha={hasFiltroFecha}
+    desde={desde}
+    hasta={hasta}
+  />
 
       {/* Paginación */}
       {totalPages > 1 && (

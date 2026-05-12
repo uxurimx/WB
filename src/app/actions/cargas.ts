@@ -3,8 +3,8 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque } from "@/db/schema";
-import { eq, max, desc, and, count } from "drizzle-orm";
+import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque, recargasTanque } from "@/db/schema";
+import { eq, max, desc, and, count, sum, gte, lte } from "drizzle-orm";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 
@@ -67,6 +67,25 @@ export async function createCargaPatio(input: CargaPatioInput) {
 
   const periodo = await getOrCreatePeriodoActual(new Date(input.fecha));
   const folio = input.folioManual ?? await getSiguienteFolio();
+
+  // Validar rango configurable de folio patio
+  const [minRow, maxRow] = await Promise.all([
+    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_min_patio") }),
+    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_max_patio") }),
+  ]);
+  const folioMin = minRow ? parseInt(minRow.valor, 10) : 0;
+  const folioMax = maxRow ? parseInt(maxRow.valor, 10) : 0;
+  if (folioMin > 0 && folio < folioMin)
+    throw new Error(`Folio ${folio} es menor al mínimo configurado para patio (${folioMin})`);
+  if (folioMax > 0 && folio > folioMax)
+    throw new Error(`Folio ${folio} supera el máximo configurado para patio (${folioMax})`);
+
+  // Evitar folio duplicado — la constraint de DB también lo captura, pero aquí damos mensaje claro
+  const existe = await db.select({ id: cargas.id }).from(cargas)
+    .where(and(eq(cargas.folio, folio), eq(cargas.origen, "patio"))).limit(1);
+  if (existe.length > 0)
+    throw new Error(`El folio ${folio} ya existe en el sistema para cargas de patio`);
+
   const tanqueTaller = await getTanquePorNombre("Taller");
   if (!tanqueTaller) throw new Error("Tanque Taller no encontrado");
   if (input.litros > (tanqueTaller.litrosActuales ?? 0)) {
@@ -100,27 +119,23 @@ export async function createCargaPatio(input: CargaPatioInput) {
     .returning();
 
   // Actualizar stock del tanque taller
-  if (tanqueTaller) {
-    const nuevosLitros = Math.max(0, (tanqueTaller.litrosActuales ?? 0) - input.litros);
-    const ajuste = tanqueTaller.ajustePorcentaje ?? 2;
-    await db
-      .update(tanques)
-      .set({
-        litrosActuales: nuevosLitros,
-        cuentalitrosActual: input.cuentaLtFin ?? tanqueTaller.cuentalitrosActual,
-        ultimaActualizacion: new Date(),
-      })
-      .where(eq(tanques.id, tanqueTaller.id));
-
-    // Emitir evento real-time
-    await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
-      tanque: "Taller",
+  const nuevosLitros = Math.max(0, (tanqueTaller.litrosActuales ?? 0) - input.litros);
+  const ajuste = tanqueTaller.ajustePorcentaje ?? 2;
+  await db
+    .update(tanques)
+    .set({
       litrosActuales: nuevosLitros,
-      ajuste,
-    }).catch(() => {}); // No bloquear si Pusher falla
-  }
+      cuentalitrosActual: input.cuentaLtFin ?? tanqueTaller.cuentalitrosActual,
+      ultimaActualizacion: new Date(),
+    })
+    .where(eq(tanques.id, tanqueTaller.id));
 
-  // Actualizar odómetro de la unidad
+  await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
+    tanque: "Taller",
+    litrosActuales: nuevosLitros,
+    ajuste,
+  }).catch(() => {});
+
   if (input.odometroHrs) {
     await db
       .update(unidades)
@@ -128,7 +143,6 @@ export async function createCargaPatio(input: CargaPatioInput) {
       .where(eq(unidades.id, input.unidadId));
   }
 
-  // Emitir evento nueva carga
   await pusherServer.trigger(CHANNELS.cargas, EVENTS.nuevaCarga, {
     cargaId: nueva.id,
     folio,
@@ -140,7 +154,8 @@ export async function createCargaPatio(input: CargaPatioInput) {
   revalidatePath("/cargas");
   revalidatePath("/overview");
 
-  return { ok: true, folio, cargaId: nueva.id };
+  const nextFolio = await getSiguienteFolio();
+  return { ok: true, folio, cargaId: nueva.id, nextFolio };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -168,6 +183,25 @@ export async function createCargaCampo(input: CargaCampoInput) {
   if (!userId) throw new Error("No autenticado");
 
   const periodo = await getOrCreatePeriodoActual(new Date(input.fecha));
+
+  // Validar rango configurable de folio campo
+  const [minRow, maxRow] = await Promise.all([
+    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_min_campo") }),
+    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_max_campo") }),
+  ]);
+  const folioMin = minRow ? parseInt(minRow.valor, 10) : 0;
+  const folioMax = maxRow ? parseInt(maxRow.valor, 10) : 0;
+  if (folioMin > 0 && input.folioNissan < folioMin)
+    throw new Error(`Folio ${input.folioNissan} es menor al mínimo configurado para campo (${folioMin})`);
+  if (folioMax > 0 && input.folioNissan > folioMax)
+    throw new Error(`Folio ${input.folioNissan} supera el máximo configurado para campo (${folioMax})`);
+
+  // Evitar folio duplicado
+  const existe = await db.select({ id: cargas.id }).from(cargas)
+    .where(and(eq(cargas.folio, input.folioNissan), eq(cargas.origen, "campo"))).limit(1);
+  if (existe.length > 0)
+    throw new Error(`El folio ${input.folioNissan} ya existe en el sistema para cargas de campo`);
+
   const tanqueNissan = await getTanquePorNombre("NISSAN");
   if (!tanqueNissan) throw new Error("Tanque NISSAN no encontrado");
   if (input.litros > (tanqueNissan.litrosActuales ?? 0)) {
@@ -237,7 +271,8 @@ export async function createCargaCampo(input: CargaCampoInput) {
   revalidatePath("/cargas");
   revalidatePath("/overview");
 
-  return { ok: true, cargaId: nueva.id, nuevoCuentalitrosNissan };
+  const nextFolio = await getSiguienteFolioCampo();
+  return { ok: true, cargaId: nueva.id, nuevoCuentalitrosNissan, nextFolio };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -247,14 +282,18 @@ export async function getCargas(opts?: {
   periodoId?: number;
   unidadId?: number;
   origen?: "patio" | "campo";
+  fechaDesde?: string;
+  fechaHasta?: string;
   limit?: number;
   offset?: number;
 }) {
   const buildWhere = () => {
     const conds = [];
-    if (opts?.periodoId) conds.push(eq(cargas.periodoId, opts.periodoId));
-    if (opts?.unidadId)  conds.push(eq(cargas.unidadId, opts.unidadId));
-    if (opts?.origen)    conds.push(eq(cargas.origen, opts.origen));
+    if (opts?.periodoId)  conds.push(eq(cargas.periodoId, opts.periodoId));
+    if (opts?.unidadId)   conds.push(eq(cargas.unidadId, opts.unidadId));
+    if (opts?.origen)     conds.push(eq(cargas.origen, opts.origen));
+    if (opts?.fechaDesde) conds.push(gte(cargas.fecha, opts.fechaDesde));
+    if (opts?.fechaHasta) conds.push(lte(cargas.fecha, opts.fechaHasta));
     return conds.length ? and(...conds) : undefined;
   };
 
@@ -263,11 +302,13 @@ export async function getCargas(opts?: {
 
   const [rows, countRows] = await Promise.all([
     db.query.cargas.findMany({
-      where: (c, { eq: _eq, and: _and }) => {
+      where: (c, { eq: _eq, and: _and, gte: _gte, lte: _lte }) => {
         const conds = [];
-        if (opts?.periodoId) conds.push(_eq(c.periodoId, opts.periodoId!));
-        if (opts?.unidadId)  conds.push(_eq(c.unidadId, opts.unidadId!));
-        if (opts?.origen)    conds.push(_eq(c.origen, opts.origen!));
+        if (opts?.periodoId)  conds.push(_eq(c.periodoId, opts.periodoId!));
+        if (opts?.unidadId)   conds.push(_eq(c.unidadId, opts.unidadId!));
+        if (opts?.origen)     conds.push(_eq(c.origen, opts.origen!));
+        if (opts?.fechaDesde) conds.push(_gte(c.fecha, opts.fechaDesde!));
+        if (opts?.fechaHasta) conds.push(_lte(c.fecha, opts.fechaHasta!));
         return conds.length ? _and(...conds) : undefined;
       },
       with: { unidad: true, operador: true, obra: true, archivos: { columns: { url: true }, limit: 1 } },
@@ -279,6 +320,19 @@ export async function getCargas(opts?: {
   ]);
 
   return { rows, total: countRows[0]?.total ?? 0 };
+}
+
+export async function getHistorialGlobalStats() {
+  const [cRes, rRes, tRes] = await Promise.all([
+    db.select({ total: count(), litros: sum(cargas.litros) }).from(cargas),
+    db.select({ total: count(), litros: sum(recargasTanque.litros) }).from(recargasTanque),
+    db.select({ total: count(), litros: sum(transferenciasTanque.litros) }).from(transferenciasTanque),
+  ]);
+  return {
+    cargas:         { total: Number(cRes[0]?.total ?? 0), litros: Number(cRes[0]?.litros ?? 0) },
+    recargas:       { total: Number(rRes[0]?.total ?? 0), litros: Number(rRes[0]?.litros ?? 0) },
+    transferencias: { total: Number(tRes[0]?.total ?? 0), litros: Number(tRes[0]?.litros ?? 0) },
+  };
 }
 
 export async function getSiguienteFolioPublic() {
@@ -422,7 +476,7 @@ export type UpdateCargaInput = {
 export async function updateCarga(id: number, data: UpdateCargaInput) {
   await requireManageRole();
 
-  // Si cambia litros, ajustar stock del tanque
+  // Si cambia litros, ajustar stock y cuentalitros del tanque
   if (data.litros !== undefined) {
     const carga = await db.query.cargas.findFirst({ where: eq(cargas.id, id) });
     if (carga?.tanqueId) {
@@ -430,9 +484,15 @@ export async function updateCarga(id: number, data: UpdateCargaInput) {
       if (tanque) {
         const diff = data.litros - carga.litros; // positivo = más consumo
         const nuevosLitros = Math.max(0, (tanque.litrosActuales ?? 0) - diff);
+        const nuevoCuentalitros = (tanque.cuentalitrosActual ?? 0) + diff;
         await db.update(tanques)
-          .set({ litrosActuales: nuevosLitros, ultimaActualizacion: new Date() })
+          .set({ litrosActuales: nuevosLitros, cuentalitrosActual: nuevoCuentalitros, ultimaActualizacion: new Date() })
           .where(eq(tanques.id, tanque.id));
+        await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
+          tanque: tanque.nombre,
+          litrosActuales: nuevosLitros,
+          cuentalitros: nuevoCuentalitros,
+        }).catch(() => {});
       }
     }
   }
@@ -452,14 +512,20 @@ export async function deleteCarga(id: number) {
   const carga = await db.query.cargas.findFirst({ where: eq(cargas.id, id) });
   if (!carga) throw new Error("Carga no encontrada");
 
-  // Revertir stock del tanque
+  // Revertir stock y cuentalitros del tanque
   if (carga.tanqueId) {
     const tanque = await db.query.tanques.findFirst({ where: eq(tanques.id, carga.tanqueId) });
     if (tanque) {
       const restoredLitros = (tanque.litrosActuales ?? 0) + carga.litros;
+      const restoredCuentalitros = Math.max(0, (tanque.cuentalitrosActual ?? 0) - carga.litros);
       await db.update(tanques)
-        .set({ litrosActuales: restoredLitros, ultimaActualizacion: new Date() })
+        .set({ litrosActuales: restoredLitros, cuentalitrosActual: restoredCuentalitros, ultimaActualizacion: new Date() })
         .where(eq(tanques.id, tanque.id));
+      await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
+        tanque: tanque.nombre,
+        litrosActuales: restoredLitros,
+        cuentalitros: restoredCuentalitros,
+      }).catch(() => {});
     }
   }
 

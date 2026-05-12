@@ -34,6 +34,8 @@ export default function FormCargaCampo({
   saldoNissan,
   cuentalitrosNissan: cuentalitrosNissanProp = 0,
   siguienteFolio,
+  folioMin = 0,
+  folioMax = 0,
 }: {
   unidades:      Unidad[];
   operadores:    Operador[];
@@ -41,12 +43,15 @@ export default function FormCargaCampo({
   saldoNissan:   number;
   cuentalitrosNissan?: number;
   siguienteFolio?: number;
+  folioMin?: number;
+  folioMax?: number;
 }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [success, setSuccess] = useState<{ litros: number; unidad: string } | null>(null);
   const [error, setError]     = useState("");
   const [cuentalitrosNissan, setCuentalitrosNissan] = useState(cuentalitrosNissanProp);
+  const skipFolioEffect = useRef(false);
 
   const [obras, setObras]             = useState<Obra[]>(obrasProp);
   const [creandoObra, setCreandoObra] = useState(false);
@@ -93,8 +98,12 @@ export default function FormCargaCampo({
     notas:             "",
   });
 
-  // Sync folio when server refreshes the prop
+  // Sync folio cuando el server refresca el prop — skipFolioEffect protege el valor local post-submit
   useEffect(() => {
+    if (skipFolioEffect.current) {
+      skipFolioEffect.current = false;
+      return;
+    }
     if (siguienteFolio != null) {
       setForm((prev) => ({ ...prev, folioNissan: String(siguienteFolio) }));
     }
@@ -191,6 +200,10 @@ export default function FormCargaCampo({
     setError("");
 
     if (!form.folioNissan) { setError("El folio NISSAN es requerido"); return; }
+    const folioNum = parseInt(form.folioNissan);
+    if (isNaN(folioNum) || folioNum <= 0) { setError("Folio inválido"); return; }
+    if (folioMin > 0 && folioNum < folioMin) { setError(`Folio mínimo para campo: ${folioMin}`); return; }
+    if (folioMax > 0 && folioNum > folioMax) { setError(`Folio máximo para campo: ${folioMax}`); return; }
     if (!form.unidadId)    { setError("Selecciona una unidad"); return; }
     const litros = parseFloat(form.litros);
     if (!litros || litros <= 0) { setError("Ingresa los litros"); return; }
@@ -268,7 +281,10 @@ export default function FormCargaCampo({
         ...prev, fecha, hora, unidadId: "", litros: "", odometroHrs: "",
         cuentaLtInicio: nextCuentaLt, cuentaLtFin: "",
         obraId: "", operadorId: "", quienSuministraId: "", notas: "",
+        // nextFolio viene del server tras el insert — autoritativo
+        folioNissan: String(result.nextFolio),
       }));
+      skipFolioEffect.current = true;
       setUltimoKm(null);
       setKmEstimado(false);
       router.refresh();

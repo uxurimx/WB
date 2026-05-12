@@ -4,6 +4,7 @@ import { Fuel } from "lucide-react";
 import { requirePermission } from "@/lib/server-guard";
 import { getUnidades, getOperadores, getObras } from "@/app/actions/catalogo";
 import { getSiguienteFolioCampoPublic } from "@/app/actions/cargas";
+import { getFolioRangos } from "@/app/actions/setup";
 import { db } from "@/db";
 import { tanques } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -22,12 +23,13 @@ async function getNissanData() {
 export default async function NuevaCargaCampoPage() {
   await requirePermission("cargas.nueva_campo");
 
-  const [unidades, operadores, obras, nissanData, siguienteFolio] = await Promise.all([
+  const [unidades, operadores, obras, nissanData, siguienteFolio, folioRangos] = await Promise.all([
     getUnidades(true),
     getOperadores(true),
     getObras(true),
     getNissanData(),
     getSiguienteFolioCampoPublic(),
+    getFolioRangos(),
   ]);
   const { saldo: saldoNissan, cuentalitros: cuentalitrosNissan } = nissanData;
 
@@ -69,6 +71,8 @@ export default async function NuevaCargaCampoPage() {
           saldoNissan={saldoNissan}
           cuentalitrosNissan={cuentalitrosNissan}
           siguienteFolio={siguienteFolio}
+          folioMin={folioRangos.campoMin}
+          folioMax={folioRangos.campoMax}
         />
       )}
     </div>

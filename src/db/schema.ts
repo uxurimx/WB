@@ -9,8 +9,9 @@ import {
   serial,
   date,
   time,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // USERS — sincronizados desde Clerk via webhook
@@ -152,7 +153,12 @@ export const cargas = pgTable("cargas", {
   notas: text("notas"),
   registradoPorId: text("registrado_por_id"), // Clerk user ID
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  // Folio único por origen (patio y campo son secuencias separadas). NULLs permitidos.
+  uniqueIndex("cargas_folio_origen_unique")
+    .on(table.folio, table.origen)
+    .where(sql`${table.folio} IS NOT NULL`),
+]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RECARGAS DE TANQUE — cuando llega diesel al taller

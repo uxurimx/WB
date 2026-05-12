@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { tanques, recargasTanque, transferenciasTanque } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, gte, lte, and } from "drizzle-orm";
 import { getSiguienteFolioPublic } from "./cargas";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
@@ -471,8 +471,19 @@ export async function deleteTransferencia(id: number) {
 }
 
 // ─── Historial de recargas ────────────────────────────────────────────────────
-export async function getRecargasTanque(limit = 150) {
+export async function getRecargasTanque(
+  limit = 150,
+  opts?: { fechaDesde?: string; fechaHasta?: string }
+) {
   const rows = await db.query.recargasTanque.findMany({
+    where: opts?.fechaDesde || opts?.fechaHasta
+      ? (r, { gte: _gte, lte: _lte, and: _and }) => {
+          const conds = [];
+          if (opts?.fechaDesde) conds.push(_gte(r.fecha, opts.fechaDesde!));
+          if (opts?.fechaHasta) conds.push(_lte(r.fecha, opts.fechaHasta!));
+          return conds.length ? _and(...conds) : undefined;
+        }
+      : undefined,
     orderBy: (r, { desc }) => [desc(r.createdAt)],
     limit,
     with: { tanque: true },
@@ -486,8 +497,19 @@ export async function getRecargasTanque(limit = 150) {
 // ─────────────────────────────────────────────────────────────
 // HISTORIAL DE TRANSFERENCIAS
 // ─────────────────────────────────────────────────────────────
-export async function getTransferencias(limit = 100) {
+export async function getTransferencias(
+  limit = 100,
+  opts?: { fechaDesde?: string; fechaHasta?: string }
+) {
   const rows = await db.query.transferenciasTanque.findMany({
+    where: opts?.fechaDesde || opts?.fechaHasta
+      ? (t, { gte: _gte, lte: _lte, and: _and }) => {
+          const conds = [];
+          if (opts?.fechaDesde) conds.push(_gte(t.fecha, opts.fechaDesde!));
+          if (opts?.fechaHasta) conds.push(_lte(t.fecha, opts.fechaHasta!));
+          return conds.length ? _and(...conds) : undefined;
+        }
+      : undefined,
     orderBy: (t, { desc }) => [desc(t.createdAt)],
     limit,
   });

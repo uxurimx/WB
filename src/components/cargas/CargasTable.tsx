@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Pencil, Trash2, AlertCircle, ArrowRight, Fuel,
   ChevronDown, ChevronUp, Gauge, Hash, MapPin, User,
-  Search, X as XIcon, ArrowUpDown, Camera,
+  Search, X as XIcon, ArrowUpDown, Camera, CalendarRange,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,8 +73,13 @@ export type RecargaItem = {
 
 export type HistorialItem = CargaItem | TransferenciaItem | RecargaItem;
 
-type Operador = { id: number; nombre: string };
-type Obra     = { id: number; nombre: string };
+type Operador    = { id: number; nombre: string };
+type Obra        = { id: number; nombre: string };
+type GlobalStats = {
+  cargas:         { total: number; litros: number };
+  recargas:       { total: number; litros: number };
+  transferencias: { total: number; litros: number };
+};
 
 function formatFecha(fecha: string) {
   return new Date(fecha + "T12:00:00").toLocaleDateString("es-MX", {
@@ -317,12 +323,21 @@ export default function CargasTable({
   operadores,
   obras,
   canEdit,
+  globalStats,
+  hasFiltroFecha = false,
+  desde: desdeProp = "",
+  hasta: hastaProp = "",
 }: {
   items: HistorialItem[];
   operadores: Operador[];
   obras: Obra[];
   canEdit: boolean;
+  globalStats: GlobalStats;
+  hasFiltroFecha?: boolean;
+  desde?: string;
+  hasta?: string;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [fotoViewer, setFotoViewer] = useState<{ url: string; folio: number | null } | null>(null);
 
@@ -331,6 +346,23 @@ export default function CargasTable({
   const [tipoFiltro,  setTipoFiltro]  = useState<TipoFiltro>("todos");
   const [sortCol,     setSortCol]     = useState<SortCol>("fecha");
   const [sortDir,     setSortDir]     = useState<"asc" | "desc">("desc");
+
+  // ── Filtro de fechas ───────────────────────────────────────
+  const [fechaDesde, setFechaDesde] = useState(desdeProp);
+  const [fechaHasta, setFechaHasta] = useState(hastaProp);
+
+  function aplicarFiltroFechas() {
+    const qs = new URLSearchParams();
+    if (fechaDesde) qs.set("desde", fechaDesde);
+    if (fechaHasta) qs.set("hasta", fechaHasta);
+    router.push(`/cargas${qs.toString() ? `?${qs.toString()}` : ""}`);
+  }
+
+  function limpiarFiltroFechas() {
+    setFechaDesde("");
+    setFechaHasta("");
+    router.push("/cargas");
+  }
 
   function toggleSort(col: SortCol) {
     if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -602,8 +634,21 @@ export default function CargasTable({
     );
   }
 
-  const cargasFiltradas = itemsFiltrados.filter((i): i is CargaItem => i._tipo === "carga");
-  const statsLitros  = cargasFiltradas.reduce((s, c) => s + c.litros, 0);
+  const cargasFiltradas   = itemsFiltrados.filter((i): i is CargaItem         => i._tipo === "carga");
+  const recargasFiltradas = itemsFiltrados.filter((i): i is RecargaItem       => i._tipo === "recarga");
+  const transfFiltradas   = itemsFiltrados.filter((i): i is TransferenciaItem => i._tipo === "transferencia");
+
+  // Usar globalStats solo cuando no hay filtros activos (búsqueda, tipo o fecha)
+  // para mostrar el total real de todo el historial
+  const anyFilter = busqueda || tipoFiltro !== "todos" || hasFiltroFecha;
+  const displayStats = anyFilter
+    ? {
+        cargas:         { total: cargasFiltradas.length,   litros: cargasFiltradas.reduce((s, c) => s + c.litros, 0) },
+        recargas:       { total: recargasFiltradas.length, litros: recargasFiltradas.reduce((s, r) => s + r.litros, 0) },
+        transferencias: { total: transfFiltradas.length,   litros: transfFiltradas.reduce((s, t) => s + t.litros, 0) },
+      }
+    : globalStats;
+
   const statsUnidades = new Set(cargasFiltradas.map((c) => c.unidad?.codigo ?? `id-${c.id}`)).size;
 
   const anyDeleteError = deleteCargaError || deleteRecargaError || deleteTransfError;
@@ -616,30 +661,65 @@ export default function CargasTable({
         </p>
       )}
 
-      {/* Mini dashboard reactivo */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        {[
-          { label: "Total Cargas",       value: cargasFiltradas.length },
-          { label: "Litros Despachados", value: `${statsLitros.toLocaleString()} L` },
-          { label: "Unidades Distintas", value: statsUnidades },
-        ].map(({ label, value }) => (
-          <div key={label} className="p-4 rounded-2xl border text-center"
-            style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
-            <p className="font-outfit font-bold text-2xl" style={{ color: "var(--fg)" }}>{value}</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>{label}</p>
-          </div>
-        ))}
+      {/* Mini dashboard reactivo — totales globales o filtrados */}
+      <div className="mb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--fg-muted)" }}>
+          {anyFilter ? "Resultados filtrados" : "Total historial"}
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          {[
+            {
+              label: "Cargas",
+              count: displayStats.cargas.total,
+              litros: displayStats.cargas.litros,
+              color: "text-indigo-400",
+              bg: "rgba(99,102,241,0.08)",
+            },
+            {
+              label: "Recargas",
+              count: displayStats.recargas.total,
+              litros: displayStats.recargas.litros,
+              color: "text-emerald-500",
+              bg: "rgba(16,185,129,0.08)",
+            },
+            {
+              label: "Transferencias",
+              count: displayStats.transferencias.total,
+              litros: displayStats.transferencias.litros,
+              color: "text-violet-400",
+              bg: "rgba(139,92,246,0.08)",
+            },
+            {
+              label: "Unidades",
+              count: statsUnidades,
+              litros: null,
+              color: "text-amber-400",
+              bg: "rgba(245,158,11,0.08)",
+            },
+          ].map(({ label, count, litros, color, bg }) => (
+            <div key={label} className="p-3 rounded-2xl border text-center"
+              style={{ backgroundColor: bg, borderColor: "var(--border)" }}>
+              <p className={`font-outfit font-bold text-2xl ${color}`}>{count.toLocaleString()}</p>
+              {litros !== null && (
+                <p className="text-[11px] font-mono mt-0.5" style={{ color: "var(--fg-muted)" }}>
+                  {litros.toLocaleString()} L
+                </p>
+              )}
+              <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>{label}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Búsqueda + filtros */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      {/* Búsqueda + filtros de tipo */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--fg-muted)" }} />
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar unidad, operador, folio..."
+            placeholder="Buscar unidad, operador, folio, tanque..."
             className="w-full pl-9 pr-8 py-2 text-sm rounded-xl border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30"
             style={{ borderColor: "var(--border)", color: "var(--fg)" }}
           />
@@ -671,6 +751,62 @@ export default function CargasTable({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Filtro de rango de fechas */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-4 p-3 rounded-xl border"
+        style={{ borderColor: "var(--border)", backgroundColor: hasFiltroFecha ? "rgba(99,102,241,0.06)" : "var(--surface)" }}>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <CalendarRange className="w-3.5 h-3.5" style={{ color: hasFiltroFecha ? "rgb(99,102,241)" : "var(--fg-muted)" }} />
+          <span className="text-xs font-semibold" style={{ color: hasFiltroFecha ? "rgb(99,102,241)" : "var(--fg-muted)" }}>
+            Rango de fechas
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs" style={{ color: "var(--fg-muted)" }}>Desde</span>
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="text-xs px-2 py-1.5 rounded-lg border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono"
+              style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs" style={{ color: "var(--fg-muted)" }}>Hasta</span>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="text-xs px-2 py-1.5 rounded-lg border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono"
+              style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={aplicarFiltroFechas}
+            disabled={!fechaDesde && !fechaHasta}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white disabled:opacity-40 transition-opacity"
+          >
+            Aplicar
+          </button>
+          {hasFiltroFecha && (
+            <button
+              type="button"
+              onClick={limpiarFiltroFechas}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs border transition-colors hover:bg-[var(--surface-2)]"
+              style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+            >
+              <XIcon className="w-3 h-3" /> Limpiar
+            </button>
+          )}
+        </div>
+        {!hasFiltroFecha && (
+          <p className="text-[10px] hidden sm:block shrink-0" style={{ color: "var(--fg-muted)" }}>
+            Al aplicar, la búsqueda incluye todo el rango
+          </p>
+        )}
       </div>
 
       {/* Tabla */}

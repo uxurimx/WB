@@ -4,6 +4,7 @@ import { PlusCircle } from "lucide-react";
 import { requirePermission } from "@/lib/server-guard";
 import { getUnidades, getOperadores } from "@/app/actions/catalogo";
 import { getSiguienteFolioPublic, getUltimaCuentaLtPatio } from "@/app/actions/cargas";
+import { getFolioRangos } from "@/app/actions/setup";
 import { db } from "@/db";
 import { tanques } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -19,12 +20,13 @@ async function getStockTaller() {
 export default async function NuevaCargaPatioPage() {
   await requirePermission("cargas.nueva_patio");
 
-  const [unidades, operadores, siguienteFolio, stockActual, ultimaCuentaLt] = await Promise.all([
+  const [unidades, operadores, siguienteFolio, stockActual, ultimaCuentaLt, folioRangos] = await Promise.all([
     getUnidades(true),
     getOperadores(true),
     getSiguienteFolioPublic(),
     getStockTaller(),
     getUltimaCuentaLtPatio(),
+    getFolioRangos(),
   ]);
 
   return (
@@ -64,6 +66,8 @@ export default async function NuevaCargaPatioPage() {
           siguienteFolio={siguienteFolio}
           stockActual={stockActual}
           ultimaCuentaLt={ultimaCuentaLt}
+          folioMin={folioRangos.patioMin}
+          folioMax={folioRangos.patioMax}
         />
       )}
     </div>

@@ -68,6 +68,40 @@ export async function setFolioBaseCampo(folio: number) {
   return { ok: true, msg: `Folio campo base establecido en ${folio}` };
 }
 
+// ─── Rangos mín/máx de folio por secuencia ───────────────────────────────────
+export async function getFolioRangos() {
+  const claves = ["folio_min_patio", "folio_max_patio", "folio_min_campo", "folio_max_campo"] as const;
+  const rows = await db.select().from(configuracion).then((r) =>
+    Object.fromEntries(r.map((x) => [x.clave, x.valor]))
+  );
+  return {
+    patioMin: rows["folio_min_patio"] ? parseInt(rows["folio_min_patio"], 10) : 0,
+    patioMax: rows["folio_max_patio"] ? parseInt(rows["folio_max_patio"], 10) : 0,
+    campoMin: rows["folio_min_campo"] ? parseInt(rows["folio_min_campo"], 10) : 0,
+    campoMax: rows["folio_max_campo"] ? parseInt(rows["folio_max_campo"], 10) : 0,
+  };
+}
+
+export async function setFolioRango(
+  tipo: "patio" | "campo",
+  min: number,
+  max: number
+) {
+  if (min > 0 && max > 0 && min >= max)
+    throw new Error("El mínimo debe ser menor al máximo");
+  const claveMin = `folio_min_${tipo}`;
+  const claveMax = `folio_max_${tipo}`;
+  await Promise.all([
+    db.insert(configuracion).values({ clave: claveMin, valor: String(Math.max(0, min)) })
+      .onConflictDoUpdate({ target: configuracion.clave, set: { valor: String(Math.max(0, min)), updatedAt: new Date() } }),
+    db.insert(configuracion).values({ clave: claveMax, valor: String(Math.max(0, max)) })
+      .onConflictDoUpdate({ target: configuracion.clave, set: { valor: String(Math.max(0, max)), updatedAt: new Date() } }),
+  ]);
+  revalidatePath("/settings");
+  revalidatePath(tipo === "patio" ? "/cargas/nueva" : "/cargas/campo");
+  return { ok: true, msg: `Rango folio ${tipo}: ${min || "sin límite"} – ${max || "sin límite"}` };
+}
+
 // ─── Tolerancia de rendimiento ────────────────────────────────────────────────
 import { TOLERANCIA_DEFAULT } from "@/lib/alertas-config";
 
