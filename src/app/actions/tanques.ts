@@ -75,7 +75,7 @@ export type TransferenciaInput = {
   litros: number;
   fecha: string; // "YYYY-MM-DD"
   notas?: string;
-  cuentalitrosOrigen?: number; // Lectura inicial de NISSAN antes de la transferencia
+  cuentalitrosOrigen?: number; // Lectura inicial del cuentalitros de taller (bomba) antes de la transferencia
 };
 
 export async function transferirEntreTanques(input: TransferenciaInput) {
@@ -106,12 +106,15 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
     destino.capacidadMax,
     (destino.litrosActuales ?? 0) + input.litros
   );
-  // Solo el tanque origen (Taller) registra la salida en su cuentalitros
-  const nuevoCuentalitrosOrigen = (origen.cuentalitrosActual ?? 0) + input.litros;
+  // Cuentalitros taller (bomba): si el usuario ingresó lectura manual, usar inicio+litros; si no, auto-incrementar
+  const tallerInicio = input.cuentalitrosOrigen ?? null;
+  const nuevoCuentalitrosOrigen = tallerInicio !== null
+    ? tallerInicio + input.litros
+    : (origen.cuentalitrosActual ?? 0) + input.litros;
 
-  // Cuentalitros NISSAN: inicio (lectura física) → fin (inicio + litros)
-  const cuentaInicio = input.cuentalitrosOrigen ?? null;
-  const cuentaFin    = cuentaInicio !== null ? cuentaInicio + input.litros : null;
+  // Solo para el registro histórico — NO se actualiza el cuentalitros de la NISSAN
+  const cuentaInicio = tallerInicio;
+  const cuentaFin    = tallerInicio !== null ? tallerInicio + input.litros : null;
 
   // El folio de transferencia es parte de la misma secuencia que cargas patio
   const folio = await getSiguienteFolioPublic();
@@ -130,7 +133,6 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
       .update(tanques)
       .set({
         litrosActuales: nuevosLitrosDestino,
-        ...(cuentaFin !== null ? { cuentalitrosActual: cuentaFin } : {}),
         ultimaActualizacion: new Date(),
       })
       .where(eq(tanques.id, input.tanqueDestinoId)),

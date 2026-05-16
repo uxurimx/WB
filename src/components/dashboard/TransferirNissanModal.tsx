@@ -25,13 +25,13 @@ export default function TransferirNissanModal({
   tanqueOrigenId,
   tanqueDestinoId,
   litrosDisponibles,
-  cuentalitrosNissan,
+  cuentalitrosTaller,
   onTransferComplete,
 }: {
   tanqueOrigenId: number;
   tanqueDestinoId: number;
   litrosDisponibles: number;
-  cuentalitrosNissan?: number;
+  cuentalitrosTaller?: number;
   onTransferComplete?: (origenLitros: number, destinoLitros: number, origenCuentalitros: number) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -42,7 +42,7 @@ export default function TransferirNissanModal({
 
   const [form, setForm] = useState({
     fecha: todayStr(), litros: "", notas: "",
-    cuentaLtInicio: cuentalitrosNissan != null ? String(cuentalitrosNissan) : "",
+    cuentaLtInicio: cuentalitrosTaller != null ? String(cuentalitrosTaller) : "",
     cuentaLtFin: "",
   });
 
@@ -64,7 +64,7 @@ export default function TransferirNissanModal({
   function handleOpen() {
     setForm({
       fecha: todayStr(), litros: "", notas: "",
-      cuentaLtInicio: cuentalitrosNissan != null ? String(cuentalitrosNissan) : "",
+      cuentaLtInicio: cuentalitrosTaller != null ? String(cuentalitrosTaller) : "",
       cuentaLtFin: "",
     });
     setError("");
@@ -188,41 +188,49 @@ export default function TransferirNissanModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="t-cuentaLtInicio">
-                    Cuenta LT Inicio
-                    {cuentalitrosNissan != null && cuentalitrosNissan > 0 && (
-                      <span className="ml-1 font-normal text-[10px]" style={{ color: "var(--fg-muted)" }}>
-                        (actual: {cuentalitrosNissan.toLocaleString()})
-                      </span>
-                    )}
-                  </Label>
-                  <Input
-                    id="t-cuentaLtInicio"
-                    name="cuentaLtInicio"
-                    type="number"
-                    step="1"
-                    min="0"
-                    value={form.cuentaLtInicio}
-                    onChange={handleChange}
-                    placeholder={cuentalitrosNissan != null ? String(cuentalitrosNissan) : "0"}
-                    className="font-mono"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="t-cuentaLtFin">Cuenta LT Fin</Label>
-                  <Input
-                    id="t-cuentaLtFin"
-                    name="cuentaLtFin"
-                    type="number"
-                    step="1"
-                    value={form.cuentaLtFin}
-                    readOnly
-                    placeholder="Auto-calculado"
-                    className="font-mono bg-[var(--surface-2)]"
-                  />
-                  <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>Inicio + litros</p>
+              {/* Cuentalitros Taller */}
+              <div className="rounded-xl border p-3 space-y-3"
+                style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
+                  Cuentalitros Taller (bomba)
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="t-cuentaLtInicio">
+                      Inicio
+                      {cuentalitrosTaller != null && cuentalitrosTaller > 0 && (
+                        <span className="ml-1 font-normal text-[10px]" style={{ color: "var(--fg-muted)" }}>
+                          (actual: {cuentalitrosTaller.toLocaleString()})
+                        </span>
+                      )}
+                    </Label>
+                    <Input
+                      id="t-cuentaLtInicio"
+                      name="cuentaLtInicio"
+                      type="number"
+                      step="1"
+                      min="0"
+                      value={form.cuentaLtInicio}
+                      onChange={handleChange}
+                      placeholder={cuentalitrosTaller != null ? String(cuentalitrosTaller) : "0"}
+                      className="font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="t-cuentaLtFin">Fin</Label>
+                    <Input
+                      id="t-cuentaLtFin"
+                      name="cuentaLtFin"
+                      type="number"
+                      step="1"
+                      value={form.cuentaLtFin}
+                      readOnly
+                      placeholder="Auto-calculado"
+                      className="font-mono"
+                      style={{ backgroundColor: "var(--surface)" }}
+                    />
+                    <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>Inicio + litros</p>
+                  </div>
                 </div>
               </div>
 
