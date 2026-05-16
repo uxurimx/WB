@@ -73,7 +73,7 @@ export default async function PeriodoDetailPage({
           </p>
         </div>
       ) : (
-        <AnalisisPeriodoClient rends={rends} periodoId={periodo.id} />
+        <AnalisisPeriodoClient rends={rends} periodoId={periodo.id} periodoCerrado={periodo.cerrado} />
       )}
     </div>
   );

@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search, SlidersHorizontal, X, TrendingUp, TrendingDown, Minus, ArrowUpDown, ChevronUp, ChevronDown,
+  RefreshCw, AlertTriangle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import ReporteActions from "./ReporteActions";
-import CatalogoDetalleModal from "@/components/catalogo/CatalogoDetalleModal";
+import { recalcularRendimientos } from "@/app/actions/rendimientos";
 import type { getRendimientosPeriodo } from "@/app/actions/rendimientos";
 
 type Rend = Awaited<ReturnType<typeof getRendimientosPeriodo>>[number];
@@ -45,17 +47,22 @@ function SortIcon({ col, current, dir }: { col: SortCol; current: SortCol; dir: 
 export default function AnalisisPeriodoClient({
   rends,
   periodoId,
+  periodoCerrado = true,
 }: {
   rends: Rend[];
   periodoId: number;
+  periodoCerrado?: boolean;
 }) {
   const [busqueda, setBusqueda]         = useState("");
   const [filtroTipo, setFiltroTipo]     = useState<FiltroTipo>("todos");
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("todos");
   const [sortCol, setSortCol]           = useState<SortCol>("codigo");
   const [sortDir, setSortDir]           = useState<"asc" | "desc">("asc");
+  const router = useRouter();
   const [showFiltros, setShowFiltros]   = useState(false);
-  const [selectedUnit, setSelectedUnit] = useState<{ id: number; nombre: string } | null>(null);
+  const [recalcMsg, setRecalcMsg]       = useState("");
+  const [recalcError, setRecalcError]   = useState("");
+  const [isPendingRecalc, startRecalc]  = useTransition();
 
   const filtrados: Rend[] = useMemo(() => {
     let r = rends;
@@ -126,10 +133,52 @@ export default function AnalisisPeriodoClient({
     setBusqueda(""); setFiltroTipo("todos"); setFiltroEstado("todos");
   }
 
+  function handleRecalcular() {
+    setRecalcMsg(""); setRecalcError("");
+    startRecalc(async () => {
+      try {
+        const res = await recalcularRendimientos(periodoId);
+        setRecalcMsg(`Recalculado — ${res.rendimientosCreados} unidades actualizadas.`);
+      } catch (err) {
+        setRecalcError(err instanceof Error ? err.message : "Error al recalcular");
+      }
+    });
+  }
+
   // ── Render ────────────────────────────────────────────────────
 
   return (
     <>
+      {/* Banner recalcular */}
+      {periodoCerrado && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-5 p-3 rounded-xl border"
+          style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+              ¿Los km parecen incorrectos? Recalcula para usar el odómetro del periodo anterior como referencia de inicio.
+            </p>
+          </div>
+          <button
+            onClick={handleRecalcular}
+            disabled={isPendingRecalc}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold shrink-0 transition-colors hover:bg-[var(--surface)] disabled:opacity-50"
+            style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isPendingRecalc ? "animate-spin" : ""}`} />
+            {isPendingRecalc ? "Recalculando..." : "Recalcular rendimientos"}
+          </button>
+        </div>
+      )}
+      {recalcMsg && (
+        <p className="text-xs text-emerald-500 mb-4 flex items-center gap-1.5">
+          <RefreshCw className="w-3 h-3" /> {recalcMsg}
+        </p>
+      )}
+      {recalcError && (
+        <p className="text-xs text-red-500 mb-4">{recalcError}</p>
+      )}
+
       {/* Cards reactivas */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
@@ -323,7 +372,7 @@ export default function AnalisisPeriodoClient({
                   <TableRow
                     key={r.id}
                     className="cursor-pointer"
-                    onClick={() => setSelectedUnit({ id: r.unidadId, nombre: unidad?.codigo ?? `#${r.unidadId}` })}
+                    onClick={() => router.push(`/catalogo/unidades/${r.unidadId}`)}
                   >
                     <TableCell>
                       <span className="font-mono font-bold text-sm">
@@ -338,9 +387,18 @@ export default function AnalisisPeriodoClient({
                     <TableCell className="text-right font-mono text-sm">
                       {fmtNum(r.litrosConsumidos, 0)} L
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm" style={{ color: "var(--fg-muted)" }}>
-                      {fmtNum(r.kmHrsRecorridos, 0)}
-                      {r.kmHrsRecorridos !== null ? (tipo === "camion" ? " km" : " hrs") : ""}
+                    <TableCell className="text-right">
+                      <span className="font-mono text-sm" style={{ color: "var(--fg-muted)" }}>
+                        {fmtNum(r.kmHrsRecorridos, 0)}
+                        {r.kmHrsRecorridos !== null ? (tipo === "camion" ? " km" : " hrs") : ""}
+                      </span>
+                      {(r.odometroInicial !== null || r.odometroFinal !== null) && (
+                        <div className="text-[10px] font-mono mt-0.5" style={{ color: "var(--fg-muted)", opacity: 0.6 }}>
+                          {r.odometroInicial != null ? r.odometroInicial.toLocaleString("es-MX") : "—"}
+                          {" → "}
+                          {r.odometroFinal != null ? r.odometroFinal.toLocaleString("es-MX") : "—"}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       {r.rendimientoActual !== null ? (
@@ -384,16 +442,6 @@ export default function AnalisisPeriodoClient({
         </p>
       )}
 
-      {/* Modal de detalle de unidad */}
-      {selectedUnit && (
-        <CatalogoDetalleModal
-          tipo="unidad"
-          id={selectedUnit.id}
-          nombre={selectedUnit.nombre}
-          open={true}
-          onOpenChange={(v) => { if (!v) setSelectedUnit(null); }}
-        />
-      )}
     </>
   );
 }

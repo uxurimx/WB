@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
 import { createObra, updateObra, toggleObraActiva, deleteObra } from "@/app/actions/catalogo";
-import CatalogoDetalleModal from "./CatalogoDetalleModal";
 
 type Obra = {
   id: number;
@@ -25,6 +25,7 @@ export default function ObrasTable({
   obras: Obra[];
   canEdit?: boolean;
 }) {
+  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState({ nombre: "", cliente: "", fechaInicio: "" });
@@ -38,9 +39,6 @@ export default function ObrasTable({
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
-
-  // Modal de detalle
-  const [selectedItem, setSelectedItem] = useState<{ id: number; nombre: string } | null>(null);
 
   // Búsqueda / filtro / orden
   const [busqueda,     setBusqueda]     = useState("");
@@ -241,17 +239,6 @@ export default function ObrasTable({
 
       {deleteError && <p className="text-sm text-red-500 px-1">{deleteError}</p>}
 
-      {/* Modal de detalle */}
-      {selectedItem && (
-        <CatalogoDetalleModal
-          tipo="obra"
-          id={selectedItem.id}
-          nombre={selectedItem.nombre}
-          open={true}
-          onOpenChange={(v) => { if (!v) setSelectedItem(null); }}
-        />
-      )}
-
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
           <TableHeader>
@@ -332,7 +319,7 @@ export default function ObrasTable({
                 <TableRow
                   key={o.id}
                   className="cursor-pointer"
-                  onClick={() => setSelectedItem({ id: o.id, nombre: o.nombre })}
+                  onClick={() => router.push(`/catalogo/obras/${o.id}`)}
                 >
                   <TableCell className="font-medium text-sm">{o.nombre}</TableCell>
                   <TableCell className="text-sm" style={{ color: "var(--fg-muted)" }}>{o.cliente ?? "—"}</TableCell>

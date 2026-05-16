@@ -11,8 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
 import { createUnidad, updateUnidad, toggleUnidadActivo, deleteUnidad } from "@/app/actions/catalogo";
-import CatalogoDetalleModal from "./CatalogoDetalleModal";
 
 type UltimoPeriodo = {
   nombre: string;
@@ -162,6 +162,7 @@ export default function UnidadesTable({
   unidades: Unidad[];
   canEdit?: boolean;
 }) {
+  const router = useRouter();
   const [showForm, setShowForm]       = useState(false);
   const [isPending, startTransition]  = useTransition();
   const [form, setForm] = useState({
@@ -176,8 +177,6 @@ export default function UnidadesTable({
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
-
-  const [selectedUnit, setSelectedUnit] = useState<{ id: number; nombre: string } | null>(null);
 
   const [busqueda,     setBusqueda]     = useState("");
   const [tipoFiltro,   setTipoFiltro]   = useState<string>("todos");
@@ -313,17 +312,6 @@ export default function UnidadesTable({
     <div className="space-y-3">
       {/* Mini-dashboard */}
       <UnidadesDashboard unidades={unidades} />
-
-      {/* Modal de detalle */}
-      {selectedUnit && (
-        <CatalogoDetalleModal
-          tipo="unidad"
-          id={selectedUnit.id}
-          nombre={selectedUnit.nombre}
-          open={true}
-          onOpenChange={(v) => { if (!v) setSelectedUnit(null); }}
-        />
-      )}
 
       {/* Toolbar */}
       <div className="flex items-center gap-2">
@@ -570,7 +558,7 @@ export default function UnidadesTable({
                 <TableRow
                   key={u.id}
                   className="cursor-pointer transition-colors hover:bg-[var(--surface-2)]"
-                  onClick={() => setSelectedUnit({ id: u.id, nombre: u.codigo })}
+                  onClick={() => router.push(`/catalogo/unidades/${u.id}`)}
                 >
                   {/* Código */}
                   <TableCell>

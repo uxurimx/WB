@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
 import { createOperador, updateOperador, toggleOperadorActivo, deleteOperador } from "@/app/actions/catalogo";
-import CatalogoDetalleModal from "./CatalogoDetalleModal";
 
 type Operador = {
   id: number;
@@ -31,6 +31,7 @@ export default function OperadoresTable({
   operadores: Operador[];
   canEdit?: boolean;
 }) {
+  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState({ nombre: "", tipo: "chofer", telefono: "" });
@@ -42,9 +43,6 @@ export default function OperadoresTable({
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
-
-  // Modal de detalle
-  const [selectedItem, setSelectedItem] = useState<{ id: number; nombre: string } | null>(null);
 
   // Búsqueda / filtro / orden
   const [busqueda,     setBusqueda]     = useState("");
@@ -262,17 +260,6 @@ export default function OperadoresTable({
 
       {deleteError && <p className="text-sm text-red-500 px-1">{deleteError}</p>}
 
-      {/* Modal de detalle */}
-      {selectedItem && (
-        <CatalogoDetalleModal
-          tipo="operador"
-          id={selectedItem.id}
-          nombre={selectedItem.nombre}
-          open={true}
-          onOpenChange={(v) => { if (!v) setSelectedItem(null); }}
-        />
-      )}
-
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
           <TableHeader>
@@ -356,7 +343,7 @@ export default function OperadoresTable({
                 <TableRow
                   key={o.id}
                   className="cursor-pointer"
-                  onClick={() => setSelectedItem({ id: o.id, nombre: o.nombre })}
+                  onClick={() => router.push(`/catalogo/operadores/${o.id}`)}
                 >
                   <TableCell className="font-medium text-sm">{o.nombre}</TableCell>
                   <TableCell>

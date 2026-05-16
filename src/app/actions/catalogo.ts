@@ -91,6 +91,56 @@ export async function getUnidadesConStats() {
   });
 }
 
+// ─────────────────────────────────────────────────────────────
+// CARGAS DE CATÁLOGO — todas las cargas (sin límite) para páginas de detalle
+// ─────────────────────────────────────────────────────────────
+export async function getCatalogoCargas(
+  tipo: "unidad" | "operador" | "obra",
+  id: number
+) {
+  const rows = await db.query.cargas.findMany({
+    where:
+      tipo === "unidad"    ? eq(cargas.unidadId, id)
+      : tipo === "operador" ? eq(cargas.operadorId, id)
+      : eq(cargas.obraId, id),
+    orderBy: (c, { desc }) => [desc(c.fecha), desc(c.createdAt)],
+    with: {
+      unidad:   { columns: { codigo: true } },
+      operador: { columns: { nombre: true } },
+      obra:     { columns: { nombre: true } },
+      periodo:  { columns: { id: true, nombre: true, cerrado: true } },
+    },
+    columns: {
+      id: true, fecha: true, hora: true, folio: true, litros: true, origen: true,
+      odometroHrs: true, periodoId: true, operadorId: true, obraId: true,
+      cuentaLtInicio: true, cuentaLtFin: true, tipoDiesel: true, notas: true, kmEstimado: true,
+    },
+  });
+
+  return rows.map((c) => ({
+    id:             c.id,
+    fecha:          c.fecha,
+    hora:           c.hora ?? null,
+    folio:          c.folio,
+    litros:         c.litros,
+    origen:         c.origen,
+    tipoDiesel:     c.tipoDiesel ?? null,
+    notas:          c.notas ?? null,
+    odometroHrs:    c.odometroHrs ?? null,
+    kmEstimado:     c.kmEstimado ?? false,
+    periodoId:      c.periodoId ?? null,
+    periodoNombre:  c.periodo?.nombre ?? null,
+    periodoCerrado: c.periodo?.cerrado ?? false,
+    operadorId:     c.operadorId ?? null,
+    obraId:         c.obraId ?? null,
+    cuentaLtInicio: c.cuentaLtInicio ?? null,
+    cuentaLtFin:    c.cuentaLtFin ?? null,
+    unidadCodigo:   c.unidad?.codigo    ?? null,
+    operadorNombre: c.operador?.nombre  ?? null,
+    obraNombre:     c.obra?.nombre      ?? null,
+  }));
+}
+
 export async function createUnidad(data: {
   codigo: string;
   nombre?: string;
