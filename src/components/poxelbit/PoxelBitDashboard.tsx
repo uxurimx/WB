@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Layers, TicketCheck, Megaphone, TrendingUp, CheckCircle2, PlayCircle,
   Circle, ArrowRight, Sparkles, LayoutGrid, Package,
-  Wrench, Zap, ChevronLeft,
+  Wrench, Zap, ChevronLeft, Truck,
 } from "lucide-react";
 import { aprobarModuloPBAction, seedPBModulosAction } from "@/app/actions/poxelbit";
 import type { getPBModulosAction, getNovedadesPBAction, getPBStatsAction } from "@/app/actions/poxelbit";
@@ -47,6 +47,15 @@ const TEMA_CONFIG: Record<string, {
     accentBg:    "bg-amber-500/10",
     accentBorder:"border-amber-500/20",
     glowRing:    "ring-1 ring-amber-500/20",
+  },
+  flota: {
+    nombre:      "Flota & Taller",
+    icon:        Truck,
+    descripcion: "Gestión integral de la flota: mantenimiento preventivo, bitácora del taller e inventario de consumibles.",
+    accent:      "text-cyan-400",
+    accentBg:    "bg-cyan-500/10",
+    accentBorder:"border-cyan-500/20",
+    glowRing:    "ring-1 ring-cyan-500/20",
   },
 };
 
@@ -98,7 +107,7 @@ export default function PoxelBitDashboard({
   const temasUnicos = Array.from(new Set(modulos.map((m) => m.tema))).filter((t) => t in TEMA_CONFIG);
 
   async function handleSeed() {
-    if (!confirm("¿Sembrar los 12 módulos del plan de desarrollo?")) return;
+    if (!confirm("¿Sembrar los módulos del plan de desarrollo? (Idempotente: solo agrega los que faltan)")) return;
     setSeeding(true);
     try {
       const res = await seedPBModulosAction();
@@ -159,7 +168,7 @@ export default function PoxelBitDashboard({
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {isAdmin && modulos.length === 0 && (
+          {isAdmin && (
             <button onClick={handleSeed} disabled={seeding}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-semibold hover:bg-indigo-500/20 transition-colors disabled:opacity-50">
               <Sparkles className="w-4 h-4" />

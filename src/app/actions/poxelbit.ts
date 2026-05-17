@@ -217,8 +217,8 @@ export async function createNovedadPBAction(data: {
 export async function seedPBModulosAction() {
   const { isAdmin } = await requirePBView();
   if (!isAdmin) throw new Error("Solo admin puede sembrar módulos");
-  const existing = await db.query.pbModulos.findMany({ columns: { id: true } });
-  if (existing.length > 0) return { seeded: 0, message: "Los módulos ya existen" };
+  const existing = await db.query.pbModulos.findMany({ columns: { titulo: true } });
+  const existingTitles = new Set(existing.map((m) => m.titulo));
 
   const modulos = [
     // ── TEMA: operaciones ──────────────────────────────────────────
@@ -392,23 +392,139 @@ export async function seedPBModulosAction() {
       beneficios: JSON.stringify(["Elimina error humano en odómetros", "Rendimientos más precisos", "Geofencing: cargas fuera de zona"]),
       impacto: "De captura manual propensa a error a lectura automática desde el vehículo.",
     },
+    // ── TEMA: analisis — módulos v2.0 ──────────────────────────────
+    {
+      titulo: "Consumo Diesel por Obra",
+      resumen: "Panel de análisis que muestra cuánto diesel consumió cada proyecto, desglosado por unidad y período.",
+      descripcion: `Hoy el sistema registra en qué obra se hizo cada carga de campo, pero nadie tiene una vista que responda la pregunta más importante al costear un proyecto: "¿Cuánto diesel consumió esta obra en total?"\n\nEste módulo agrega un panel de análisis por obra que consolida todo el diesel atribuible a cada proyecto. Primero el diesel de campo (exacto, porque cada carga tiene obra_id asignado), luego el diesel de patio de las unidades que trabajaron en esa obra durante ese período (aproximado, etiquetado claramente como tal). El desglose muestra cada unidad, sus litros, y si el precio/litro está configurado, el costo en pesos.\n\nEjemplo real: Obra Incasa, 3 meses — EX02: 4,200 L / EX13: 3,100 L / CA17: 1,240 L (aprox.) / Total: 8,540 L × $24.50 = $209,230 MXN. Ese número hoy no existe en ningún sistema. Con él, la siguiente cotización de obra similar tiene datos reales detrás, no estimaciones.`,
+      categoria: "analisis",
+      costoEstimado: 15000,
+      diasEstimados: 12,
+      tema: "analisis",
+      fasePackage: 2,
+      orden: 13,
+      casosUso: JSON.stringify([
+        "Ver cuánto diesel consumió Obra Incasa en sus 3 meses de duración, desglosado por maquinaria",
+        "Comparar consumo diesel entre dos obras del mismo tipo para calibrar presupuestos futuros",
+        "Detectar que Obra Roble consumió 40% más de lo esperado a mitad del proyecto",
+      ]),
+      beneficios: JSON.stringify([
+        "Costo real por proyecto, no estimado — base para cotizaciones futuras",
+        "Diesel de campo (exacto) y diesel de patio (aproximado) presentados por separado con etiquetas claras",
+        "Identifica obras que consumen más diesel del promedio histórico",
+      ]),
+      impacto: "Transforma el costo del diesel de un gasto global a un costo atribuible por proyecto. La siguiente obra similar se cotiza con datos reales, no suposiciones.",
+    },
+    // ── TEMA: flota ─────────────────────────────────────────────────
+    {
+      titulo: "Alertas de Mantenimiento Preventivo",
+      resumen: "El sistema monitorea km y horas desde el último servicio y genera alertas antes de que el mantenimiento venza.",
+      descripcion: `Cada carga de combustible que registra un chofer incluye el odómetro actual. Eso significa que el sistema ya sabe, en todo momento, cuántos kilómetros ha recorrido cada camión desde su último servicio. Solo falta que lo use.\n\nEste módulo agrega la tabla de mantenimientos: cada vez que una unidad recibe un servicio (aceite, llantas, frenos, preventivo), se registra el km/hrs al momento del servicio y el siguiente umbral. El sistema compara ese umbral con el odómetro de la última carga, y cuando la diferencia llega al 80%, genera una alerta "próximo mantenimiento". Al llegar al 100%, la alerta es "mantenimiento vencido".\n\nPara maquinaria el mecanismo es idéntico pero con horas acumuladas: cada carga de campo en una excavadora registra las horas actuales del motor. El ciclo de servicio es de 24 horas operativas.\n\nEl cliente actualmente lleva esto en libreta y reconoce que a veces se le escapa. Este módulo lo hace automático: el dato ya entra al sistema en cada carga, el cálculo es inmediato, y la alerta es visible antes de que sea urgente. Si existe el módulo de Tareas/Checklist (B4), cada alerta se convierte automáticamente en una tarea persistente que no desaparece hasta que alguien registra el servicio.`,
+      categoria: "flota",
+      costoEstimado: 22000,
+      diasEstimados: 18,
+      tema: "flota",
+      fasePackage: 4,
+      orden: 14,
+      casosUso: JSON.stringify([
+        "CA07 a 850 km del servicio → alerta amarilla 'Próximo mantenimiento' visible en dashboard",
+        "EX02 a 22 hrs acumuladas desde último servicio → notificación naranja 'Preventivo en 2 hrs'",
+        "Gerente ve en una pantalla todas las unidades con mantenimiento próximo o vencido, ordenadas por urgencia",
+      ]),
+      beneficios: JSON.stringify([
+        "Nunca más un mantenimiento vencido por descuido: el sistema avisa al 80% y al 100% del ciclo",
+        "Completamente automático: cada carga de combustible alimenta el cálculo sin trabajo extra del usuario",
+        "Historial de mantenimientos por unidad: cuándo fue el último servicio, quién lo hizo, qué se revisó",
+      ]),
+      impacto: "El cliente reconoce que pierde el control de mantenimientos en libreta. Este módulo lo hace imposible de olvidar: el sistema avisa antes de que sea urgente, no después de que ya falló.",
+    },
+    {
+      titulo: "Sistema de Tareas / Checklist",
+      resumen: "Las alertas del sistema se convierten en tareas persistentes. El dashboard muestra las tareas pendientes primero, antes que cualquier estadística.",
+      descripcion: `El sistema actual detecta cuando algo no está bien: un rendimiento fuera de tolerancia, un stock bajo, una unidad que supera el km de mantenimiento. Pero la alerta aparece, el usuario la ve o no la ve, y desaparece. Si nadie actuó, nadie lo sabe.\n\nEste módulo transforma esas alertas en tareas persistentes. Una tarea no desaparece hasta que alguien la cierra con una acción concreta. El dashboard del administrador muestra las tareas pendientes como primera pantalla, antes que cualquier estadística de diesel:\n\n→ 🔴 CA28 mantenimiento 100,000 km — VENCIDO\n→ 🟡 Stock bajo Taller — ordenar diesel (quedan 320 L)\n→ 🟡 CA17 rendimiento -22% esta semana — revisar\n→ 🟢 EX02 próximo mantenimiento — faltan 2 días\n\nLas tareas tienen dos orígenes: automáticas (generadas por el sistema cuando detecta una condición) y manuales (el administrador crea una tarea de cualquier actividad que necesite seguimiento). Ambas tienen estado: pendiente → en proceso → completada o descartada con justificación.\n\nEl historial de tareas completadas es un registro de qué problemas hubo, cuándo se detectaron y cuándo se resolvieron. En una auditoría o reunión con dirección, esa trazabilidad tiene valor. Este módulo convierte el sistema de una herramienta que el usuario consulta a un sistema que habla con el usuario primero.`,
+      categoria: "flota",
+      costoEstimado: 38000,
+      diasEstimados: 32,
+      tema: "flota",
+      fasePackage: 4,
+      orden: 15,
+      casosUso: JSON.stringify([
+        "Admin entra al sistema → primera pantalla: 3 tareas pendientes (no estadísticas de diesel)",
+        "Alerta de stock bajo → tarea 'Pedir diesel' con estado pendiente hasta que se ordene y se cierre",
+        "Mantenimiento CA28 vencido → tarea persistente que sobrevive a cierres de sesión y días sin revisar",
+      ]),
+      beneficios: JSON.stringify([
+        "Nada se pierde: cada problema detectado tiene trazabilidad desde la detección hasta la resolución",
+        "El historial de tareas completadas es el registro de decisiones operativas tomadas en el tiempo",
+        "Sistema proactivo: el administrador no busca los problemas, los problemas buscan al administrador",
+      ]),
+      impacto: "Es el módulo más transformador de la propuesta: el sistema deja de ser un registro pasivo y se convierte en el centro de comando de las operaciones del día.",
+    },
+    {
+      titulo: "Bitácora del Taller",
+      resumen: "Registro digital de cada entrada de unidad al taller: motivo, quién atendió, materiales usados, resultado. Diseñado para capturar desde el celular en menos de 60 segundos.",
+      descripcion: `El cliente lo dice con exactitud: "La neta ya no la llevo al día porque a veces se me pelan las cosas, no traigo la libreta o vienen tantos que se me escapa algún detalle."\n\nEste módulo es la versión digital de esa libreta, diseñada para operar desde el celular en el momento en que pasa. Cuando una unidad entra al taller: se selecciona la unidad, se elige el motivo (categoría + texto libre), se anota quién atiende, y se guarda. Cuando sale: se actualiza el estado (terminado / pendiente de refacción / requiere regreso) y opcionalmente se listan los materiales usados con cantidad y costo.\n\nSi existen consumibles en inventario (B6), los materiales se descuentan automáticamente del stock al registrar su uso. Si no están en inventario, se anotan como texto libre con costo para tener el gasto registrado de todas formas.\n\nEl historial de taller queda accesible desde la ficha de cada unidad: cuántas veces entró en los últimos meses, por qué motivos, qué se usó en cada visita. Con eso el técnico que atiende CA07 puede ver qué se hizo la última vez sin preguntar a nadie. Y el gerente puede detectar si una unidad está entrando al taller con frecuencia anormal, señal de que algo más grave está pasando.`,
+      categoria: "flota",
+      costoEstimado: 32000,
+      diasEstimados: 27,
+      tema: "flota",
+      fasePackage: 4,
+      orden: 16,
+      casosUso: JSON.stringify([
+        "CA17 entra con fuga hidráulica: técnico registra entrada en el celular en 60 segundos mientras revisa la unidad",
+        "Técnico consulta historial de EX02 antes de atenderlo: ve qué se hizo en los últimos 3 meses sin preguntar",
+        "Gerente detecta que R02 entró al taller 4 veces en 2 semanas — señal de un problema recurrente mayor",
+      ]),
+      beneficios: JSON.stringify([
+        "El celular siempre está en el bolsillo — no hay libreta que olvidar ni transcripción tardía que perder información",
+        "Historial completo de taller por unidad, visible desde su ficha junto con cargas y rendimientos",
+        "Costo real de cada servicio calculado automáticamente cuando los materiales están en inventario",
+      ]),
+      impacto: "La información que hoy se pierde porque 'no traía la libreta' se captura en el momento, en el celular, en menos de un minuto. El taller deja de operar con memoria humana.",
+    },
+    {
+      titulo: "Inventario de Consumibles",
+      resumen: "Control de stock de llantas, rines, aceite y filtros. Compras por lote, consumo individual vinculado a entradas al taller.",
+      descripcion: `Las llantas y rines se compran por lote. El cliente los va usando de a uno o de a dos cuando entra una unidad al taller. Sin control de inventario, el pedido de llantas nuevas se hace cuando alguien nota que ya no quedan, no cuando el sistema detecta que la existencia está llegando al mínimo.\n\nEste módulo controla el stock de consumibles: cada producto (llanta R22.5, aceite 15W40, filtro de combustible, rin 22) tiene un stock mínimo configurado. Cuando llega un lote nuevo, se registra la entrada con cantidad, costo unitario y proveedor. Cuando se usa en el taller (vinculado a una entrada de la Bitácora, B5), se registra la salida y el stock se actualiza en tiempo real.\n\nEl dashboard de inventario muestra una barra de progreso por producto: verde si hay stock suficiente, amarillo si está por debajo del mínimo, rojo si hay cero. El sistema genera una alerta (y si existe B4, una tarea "Pedir llantas") cuando un producto cae por debajo del mínimo configurado.\n\nEl costo real de cada entrada al taller se calcula automáticamente: si CA17 usó 2 llantas R22.5 a $4,200 c/u y 1 filtro de combustible a $280, el costo del servicio es $8,680 sin que nadie tenga que calcularlo. El historial de compras por proveedor permite ver quién vende más barato a lo largo del tiempo.`,
+      categoria: "flota",
+      costoEstimado: 28000,
+      diasEstimados: 23,
+      tema: "flota",
+      fasePackage: 4,
+      orden: 17,
+      casosUso: JSON.stringify([
+        "Llegan 8 llantas R22.5 de Llantera López → se registra entrada de lote con proveedor y costo unitario",
+        "CA17 usa 2 llantas en taller (entrada Bitácora #47) → stock baja automáticamente de 8 a 6, costo registrado",
+        "Stock de llantas R20 llega a 2 piezas → alerta de mínimo y tarea 'Pedir llantas' generada automáticamente",
+      ]),
+      beneficios: JSON.stringify([
+        "Siempre se sabe cuántos consumibles quedan sin necesidad de hacer inventario físico",
+        "Costo real de cada entrada al taller: materiales a precio real, calculados automáticamente",
+        "Historial de compras por proveedor: quién vende más barato, con qué tiempo de entrega, en qué período",
+      ]),
+      impacto: "El pedido de consumibles deja de hacerse 'cuando alguien nota que ya no quedan' y pasa a hacerse cuando el sistema detecta que se está llegando al mínimo — con tiempo suficiente para ordenar.",
+    },
   ];
 
-  await db.insert(pbModulos).values(modulos.map((m, i) => ({
+  const nuevos = modulos.filter((m) => !existingTitles.has(m.titulo));
+  if (nuevos.length === 0) return { seeded: 0, message: "Todos los módulos ya existen" };
+
+  await db.insert(pbModulos).values(nuevos.map((m) => ({
     ...m,
-    orden: i + 1,
     casosUso: m.casosUso ?? "[]",
     beneficios: m.beneficios ?? "[]",
     dependencias: "[]",
   })));
 
-  // Novedad inicial de bienvenida
-  await db.insert(pbNovedades).values({
-    titulo: "Portal PoxelBit activado",
-    contenido: "Bienvenido al portal de desarrollo de su sistema de control de diesel. Aquí podrá revisar los módulos propuestos, aprobar los que desee implementar y comunicarse directamente con el equipo de desarrollo.",
-    tipo: "milestone",
-  });
+  // Novedad de bienvenida solo si es la primera vez
+  if (existingTitles.size === 0) {
+    await db.insert(pbNovedades).values({
+      titulo: "Portal PoxelBit activado",
+      contenido: "Bienvenido al portal de desarrollo de su sistema de control de diesel. Aquí podrá revisar los módulos propuestos, aprobar los que desee implementar y comunicarse directamente con el equipo de desarrollo.",
+      tipo: "milestone",
+    });
+  }
 
   revalidatePath("/poxelbit");
-  return { seeded: modulos.length, message: `${modulos.length} módulos sembrados correctamente` };
+  return { seeded: nuevos.length, message: `${nuevos.length} módulo${nuevos.length !== 1 ? "s" : ""} sembrado${nuevos.length !== 1 ? "s" : ""} correctamente` };
 }
