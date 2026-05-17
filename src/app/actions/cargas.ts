@@ -659,6 +659,64 @@ export async function deleteCarga(id: number, notaModificacion?: string) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// CREAR CARGA EXTERNA (gasolinera / socio / amigo)
+// ─────────────────────────────────────────────────────────────
+export type CargaExternaInput = {
+  fecha: string;
+  unidadId: number;
+  litros: number;
+  odometroHrs?: number;
+  fuente?: string;      // texto libre: "Gasolinera", "Amigo Juan", etc.
+  obraId?: number;
+  notas?: string;
+};
+
+export async function createCargaExterna(input: CargaExternaInput) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("No autenticado");
+  await requireManageRole();
+
+  if (input.litros <= 0) throw new Error("Los litros deben ser mayores a 0");
+
+  const periodo = await getOrCreatePeriodoActual(new Date(input.fecha));
+
+  const fuenteExterno = await db.query.fuentesDiesel.findFirst({
+    where: eq(fuentesDiesel.tipo, "externo"),
+  });
+
+  const notaFinal = [
+    input.fuente ? `[${input.fuente}]` : "[Externo]",
+    input.notas?.trim() ?? "",
+  ].filter(Boolean).join(" ") || null;
+
+  const [nueva] = await db
+    .insert(cargas)
+    .values({
+      fecha:           input.fecha,
+      periodoId:       periodo.id,
+      unidadId:        input.unidadId,
+      obraId:          input.obraId ?? null,
+      fuenteId:        fuenteExterno?.id ?? null,
+      litros:          input.litros,
+      odometroHrs:     input.odometroHrs ?? null,
+      origen:          "externo",
+      notas:           notaFinal,
+      registradoPorId: userId,
+    })
+    .returning();
+
+  if (input.odometroHrs) {
+    await db.update(unidades)
+      .set({ odometroActual: input.odometroHrs })
+      .where(eq(unidades.id, input.unidadId));
+  }
+
+  revalidatePath("/cargas");
+  revalidatePath(`/catalogo/unidades/${input.unidadId}`);
+  return { ok: true, cargaId: nueva.id };
+}
+
+// ─────────────────────────────────────────────────────────────
 // HISTORIAL DE CAMBIOS EN RENDIMIENTOS (para auditoría)
 // ─────────────────────────────────────────────────────────────
 export async function getAuditLogCargasUnidad(unidadId: number) {

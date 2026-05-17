@@ -254,6 +254,100 @@ export const auditLog = pgTable("audit_log", {
 // ─────────────────────────────────────────────────────────────────────────────
 // RELATIONS — para queries con joins (drizzle relational API)
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// POXELBIT — Portal de gestión de desarrollo del cliente
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const pbModulos = pgTable("pb_modulos", {
+  id:            serial("id").primaryKey(),
+  titulo:        varchar("titulo", { length: 200 }).notNull(),
+  resumen:       text("resumen").notNull(),
+  descripcion:   text("descripcion").notNull(),
+  categoria:     varchar("categoria", { length: 50 }).notNull().default("operaciones"),
+  // operaciones | analisis | expansion
+  estado:        varchar("estado", { length: 20 }).notNull().default("proposed"),
+  // proposed | approved | in_progress | completed | paused | cancelled
+  costoEstimado: integer("costo_estimado").notNull().default(0),
+  diasEstimados: integer("dias_estimados").notNull().default(0),
+  progreso:      integer("progreso").notNull().default(0),
+  fase:          integer("fase").notNull().default(1),
+  tema:          varchar("tema", { length: 50 }).notNull().default("operaciones"),
+  fasePackage:   integer("fase_package").notNull().default(1),
+  impacto:       text("impacto"),
+  casosUso:      text("casos_uso"),     // JSON string[]
+  beneficios:    text("beneficios"),    // JSON string[]
+  dependencias:  text("dependencias"),  // JSON number[]
+  notasTecnicas: text("notas_tecnicas"),
+  aprobadoAt:    timestamp("aprobado_at"),
+  aprobadoPor:   text("aprobado_por"),
+  iniciadoAt:    timestamp("iniciado_at"),
+  completadoAt:  timestamp("completado_at"),
+  orden:         integer("orden").notNull().default(0),
+  createdAt:     timestamp("created_at").defaultNow(),
+  updatedAt:     timestamp("updated_at").defaultNow(),
+});
+
+export const pbTickets = pgTable("pb_tickets", {
+  id:              serial("id").primaryKey(),
+  titulo:          varchar("titulo", { length: 200 }).notNull(),
+  descripcion:     text("descripcion").notNull(),
+  tipo:            varchar("tipo", { length: 30 }).notNull(),
+  // new_module | bug | change | question | payment
+  estado:          varchar("estado", { length: 20 }).notNull().default("open"),
+  // open | in_progress | resolved | closed
+  prioridad:       varchar("prioridad", { length: 20 }).notNull().default("medium"),
+  // low | medium | high | urgent
+  moduloId:        integer("modulo_id"),
+  creadoPorId:     text("creado_por_id").notNull(),
+  creadoPorNombre: varchar("creado_por_nombre", { length: 150 }).notNull(),
+  resueltaAt:      timestamp("resuelta_at"),
+  createdAt:       timestamp("created_at").defaultNow(),
+  updatedAt:       timestamp("updated_at").defaultNow(),
+});
+
+export const pbMensajes = pgTable("pb_mensajes", {
+  id:         serial("id").primaryKey(),
+  ticketId:   integer("ticket_id").notNull(),
+  contenido:  text("contenido").notNull(),
+  autorId:    text("autor_id").notNull(),
+  autorNombre: varchar("autor_nombre", { length: 150 }).notNull(),
+  autorRol:   varchar("autor_rol", { length: 20 }).notNull().default("client"),
+  // client | developer
+  leido:      boolean("leido").notNull().default(false),
+  createdAt:  timestamp("created_at").defaultNow(),
+});
+
+export const pbNovedades = pgTable("pb_novedades", {
+  id:        serial("id").primaryKey(),
+  titulo:    varchar("titulo", { length: 200 }).notNull(),
+  contenido: text("contenido").notNull(),
+  tipo:      varchar("tipo", { length: 30 }).notNull().default("update"),
+  // update | new_module | maintenance | payment | milestone
+  moduloId:  integer("modulo_id"),
+  leido:     boolean("leido").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// PoxelBit relations
+export const pbModulosRelations = relations(pbModulos, ({ many }) => ({
+  tickets:   many(pbTickets),
+  novedades: many(pbNovedades),
+}));
+
+export const pbTicketsRelations = relations(pbTickets, ({ one, many }) => ({
+  modulo:   one(pbModulos, { fields: [pbTickets.moduloId], references: [pbModulos.id] }),
+  mensajes: many(pbMensajes),
+}));
+
+export const pbMensajesRelations = relations(pbMensajes, ({ one }) => ({
+  ticket: one(pbTickets, { fields: [pbMensajes.ticketId], references: [pbTickets.id] }),
+}));
+
+export const pbNovedadesRelations = relations(pbNovedades, ({ one }) => ({
+  modulo: one(pbModulos, { fields: [pbNovedades.moduloId], references: [pbModulos.id] }),
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
 export const unidadesRelations = relations(unidades, ({ one, many }) => ({
   operadorDefault: one(operadores, {
     fields: [unidades.operadorDefaultId],

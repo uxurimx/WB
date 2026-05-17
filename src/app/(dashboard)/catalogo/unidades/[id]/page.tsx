@@ -109,6 +109,8 @@ export default async function UnidadDetallePage({
 
       <CatalogoDetalleClient
         tipo="unidad"
+        unidadId={unidad.id}
+        unidadTipo={unidad.tipo}
         cargas={cargas}
         rends={rends}
         fotos={fotos}

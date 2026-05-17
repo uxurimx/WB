@@ -6,11 +6,12 @@ export type NavPermission =
   | "cargas.nueva_campo"
   | "catalogo"
   | "periodos"
-  | "admin";
+  | "admin"
+  | "poxelbit";
 
 export const ROLE_NAV_PERMISSIONS: Record<string, NavPermission[]> = {
-  admin:           ["dashboard", "settings", "cargas.historial", "cargas.nueva_patio", "cargas.nueva_campo", "catalogo", "periodos", "admin"],
-  gerente:         ["dashboard", "settings", "cargas.historial", "cargas.nueva_patio", "cargas.nueva_campo", "catalogo", "periodos"],
+  admin:           ["dashboard", "settings", "cargas.historial", "cargas.nueva_patio", "cargas.nueva_campo", "catalogo", "periodos", "admin", "poxelbit"],
+  gerente:         ["dashboard", "settings", "cargas.historial", "cargas.nueva_patio", "cargas.nueva_campo", "catalogo", "periodos", "poxelbit"],
   despachador:     ["cargas.historial", "cargas.nueva_patio"],
   operador_nissan: ["cargas.historial", "cargas.nueva_campo"],
   encargado_obra:  ["cargas.historial", "cargas.nueva_campo", "catalogo"],

@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import {
   Fuel, LayoutDashboard, Settings, ChevronRight, ChevronDown,
   PlusCircle, ClipboardList, Truck, Users, HardHat, Menu, X,
-  Wrench, Calendar, Shield,
+  Wrench, Calendar, Shield, TicketCheck, Megaphone, Blocks,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
@@ -14,9 +14,9 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { ROLE_NAV_PERMISSIONS, type NavPermission } from "@/lib/permissions";
 
-type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ className?: string }> };
+type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ className?: string }>; badge?: number };
 
-function getNavSections(permisos: NavPermission[]) {
+function getNavSections(permisos: NavPermission[], pbOpenTickets = 0) {
   const has = (p: NavPermission) => permisos.includes(p);
 
   const cargasItems: NavItemDef[] = [
@@ -65,6 +65,15 @@ function getNavSections(permisos: NavPermission[]) {
       collapsible: false,
       items: sistemaItems,
     }] : []),
+    ...(has("poxelbit") ? [{
+      label: "PoxelBit",
+      collapsible: true,
+      items: [
+        { name: "Portal",    href: "/poxelbit",           icon: Blocks      },
+        { name: "Tickets",   href: "/poxelbit/tickets",   icon: TicketCheck, badge: pbOpenTickets },
+        { name: "Novedades", href: "/poxelbit/novedades", icon: Megaphone   },
+      ],
+    }] : []),
   ];
 }
 
@@ -72,6 +81,7 @@ function NavItem({
   name,
   href,
   icon: Icon,
+  badge,
   onNavigate,
 }: NavItemDef & { onNavigate?: () => void }) {
   const pathname  = usePathname();
@@ -98,7 +108,14 @@ function NavItem({
         />
         <span className="text-sm">{name}</span>
       </div>
-      {isActive && <ChevronRight className="w-3.5 h-3.5 opacity-60" />}
+      <div className="flex items-center gap-1.5">
+        {badge != null && badge > 0 && (
+          <span className="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center bg-indigo-500 text-white">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
+        {isActive && <ChevronRight className="w-3.5 h-3.5 opacity-60" />}
+      </div>
     </Link>
   );
 }
@@ -111,6 +128,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const [permisos, setPermisos] = useState<NavPermission[]>(
     role ? (ROLE_NAV_PERMISSIONS[role] ?? []) : []
   );
+  const [pbOpenTickets, setPbOpenTickets] = useState(0);
 
   useEffect(() => {
     fetch("/api/me/perms")
@@ -119,12 +137,24 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       .catch(() => {});
   }, []);
 
-  const navSections = getNavSections(permisos);
+  useEffect(() => {
+    if (!permisos.includes("poxelbit")) return;
+    fetch("/api/poxelbit/open-tickets")
+      .then((r) => r.json())
+      .then((data) => { if (typeof data.count === "number") setPbOpenTickets(data.count); })
+      .catch(() => {});
+  }, [permisos]);
 
-  // Catálogos abierto si la ruta actual está dentro
+  const navSections = getNavSections(permisos, pbOpenTickets);
+
+  // Catálogos / PoxelBit: abierto si la ruta actual está dentro
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
     const inCatalogos = pathname.startsWith("/catalogo");
-    return inCatalogos ? new Set() : new Set(["Catálogos"]);
+    const inPoxelbit  = pathname.startsWith("/poxelbit");
+    const collapsed = new Set<string>();
+    if (!inCatalogos) collapsed.add("Catálogos");
+    if (!inPoxelbit)  collapsed.add("PoxelBit");
+    return collapsed;
   });
 
   function toggleSection(label: string) {

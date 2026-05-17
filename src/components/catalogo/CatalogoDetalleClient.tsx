@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Search, SlidersHorizontal, X, Pencil, Trash2, AlertCircle, AlertTriangle,
   Camera, ClipboardList, TrendingUp, TrendingDown, Minus, Fuel, BarChart3,
-  ChevronUp, ChevronDown, ArrowUpDown,
+  ChevronUp, ChevronDown, ArrowUpDown, Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { updateCarga, deleteCarga } from "@/app/actions/cargas";
+import { updateCarga, deleteCarga, createCargaExterna } from "@/app/actions/cargas";
 import type { getCatalogoCargas } from "@/app/actions/catalogo";
 import type { getRendimientosUnidad } from "@/app/actions/rendimientos";
 import type { getArchivosUnidad } from "@/app/actions/archivos";
@@ -28,9 +28,9 @@ type RendItem  = Awaited<ReturnType<typeof getRendimientosUnidad>>[number];
 type FotoItem  = Awaited<ReturnType<typeof getArchivosUnidad>>[number];
 type AuditItem = Awaited<ReturnType<typeof getAuditLogCargasUnidad>>[number];
 
-type Tab         = "cargas" | "rendimiento" | "fotos" | "cambios";
-type SortCol     = "fecha" | "folio" | "litros" | "odometro";
-type FiltroOrigen = "todos" | "patio" | "campo";
+type Tab          = "cargas" | "rendimiento" | "fotos" | "cambios";
+type SortCol      = "fecha" | "folio" | "litros" | "odometro";
+type FiltroOrigen = "todos" | "patio" | "campo" | "externo";
 
 function fmtNum(n: number | null | undefined, d = 1) {
   if (n == null) return "—";
@@ -46,6 +46,8 @@ function SortIcon({ col, current, dir }: { col: SortCol; current: SortCol; dir: 
 
 export default function CatalogoDetalleClient({
   tipo,
+  unidadId,
+  unidadTipo,
   cargas: cargasInit,
   rends,
   fotos,
@@ -55,6 +57,8 @@ export default function CatalogoDetalleClient({
   canEdit,
 }: {
   tipo: "unidad" | "operador" | "obra";
+  unidadId?: number;
+  unidadTipo?: string;
   cargas: Carga[];
   rends: RendItem[] | null;
   fotos: FotoItem[] | null;
@@ -98,10 +102,20 @@ export default function CatalogoDetalleClient({
   // Foto lightbox
   const [fotoLightbox, setFotoLightbox] = useState<FotoItem | null>(null);
 
+  // Carga externa
+  const [showExterna, setShowExterna]   = useState(false);
+  const [externaForm, setExternaForm]   = useState({
+    fecha: new Date().toISOString().slice(0, 10),
+    litros: "", odometroHrs: "", fuente: "", obraId: "", notas: "",
+  });
+  const [externaError,   setExternaError]   = useState("");
+  const [externaPending, startExternaTx]    = useTransition();
+
   // ── Computed ─────────────────────────────────────────────────
-  const totalLitros = localCargas.reduce((s, c) => s + c.litros, 0);
-  const cargasPatio = localCargas.filter((c) => c.origen === "patio").length;
-  const cargasCampo = localCargas.filter((c) => c.origen === "campo").length;
+  const totalLitros    = localCargas.reduce((s, c) => s + c.litros, 0);
+  const cargasPatio    = localCargas.filter((c) => c.origen === "patio").length;
+  const cargasCampo    = localCargas.filter((c) => c.origen === "campo").length;
+  const cargasExternas = localCargas.filter((c) => c.origen === "externo").length;
 
   const periodosFiltro = useMemo(() => {
     const seen = new Set<number>();
@@ -236,7 +250,35 @@ export default function CatalogoDetalleClient({
     });
   }
 
-  const canEditRows = tipo === "unidad" && canEdit;
+  // ── Carga externa handler ─────────────────────────────────────
+  function submitExterna(e: React.FormEvent) {
+    e.preventDefault();
+    setExternaError("");
+    const litros = parseFloat(externaForm.litros);
+    if (!litros || litros <= 0) { setExternaError("Los litros deben ser mayores a 0"); return; }
+    if (!unidadId) return;
+    startExternaTx(async () => {
+      try {
+        await createCargaExterna({
+          fecha:       externaForm.fecha,
+          unidadId,
+          litros,
+          odometroHrs: externaForm.odometroHrs ? parseFloat(externaForm.odometroHrs) : undefined,
+          fuente:      externaForm.fuente.trim() || undefined,
+          obraId:      externaForm.obraId ? parseInt(externaForm.obraId) : undefined,
+          notas:       externaForm.notas.trim() || undefined,
+        });
+        setShowExterna(false);
+        setExternaForm({ fecha: new Date().toISOString().slice(0, 10), litros: "", odometroHrs: "", fuente: "", obraId: "", notas: "" });
+        router.refresh();
+      } catch (err) {
+        setExternaError(err instanceof Error ? err.message : "Error al registrar");
+      }
+    });
+  }
+
+  const canEditRows   = tipo === "unidad" && canEdit;
+  const canAddExterna = tipo === "unidad" && canEdit && unidadTipo !== "nissan";
 
   const tabs = tipo === "unidad"
     ? [
@@ -253,17 +295,18 @@ export default function CatalogoDetalleClient({
     { label: "Litros totales", value: `${totalLitros.toLocaleString("es-MX")} L`, icon: Fuel },
     { label: "Patio",          value: cargasPatio,                                 icon: BarChart3 },
     { label: "Campo",          value: cargasCampo,                                 icon: Fuel },
+    ...(cargasExternas > 0 ? [{ label: "Externas", value: cargasExternas, icon: Zap }] : []),
   ];
 
   return (
     <>
-      {/* Tabs */}
-      <div className="flex gap-1 border-b mb-6" style={{ borderColor: "var(--border)" }}>
+      {/* Tabs — scroll horizontal en móvil */}
+      <div className="flex gap-1 border-b mb-6 overflow-x-auto" style={{ borderColor: "var(--border)", scrollbarWidth: "none" }}>
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            className={`shrink-0 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
               activeTab === t.key
                 ? "border-indigo-500 text-indigo-500"
                 : "border-transparent"
@@ -298,6 +341,20 @@ export default function CatalogoDetalleClient({
             <p className="text-xs text-red-500 flex items-center gap-1.5">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {deleteError}
             </p>
+          )}
+
+          {/* Botón carga externa */}
+          {canAddExterna && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowExterna(true)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-colors hover:border-amber-500/50 hover:bg-amber-500/5"
+                style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+              >
+                <Zap className="w-4 h-4 text-amber-400" />
+                Carga externa
+              </button>
+            </div>
           )}
 
           {/* Barra búsqueda + filtros */}
@@ -343,13 +400,13 @@ export default function CatalogoDetalleClient({
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--fg-muted)" }}>Origen</p>
                   <div className="flex gap-1.5 flex-wrap">
-                    {(["todos", "patio", "campo"] as FiltroOrigen[]).map((v) => (
+                    {(["todos", "patio", "campo", "externo"] as FiltroOrigen[]).map((v) => (
                       <button key={v} onClick={() => setFiltroOrigen(v)}
                         className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                           filtroOrigen === v ? "bg-indigo-500 text-white border-indigo-500" : ""
                         }`}
                         style={filtroOrigen !== v ? { backgroundColor: "var(--surface)", color: "var(--fg-muted)", borderColor: "var(--border)" } : undefined}>
-                        {v === "todos" ? "Todos" : v === "patio" ? "Patio" : "Campo"}
+                        {v === "todos" ? "Todos" : v === "patio" ? "Patio" : v === "campo" ? "Campo" : "Externa"}
                       </button>
                     ))}
                   </div>
@@ -466,8 +523,11 @@ export default function CatalogoDetalleClient({
                           {c.folio != null ? `#${c.folio}` : "—"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={c.origen === "campo" ? "warning" : "default"} className="text-[10px]">
-                            {c.origen === "campo" ? "Campo" : "Patio"}
+                          <Badge
+                            variant={c.origen === "campo" ? "warning" : c.origen === "externo" ? "secondary" : "default"}
+                            className={`text-[10px] ${c.origen === "externo" ? "border border-amber-500/30 bg-amber-500/10 text-amber-400" : ""}`}
+                          >
+                            {c.origen === "campo" ? "Campo" : c.origen === "externo" ? "Externa" : "Patio"}
                           </Badge>
                         </TableCell>
                         {tipo !== "unidad" && (
@@ -721,6 +781,82 @@ export default function CatalogoDetalleClient({
           )}
         </div>
       )}
+
+      {/* ── Modal: Carga Externa ─────────────────────────── */}
+      <Dialog open={showExterna} onOpenChange={(v) => { if (!v) { setShowExterna(false); setExternaError(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-400" />
+              Registrar carga externa
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitExterna} className="space-y-4 py-1">
+            <div className="rounded-xl border px-3 py-2.5 text-xs space-y-0.5"
+              style={{ backgroundColor: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.25)" }}>
+              <p className="font-semibold" style={{ color: "var(--fg)" }}>Sin impacto en tanques internos</p>
+              <p style={{ color: "var(--fg-muted)" }}>
+                Esta carga NO descuenta el stock del Taller ni del NISSAN. Sí cuenta para el cálculo de rendimiento.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Fecha *</Label>
+                <Input type="date" value={externaForm.fecha}
+                  onChange={(e) => setExternaForm((p) => ({ ...p, fecha: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Litros *</Label>
+                <Input type="number" step="0.5" min="0.5" placeholder="0" className="font-mono font-bold"
+                  value={externaForm.litros}
+                  onChange={(e) => setExternaForm((p) => ({ ...p, litros: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Odómetro / HRS</Label>
+                <Input type="number" step="1" placeholder="Sin registro" className="font-mono"
+                  value={externaForm.odometroHrs}
+                  onChange={(e) => setExternaForm((p) => ({ ...p, odometroHrs: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Fuente</Label>
+                <Input type="text" placeholder="Gasolinera, Amigo…"
+                  value={externaForm.fuente}
+                  onChange={(e) => setExternaForm((p) => ({ ...p, fuente: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Obra</Label>
+              <Select name="obraId" value={externaForm.obraId}
+                onChange={(e) => setExternaForm((p) => ({ ...p, obraId: e.target.value }))}>
+                <option value="">— Sin obra —</option>
+                {obras.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Notas</Label>
+              <Textarea placeholder="Motivo, ubicación, quién autorizó…" rows={2}
+                value={externaForm.notas}
+                onChange={(e) => setExternaForm((p) => ({ ...p, notas: e.target.value }))} />
+            </div>
+            {externaError && (
+              <p className="text-sm text-red-500 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" /> {externaError}
+              </p>
+            )}
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="ghost" size="sm">Cancelar</Button>
+              </DialogClose>
+              <Button type="submit" size="sm" disabled={externaPending}
+                className="bg-amber-500 hover:bg-amber-600 text-white">
+                {externaPending ? "Registrando…" : "Registrar carga externa"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Modal: Editar carga ────────────────────────────── */}
       <Dialog open={!!editCarga} onOpenChange={(v) => { if (!v) setEditCarga(null); }}>
