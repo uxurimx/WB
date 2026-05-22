@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import {
   Fuel, LayoutDashboard, Settings, ChevronRight, ChevronDown,
   PlusCircle, ClipboardList, Truck, Users, HardHat, Menu, X,
-  Wrench, Calendar, Shield, TicketCheck, Megaphone, Blocks,
+  Wrench, Calendar, Shield, TicketCheck, Megaphone, Blocks, BarChart2,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
@@ -55,10 +55,13 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0) {
       collapsible: true,
       items: catalogoItems,
     }] : []),
-    ...(has("periodos") ? [{
+    ...((has("periodos") || has("analiticas")) ? [{
       label: "Análisis",
       collapsible: false,
-      items: [{ name: "Períodos", href: "/periodos", icon: Calendar }],
+      items: [
+        ...(has("periodos")    ? [{ name: "Períodos",   href: "/periodos",   icon: Calendar   }] : []),
+        ...(has("analiticas")  ? [{ name: "Analíticas", href: "/analiticas", icon: BarChart2  }] : []),
+      ],
     }] : []),
     ...(sistemaItems.length ? [{
       label: "Sistema",

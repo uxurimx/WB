@@ -348,6 +348,37 @@ export const pbNovedadesRelations = relations(pbNovedades, ({ one }) => ({
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ANALYTICS — tracking de visitantes en la landing page (/)
+// ─────────────────────────────────────────────────────────────────────────────
+export const analyticsSessions = pgTable("analytics_sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull().unique(),
+  deviceType: varchar("device_type", { length: 20 }),  // mobile | tablet | desktop
+  browser: varchar("browser", { length: 30 }),
+  os: varchar("os", { length: 30 }),
+  screenW: integer("screen_w"),
+  screenH: integer("screen_h"),
+  referrer: text("referrer"),
+  ipHash: text("ip_hash"),
+  durationSeconds: integer("duration_seconds"),
+  maxScrollPct: integer("max_scroll_pct").default(0),
+  bounced: boolean("bounced").default(true),
+  endedAt: timestamp("ended_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const analyticsEvents = pgTable("analytics_events", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull(),
+  type: varchar("type", { length: 30 }).notNull(), // scroll | click
+  element: text("element"),
+  xPct: real("x_pct"),
+  yPct: real("y_pct"),
+  value: text("value"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 export const unidadesRelations = relations(unidades, ({ one, many }) => ({
   operadorDefault: one(operadores, {
     fields: [unidades.operadorDefaultId],

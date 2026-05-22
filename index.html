@@ -962,5 +962,129 @@ function sendWA(e) {
   window.open(`https://wa.me/528184656755?text=${encodeURIComponent(txt)}`, '_blank');
 }
 </script>
+
+<!-- WB Analytics — tracker propio, sin terceros -->
+<script>
+(function(){
+  try{
+    // Ignorar bots y headless browsers
+    if(navigator.webdriver) return;
+    if(/bot|crawl|spider|slurp|headless|facebookexternalhit/i.test(navigator.userAgent)) return;
+
+    var BASE = '/api/analytics';
+
+    // Session ID persistido en sessionStorage (nueva sesión por pestaña/visita)
+    var sid = sessionStorage.getItem('_wbs');
+    var isNew = !sid;
+    if(isNew){
+      try{ sid = crypto.randomUUID(); } catch(e){
+        sid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
+          var r = Math.random()*16|0, v = c=='x'?r:(r&0x3|0x8); return v.toString(16);
+        });
+      }
+      sessionStorage.setItem('_wbs', sid);
+    }
+
+    // Device / browser / OS detection
+    var ua = navigator.userAgent;
+    var isMobile = /Mobi|Android/i.test(ua) && !/iPad/i.test(ua);
+    var isTablet = /iPad|Tablet/i.test(ua);
+    var deviceType = isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop';
+    var browser = 'other';
+    if(/Edg/i.test(ua)) browser='edge';
+    else if(/OPR|Opera/i.test(ua)) browser='opera';
+    else if(/Chrome/i.test(ua)) browser='chrome';
+    else if(/Firefox/i.test(ua)) browser='firefox';
+    else if(/Safari/i.test(ua)) browser='safari';
+    var os = 'other';
+    if(/iPhone|iPad/i.test(ua)) os='ios';
+    else if(/Android/i.test(ua)) os='android';
+    else if(/Windows/i.test(ua)) os='windows';
+    else if(/Mac/i.test(ua)) os='macos';
+    else if(/Linux/i.test(ua)) os='linux';
+
+    function post(path, data){
+      try{
+        fetch(BASE+path, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(data),
+          keepalive: true
+        }).catch(function(){});
+      } catch(e){}
+    }
+
+    // Crear sesión (solo si es nueva pestaña)
+    if(isNew){
+      post('/session',{
+        sessionId: sid,
+        deviceType: deviceType,
+        browser: browser,
+        os: os,
+        screenW: screen.width,
+        screenH: screen.height,
+        referrer: document.referrer || null
+      });
+    }
+
+    // Scroll tracking — milestones 25/50/75/100
+    var scrollHits = {};
+    var maxScroll = 0;
+    window.addEventListener('scroll', function(){
+      var h = document.documentElement.scrollHeight - window.innerHeight;
+      if(h <= 0) return;
+      var pct = Math.round(window.scrollY / h * 100);
+      if(pct > maxScroll) maxScroll = pct;
+      [25,50,75,100].forEach(function(m){
+        if(pct >= m && !scrollHits[m]){
+          scrollHits[m] = true;
+          post('/event',{ sessionId:sid, type:'scroll', value:String(m) });
+        }
+      });
+    }, {passive:true});
+
+    // Click tracking — captura elemento + coordenadas para heatmap
+    document.addEventListener('click', function(e){
+      var el = e.target && e.target.closest
+        ? e.target.closest('a,button,.btn,.wabtn,.ncta,.sc,.ci,.fsoc')
+        : null;
+      if(!el) return;
+      var xPct = Math.round(e.pageX / Math.max(document.body.scrollWidth, 1) * 100);
+      var yPct = Math.round(e.pageY / Math.max(document.documentElement.scrollHeight, 1) * 100);
+      var text = ((el.textContent||el.getAttribute('aria-label')||'')
+        .trim().replace(/\s+/g,' ')).slice(0,80);
+      post('/event',{
+        sessionId: sid,
+        type: 'click',
+        element: text || el.tagName.toLowerCase(),
+        xPct: xPct,
+        yPct: yPct
+      });
+    });
+
+    // Exit tracking — actualiza duración, scroll máx, bounce
+    var startTs = Date.now();
+    function onExit(){
+      var dur = Math.round((Date.now()-startTs)/1000);
+      var bounced = Object.keys(scrollHits).length===0 && dur < 10;
+      var payload = JSON.stringify({
+        sessionId: sid,
+        _update: true,
+        duration: dur,
+        maxScrollPct: maxScroll,
+        bounced: bounced
+      });
+      try{
+        if(navigator.sendBeacon){
+          navigator.sendBeacon(BASE+'/session', new Blob([payload],{type:'application/json'}));
+        }
+      } catch(e){}
+    }
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState==='hidden') onExit();
+    });
+  } catch(e){}
+})();
+</script>
 </body>
 </html>
