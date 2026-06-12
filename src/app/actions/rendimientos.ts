@@ -255,13 +255,16 @@ export async function getPeriodosConStats() {
 
   const statsMap = new Map(stats.map((s) => [s.periodoId, s]));
 
+  // fueraTolerancia solo cuenta desviaciones que empeoran: camión rinde menos (Δ<0),
+  // maquinaria consume más (Δ>0). Las mejoras fuera de tolerancia no suman al indicador.
   const rendStats = await db
     .select({
       periodoId: rendimientos.periodoId,
       total: sql<number>`count(*)::int`,
-      fueraTolerancia: sql<number>`count(*) filter (where ${rendimientos.dentroDeTolerancia} = false)::int`,
+      fueraTolerancia: sql<number>`count(*) filter (where ${rendimientos.dentroDeTolerancia} = false and ((${unidades.tipo} = 'camion' and ${rendimientos.diferencia} < 0) or (${unidades.tipo} <> 'camion' and ${rendimientos.diferencia} > 0)))::int`,
     })
     .from(rendimientos)
+    .innerJoin(unidades, eq(rendimientos.unidadId, unidades.id))
     .where(inArray(rendimientos.periodoId, ids))
     .groupBy(rendimientos.periodoId);
 

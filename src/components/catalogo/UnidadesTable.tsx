@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import {
-  Plus, Power, PowerOff, Pencil, Trash2, Check, X, Search, SlidersHorizontal,
+  Plus, Power, PowerOff, Pencil, Trash2, X, Search, SlidersHorizontal,
   TrendingUp, TrendingDown, Minus, Fuel, Gauge, AlertTriangle, ArrowUpDown,
   ChevronUp, ChevronDown,
 } from "lucide-react";
@@ -10,6 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import { createUnidad, updateUnidad, toggleUnidadActivo, deleteUnidad } from "@/app/actions/catalogo";
@@ -499,60 +509,10 @@ export default function UnidadesTable({
             )}
 
             {unidadesFiltradas.map((u) => {
-              const isEditing  = editingId === u.id;
               const isDeleting = deletingId === u.id;
               const esCamion   = u.tipo === "camion";
               const unidadKm   = esCamion ? "km/L" : "L/Hr";
               const rend       = u.ultimoPeriodo;
-
-              if (isEditing) {
-                return (
-                  <TableRow key={u.id} style={{ backgroundColor: "var(--surface)" }}>
-                    <TableCell>
-                      <Input value={editForm.codigo}
-                        onChange={(e) => setEditForm((p) => ({ ...p, codigo: e.target.value }))}
-                        className="h-8 font-mono font-bold text-sm uppercase w-24" />
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <div className="flex gap-1.5">
-                        <Input value={editForm.nombre}
-                          onChange={(e) => setEditForm((p) => ({ ...p, nombre: e.target.value }))}
-                          placeholder="Nombre" className="h-8 text-sm" />
-                        <Input value={editForm.modelo}
-                          onChange={(e) => setEditForm((p) => ({ ...p, modelo: e.target.value }))}
-                          placeholder="Modelo" className="h-8 text-sm" />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Select value={editForm.tipo}
-                        onChange={(e) => setEditForm((p) => ({ ...p, tipo: e.target.value }))}
-                        className="h-8 text-sm">
-                        <option value="camion">Camión</option>
-                        <option value="maquina">Maquinaria</option>
-                        <option value="nissan">NISSAN</option>
-                        <option value="otro">Otro</option>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell" />
-                    <TableCell className="hidden sm:table-cell" />
-                    <TableCell className="hidden lg:table-cell" />
-                    <TableCell className="hidden lg:table-cell" />
-                    <TableCell colSpan={2}>
-                      <div className="flex items-center gap-1.5">
-                        {editError && <span className="text-xs text-red-500">{editError}</span>}
-                        <button onClick={() => saveEdit(u.id)} disabled={isPending}
-                          className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors">
-                          <Check className="w-4 h-4 text-emerald-500" />
-                        </button>
-                        <button onClick={cancelEdit}
-                          className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors">
-                          <X className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              }
 
               return (
                 <TableRow
@@ -682,6 +642,84 @@ export default function UnidadesTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Modal de edición */}
+      <Dialog open={editingId !== null} onOpenChange={(o) => { if (!o) cancelEdit(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              Editar unidad{editingId !== null ? ` — ${unidades.find((u) => u.id === editingId)?.codigo ?? ""}` : ""}
+            </DialogTitle>
+            <DialogDescription>
+              Modifica los datos de la unidad. El código debe ser único.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={(e) => { e.preventDefault(); if (editingId !== null) saveEdit(editingId); }}
+            className="space-y-4 mt-1"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-codigo">Código *</Label>
+                <Input id="edit-codigo" value={editForm.codigo}
+                  onChange={(e) => setEditForm((p) => ({ ...p, codigo: e.target.value }))}
+                  placeholder="CA12, EX01, R02..." className="uppercase" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-tipo">Tipo *</Label>
+                <Select id="edit-tipo" value={editForm.tipo}
+                  onChange={(e) => setEditForm((p) => ({ ...p, tipo: e.target.value }))}>
+                  <option value="camion">Camión</option>
+                  <option value="maquina">Maquinaria</option>
+                  <option value="nissan">NISSAN</option>
+                  <option value="otro">Otro</option>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-nombre">Nombre</Label>
+                <Input id="edit-nombre" value={editForm.nombre}
+                  onChange={(e) => setEditForm((p) => ({ ...p, nombre: e.target.value }))}
+                  placeholder="Nombre descriptivo" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-modelo">Modelo</Label>
+                <Input id="edit-modelo" value={editForm.modelo}
+                  onChange={(e) => setEditForm((p) => ({ ...p, modelo: e.target.value }))}
+                  placeholder="Komatsu PC88, CAT 308..." />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-capacidadTanque">Cap. Tanque (L)</Label>
+                <Input id="edit-capacidadTanque" type="number" value={editForm.capacidadTanque}
+                  onChange={(e) => setEditForm((p) => ({ ...p, capacidadTanque: e.target.value }))}
+                  placeholder="300" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-rendimientoReferencia">
+                  Rend. Referencia {editForm.tipo === "maquina" ? "(L/Hr)" : "(km/L)"}
+                </Label>
+                <Input id="edit-rendimientoReferencia" type="number" step="0.01"
+                  value={editForm.rendimientoReferencia}
+                  onChange={(e) => setEditForm((p) => ({ ...p, rendimientoReferencia: e.target.value }))}
+                  placeholder="2.8" />
+              </div>
+            </div>
+
+            {editError && <p className="text-sm text-red-500">{editError}</p>}
+
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="ghost" size="sm">
+                  Cancelar
+                </Button>
+              </DialogClose>
+              <Button type="submit" size="sm" disabled={isPending}>
+                {isPending ? "Guardando..." : "Guardar cambios"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

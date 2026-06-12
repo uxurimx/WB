@@ -121,8 +121,13 @@ export default function AnalisisPeriodoClient({
   }
 
   // Cards reactivas
+  // El indicador solo cuenta desviaciones que empeoran: camión rinde menos (Δ<0),
+  // maquinaria consume más (Δ>0). Las mejoras fuera de tolerancia no suman.
+  const esEmpeora = (r: Rend) =>
+    r.diferencia !== null &&
+    (r.unidad?.tipo === "camion" ? r.diferencia < 0 : r.diferencia > 0);
   const totalLitros      = filtrados.reduce((s, r) => s + (r.litrosConsumidos ?? 0), 0);
-  const fueraTolerancia  = filtrados.filter((r) => r.dentroDeTolerancia === false).length;
+  const fueraTolerancia  = filtrados.filter((r) => r.dentroDeTolerancia === false && esEmpeora(r)).length;
   const sinReferencia    = filtrados.filter((r) => r.rendimientoReferencia === null).length;
 
   const hayFiltros = !!(busqueda.trim() || filtroTipo !== "todos" || filtroEstado !== "todos");

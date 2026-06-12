@@ -75,7 +75,10 @@ export async function getOverviewStats() {
             r.rendimientoActual !== null &&
             r.rendimientoReferencia !== null &&
             r.diferencia !== null &&
-            r.unidad !== null
+            r.unidad !== null &&
+            // Solo desviaciones que empeoran: camión rinde menos (Δ<0),
+            // maquinaria consume más (Δ>0). Las mejoras no generan alerta.
+            (r.unidad.tipo === "camion" ? r.diferencia < 0 : r.diferencia > 0)
         )
         .map((r) => {
           const difPct =
