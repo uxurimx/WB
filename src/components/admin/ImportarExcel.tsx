@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { importarCargas, type ImportRow, type ImportResult } from "@/app/actions/import";
+import TableScroll from "@/components/ui/table-scroll";
 
 // ── Excel parsing helpers ─────────────────────────────────────
 
@@ -343,7 +344,8 @@ export default function ImportarExcel() {
         </div>
 
         {/* Preview table */}
-        <div className="rounded-xl border overflow-auto" style={{ borderColor: "var(--border)" }}>
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
+          <TableScroll>
           <table className="w-full text-xs min-w-[600px]">
             <thead>
               <tr style={{ backgroundColor: "var(--surface-2)" }}>
@@ -374,6 +376,7 @@ export default function ImportarExcel() {
               ))}
             </tbody>
           </table>
+          </TableScroll>
           {parsed.dataRows.length > 10 && (
             <p
               className="px-3 py-2 text-xs border-t"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Pencil, Trash2, AlertCircle, ArrowRight, Fuel,
@@ -14,10 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import TableScroll from "@/components/ui/table-scroll";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
-import { updateCarga, deleteCarga } from "@/app/actions/cargas";
+import { updateCarga, deleteCarga, getCargasPage } from "@/app/actions/cargas";
 import {
   updateRecargaTanque, deleteRecargaTanque,
   updateTransferencia, deleteTransferencia,
@@ -78,11 +79,6 @@ export type HistorialItem = CargaItem | TransferenciaItem | RecargaItem;
 
 type Operador    = { id: number; nombre: string };
 type Obra        = { id: number; nombre: string };
-type GlobalStats = {
-  cargas:         { total: number; litros: number };
-  recargas:       { total: number; litros: number };
-  transferencias: { total: number; litros: number };
-};
 
 function formatFecha(fecha: string) {
   return new Date(fecha + "T12:00:00").toLocaleDateString("es-MX", {
@@ -322,21 +318,39 @@ type TipoFiltro = "todos" | "patio" | "campo" | "recarga" | "transf";
 
 // ─── Componente principal ─────────────────────────────────────
 export default function CargasTable({
-  items,
+  initialCargas,
+  cargasTotal,
+  cargasLitros,
+  cargasUnidades,
+  recargas,
+  transferencias,
   operadores,
   obras,
   canEdit,
-  globalStats,
+  pageSize,
+  origen,
+  unidadId,
   hasFiltroFecha = false,
+  isDefaultWindow = false,
+  todo = false,
   desde: desdeProp = "",
   hasta: hastaProp = "",
 }: {
-  items: HistorialItem[];
+  initialCargas: CargaItem[];
+  cargasTotal: number;
+  cargasLitros: number;
+  cargasUnidades: number;
+  recargas: RecargaItem[];
+  transferencias: TransferenciaItem[];
   operadores: Operador[];
   obras: Obra[];
   canEdit: boolean;
-  globalStats: GlobalStats;
+  pageSize: number;
+  origen?: "patio" | "campo";
+  unidadId?: number;
   hasFiltroFecha?: boolean;
+  isDefaultWindow?: boolean;
+  todo?: boolean;
   desde?: string;
   hasta?: string;
 }) {
@@ -344,15 +358,91 @@ export default function CargasTable({
   const [isPending, startTransition] = useTransition();
   const [fotoViewer, setFotoViewer] = useState<{ url: string; folio: number | null } | null>(null);
 
+  // ── Cargas server-side (paginadas) ─────────────────────────
+  const [cargas,        setCargas]        = useState<CargaItem[]>(initialCargas);
+  const [total,         setTotal]         = useState(cargasTotal);
+  const [litrosTotal,   setLitrosTotal]   = useState(cargasLitros);
+  const [unidadesTotal, setUnidadesTotal] = useState(cargasUnidades);
+  const [loadingMore,   setLoadingMore]   = useState(false);
+  const [searching,     setSearching]     = useState(false);
+
   // ── Búsqueda / filtro / orden ──────────────────────────────
   const [busqueda,    setBusqueda]    = useState("");
-  const [tipoFiltro,  setTipoFiltro]  = useState<TipoFiltro>("todos");
+  const [tipoFiltro,  setTipoFiltro]  = useState<TipoFiltro>(origen ?? "todos");
   const [sortCol,     setSortCol]     = useState<SortCol>("fecha");
   const [sortDir,     setSortDir]     = useState<"asc" | "desc">("desc");
 
   // ── Filtro de fechas ───────────────────────────────────────
   const [fechaDesde, setFechaDesde] = useState(desdeProp);
   const [fechaHasta, setFechaHasta] = useState(hastaProp);
+
+  const origenFromTipo = (t: TipoFiltro): "patio" | "campo" | undefined =>
+    t === "patio" ? "patio" : t === "campo" ? "campo" : undefined;
+  const tipoNecesitaCargas = (t: TipoFiltro) => t !== "recarga" && t !== "transf";
+
+  const fetchPage = useCallback(
+    (t: TipoFiltro, search: string, offset: number) =>
+      getCargasPage({
+        origen: origenFromTipo(t),
+        unidadId,
+        fechaDesde: desdeProp || undefined,
+        fechaHasta: hastaProp || undefined,
+        search: search.trim() || undefined,
+        limit: pageSize,
+        offset,
+      }),
+    [unidadId, desdeProp, hastaProp, pageSize],
+  );
+
+  async function loadCargas(t: TipoFiltro, search: string) {
+    if (!tipoNecesitaCargas(t)) {
+      setCargas([]); setTotal(0); setLitrosTotal(0); setUnidadesTotal(0);
+      return;
+    }
+    setSearching(true);
+    try {
+      const res = await fetchPage(t, search, 0);
+      setCargas(res.items); setTotal(res.total); setLitrosTotal(res.litros); setUnidadesTotal(res.unidades);
+    } finally { setSearching(false); }
+  }
+
+  async function loadMore() {
+    setLoadingMore(true);
+    try {
+      const res = await fetchPage(tipoFiltro, busqueda, cargas.length);
+      setCargas((prev) => [...prev, ...res.items]);
+      setTotal(res.total); setLitrosTotal(res.litros); setUnidadesTotal(res.unidades);
+    } finally { setLoadingMore(false); }
+  }
+
+  // Tras editar/eliminar una carga: refresca lo visible (mantiene la cantidad cargada)
+  const reloadCargas = useCallback(async () => {
+    if (!tipoNecesitaCargas(tipoFiltro)) return;
+    const limit = Math.max(pageSize, cargas.length);
+    const res = await getCargasPage({
+      origen: origenFromTipo(tipoFiltro),
+      unidadId,
+      fechaDesde: desdeProp || undefined,
+      fechaHasta: hastaProp || undefined,
+      search: busqueda.trim() || undefined,
+      limit, offset: 0,
+    });
+    setCargas(res.items); setTotal(res.total); setLitrosTotal(res.litros); setUnidadesTotal(res.unidades);
+  }, [tipoFiltro, cargas.length, unidadId, desdeProp, hastaProp, pageSize, busqueda]);
+
+  // Búsqueda con debounce → consulta servidor (cubre todo el rango, no solo lo cargado)
+  const firstSearch = useRef(true);
+  useEffect(() => {
+    if (firstSearch.current) { firstSearch.current = false; return; }
+    const id = setTimeout(() => { loadCargas(tipoFiltro, busqueda); }, 350);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busqueda]);
+
+  function changeTipo(key: TipoFiltro) {
+    setTipoFiltro(key);
+    loadCargas(key, busqueda);
+  }
 
   function aplicarFiltroFechas() {
     const qs = new URLSearchParams();
@@ -364,7 +454,7 @@ export default function CargasTable({
   function limpiarFiltroFechas() {
     setFechaDesde("");
     setFechaHasta("");
-    router.push("/cargas");
+    router.push("/cargas?todo=1");
   }
 
   function toggleSort(col: SortCol) {
@@ -372,29 +462,23 @@ export default function CargasTable({
     else { setSortCol(col); setSortDir("desc"); }
   }
 
-  const itemsFiltrados = items
-    .filter((item) => {
-      if (tipoFiltro === "patio")   return item._tipo === "carga" && item.origen === "patio";
-      if (tipoFiltro === "campo")   return item._tipo === "carga" && item.origen === "campo";
-      if (tipoFiltro === "recarga") return item._tipo === "recarga";
-      if (tipoFiltro === "transf")  return item._tipo === "transferencia";
-      return true;
-    })
-    .filter((item) => {
-      if (!busqueda) return true;
-      const q = busqueda.toLowerCase();
-      if (item._tipo === "carga") {
-        return (
-          (item.unidad?.codigo ?? "").toLowerCase().includes(q) ||
-          (item.operador?.nombre ?? "").toLowerCase().includes(q) ||
-          (item.obra?.nombre ?? "").toLowerCase().includes(q) ||
-          String(item.folio ?? "").includes(q)
-        );
-      }
-      if (item._tipo === "recarga")       return (item.proveedor ?? "").toLowerCase().includes(q) || item.tanqueNombre.toLowerCase().includes(q);
-      if (item._tipo === "transferencia") return item.origenNombre.toLowerCase().includes(q) || item.destinoNombre.toLowerCase().includes(q);
-      return true;
-    })
+  // Recargas/transferencias: pocas, vienen completas dentro de la ventana → filtro en cliente.
+  const matchSearch = (item: RecargaItem | TransferenciaItem) => {
+    if (!busqueda) return true;
+    const q = busqueda.toLowerCase();
+    if (item._tipo === "recarga") return (item.proveedor ?? "").toLowerCase().includes(q) || item.tanqueNombre.toLowerCase().includes(q);
+    return item.origenNombre.toLowerCase().includes(q) || item.destinoNombre.toLowerCase().includes(q);
+  };
+
+  const recargasView = (tipoFiltro === "todos" || tipoFiltro === "recarga")
+    ? recargas.filter(matchSearch) as RecargaItem[]
+    : [];
+  const transfView = (tipoFiltro === "todos" || tipoFiltro === "transf")
+    ? transferencias.filter(matchSearch) as TransferenciaItem[]
+    : [];
+  const cargasView = tipoNecesitaCargas(tipoFiltro) ? cargas : [];
+
+  const itemsFiltrados = ([...cargasView, ...recargasView, ...transfView] as HistorialItem[])
     .sort((a, b) => {
       const mul = sortDir === "asc" ? 1 : -1;
       const getFolio    = (x: HistorialItem) => (x._tipo !== "recarga" ? (x.folio ?? 0) : 0);
@@ -409,6 +493,8 @@ export default function CargasTable({
       if (sortCol === "odometro") return mul * (getOdometro(a) - getOdometro(b));
       return 0;
     });
+
+  const puedeCargarMas = tipoNecesitaCargas(tipoFiltro) && cargas.length < total;
 
   // ── Estado: edición/eliminación de cargas ──────────────────
   const [editCarga,    setEditCarga]    = useState<CargaItem | null>(null);
@@ -481,6 +567,7 @@ export default function CargasTable({
           notas:          editCargaForm.notas || null,
         });
         setEditCarga(null);
+        await reloadCargas();
       } catch (err) {
         setEditCargaError(err instanceof Error ? err.message : "Error al guardar");
       }
@@ -488,7 +575,7 @@ export default function CargasTable({
   }
 
   function handleDeleteCarga(id: number) {
-    const item = items.find((i) => i._tipo === "carga" && i.id === id) as CargaItem | undefined;
+    const item = cargas.find((i) => i.id === id);
     if (item?.periodoCerrado) {
       // Período cerrado: exige nota antes de eliminar
       setDeleteNoteState({ cargaId: id, nota: "" });
@@ -501,6 +588,7 @@ export default function CargasTable({
         try {
           await deleteCarga(id);
           setDeletingCargaId(null);
+          await reloadCargas();
         } catch (err) {
           setDeleteCargaError(err instanceof Error ? err.message : "Error al eliminar");
           setDeletingCargaId(null);
@@ -518,6 +606,7 @@ export default function CargasTable({
       try {
         await deleteCarga(deleteNoteState.cargaId, deleteNoteState.nota);
         setDeleteNoteState(null);
+        await reloadCargas();
       } catch (err) {
         setDeleteCargaError(err instanceof Error ? err.message : "Error al eliminar");
       }
@@ -658,22 +747,15 @@ export default function CargasTable({
     );
   }
 
-  const cargasFiltradas   = itemsFiltrados.filter((i): i is CargaItem         => i._tipo === "carga");
-  const recargasFiltradas = itemsFiltrados.filter((i): i is RecargaItem       => i._tipo === "recarga");
-  const transfFiltradas   = itemsFiltrados.filter((i): i is TransferenciaItem => i._tipo === "transferencia");
-
-  // Sin filtros activos → muestra totales reales de toda la DB (globalStats)
-  // Con filtros → computa desde los items filtrados (todo ya cargado en memoria, sin paginación)
-  const anyFilter = !!(busqueda || tipoFiltro !== "todos" || hasFiltroFecha);
-  const displayStats = anyFilter
-    ? {
-        cargas:         { total: cargasFiltradas.length,   litros: cargasFiltradas.reduce((s, c) => s + c.litros, 0) },
-        recargas:       { total: recargasFiltradas.length, litros: recargasFiltradas.reduce((s, r) => s + r.litros, 0) },
-        transferencias: { total: transfFiltradas.length,   litros: transfFiltradas.reduce((s, t) => s + t.litros, 0) },
-      }
-    : globalStats;
-
-  const statsUnidades = new Set(cargasFiltradas.map((c) => c.unidad?.codigo ?? `id-${c.id}`)).size;
+  // Cargas: totales del servidor (cubren toda la ventana/filtro, no solo lo cargado).
+  // Recargas/transferencias: pocas y completas en memoria → se cuentan en cliente.
+  const anyFilter = !!(busqueda || tipoFiltro !== "todos" || !isDefaultWindow);
+  const displayStats = {
+    cargas:         { total,                       litros: litrosTotal },
+    recargas:       { total: recargasView.length,  litros: recargasView.reduce((s, r) => s + r.litros, 0) },
+    transferencias: { total: transfView.length,    litros: transfView.reduce((s, t) => s + t.litros, 0) },
+  };
+  const statsUnidades = unidadesTotal;
 
   const anyDeleteError = deleteCargaError || deleteRecargaError || deleteTransfError;
 
@@ -688,7 +770,11 @@ export default function CargasTable({
       {/* Mini dashboard reactivo — totales globales o filtrados */}
       <div className="mb-2">
         <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--fg-muted)" }}>
-          {anyFilter ? "Resultados según filtros activos" : "Totales — todo el historial"}
+          {anyFilter
+            ? "Resultados según filtros activos"
+            : todo
+            ? "Totales — todo el historial"
+            : "Totales — período actual"}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           {[
@@ -747,6 +833,11 @@ export default function CargasTable({
             className="w-full pl-9 pr-8 py-2 text-sm rounded-xl border bg-transparent outline-none focus:ring-2 focus:ring-indigo-500/30"
             style={{ borderColor: "var(--border)", color: "var(--fg)" }}
           />
+          {searching && (
+            <span className="absolute right-8 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: "var(--fg-muted)" }}>
+              Buscando…
+            </span>
+          )}
           {busqueda && (
             <button
               type="button"
@@ -763,7 +854,7 @@ export default function CargasTable({
             <button
               key={key}
               type="button"
-              onClick={() => setTipoFiltro(key)}
+              onClick={() => changeTipo(key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                 tipoFiltro === key
                   ? "bg-indigo-600 text-white border-indigo-600"
@@ -822,23 +913,33 @@ export default function CargasTable({
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs border transition-colors hover:bg-[var(--surface-2)]"
               style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
             >
-              <XIcon className="w-3 h-3" /> Limpiar
+              <XIcon className="w-3 h-3" /> {isDefaultWindow ? "Ver todo el historial" : "Limpiar"}
+            </button>
+          )}
+          {todo && (
+            <button
+              type="button"
+              onClick={() => router.push("/cargas")}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs border transition-colors hover:bg-[var(--surface-2)]"
+              style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+            >
+              <CalendarRange className="w-3 h-3" /> Volver al período actual
             </button>
           )}
         </div>
-        {!hasFiltroFecha && (
+        {todo && (
           <p className="text-[10px] hidden sm:block shrink-0" style={{ color: "var(--fg-muted)" }}>
-            Filtra por rango y busca en todos los registros del período
+            Mostrando todo el historial
           </p>
         )}
       </div>
 
       {/* Tabla */}
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
-        <div className="overflow-x-auto">
+        <TableScroll maxHeight="calc(100vh - 19rem)">
           <table className="w-full min-w-[640px] text-sm">
-            <thead>
-              <tr style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
+            <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-[var(--surface)]">
+              <tr style={{ borderBottom: "1px solid var(--border)" }}>
                 {[
                   { col: "folio"    as SortCol, label: "Folio",      cls: "" },
                   { col: "fecha"    as SortCol, label: "Fecha",      cls: "" },
@@ -1008,8 +1109,28 @@ export default function CargasTable({
               })}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </div>
+
+      {/* Paginación / cargar más */}
+      {tipoNecesitaCargas(tipoFiltro) && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-3">
+          <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+            Mostrando {cargasView.length.toLocaleString()} de {total.toLocaleString()} cargas
+          </p>
+          {puedeCargarMas && (
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold border transition-colors hover:bg-[var(--surface-2)] disabled:opacity-50"
+              style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+            >
+              {loadingMore ? "Cargando…" : `Cargar más (${pageSize})`}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ─── Modal: editar carga ────────────────────────────────── */}
       <Dialog open={!!editCarga} onOpenChange={(open) => { if (!open) setEditCarga(null); }}>

@@ -5,6 +5,7 @@ import {
   Smartphone, Monitor, Tablet, Clock, MousePointerClick,
   TrendingUp, Globe, Percent, RefreshCw, Activity,
 } from "lucide-react";
+import TableScroll from "@/components/ui/table-scroll";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -619,7 +620,7 @@ export default function AnalyticsDashboard() {
             Sesiones recientes
           </p>
         </div>
-        <div className="overflow-x-auto">
+        <TableScroll>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: "var(--border)" }}>
@@ -698,7 +699,7 @@ export default function AnalyticsDashboard() {
               )}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </div>
 
     </div>

@@ -4,7 +4,8 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque, recargasTanque, rendimientos, periodos, auditLog, users } from "@/db/schema";
-import { eq, max, desc, and, count, sum, gte, lte, like } from "drizzle-orm";
+import { eq, max, desc, and, or, count, countDistinct, sum, gte, lte, like, ilike, inArray, sql } from "drizzle-orm";
+import { obras, operadores } from "@/db/schema";
 import { getTolerancia } from "@/app/actions/setup";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
@@ -295,42 +296,87 @@ export async function getCargas(opts?: {
   origen?: "patio" | "campo";
   fechaDesde?: string;
   fechaHasta?: string;
+  search?: string;
   limit?: number;
   offset?: number;
 }) {
-  const buildWhere = () => {
-    const conds = [];
-    if (opts?.periodoId)  conds.push(eq(cargas.periodoId, opts.periodoId));
-    if (opts?.unidadId)   conds.push(eq(cargas.unidadId, opts.unidadId));
-    if (opts?.origen)     conds.push(eq(cargas.origen, opts.origen));
-    if (opts?.fechaDesde) conds.push(gte(cargas.fecha, opts.fechaDesde));
-    if (opts?.fechaHasta) conds.push(lte(cargas.fecha, opts.fechaHasta));
-    return conds.length ? and(...conds) : undefined;
-  };
+  const conds = [];
+  if (opts?.periodoId)  conds.push(eq(cargas.periodoId, opts.periodoId));
+  if (opts?.unidadId)   conds.push(eq(cargas.unidadId, opts.unidadId));
+  if (opts?.origen)     conds.push(eq(cargas.origen, opts.origen));
+  if (opts?.fechaDesde) conds.push(gte(cargas.fecha, opts.fechaDesde));
+  if (opts?.fechaHasta) conds.push(lte(cargas.fecha, opts.fechaHasta));
+  const q = opts?.search?.trim();
+  if (q) {
+    const like = `%${q}%`;
+    conds.push(
+      or(
+        sql`${cargas.folio}::text ilike ${like}`,
+        inArray(cargas.unidadId, db.select({ id: unidades.id }).from(unidades).where(ilike(unidades.codigo, like))),
+        inArray(cargas.operadorId, db.select({ id: operadores.id }).from(operadores).where(ilike(operadores.nombre, like))),
+        inArray(cargas.obraId, db.select({ id: obras.id }).from(obras).where(ilike(obras.nombre, like))),
+      )!,
+    );
+  }
+  const whereCond = conds.length ? and(...conds) : undefined;
 
   const lim = opts?.limit ?? 50;
   const off = opts?.offset ?? 0;
 
-  const [rows, countRows] = await Promise.all([
+  const [rows, aggRows] = await Promise.all([
     db.query.cargas.findMany({
-      where: (c, { eq: _eq, and: _and, gte: _gte, lte: _lte }) => {
-        const conds = [];
-        if (opts?.periodoId)  conds.push(_eq(c.periodoId, opts.periodoId!));
-        if (opts?.unidadId)   conds.push(_eq(c.unidadId, opts.unidadId!));
-        if (opts?.origen)     conds.push(_eq(c.origen, opts.origen!));
-        if (opts?.fechaDesde) conds.push(_gte(c.fecha, opts.fechaDesde!));
-        if (opts?.fechaHasta) conds.push(_lte(c.fecha, opts.fechaHasta!));
-        return conds.length ? _and(...conds) : undefined;
-      },
+      where: whereCond,
       with: { unidad: true, operador: true, obra: true, archivos: { columns: { url: true }, limit: 1 }, periodo: { columns: { cerrado: true } } },
       orderBy: (c, { desc: _desc }) => [_desc(c.fecha), _desc(c.createdAt)],
       limit: lim,
       offset: off,
     }),
-    db.select({ total: count() }).from(cargas).where(buildWhere()),
+    db.select({ total: count(), litros: sum(cargas.litros), unidades: countDistinct(cargas.unidadId) }).from(cargas).where(whereCond),
   ]);
 
-  return { rows, total: countRows[0]?.total ?? 0 };
+  return {
+    rows,
+    total:    aggRows[0]?.total ?? 0,
+    litros:   Number(aggRows[0]?.litros ?? 0),
+    unidades: aggRows[0]?.unidades ?? 0,
+  };
+}
+
+// Versión para el cliente: devuelve las cargas ya mapeadas al shape de la tabla + totales.
+export async function getCargasPage(opts: {
+  origen?: "patio" | "campo";
+  unidadId?: number;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  search?: string;
+  limit: number;
+  offset: number;
+}) {
+  const { rows, total, litros, unidades } = await getCargas(opts);
+  const items = rows.map((c) => ({
+    _tipo: "carga" as const,
+    id: c.id,
+    fecha: c.fecha,
+    hora: c.hora,
+    folio: c.folio,
+    litros: c.litros,
+    origen: c.origen,
+    tipoDiesel: c.tipoDiesel,
+    notas: c.notas,
+    operadorId: c.operadorId,
+    obraId: c.obraId,
+    odometroHrs: c.odometroHrs ?? null,
+    cuentaLtInicio: c.cuentaLtInicio ?? null,
+    cuentaLtFin: c.cuentaLtFin ?? null,
+    kmEstimado: c.kmEstimado ?? false,
+    periodoId: c.periodoId ?? null,
+    periodoCerrado: c.periodo?.cerrado ?? false,
+    unidad: c.unidad ? { codigo: c.unidad.codigo } : null,
+    operador: c.operador ? { nombre: c.operador.nombre } : null,
+    obra: c.obra ? { nombre: c.obra.nombre } : null,
+    fotoUrl: c.archivos?.[0]?.url ?? null,
+  }));
+  return { items, total, litros, unidades };
 }
 
 export async function getHistorialGlobalStats() {

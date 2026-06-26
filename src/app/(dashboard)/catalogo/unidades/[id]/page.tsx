@@ -51,7 +51,7 @@ export default async function UnidadDetallePage({
   ]);
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl">
+    <div className="p-6 md:p-8 max-w-[1536px]">
       {/* Header */}
       <div className="mb-8">
         <Link

@@ -1,17 +1,19 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import TableScroll from "@/components/ui/table-scroll";
 
-const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="w-full overflow-auto">
-      <table
-        ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
-    </div>
-  )
-);
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement> & { maxHeight?: string }
+>(({ className, maxHeight, ...props }, ref) => (
+  <TableScroll maxHeight={maxHeight}>
+    <table
+      ref={ref}
+      className={cn("w-full caption-bottom text-sm", className)}
+      {...props}
+    />
+  </TableScroll>
+));
 Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<

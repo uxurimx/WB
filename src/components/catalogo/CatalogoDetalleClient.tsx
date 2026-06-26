@@ -458,7 +458,7 @@ export default function CatalogoDetalleClient({
             </div>
           ) : (
             <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
-              <div className="overflow-x-auto">
+              <div>
                 <Table style={{ minWidth: canEditRows ? "700px" : "600px" }}>
                   <TableHeader>
                     <TableRow style={{ backgroundColor: "var(--surface-2)" }}>

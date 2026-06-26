@@ -474,7 +474,7 @@ export default function UnidadesTable({
       )}
 
       {/* Table */}
-      <div className="rounded-2xl border overflow-x-auto" style={{ borderColor: "var(--border)" }}>
+      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: "var(--surface)" }}>

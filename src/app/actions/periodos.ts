@@ -48,6 +48,27 @@ export async function getOrCreatePeriodoActual(fecha?: Date) {
   return nuevo;
 }
 
+// Rango de fechas por defecto para el historial (solo lectura, NO crea períodos).
+// Devuelve el período que contiene hoy; si no, el más reciente; fallback: últimos 30 días.
+export async function getPeriodoActualRange(): Promise<{ desde: string; hasta: string }> {
+  const hoyStr = new Date().toISOString().split("T")[0];
+
+  const actual = await db.query.periodos.findFirst({
+    where: and(lte(periodos.fechaInicio, hoyStr), gte(periodos.fechaFin, hoyStr)),
+    orderBy: (p, { desc }) => [desc(p.fechaInicio)],
+  });
+  if (actual) return { desde: actual.fechaInicio, hasta: actual.fechaFin };
+
+  const reciente = await db.query.periodos.findFirst({
+    orderBy: (p, { desc }) => [desc(p.fechaInicio)],
+  });
+  if (reciente) return { desde: reciente.fechaInicio, hasta: reciente.fechaFin };
+
+  const hace30 = new Date();
+  hace30.setDate(hace30.getDate() - 30);
+  return { desde: hace30.toISOString().split("T")[0], hasta: hoyStr };
+}
+
 export async function getPeriodosRecientes(limit = 10) {
   return db.query.periodos.findMany({
     orderBy: (p, { desc }) => [desc(p.fechaInicio)],

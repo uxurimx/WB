@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Plus, Trash2, Check, X, Shield, Users } from "lucide-react";
 import type { NavPermission } from "@/lib/permissions";
 import { updateRolePerms, createRole, deleteRole } from "@/app/actions/admin";
+import TableScroll from "@/components/ui/table-scroll";
 
 const PERMISOS: { key: NavPermission; label: string; desc: string }[] = [
   { key: "dashboard",          label: "Dashboard",            desc: "Vista general: stock, KPIs y cargas recientes" },
@@ -228,7 +229,7 @@ export default function RolesTab({
 
         {/* Tabla de permisos editable */}
         <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
-          <div className="overflow-x-auto">
+          <TableScroll>
             <table className="w-full text-sm min-w-[600px]">
               <thead>
                 <tr style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
@@ -301,7 +302,7 @@ export default function RolesTab({
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         </div>
 
         <p className="text-xs mt-2 px-1" style={{ color: "var(--fg-muted)" }}>

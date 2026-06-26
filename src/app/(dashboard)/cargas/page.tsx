@@ -4,70 +4,66 @@ import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { ClipboardList, PlusCircle, Fuel } from "lucide-react";
 import { requirePermission } from "@/lib/server-guard";
-import { getCargas, getHistorialGlobalStats } from "@/app/actions/cargas";
+import { getCargasPage, getHistorialGlobalStats } from "@/app/actions/cargas";
 import { getOperadores, getObras } from "@/app/actions/catalogo";
 import { getTransferencias, getRecargasTanque } from "@/app/actions/tanques";
+import { getPeriodoActualRange } from "@/app/actions/periodos";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CargasTable, {
-  type CargaItem, type TransferenciaItem, type RecargaItem, type HistorialItem,
+  type TransferenciaItem, type RecargaItem,
 } from "@/components/cargas/CargasTable";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
+const PAGE_SIZE = 50;
 
 export default async function HistorialCargasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ origen?: string; unidadId?: string; desde?: string; hasta?: string }>;
+  searchParams: Promise<{ origen?: string; unidadId?: string; desde?: string; hasta?: string; todo?: string }>;
 }) {
   await requirePermission("cargas.historial");
 
   const params = await searchParams;
   const origen = params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined;
-  const soloCargas = !!origen;
-  const desde = params.desde ?? "";
-  const hasta = params.hasta ?? "";
-  const hasFiltroFecha = !!(desde || hasta);
+  const unidadId = params.unidadId ? parseInt(params.unidadId) : undefined;
 
+  // Ventana de fechas: explícita (desde/hasta) > todo el historial (?todo=1) > período actual (default)
+  const todo = params.todo === "1";
+  const explicitDesde = params.desde ?? "";
+  const explicitHasta = params.hasta ?? "";
+  const hasExplicit = !!(explicitDesde || explicitHasta);
+
+  let desde = "";
+  let hasta = "";
+  let isDefaultWindow = false;
+  if (todo) {
+    // sin ventana → todo el historial (paginado)
+  } else if (hasExplicit) {
+    desde = explicitDesde;
+    hasta = explicitHasta;
+  } else {
+    const range = await getPeriodoActualRange();
+    desde = range.desde;
+    hasta = range.hasta;
+    isDefaultWindow = true;
+  }
+  const hasFiltroFecha = !!(desde || hasta);
   const dateOpts = { fechaDesde: desde || undefined, fechaHasta: hasta || undefined };
 
-  // Siempre carga todo el historial (sin paginación) para que búsqueda y filtros
-  // operen sobre todos los registros, no solo una página
-  const [{ rows: cargas, total: totalCargas }, operadores, obras, clerkUser, transferencias, recargas, globalStats] = await Promise.all([
-    getCargas({ origen, unidadId: params.unidadId ? parseInt(params.unidadId) : undefined, limit: 9999, offset: 0, ...dateOpts }),
+  // Cargas: primera página (server-side). Recargas/transferencias son pocas → se cargan
+  // completas dentro de la ventana y se filtran/intercalan en el cliente.
+  const [cargasPage, operadores, obras, clerkUser, transferencias, recargas, globalStats] = await Promise.all([
+    getCargasPage({ origen, unidadId, limit: PAGE_SIZE, offset: 0, ...dateOpts }),
     getOperadores(false),
     getObras(false),
     currentUser(),
-    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getTransferencias>>) : getTransferencias(9999, dateOpts),
-    soloCargas ? Promise.resolve([] as Awaited<ReturnType<typeof getRecargasTanque>>) : getRecargasTanque(9999, dateOpts),
+    getTransferencias(5000, dateOpts),
+    getRecargasTanque(5000, dateOpts),
     getHistorialGlobalStats(),
   ]);
 
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
-
-  const cargaItems: CargaItem[] = cargas.map((c) => ({
-    _tipo: "carga",
-    id: c.id,
-    fecha: c.fecha,
-    hora: c.hora,
-    folio: c.folio,
-    litros: c.litros,
-    origen: c.origen,
-    tipoDiesel: c.tipoDiesel,
-    notas: c.notas,
-    operadorId: c.operadorId,
-    obraId: c.obraId,
-    odometroHrs: c.odometroHrs ?? null,
-    cuentaLtInicio: c.cuentaLtInicio ?? null,
-    cuentaLtFin: c.cuentaLtFin ?? null,
-    kmEstimado: c.kmEstimado ?? false,
-    periodoId: c.periodoId ?? null,
-    periodoCerrado: c.periodo?.cerrado ?? false,
-    unidad: c.unidad ? { codigo: c.unidad.codigo } : null,
-    operador: c.operador ? { nombre: c.operador.nombre } : null,
-    obra: c.obra ? { nombre: c.obra.nombre } : null,
-    fotoUrl: c.archivos?.[0]?.url ?? null,
-  }));
 
   const transfItems: TransferenciaItem[] = transferencias.map((t) => ({
     _tipo: "transferencia",
@@ -95,12 +91,8 @@ export default async function HistorialCargasPage({
     notas: r.notas,
   }));
 
-  const items: HistorialItem[] = [...cargaItems, ...transfItems, ...recargaItems].sort(
-    (a, b) => b.fecha.localeCompare(a.fecha)
-  );
-
   return (
-    <div className="p-6 md:p-8 max-w-6xl">
+    <div className="p-6 md:p-8 max-w-[1536px]">
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
@@ -114,8 +106,10 @@ export default async function HistorialCargasPage({
           </div>
           <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>Historial</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--fg-muted)" }}>
-            {hasFiltroFecha
-              ? `${totalCargas.toLocaleString()} cargas en el rango seleccionado`
+            {isDefaultWindow
+              ? `Período actual · ${cargasPage.total.toLocaleString()} cargas`
+              : hasFiltroFecha
+              ? `${cargasPage.total.toLocaleString()} cargas en el rango seleccionado`
               : `${globalStats.cargas.total.toLocaleString()} cargas · ${globalStats.recargas.total.toLocaleString()} recargas · ${globalStats.transferencias.total.toLocaleString()} transferencias`
             }
           </p>
@@ -132,11 +126,18 @@ export default async function HistorialCargasPage({
 
       {/* Filtros de origen */}
       <div className="flex gap-2 mb-5 flex-wrap">
-        {[
-          { label: "Todas", href: desde || hasta ? `/cargas?desde=${desde}&hasta=${hasta}` : "/cargas", active: !origen },
-          { label: "Patio", href: desde || hasta ? `/cargas?origen=patio&desde=${desde}&hasta=${hasta}` : "/cargas?origen=patio", active: origen === "patio" },
-          { label: "Campo", href: desde || hasta ? `/cargas?origen=campo&desde=${desde}&hasta=${hasta}` : "/cargas?origen=campo", active: origen === "campo" },
-        ].map(({ label, href, active }) => (
+        {(() => {
+          const windowQs = todo ? "todo=1" : hasExplicit ? `desde=${desde}&hasta=${hasta}` : "";
+          const withOrigen = (o?: string) => {
+            const parts = [o ? `origen=${o}` : "", windowQs].filter(Boolean);
+            return `/cargas${parts.length ? `?${parts.join("&")}` : ""}`;
+          };
+          return [
+            { label: "Todas", href: withOrigen(), active: !origen },
+            { label: "Patio", href: withOrigen("patio"), active: origen === "patio" },
+            { label: "Campo", href: withOrigen("campo"), active: origen === "campo" },
+          ];
+        })().map(({ label, href, active }) => (
           <Link key={label} href={href}>
             <Badge variant={active ? "default" : "secondary"} className="cursor-pointer text-sm px-3 py-1">
               {label}
@@ -146,12 +147,22 @@ export default async function HistorialCargasPage({
       </div>
 
       <CargasTable
-        items={items}
+        key={`${origen ?? "all"}|${todo ? "todo" : `${desde}_${hasta}`}|${unidadId ?? ""}`}
+        initialCargas={cargasPage.items}
+        cargasTotal={cargasPage.total}
+        cargasLitros={cargasPage.litros}
+        cargasUnidades={cargasPage.unidades}
+        recargas={recargaItems}
+        transferencias={transfItems}
         operadores={operadores}
         obras={obras}
         canEdit={canEdit}
-        globalStats={globalStats}
+        pageSize={PAGE_SIZE}
+        origen={origen}
+        unidadId={unidadId}
         hasFiltroFecha={hasFiltroFecha}
+        isDefaultWindow={isDefaultWindow}
+        todo={todo}
         desde={desde}
         hasta={hasta}
       />
