@@ -141,7 +141,7 @@ export default function PoxelBitDashboard({
   ];
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl">
+    <div className="p-4 md:p-8 max-w-[1536px]">
 
       {/* ── Header ────────────────────────────────────────────── */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

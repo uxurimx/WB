@@ -14,6 +14,9 @@ const PERMISOS: { key: NavPermission; label: string; desc: string }[] = [
   { key: "cargas.nueva_campo", label: "Carga Campo",          desc: "Registra cargas desde el tanque NISSAN" },
   { key: "catalogo",           label: "Catálogos",            desc: "Gestiona unidades, operadores y obras" },
   { key: "periodos",           label: "Períodos / Análisis",  desc: "Accede a análisis por período" },
+  { key: "tanques",            label: "Tanques",              desc: "Control de inventario, historial y conciliación de tanques" },
+  { key: "analiticas",         label: "Analíticas",           desc: "Estadísticas avanzadas y métricas históricas" },
+  { key: "poxelbit",           label: "PoxelBit",             desc: "Portal de soporte y tickets de desarrollo" },
   { key: "admin",              label: "Administración",        desc: "Panel de administración del sistema" },
 ];
 

@@ -15,7 +15,7 @@ export default async function OperadoresPage() {
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl">
+    <div className="p-6 md:p-8 max-w-[1536px]">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
           <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">

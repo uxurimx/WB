@@ -17,7 +17,7 @@ export default async function AdminPage() {
   const activos = usuariosList.filter((u) => u.activo).length;
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl">
+    <div className="p-6 md:p-8 max-w-[1536px]">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">

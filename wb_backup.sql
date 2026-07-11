@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict XKyr3ntvQt8b84VSp9A8mRgPzQMNTn9oFWxApUiBdfXFnEnA2FLyYmZ0WRh4pdx
+\restrict DOahy3zQSuMKR8MMxwdH6al4RwSOg3i0wdBY1LldQ3oCpHbIOafVfzqqXQI6swL
 
--- Dumped from database version 17.10 (8e4c665)
+-- Dumped from database version 17.10 (986efc8)
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -1065,6 +1065,147 @@ COPY public.analytics_events (id, session_id, type, element, x_pct, y_pct, value
 97	dafa4aa4-5a12-494b-8aa9-94dfee579f9b	scroll	\N	\N	\N	75	2026-05-29 17:37:14.764369
 98	dafa4aa4-5a12-494b-8aa9-94dfee579f9b	scroll	\N	\N	\N	100	2026-05-29 17:37:39.20779
 99	dafa4aa4-5a12-494b-8aa9-94dfee579f9b	click	PoxelBit	79	99	\N	2026-05-29 17:37:46.400806
+100	9ed3497d-1e51-4efe-8584-f876f938ddcc	scroll	\N	\N	\N	25	2026-06-06 17:18:37.033182
+101	9ed3497d-1e51-4efe-8584-f876f938ddcc	scroll	\N	\N	\N	50	2026-06-06 17:18:37.57585
+102	9ed3497d-1e51-4efe-8584-f876f938ddcc	scroll	\N	\N	\N	75	2026-06-06 17:18:37.926616
+103	9ed3497d-1e51-4efe-8584-f876f938ddcc	scroll	\N	\N	\N	100	2026-06-06 17:18:38.04348
+104	9ed3497d-1e51-4efe-8584-f876f938ddcc	click	Teléfono / WhatsApp 818 465 6755 Monterrey, Nuevo León · Lun–Vie 8–18 hrs	25	71	\N	2026-06-06 17:19:23.195031
+105	9acf80f4-02b0-49c0-a4a3-d7fccd78e3a8	scroll	\N	\N	\N	25	2026-06-09 03:38:49.340133
+106	9acf80f4-02b0-49c0-a4a3-d7fccd78e3a8	click	Camionesde Volteo Acarreo de tierra, grava y materiales. Disponibilidad inmediat	16	43	\N	2026-06-09 03:38:52.380601
+107	9acf80f4-02b0-49c0-a4a3-d7fccd78e3a8	click	Camionesde Volteo Acarreo de tierra, grava y materiales. Disponibilidad inmediat	17	44	\N	2026-06-09 03:38:54.062318
+108	9acf80f4-02b0-49c0-a4a3-d7fccd78e3a8	scroll	\N	\N	\N	50	2026-06-09 03:38:55.081962
+109	9acf80f4-02b0-49c0-a4a3-d7fccd78e3a8	scroll	\N	\N	\N	50	2026-06-09 03:39:02.348178
+110	9acf80f4-02b0-49c0-a4a3-d7fccd78e3a8	scroll	\N	\N	\N	25	2026-06-09 03:39:02.371775
+111	b2876ac6-7067-4fa0-8b34-f4726588f984	scroll	\N	\N	\N	25	2026-06-09 21:49:08.093123
+112	4ed63f7f-1518-4310-b0ac-80f969597294	scroll	\N	\N	\N	25	2026-06-09 21:50:23.634818
+113	4ed63f7f-1518-4310-b0ac-80f969597294	scroll	\N	\N	\N	50	2026-06-09 21:50:26.170733
+115	4ed63f7f-1518-4310-b0ac-80f969597294	scroll	\N	\N	\N	75	2026-06-09 22:09:02.002213
+114	4ed63f7f-1518-4310-b0ac-80f969597294	scroll	\N	\N	\N	100	2026-06-09 22:09:02.017893
+116	dae5c103-742c-480a-a31b-d74c5b348106	click	Ver servicios	40	27	\N	2026-06-10 18:29:34.702674
+117	dae5c103-742c-480a-a31b-d74c5b348106	scroll	\N	\N	\N	25	2026-06-10 18:29:34.99975
+118	dae5c103-742c-480a-a31b-d74c5b348106	scroll	\N	\N	\N	50	2026-06-10 18:29:35.908027
+119	ab829ceb-4de6-4e1d-b699-608dba9b1b75	scroll	\N	\N	\N	25	2026-06-10 21:45:44.029872
+120	ab829ceb-4de6-4e1d-b699-608dba9b1b75	scroll	\N	\N	\N	50	2026-06-10 21:45:47.558991
+121	ab829ceb-4de6-4e1d-b699-608dba9b1b75	scroll	\N	\N	\N	75	2026-06-10 21:45:48.562327
+122	ab829ceb-4de6-4e1d-b699-608dba9b1b75	scroll	\N	\N	\N	100	2026-06-10 21:45:50.420943
+123	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	Servicios	63	1	\N	2026-06-10 21:45:54.313869
+124	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	Cobertura	69	36	\N	2026-06-10 21:45:55.757045
+125	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	Servicios	62	59	\N	2026-06-10 21:45:57.48113
+126	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	a	19	1	\N	2026-06-10 21:46:00.22104
+127	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	Ver servicios	42	27	\N	2026-06-10 21:46:05.291174
+128	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	ConstrucciónComercial Obras comerciales e industriales. Supervisión técnica de i	24	49	\N	2026-06-10 21:46:06.151998
+129	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	ConstrucciónComercial Obras comerciales e industriales. Supervisión técnica de i	24	53	\N	2026-06-10 21:46:08.57755
+130	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	ConstrucciónComercial Obras comerciales e industriales. Supervisión técnica de i	25	50	\N	2026-06-10 21:46:09.550381
+131	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	ConstrucciónComercial Obras comerciales e industriales. Supervisión técnica de i	25	50	\N	2026-06-10 21:46:09.740436
+132	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	WB Renta deMaquinaria Retroexcavadoras, cargadores y equipo especializado con o 	40	51	\N	2026-06-10 21:46:10.157935
+133	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	Camionesde Volteo Acarreo de tierra, grava y materiales. Disponibilidad inmediat	57	50	\N	2026-06-10 21:46:10.629619
+134	ab829ceb-4de6-4e1d-b699-608dba9b1b75	click	Excavación Excavaciones de cimentación, zanjas y terracería con maquinaria de al	82	51	\N	2026-06-10 21:46:11.229474
+135	a9407178-a399-4955-af62-35b99288b209	scroll	\N	\N	\N	25	2026-06-10 21:47:10.072409
+136	a9407178-a399-4955-af62-35b99288b209	scroll	\N	\N	\N	50	2026-06-10 21:47:10.895578
+137	a9407178-a399-4955-af62-35b99288b209	scroll	\N	\N	\N	75	2026-06-10 21:47:10.927634
+138	a9407178-a399-4955-af62-35b99288b209	click	button	94	74	\N	2026-06-10 21:47:11.700155
+139	a9407178-a399-4955-af62-35b99288b209	click	Cobertura	20	3	\N	2026-06-10 21:47:16.744996
+140	a9407178-a399-4955-af62-35b99288b209	click	button	93	24	\N	2026-06-10 21:47:19.954804
+141	a9407178-a399-4955-af62-35b99288b209	click	Servicios	16	26	\N	2026-06-10 21:47:20.687589
+142	7c86a6a4-012e-46b9-8950-6188c40c8850	scroll	\N	\N	\N	25	2026-06-11 18:14:12.51995
+143	7c86a6a4-012e-46b9-8950-6188c40c8850	scroll	\N	\N	\N	50	2026-06-11 18:14:24.341444
+144	7c86a6a4-012e-46b9-8950-6188c40c8850	scroll	\N	\N	\N	75	2026-06-11 18:14:25.589618
+145	7c86a6a4-012e-46b9-8950-6188c40c8850	click	button	92	1	\N	2026-06-11 18:14:31.753796
+146	7c86a6a4-012e-46b9-8950-6188c40c8850	click	Servicios	10	2	\N	2026-06-11 18:14:34.355941
+147	7c86a6a4-012e-46b9-8950-6188c40c8850	click	ConstrucciónComercial Obras comerciales e industriales. Supervisión técnica de i	18	34	\N	2026-06-11 18:14:35.920597
+148	dc68f6a0-d088-4317-b51d-c84461fe5b99	scroll	\N	\N	\N	25	2026-06-12 20:48:33.041351
+149	dc68f6a0-d088-4317-b51d-c84461fe5b99	scroll	\N	\N	\N	50	2026-06-12 20:48:33.372314
+150	dc68f6a0-d088-4317-b51d-c84461fe5b99	scroll	\N	\N	\N	75	2026-06-12 20:48:36.037662
+151	dc68f6a0-d088-4317-b51d-c84461fe5b99	scroll	\N	\N	\N	100	2026-06-12 20:48:36.549879
+152	3a3643e9-18f8-486f-82e6-d89ed817c4a8	scroll	\N	\N	\N	25	2026-06-13 00:43:13.312088
+153	3a3643e9-18f8-486f-82e6-d89ed817c4a8	scroll	\N	\N	\N	50	2026-06-13 00:43:15.662886
+154	22a957f7-dd48-4529-9709-962ee7d549ee	scroll	\N	\N	\N	25	2026-06-16 21:26:37.617927
+155	22a957f7-dd48-4529-9709-962ee7d549ee	scroll	\N	\N	\N	50	2026-06-16 21:26:39.961638
+156	22a957f7-dd48-4529-9709-962ee7d549ee	scroll	\N	\N	\N	75	2026-06-16 21:26:49.92293
+157	22a957f7-dd48-4529-9709-962ee7d549ee	scroll	\N	\N	\N	100	2026-06-16 21:26:53.694416
+158	22a957f7-dd48-4529-9709-962ee7d549ee	click	Sede principal Monterrey Nuevo León, México	69	60	\N	2026-06-16 21:27:18.497101
+159	22a957f7-dd48-4529-9709-962ee7d549ee	click	Sede principal Monterrey Nuevo León, México	37	60	\N	2026-06-16 21:27:21.014192
+160	22a957f7-dd48-4529-9709-962ee7d549ee	click	button	91	1	\N	2026-06-16 21:27:31.3446
+161	22a957f7-dd48-4529-9709-962ee7d549ee	click	button	89	1	\N	2026-06-16 21:27:33.107389
+162	99bf3899-e685-479b-89bf-87571acf907a	click	button	90	1	\N	2026-06-17 19:35:33.060916
+163	99bf3899-e685-479b-89bf-87571acf907a	click	button	92	1	\N	2026-06-17 19:35:35.171684
+164	99bf3899-e685-479b-89bf-87571acf907a	scroll	\N	\N	\N	25	2026-06-17 19:35:36.281644
+165	99bf3899-e685-479b-89bf-87571acf907a	scroll	\N	\N	\N	50	2026-06-17 19:35:55.405288
+166	99bf3899-e685-479b-89bf-87571acf907a	scroll	\N	\N	\N	75	2026-06-17 19:36:02.35994
+167	99bf3899-e685-479b-89bf-87571acf907a	scroll	\N	\N	\N	100	2026-06-17 19:36:07.089917
+168	99bf3899-e685-479b-89bf-87571acf907a	click	Sede principal Monterrey Nuevo León, México	64	60	\N	2026-06-17 19:36:13.811105
+169	99bf3899-e685-479b-89bf-87571acf907a	click	Sede principal Monterrey Nuevo León, México	34	60	\N	2026-06-17 19:36:14.827425
+170	99bf3899-e685-479b-89bf-87571acf907a	click	Sede principal Monterrey Nuevo León, México	68	60	\N	2026-06-17 19:36:15.94405
+171	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	click	Ver servicios	27	21	\N	2026-06-19 18:35:36.105128
+172	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	scroll	\N	\N	\N	25	2026-06-19 18:35:36.174732
+173	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	click	Excavación Excavaciones de cimentación, zanjas y terracería con maquinaria de al	76	44	\N	2026-06-19 18:35:44.093143
+174	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	click	WB Renta deMaquinaria Retroexcavadoras, cargadores y equipo especializado con o 	66	37	\N	2026-06-19 18:35:57.12028
+175	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	click	Camionesde Volteo Acarreo de tierra, grava y materiales. Disponibilidad inmediat	17	42	\N	2026-06-19 18:35:58.971795
+176	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	scroll	\N	\N	\N	50	2026-06-19 18:36:01.775338
+177	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	scroll	\N	\N	\N	75	2026-06-19 18:36:11.567351
+178	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	scroll	\N	\N	\N	100	2026-06-19 18:36:31.21399
+179	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	click	button	89	1	\N	2026-06-19 18:36:43.766508
+180	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	click	Cobertura	16	3	\N	2026-06-19 18:36:45.825865
+181	fa8d2cff-32b5-47d8-9b54-eb8c4095e9b0	scroll	\N	\N	\N	25	2026-06-22 22:14:20.395706
+182	fa8d2cff-32b5-47d8-9b54-eb8c4095e9b0	scroll	\N	\N	\N	50	2026-06-22 22:14:20.890205
+183	fa8d2cff-32b5-47d8-9b54-eb8c4095e9b0	scroll	\N	\N	\N	75	2026-06-22 22:14:24.310468
+184	fa8d2cff-32b5-47d8-9b54-eb8c4095e9b0	scroll	\N	\N	\N	100	2026-06-22 22:14:25.016011
+185	ef041999-ccdb-46e3-b05c-690795ad5e25	click	Ver servicios	36	27	\N	2026-06-23 17:32:52.20399
+186	ef041999-ccdb-46e3-b05c-690795ad5e25	click	Ver servicios	36	28	\N	2026-06-23 17:32:52.274432
+187	ef041999-ccdb-46e3-b05c-690795ad5e25	scroll	\N	\N	\N	25	2026-06-23 17:32:52.304197
+188	ef041999-ccdb-46e3-b05c-690795ad5e25	click	Camionesde Volteo Acarreo de tierra, grava y materiales. Disponibilidad inmediat	63	50	\N	2026-06-23 17:32:57.574459
+189	ef041999-ccdb-46e3-b05c-690795ad5e25	click	Camionesde Volteo Acarreo de tierra, grava y materiales. Disponibilidad inmediat	61	50	\N	2026-06-23 17:32:58.46156
+190	ef041999-ccdb-46e3-b05c-690795ad5e25	click	Excavación Excavaciones de cimentación, zanjas y terracería con maquinaria de al	84	50	\N	2026-06-23 17:32:59.215779
+191	ef041999-ccdb-46e3-b05c-690795ad5e25	scroll	\N	\N	\N	50	2026-06-23 17:33:00.087367
+192	ef041999-ccdb-46e3-b05c-690795ad5e25	scroll	\N	\N	\N	75	2026-06-23 17:33:01.75411
+193	e7e17007-a443-4e6d-a157-a100e1bf7628	scroll	\N	\N	\N	25	2026-06-23 18:04:32.440252
+194	e7e17007-a443-4e6d-a157-a100e1bf7628	scroll	\N	\N	\N	50	2026-06-23 18:04:32.528516
+195	e7e17007-a443-4e6d-a157-a100e1bf7628	scroll	\N	\N	\N	75	2026-06-23 18:04:33.00351
+196	e7e17007-a443-4e6d-a157-a100e1bf7628	scroll	\N	\N	\N	100	2026-06-23 18:04:33.384212
+197	e7e17007-a443-4e6d-a157-a100e1bf7628	click	Teléfono / WhatsApp 818 465 6755 Monterrey, Nuevo León · Lun–Vie 8–18 hrs	24	72	\N	2026-06-23 18:04:46.792595
+198	e7e17007-a443-4e6d-a157-a100e1bf7628	click	Correo electrónico admin2@wbco.mx	24	76	\N	2026-06-23 18:04:52.508216
+199	e7e17007-a443-4e6d-a157-a100e1bf7628	click	Servicios	59	65	\N	2026-06-23 18:06:15.046359
+200	35714994-7fbd-4a03-81d8-ddaeb3483bb6	scroll	\N	\N	\N	25	2026-06-23 19:11:16.931181
+201	35714994-7fbd-4a03-81d8-ddaeb3483bb6	scroll	\N	\N	\N	50	2026-06-23 19:11:17.505177
+202	35714994-7fbd-4a03-81d8-ddaeb3483bb6	scroll	\N	\N	\N	75	2026-06-23 19:11:21.473798
+203	35714994-7fbd-4a03-81d8-ddaeb3483bb6	scroll	\N	\N	\N	100	2026-06-23 19:29:30.085111
+204	6195db7e-3c33-4916-86a6-9d1992b5d5ef	scroll	\N	\N	\N	25	2026-06-24 08:16:34.230065
+205	6195db7e-3c33-4916-86a6-9d1992b5d5ef	scroll	\N	\N	\N	50	2026-06-24 08:16:40.34159
+206	6195db7e-3c33-4916-86a6-9d1992b5d5ef	scroll	\N	\N	\N	75	2026-06-24 08:16:43.062166
+207	b72e8c78-f826-4df6-a827-0b3279358944	click	a	11	1	\N	2026-07-01 20:14:17.914722
+208	b72e8c78-f826-4df6-a827-0b3279358944	click	a	12	1	\N	2026-07-01 20:14:19.131409
+209	b72e8c78-f826-4df6-a827-0b3279358944	click	button	92	1	\N	2026-07-01 20:14:19.728084
+210	b72e8c78-f826-4df6-a827-0b3279358944	click	button	91	1	\N	2026-07-01 20:14:21.535735
+211	b72e8c78-f826-4df6-a827-0b3279358944	scroll	\N	\N	\N	25	2026-07-01 20:14:24.093531
+212	b72e8c78-f826-4df6-a827-0b3279358944	scroll	\N	\N	\N	50	2026-07-01 20:14:26.741898
+213	b72e8c78-f826-4df6-a827-0b3279358944	scroll	\N	\N	\N	75	2026-07-01 20:14:30.52771
+214	b72e8c78-f826-4df6-a827-0b3279358944	scroll	\N	\N	\N	100	2026-07-01 20:14:33.843806
+215	2bffe295-87c2-4a55-a4f2-b1537695b7ef	scroll	\N	\N	\N	25	2026-07-01 23:16:05.797214
+216	2bffe295-87c2-4a55-a4f2-b1537695b7ef	scroll	\N	\N	\N	50	2026-07-01 23:17:57.094963
+217	2bffe295-87c2-4a55-a4f2-b1537695b7ef	scroll	\N	\N	\N	25	2026-07-01 23:18:02.847964
+218	b4e7d8dc-3f79-43b2-ad94-4ee644b428c5	click	a	28	1	\N	2026-07-02 13:38:16.032062
+219	2c0d7bb2-132e-40f1-824a-3d040feadaf3	scroll	\N	\N	\N	25	2026-07-02 13:38:19.901053
+220	2c0d7bb2-132e-40f1-824a-3d040feadaf3	scroll	\N	\N	\N	50	2026-07-02 13:38:20.185629
+221	2c0d7bb2-132e-40f1-824a-3d040feadaf3	scroll	\N	\N	\N	75	2026-07-02 13:38:20.276432
+222	2c0d7bb2-132e-40f1-824a-3d040feadaf3	scroll	\N	\N	\N	100	2026-07-02 13:38:20.651926
+223	2c0d7bb2-132e-40f1-824a-3d040feadaf3	click	覆蓋範圍	68	2	\N	2026-07-02 13:38:52.90473
+224	62679c4e-0074-477a-a092-0cc4a60d6e0b	scroll	\N	\N	\N	75	2026-07-04 19:14:26.369891
+225	62679c4e-0074-477a-a092-0cc4a60d6e0b	scroll	\N	\N	\N	50	2026-07-04 19:14:26.409229
+226	62679c4e-0074-477a-a092-0cc4a60d6e0b	scroll	\N	\N	\N	100	2026-07-04 19:14:26.5962
+227	62679c4e-0074-477a-a092-0cc4a60d6e0b	scroll	\N	\N	\N	25	2026-07-04 19:14:26.957103
+228	91c6d542-b079-43cd-96ea-9c29dc540bfb	scroll	\N	\N	\N	25	2026-07-06 10:30:06.334
+229	91c6d542-b079-43cd-96ea-9c29dc540bfb	scroll	\N	\N	\N	50	2026-07-06 10:30:06.394263
+230	91c6d542-b079-43cd-96ea-9c29dc540bfb	scroll	\N	\N	\N	75	2026-07-06 10:30:06.837841
+231	91c6d542-b079-43cd-96ea-9c29dc540bfb	scroll	\N	\N	\N	100	2026-07-06 10:30:06.932984
+232	91c6d542-b079-43cd-96ea-9c29dc540bfb	click	Servicios	62	1	\N	2026-07-06 10:31:05.043717
+233	397022c4-286a-4fe5-8437-f739543fd916	scroll	\N	\N	\N	25	2026-07-07 06:46:19.340835
+234	397022c4-286a-4fe5-8437-f739543fd916	click	a	27	33	\N	2026-07-07 06:46:22.0904
+235	5df44d88-60c0-4a26-9b14-78b559e14953	scroll	\N	\N	\N	25	2026-07-10 20:07:46.019252
+236	5df44d88-60c0-4a26-9b14-78b559e14953	click	Ver servicios	37	20	\N	2026-07-10 20:07:47.539926
+237	5df44d88-60c0-4a26-9b14-78b559e14953	scroll	\N	\N	\N	50	2026-07-10 20:07:52.483095
+238	5df44d88-60c0-4a26-9b14-78b559e14953	scroll	\N	\N	\N	75	2026-07-10 20:08:03.990405
+239	5df44d88-60c0-4a26-9b14-78b559e14953	click	Enviar cotización por WhatsApp	85	78	\N	2026-07-10 20:08:53.003813
+240	5df44d88-60c0-4a26-9b14-78b559e14953	click	818 465 6755	36	55	\N	2026-07-10 20:09:12.537376
 \.
 
 
@@ -1126,8 +1267,85 @@ COPY public.analytics_sessions (id, session_id, device_type, browser, os, screen
 51	dafa4aa4-5a12-494b-8aa9-94dfee579f9b	desktop	chrome	windows	1600	900	\N	177.226	64	100	f	2026-05-29 17:37:46.586	2026-05-29 17:36:44.078374
 52	625a10a1-ba49-4a8f-9dd2-8d49e8cdd8c4	desktop	chrome	macos	1024	898	\N	149.88	5	0	t	2026-05-30 07:29:27.507	2026-05-30 07:29:24.214201
 53	8ce55337-5a66-4bf7-9389-b5255e74995f	desktop	chrome	windows	16384	16384	\N	167.103	\N	0	t	\N	2026-06-02 12:30:58.914362
+70	0f9192ea-8e6b-4d52-8ad8-ff901b3afa76	desktop	other	ios	440	956	http://m.facebook.com	66.220	32	0	f	2026-06-15 18:33:07.258	2026-06-15 18:32:36.971916
 54	fcf51eae-af16-4ed7-9d51-f7d5e4e299e7	mobile	chrome	android	1024	1024	\N	35.88	7	0	t	2026-06-02 21:44:26.017	2026-06-02 21:44:19.639422
 55	9cf08998-4a39-4ff0-adb7-1dee5a587577	desktop	chrome	macos	1024	898	\N	158.173	3	0	t	2026-06-05 02:15:26.215	2026-06-05 02:15:25.392481
+56	9ed3497d-1e51-4efe-8584-f876f938ddcc	desktop	edge	windows	1536	864	https://www.bing.com/	201.132	51	100	f	2026-06-06 17:19:26.342	2026-06-06 17:18:37.003187
+57	8a9fa824-1487-4bf7-9c28-a27ce46f2021	mobile	opera	android	424	946	\N	186.96	\N	0	t	\N	2026-06-08 17:18:20.04936
+58	ad2d8916-3983-4a5a-878c-8fc14e68931e	mobile	opera	android	424	946	\N	186.96	3	0	t	2026-06-08 17:40:40.956	2026-06-08 17:40:39.405074
+59	bfc9c046-97e8-4179-ad79-d0f37266fb2d	desktop	edge	windows	1920	1080	\N	186.96	7	0	t	2026-06-08 20:27:54.397	2026-06-08 20:27:47.874096
+71	22a957f7-dd48-4529-9709-962ee7d549ee	mobile	safari	ios	428	926	https://l.instagram.com/	189.219	67	102	f	2026-06-16 21:27:37.25	2026-06-16 21:26:30.859286
+60	9acf80f4-02b0-49c0-a4a3-d7fccd78e3a8	mobile	safari	ios	390	844	https://l.instagram.com/	189.153	18	61	f	2026-06-09 03:39:02.131	2026-06-09 03:38:45.868938
+61	b2876ac6-7067-4fa0-8b34-f4726588f984	desktop	edge	windows	1280	720	\N	189.179	179	42	f	2026-06-09 21:52:01.796	2026-06-09 21:49:04.642544
+72	99bf3899-e685-479b-89bf-87571acf907a	mobile	safari	ios	440	956	https://l.instagram.com/	201.162	438	101	f	2026-06-17 19:42:18.43	2026-06-17 19:34:58.78691
+73	5ed73a8e-d07d-4629-98da-34562b6697d3	mobile	opera	android	424	946	\N	200.68	\N	0	t	\N	2026-06-18 13:36:52.971315
+62	4ed63f7f-1518-4310-b0ac-80f969597294	desktop	edge	windows	1280	720	\N	189.179	2721	100	f	2026-06-09 22:34:26.005	2026-06-09 21:49:04.647657
+63	dae5c103-742c-480a-a31b-d74c5b348106	desktop	firefox	linux	1600	900	\N	177.226	251	50	f	2026-06-10 18:33:37.236	2026-06-10 18:29:26.687413
+74	98d08a0b-ba9f-4fd1-9ea3-b699084e732c	mobile	opera	android	424	946	\N	200.68	\N	0	t	\N	2026-06-18 18:45:27.348596
+65	a9407178-a399-4955-af62-35b99288b209	mobile	safari	ios	393	852	https://l.instagram.com/	131.161	15	91	f	2026-06-10 21:47:23.102	2026-06-10 21:47:07.63052
+64	ab829ceb-4de6-4e1d-b699-608dba9b1b75	desktop	chrome	windows	1536	864	\N	131.161	114	100	f	2026-06-10 21:47:34.814	2026-06-10 21:45:42.458164
+66	7c86a6a4-012e-46b9-8950-6188c40c8850	mobile	safari	ios	428	926	https://l.instagram.com/	189.219	39	87	f	2026-06-11 18:14:39.428	2026-06-11 18:14:01.993262
+75	12ce35cb-4a79-4322-99bb-ddcfb1901433	mobile	opera	android	424	946	\N	200.68	9	0	t	2026-06-19 15:36:02.08	2026-06-19 15:35:55.479648
+76	c5a0ec9d-5795-485d-8968-d5b43d72c3d6	mobile	chrome	android	360	771	\N	200.63	338	100	f	2026-06-19 18:36:51.48	2026-06-19 18:31:14.694423
+67	dc68f6a0-d088-4317-b51d-c84461fe5b99	desktop	chrome	windows	1536	864	\N	131.161	93	100	f	2026-06-12 20:49:57.424	2026-06-12 20:48:25.856399
+68	3a3643e9-18f8-486f-82e6-d89ed817c4a8	mobile	safari	ios	428	926	\N	200.68	126	62	f	2026-06-13 00:44:33.658	2026-06-13 00:42:28.971369
+69	af8ada9f-63e9-4c09-9f6c-9740330078ae	mobile	opera	android	424	946	\N	200.68	14	0	f	2026-06-15 18:22:02.169	2026-06-15 18:21:49.476333
+77	dfe29d5a-be8f-4c7e-8216-a797af85aa4c	mobile	opera	android	424	946	\N	200.68	15	0	f	2026-06-20 19:37:08.128	2026-06-20 19:36:54.822758
+78	1be07589-c2bc-4049-8f9c-448beb5b1bef	desktop	edge	windows	1980	1080	https://www.bing.com/	4.255	7	0	t	2026-06-21 21:53:30.11	2026-06-21 21:53:24.373232
+79	96e4eb1d-084c-4df2-ae69-06353454ef7c	desktop	chrome	windows	1536	864	\N	131.161	4	0	t	2026-06-22 18:20:49.492	2026-06-22 18:20:46.525159
+80	848f280f-6675-4c42-9854-e7d2b5be072c	mobile	opera	android	424	946	\N	186.96	6	0	t	2026-06-22 19:02:38.69	2026-06-22 19:02:32.844609
+81	fa8d2cff-32b5-47d8-9b54-eb8c4095e9b0	desktop	chrome	windows	1536	864	\N	131.161	1541	100	f	2026-06-22 22:39:59.398	2026-06-22 22:14:19.140221
+82	ef041999-ccdb-46e3-b05c-690795ad5e25	desktop	chrome	windows	1253	783	https://l.instagram.com/	189.158	146	78	f	2026-06-23 17:35:12.274	2026-06-23 17:32:48.101532
+83	e7e17007-a443-4e6d-a157-a100e1bf7628	desktop	edge	windows	1920	1080	\N	189.248	200	100	f	2026-06-23 18:06:50.768	2026-06-23 18:03:32.512061
+84	20395d61-988b-4ebd-bb21-d33e0c28c614	desktop	chrome	macos	800	600	\N	35.87	\N	0	t	\N	2026-06-23 18:07:33.106019
+85	35714994-7fbd-4a03-81d8-ddaeb3483bb6	desktop	chrome	windows	1536	864	\N	131.161	1130	100	f	2026-06-23 19:30:01.744	2026-06-23 19:11:13.25177
+86	a8477e3f-0630-4f32-aef8-619374845273	desktop	safari	macos	800	600	\N	34.86	9	0	t	2026-06-24 01:31:21.217	2026-06-24 01:31:13.878689
+87	da128b7d-2a74-431b-a069-db79f1042fc6	desktop	chrome	windows	800	600	\N	54.71	\N	0	t	\N	2026-06-24 01:31:56.879946
+88	8758ffeb-1cfe-4c7b-8dce-881c1b497d0c	desktop	chrome	linux	800	600	\N	34.123	\N	0	t	\N	2026-06-24 02:32:15.134769
+89	00713158-ae6e-4ab7-97bb-66ec91c5deb7	desktop	chrome	linux	800	600	\N	34.72	\N	0	t	\N	2026-06-24 02:32:34.890682
+90	11798bcb-a237-45fc-aabb-42c9f03958d4	desktop	chrome	windows	1920	1080	\N	82.24	\N	0	t	\N	2026-06-24 02:38:50.131424
+91	015b6cee-613f-4db3-9818-0ac91a23d416	mobile	chrome	android	1600	1200	\N	205.169	\N	0	t	\N	2026-06-24 02:48:24.922307
+92	9826f5ce-a242-4d6b-8827-8d522eeafc84	mobile	safari	ios	1600	1200	\N	205.169	\N	0	t	\N	2026-06-24 02:48:27.267068
+93	a063ca75-de5e-47bd-be98-ddbc0d59c811	desktop	chrome	windows	800	600	https://bing.com/	205.169	\N	0	t	\N	2026-06-24 02:48:28.892116
+94	06db6696-6aaf-412b-8bb8-bc290306ca25	desktop	chrome	windows	800	600	\N	205.169	\N	0	t	\N	2026-06-24 02:51:53.855669
+95	1bfebdda-888b-4d45-a978-703de76014fd	mobile	safari	ios	390	844	\N	103.196	10	0	f	2026-06-24 03:47:44.326	2026-06-24 03:47:35.863708
+96	142eb760-34bc-4e9e-8e83-ba125a32153f	mobile	safari	ios	390	844	\N	103.196	\N	0	t	\N	2026-06-24 03:48:29.487837
+97	c4a63905-c2fd-4260-a832-68dae0a73a67	mobile	safari	ios	390	844	\N	103.196	16	0	f	2026-06-24 03:49:01.37	2026-06-24 03:48:45.746041
+98	fdc7e6a9-fde7-4f59-be75-a414112429ce	mobile	safari	ios	390	844	\N	103.4	15	0	f	2026-06-24 03:49:19.844	2026-06-24 03:49:04.913787
+99	04816253-bc96-49b6-8464-807a43569c03	mobile	safari	ios	390	844	\N	103.196	14	0	f	2026-06-24 03:49:39.838	2026-06-24 03:49:25.364751
+100	6195db7e-3c33-4916-86a6-9d1992b5d5ef	mobile	chrome	android	384	832	https://l.instagram.com/	189.159	15	95	f	2026-06-24 08:16:44.834	2026-06-24 08:16:31.177157
+101	aae36fea-dc88-4326-8373-bcc9e5018f9d	mobile	opera	android	424	946	\N	200.68	8	0	t	2026-06-24 13:07:33.935	2026-06-24 13:01:30.613097
+102	5f3661e8-9f1d-44f3-9b0e-e81aed4f6f85	mobile	opera	android	424	946	\N	200.68	\N	0	t	\N	2026-06-24 13:36:20.42739
+103	608b7879-6ffb-4349-9973-d9aa82033b7f	desktop	chrome	macos	1024	898	\N	187.190	6	0	t	2026-06-24 20:34:06.557	2026-06-24 20:34:01.886033
+104	9390a9eb-1298-44b1-9a78-2c6d51dbcd95	mobile	opera	android	424	946	\N	200.68	5	0	t	2026-06-25 23:35:33.473	2026-06-25 23:35:29.508294
+105	ddb0c034-7ab9-4697-9e56-bd92b0f11ff6	desktop	chrome	linux	1440	900	\N	202.5	8	0	t	2026-06-26 00:20:29.836	2026-06-26 00:20:23.003603
+106	bcf0003c-0066-4383-b004-57578ddcf57a	desktop	chrome	linux	800	600	\N	34.122	\N	0	t	\N	2026-06-26 05:49:33.148738
+107	2c57e25d-152b-4719-af73-30eb3812820a	mobile	opera	android	424	946	\N	200.68	8	0	t	2026-06-26 14:51:51.564	2026-06-26 14:51:45.582864
+108	83e6407f-2414-41e8-bb59-225398fa8923	desktop	chrome	windows	800	600	\N	205.169	\N	0	t	\N	2026-06-26 18:08:32.827958
+109	7fed6ed2-07ed-4c00-8ea9-c5f991d66dd0	mobile	opera	android	424	946	\N	200.68	4	0	t	2026-06-26 23:42:57.742	2026-06-26 23:42:55.604505
+110	851a24a8-2219-40d3-9106-08f2b1d2076f	mobile	chrome	android	2000	2000	https://www.facebook.com/	173.252	23	0	f	2026-06-27 03:39:56.792	2026-06-27 03:39:34.913734
+111	d68155f1-7f37-49e4-9a03-aecdf28a4061	mobile	opera	android	424	946	\N	200.68	25	0	f	2026-06-30 22:03:08.028	2026-06-30 22:02:44.813613
+113	7fd19ac8-2bd4-4ba8-920f-9beea8f3825a	mobile	safari	ios	320	693	\N	190.123	1	0	t	2026-07-01 20:14:43.959	2026-07-01 20:14:42.686833
+114	d90afbd2-077a-4ce4-bb1d-b8bd802e72e3	mobile	safari	ios	320	693	\N	190.123	2	0	t	2026-07-01 20:14:47.46	2026-07-01 20:14:45.825856
+128	e9574846-1caa-48fa-adb0-666346088cfb	desktop	chrome	windows	1920	1080	https://www.wbconstruccion.mx/?fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGn2viOK1m-H-TEH1E8KWzUTqapxOwj25DaLpm57RID7AwH5kQleCfsVHHKaNQ_aem_YrSv0cpttPv3FESqeVX4_w&utm_content=link_in_bio&utm_medium=social&utm_source=ig	210.242	136	0	f	2026-07-07 06:48:45.982	2026-07-07 06:46:22.252536
+112	b72e8c78-f826-4df6-a827-0b3279358944	mobile	safari	ios	320	693	https://l.instagram.com/	190.123	43	101	f	2026-07-01 20:14:59.272	2026-07-01 20:14:17.66829
+117	b4e7d8dc-3f79-43b2-ad94-4ee644b428c5	desktop	chrome	windows	1920	1080	https://l.instagram.com/	210.242	83	0	f	2026-07-02 13:39:34.364	2026-07-02 13:38:12.634466
+118	2c0d7bb2-132e-40f1-824a-3d040feadaf3	desktop	chrome	windows	1920	1080	https://www.wbconstruccion.mx/?fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGn2viOK1m-H-TEH1E8KWzUTqapxOwj25DaLpm57RID7AwH5kQleCfsVHHKaNQ_aem_YrSv0cpttPv3FESqeVX4_w&utm_content=link_in_bio&utm_medium=social&utm_source=ig	210.242	79	100	f	2026-07-02 13:39:34.891	2026-07-02 13:38:15.813405
+115	2bffe295-87c2-4a55-a4f2-b1537695b7ef	mobile	safari	ios	320	693	https://l.instagram.com/	190.123	123	61	f	2026-07-01 23:18:01.96	2026-07-01 23:16:00.765688
+116	d1456edf-6a1c-480b-a2e0-bf73234f2315	mobile	opera	android	424	946	\N	200.68	6	0	t	2026-07-02 13:13:21.037	2026-07-02 13:13:16.443837
+120	36ba7d57-4cb9-4abb-8dfd-58722b30d571	desktop	chrome	windows	1920	1080	\N	210.242	6	0	t	2026-07-02 13:39:50.547	2026-07-02 13:39:44.107385
+119	c0eb9250-0e6f-4f0c-904b-047bfcb7e576	desktop	chrome	windows	1920	1080	https://www.wbconstruccion.mx/?fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGn2viOK1m-H-TEH1E8KWzUTqapxOwj25DaLpm57RID7AwH5kQleCfsVHHKaNQ_aem_YrSv0cpttPv3FESqeVX4_w&utm_content=link_in_bio&utm_medium=social&utm_source=ig	210.242	1136	0	f	2026-07-02 13:58:29.448	2026-07-02 13:39:32.626104
+121	3ff38ac1-7ba7-40ff-a43c-b1ee612c2899	mobile	opera	android	424	946	\N	200.68	5	0	t	2026-07-03 23:34:15.242	2026-07-03 23:34:11.841199
+122	62679c4e-0074-477a-a092-0cc4a60d6e0b	desktop	chrome	linux	1920	890	\N	149.57	\N	0	t	\N	2026-07-04 19:14:20.862451
+123	f3d71586-3374-4c91-a1d6-6f97f6c8306f	mobile	opera	android	424	946	\N	186.96	4	0	t	2026-07-04 20:11:26.457	2026-07-04 20:11:23.622321
+124	782823ff-8806-46e0-b37b-331c3f1d45bd	desktop	chrome	windows	1489	838	\N	210.242	246	0	f	2026-07-06 10:31:09.975	2026-07-06 10:27:05.756804
+127	397022c4-286a-4fe5-8437-f739543fd916	desktop	chrome	windows	1920	1080	\N	210.242	244	48	f	2026-07-07 06:47:28.946	2026-07-07 06:43:26.372203
+132	97c6f4ae-8c9e-4dcb-b411-542d682bac55	desktop	chrome	linux	1680	1050	\N	45.174	9	0	t	2026-07-11 01:43:05.147	2026-07-11 01:42:57.806935
+129	21b0d7a2-55cb-4f73-afc8-da6bdba36a7a	desktop	chrome	windows	1920	1080	\N	210.242	15	0	f	2026-07-07 06:49:03.409	2026-07-07 06:48:47.932481
+125	91c6d542-b079-43cd-96ea-9c29dc540bfb	desktop	chrome	windows	1489	838	\N	210.242	206	100	f	2026-07-06 10:33:28.803	2026-07-06 10:30:02.609706
+126	76e73ab7-ef25-4466-a65a-fd4922fb00f7	desktop	chrome	windows	1489	838	\N	210.242	4	0	t	2026-07-07 05:31:21.528	2026-07-07 05:31:18.989714
+130	8bc9336a-6412-45fd-9504-251474fddfef	mobile	opera	android	424	946	\N	200.68	3	0	t	2026-07-10 13:30:55.668	2026-07-10 13:30:54.027915
+131	5df44d88-60c0-4a26-9b14-78b559e14953	mobile	chrome	android	412	892	https://l.instagram.com/	201.175	92	93	f	2026-07-10 20:09:14.23	2026-07-10 20:07:43.145832
 \.
 
 
@@ -1149,6 +1367,14 @@ COPY public.audit_log (id, usuario_id, accion, entidad, entidad_id, datos_json, 
 1	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	60:197	{"motivo":"update_carga","cargaId":2779,"cambios":{"fecha":"2026-05-07","hora":"09:07","folio":11595,"litros":50,"odometroHrs":21911,"cuentaLtInicio":5247,"cuentaLtFin":5295,"operadorId":240,"obraId":152,"notas":null}}	2026-05-15 17:07:41.192426
 2	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	63:234	{"motivo":"update_carga","cargaId":2887,"cambios":{"fecha":"2026-05-13","hora":"15:20","folio":11835,"litros":240,"odometroHrs":3686.6,"cuentaLtInicio":914880,"cuentaLtFin":915130,"operadorId":271,"obraId":144,"notas":"No se lleno el tanque kedo ariva de 3/4"}}	2026-05-22 12:02:55.429842
 3	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	63:234	{"motivo":"update_carga","cargaId":2887,"cambios":{"fecha":"2026-05-13","hora":"15:20","folio":11835,"litros":1,"odometroHrs":3686.6,"cuentaLtInicio":914880,"cuentaLtFin":915130,"operadorId":271,"obraId":144,"notas":"No se lleno el tanque kedo ariva de 3/4\\nSe retiran 260 litros el 22 de mayo , 100 al camion 12 directo en yogas , 160 se fueron a la nissan"}}	2026-05-22 12:04:57.679191
+4	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	68:215	{"motivo":"update_carga","cargaId":3632,"cambios":{"fecha":"2026-06-15","folio":442650000,"litros":185,"odometroHrs":50432,"cuentaLtInicio":null,"cuentaLtFin":null,"operadorId":null,"obraId":null,"notas":"[OXXOGAS] SE RELLENAN 185 LITROS DE OXXOGAS, PREVIAMENTE HABIAMOS RETIRADO 200 LITROS DE ESTE CAMION  ( QUEDARON DE STOCK )"}}	2026-06-20 17:28:33.06604
+5	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	68:215	{"motivo":"update_carga","cargaId":3632,"cambios":{"fecha":"2026-06-15","folio":442650000,"litros":185,"odometroHrs":null,"cuentaLtInicio":null,"cuentaLtFin":null,"operadorId":null,"obraId":null,"notas":"[OXXOGAS] SE RELLENAN 185 LITROS DE OXXOGAS, PREVIAMENTE HABIAMOS RETIRADO 200 LITROS DE ESTE CAMION  ( QUEDARON DE STOCK )"}}	2026-06-20 17:29:30.133274
+6	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	68:242	{"motivo":"update_carga","cargaId":3627,"cambios":{"fecha":"2026-06-19","hora":"16:00","folio":13903,"litros":10,"odometroHrs":3537,"cuentaLtInicio":2625653,"cuentaLtFin":2625663,"operadorId":252,"obraId":null,"notas":"Kms 3537"}}	2026-06-24 00:45:10.50954
+7	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	68:212	{"motivo":"update_carga","cargaId":3614,"cambios":{"fecha":"2026-06-19","hora":"09:55","folio":13899,"litros":100,"odometroHrs":0,"cuentaLtInicio":2624214,"cuentaLtFin":2624314,"operadorId":255,"obraId":null,"notas":null}}	2026-06-24 00:48:52.708802
+8	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	69:226	{"motivo":"update_carga","cargaId":3776,"cambios":{"fecha":"2026-06-26","litros":1,"odometroHrs":59831,"cuentaLtInicio":null,"cuentaLtFin":null,"operadorId":null,"obraId":162,"notas":"[Externo]"}}	2026-06-27 17:55:41.047298
+9	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	69:226	{"motivo":"update_carga","cargaId":3776,"cambios":{"fecha":"2026-06-26","litros":1,"odometroHrs":57831,"cuentaLtInicio":null,"cuentaLtFin":null,"operadorId":null,"obraId":162,"notas":"[Externo]"}}	2026-06-27 17:56:33.192239
+10	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	71:203	{"motivo":"update_carga","cargaId":3803,"cambios":{"fecha":"2026-06-29","hora":"17:46","folio":12467,"litros":120,"odometroHrs":131831,"cuentaLtInicio":2639189,"cuentaLtFin":2639309,"operadorId":242,"obraId":null,"notas":"SE CAMBIA VALVULA REPARTIDORA DE AIRE\\n"}}	2026-07-04 20:45:11.290282
+11	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	71:203	{"motivo":"update_carga","cargaId":3802,"cambios":{"fecha":"2026-06-29","hora":"17:46","folio":12467,"litros":120,"odometroHrs":131831,"cuentaLtInicio":2639189,"cuentaLtFin":2639309,"operadorId":250,"obraId":null,"notas":null}}	2026-07-04 20:45:53.821268
 \.
 
 
@@ -1912,6 +2138,708 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 3338	2026-06-05	17:47:00	11908	66	214	257	143	30	16	30	67057	931440	931470	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-05 23:49:36.536598	253	257	f
 3339	2026-06-05	17:49:00	11909	66	252	272	143	30	16	90	1617	931470	931560	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-05 23:51:06.331647	253	272	f
 3340	2026-06-05	17:51:00	11910	66	212	255	170	30	16	70	48181	931560	931630	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-05 23:54:09.395425	253	255	f
+3341	2026-06-05	16:16:00	13679	66	213	256	\N	29	15	5	1.370077e+06	2.601442e+06	2.601447e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-05 23:58:02.760188	\N	\N	f
+3342	2026-06-06	00:58:00	13680	67	213	256	\N	29	15	100	1.370077e+06	2.601447e+06	2.601547e+06	patio	normal	Carga POSTFECHADA para sábado , nivel muy bajo 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-05 23:59:19.418209	\N	\N	f
+3343	2026-06-05	\N	\N	66	211	\N	162	31	\N	1	35522	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:02:08.67096	\N	\N	f
+3344	2026-06-06	00:02:00	13681	67	211	254	\N	29	15	100	35522	2.601547e+06	2.601647e+06	patio	normal	Postfechado para sábado 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:03:13.144582	\N	\N	f
+3345	2026-06-05	16:50:00	13682	66	229	269	\N	29	15	100	791200	2.601647e+06	2.601747e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:05:04.530772	\N	\N	f
+3346	2026-06-05	17:11:00	13683	66	209	251	\N	29	15	1	44129	2.601747e+06	2.601748e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:07:14.27383	\N	\N	f
+3348	2026-06-05	\N	\N	66	197	\N	162	31	\N	1	24459	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:11:28.203717	\N	\N	f
+3349	2026-06-06	00:00:00	13685	67	197	240	\N	29	15	100	24459	2.601827e+06	2.601927e+06	patio	normal	Carga postfechada sábado 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:12:49.427009	\N	\N	f
+3350	2026-06-05	17:40:00	13686	66	205	247	\N	29	15	20	20293	2.601927e+06	2.601947e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:14:42.798427	\N	\N	f
+3351	2026-06-06	00:00:00	13687	67	205	247	\N	29	15	50	20293	2.601948e+06	2.601998e+06	patio	normal	Carga postfechada sábado 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:16:46.145476	\N	\N	f
+3352	2026-06-05	17:50:00	13688	66	232	267	\N	29	15	30	480058	2.601999e+06	2.602029e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:17:45.026385	\N	\N	f
+3353	2026-06-05	17:56:00	13689	66	226	266	\N	29	15	60	54435	2.602029e+06	2.602089e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:21:15.024282	\N	\N	f
+3354	2026-06-06	00:00:00	13690	67	226	266	\N	29	15	80	54435	2.602089e+06	2.602169e+06	patio	normal	NOTA POSTFECHADA, CAMION CON 140 LITROS QUEDA ABAJITO DE MEDIO TANQUE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:23:29.140852	\N	\N	f
+3355	2026-06-05	18:08:00	13691	66	202	244	\N	29	15	70	69781	2.602169e+06	2.602239e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:24:00.446353	\N	\N	f
+3356	2026-06-05	18:23:00	13692	66	228	268	\N	29	15	90	5738	2.60224e+06	2.60233e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:28:01.571716	\N	\N	f
+3357	2026-06-05	18:34:00	13693	66	242	252	\N	29	15	1	46118	2.60233e+06	2.602331e+06	patio	normal	kms reales 1155	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:29:04.788503	\N	\N	f
+3358	2026-06-06	00:00:00	13694	67	242	252	\N	29	15	90	46119	2.602328e+06	2.602418e+06	patio	normal	CARGA POSTFECHADA , NIVEL DEMASIADO BAJO, CAMION CARGADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:30:00.742982	\N	\N	f
+3359	2026-06-05	18:46:00	13695	66	206	248	\N	29	15	1	518919	2.602421e+06	2.602422e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:31:13.870141	\N	\N	f
+3360	2026-06-06	12:00:00	13696	67	206	248	\N	29	15	100	518919	2.602422e+06	2.602522e+06	patio	normal	CARGA POSTFECHADA, NIVEL DEMASIADO BAJO 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:32:00.689058	\N	\N	f
+3361	2026-06-05	18:59:00	13697	66	199	258	\N	29	15	60	138357	2.602522e+06	2.602582e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:32:54.84727	\N	\N	f
+3362	2026-06-06	12:00:00	13698	67	199	258	\N	29	15	50	138357	2.602582e+06	2.602632e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:33:17.944847	\N	\N	f
+3363	2026-06-05	19:07:00	13699	66	204	246	\N	29	15	100	443941	2.602632e+06	2.602732e+06	patio	normal	BUEN RENDIMIENTO, NO CARGA SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 01:34:13.98364	\N	\N	f
+3364	2026-06-06	07:02:00	11911	67	202	244	146	30	16	100	69829	931630	931730	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-06 13:04:11.057406	253	244	f
+3365	2026-06-06	07:04:00	11912	67	198	241	146	30	16	150	80867	931730	931880	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-06 13:05:34.883483	253	241	f
+3366	2026-06-05	\N	\N	66	208	\N	162	31	\N	1	1.032201e+06	\N	\N	externo	normal	[Externo] CORTE KMS	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 16:09:40.183818	\N	\N	f
+3368	2026-06-05	\N	\N	66	198	\N	162	31	\N	1	80855	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 16:28:51.19288	\N	\N	f
+3369	2026-06-05	\N	\N	66	252	\N	162	31	\N	1	1639	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 17:02:55.287711	\N	\N	f
+3370	2026-06-05	\N	\N	66	203	\N	162	31	\N	1	128827	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 17:43:45.910686	\N	\N	f
+3371	2026-06-06	23:00:00	13700	67	214	257	\N	29	15	70	67164	2.602732e+06	2.602802e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:12:03.897888	\N	\N	f
+3372	2026-06-06	11:10:00	13701	67	212	255	\N	29	15	70	48316	2.602802e+06	2.602872e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:14:18.341915	\N	\N	f
+3373	2026-06-06	11:23:00	13702	67	252	272	\N	29	15	70	1808	2.602872e+06	2.602942e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:14:47.714309	\N	\N	f
+3374	2026-06-06	11:35:00	13703	67	197	240	\N	29	15	70	24570	2.602942e+06	2.603012e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:15:27.458415	\N	\N	f
+3375	2026-06-06	11:49:00	13704	67	254	239	\N	29	15	40	476767	2.603012e+06	2.603052e+06	patio	normal	RC58811A	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:16:12.313385	\N	\N	f
+3376	2026-06-06	12:05:00	13705	67	208	250	\N	29	15	70	1.032291e+06	2.603052e+06	2.603122e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:16:57.792356	\N	\N	f
+3377	2026-06-06	12:19:00	13706	67	206	248	\N	29	15	70	519061	2.603122e+06	2.603192e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:42:55.613737	\N	\N	f
+3378	2026-06-06	12:50:00	13707	67	242	252	\N	29	15	70	46119	2.603192e+06	2.603262e+06	patio	normal	KILOMETRAJE REAL 1291	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:43:26.189318	\N	\N	f
+3379	2026-06-06	12:56:00	13708	67	203	242	\N	29	15	70	128853	2.603263e+06	2.603333e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:43:59.126301	\N	\N	f
+3380	2026-06-06	13:10:00	13709	67	204	246	\N	29	15	70	444120	2.603333e+06	2.603403e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:44:23.509725	\N	\N	f
+3381	2026-06-06	13:16:00	13710	67	211	254	\N	29	15	70	35707	2.603403e+06	2.603473e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:45:02.427323	\N	\N	f
+3382	2026-06-06	13:23:00	13711	67	201	243	\N	29	15	70	15280	2.603472e+06	2.603542e+06	patio	normal	REGRESA DE VACAS CHOFER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:45:42.951003	\N	\N	f
+3383	2026-06-06	13:32:00	13712	67	209	251	\N	29	15	70	44263	2.603542e+06	2.603612e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 19:47:21.267388	\N	\N	f
+3384	2026-06-06	13:42:00	13713	67	226	266	\N	29	15	70	54630	2.603612e+06	2.603682e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 20:46:36.473902	\N	\N	f
+3385	2026-06-06	13:51:00	13714	67	205	247	\N	29	15	70	20474	2.603682e+06	2.603752e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 20:47:11.270921	\N	\N	f
+3386	2026-06-06	13:59:00	13715	67	229	269	\N	29	15	18	791402	2.603753e+06	2.603771e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 20:48:48.284013	\N	\N	f
+3387	2026-06-06	\N	\N	67	245	\N	163	31	\N	60	562086	\N	\N	externo	normal	[OXXOGAS] CARGA MARGARITO DIESEL DE OXXO GAS, CUENTALITROS: 931880 - 931941, FOLIO 11913\nFOLIO OXXO GAS: 442527960	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 20:20:02.173442	\N	\N	f
+3388	2026-06-06	\N	\N	67	215	\N	163	31	\N	60	47235	\N	\N	externo	normal	[OXXOGAS] CARGA MAGO DIESEL OXXOGAS, CUENTALITROS: 931941 - 932001, FOLIO: 11914\nFOLIO OXXO GAS: 442527960	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 20:21:40.277432	\N	\N	f
+3389	2026-06-06	\N	\N	67	229	\N	163	31	\N	60	791402	\N	\N	externo	normal	[OXXOGAS] CARGA MAGO DIESEL DE OXXOGAS FOLIO OXXO GAS: 442527960\nCUENTALITROS: 932001 - 932061, FOLIO: 11915	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 20:22:58.323143	\N	\N	f
+3392	2026-06-08	\N	\N	67	234	\N	168	31	\N	207	3726	\N	\N	externo	normal	[OXXOGAS] CARGA MAGO DE OXXOGAS 185 LITROS, FOLIO 181263760, TENIA UN RESTO EL TANQUE, DANDO TOTAL DE 207 LT CARGADOS	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 20:56:16.071368	\N	\N	f
+3393	2026-06-08	11:38:00	13717	67	199	266	\N	29	15	120	138573	2.603771e+06	2.603891e+06	patio	normal	AGARRA CHRISTOPHER CA31, DEJA EL 08 EN KENWORTH SANTA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 20:57:44.262521	\N	\N	f
+3394	2026-06-08	14:30:00	13719	67	221	264	\N	29	15	30	6902	2.605023e+06	2.605053e+06	patio	normal	SE MANDAN 30 LITROS EN YOGA A MARAVILLAS  (JUANRA)	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 20:59:05.77581	\N	\N	f
+3395	2026-06-08	\N	\N	67	221	\N	154	31	\N	10	\N	\N	\N	externo	normal	[SOBRANTE PIPA] SE MANDAN 10 LITROS SOBRANTES DE MANGUERA DE PIPA, SE LE MANDAN 40 LITROS EN TOTAL YA CON LA CARGA DE TALLER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 20:59:51.363679	\N	\N	f
+3396	2026-06-08	14:46:00	13720	67	242	252	\N	29	15	120	46120	2.605052e+06	2.605172e+06	patio	normal	Kilos reales: 1487	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 21:03:16.795008	\N	\N	f
+3397	2026-06-08	15:04:00	13721	67	213	256	\N	29	15	120	1.3703e+06	2.605173e+06	2.605293e+06	patio	normal	AGUJA EN EL PISO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:14:16.113919	\N	\N	f
+3398	2026-06-08	15:20:00	13722	67	245	279	\N	29	15	120	562126	2.605293e+06	2.605413e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:14:45.985585	\N	\N	f
+3391	2026-06-06	\N	\N	67	232	\N	163	31	\N	80	480319	\N	\N	externo	normal	[OXXOGAS] CARGA MAGO DIESEL DE OXXOGAS ,FOLIO OXXO GAS: 442527960\nCUENTALITROS: 932122 - 932202, FOLIO 11917	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 20:25:40.833749	\N	\N	f
+3399	2026-06-06	\N	\N	67	228	\N	163	31	\N	80	6000	\N	\N	externo	normal	[OXXOGAS] CARGA DIESEL DE OXXO GAS , TICKET:442527960\nCUENTALITROS 932122 - 932702 , FOLIO 11917	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:26:47.21382	\N	\N	f
+3400	2026-06-08	15:40:00	13723	67	232	267	\N	29	15	120	480524	2.605413e+06	2.605533e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:33:14.480411	\N	\N	f
+3401	2026-06-08	15:50:00	13724	67	228	268	\N	29	15	100	6201	2.605534e+06	2.605634e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:33:45.91537	\N	\N	f
+3402	2026-06-08	16:15:00	13725	67	211	254	\N	29	15	120	35922	2.605634e+06	2.605754e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:34:13.317899	\N	\N	f
+3403	2026-06-08	16:29:00	13726	67	206	248	\N	29	15	120	519320	2.605755e+06	2.605875e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:36:11.629102	\N	\N	f
+3404	2026-06-08	16:37:00	13727	67	209	251	\N	29	15	120	44483	2.605875e+06	2.605995e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:37:42.023131	\N	\N	f
+3405	2026-06-08	19:02:00	13728	67	205	247	\N	29	15	100	20741	2.605995e+06	2.606095e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:38:42.48517	\N	\N	f
+3406	2026-06-08	15:53:00	11919	67	208	250	157	30	16	120	1.032481e+06	932409	932529	campo	normal	AGUJA EN EL PISO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:44:06.381281	\N	250	f
+3407	2026-06-08	15:50:00	11920	67	214	257	157	30	16	100	67352	932409	932509	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:45:11.195547	\N	257	f
+3408	2026-06-08	15:55:00	11921	67	202	244	157	30	16	100	70125	932629	932729	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:47:20.358803	\N	244	f
+3409	2026-06-08	16:00:00	11922	67	201	243	157	30	16	100	15475	932730	932830	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:47:58.080421	\N	243	f
+3410	2026-06-08	16:06:00	11923	67	198	241	157	30	16	100	81125	932830	932930	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:48:26.599869	\N	241	f
+3411	2026-06-08	16:14:00	11924	67	212	255	157	30	16	100	48496	932930	933030	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:49:16.570489	\N	255	f
+3412	2026-06-08	17:03:00	11925	67	197	240	157	30	16	120	24790	933032	933152	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:50:14.37125	\N	240	f
+3413	2026-06-08	17:15:00	11926	67	252	272	163	30	16	150	2082	933152	933302	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:50:43.994435	\N	272	f
+3414	2026-06-08	17:49:00	11927	67	244	253	165	30	16	66	150673	933302	933368	campo	normal	TARJETA DE OXXO GAS SIN SALDO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-08 23:51:39.655914	\N	253	f
+3415	2026-06-08	17:51:00	13729	67	200	258	\N	29	15	120	642848	2.606095e+06	2.606215e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-09 23:00:54.446965	\N	\N	f
+3416	2026-06-09	20:35:00	13730	67	229	280	\N	29	15	120	791540	2.606215e+06	2.606335e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-09 23:03:17.976781	\N	\N	f
+3417	2026-06-09	09:42:00	13731	67	224	242	\N	29	15	200	3848	2.606336e+06	2.606536e+06	patio	normal	se mandan 200 litros a ex09 en rio Bravo, recibe Javier Lopez pelucas	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-09 23:04:13.426025	\N	\N	f
+3418	2026-06-09	10:09:00	13732	67	241	239	\N	29	15	40	19345	2.606536e+06	2.606576e+06	patio	normal	se lleva Alain 2 Botes	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-09 23:04:51.089085	\N	\N	f
+3419	2026-06-09	12:00:00	13734	67	214	257	\N	29	15	70	67520	2.606576e+06	2.606646e+06	patio	normal	se borran codigos, DPF	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-09 23:06:49.01957	\N	\N	f
+3420	2026-06-09	13:30:00	13736	67	212	255	\N	29	15	100	48727	2.606746e+06	2.606846e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-09 23:10:38.290818	\N	\N	f
+3421	2026-06-09	16:12:00	13737	67	213	256	\N	29	15	100	1.370493e+06	2.606846e+06	2.606946e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-09 23:11:14.899782	\N	\N	f
+3422	2026-06-09	16:40:00	13739	67	232	267	\N	29	15	100	480822	2.606946e+06	2.607046e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:13:49.892727	\N	\N	f
+3423	2026-06-09	16:50:00	13740	67	211	254	\N	29	15	100	36132	2.607047e+06	2.607147e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:14:35.700924	\N	\N	f
+3424	2026-06-09	16:59:00	13741	67	200	258	\N	29	15	100	643331	2.607147e+06	2.607247e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:15:23.496731	\N	\N	f
+3425	2026-06-09	17:13:00	13742	67	206	248	\N	29	15	110	519558	2.607347e+06	2.607457e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:16:17.051159	\N	\N	f
+3426	2026-06-09	17:20:00	13743	67	209	251	\N	29	15	110	44673	2.607457e+06	2.607567e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:16:48.785834	\N	\N	f
+3427	2026-06-09	17:32:00	13744	67	242	252	\N	29	15	110	46120	2.607568e+06	2.607678e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:17:43.350956	\N	\N	f
+3428	2026-06-09	17:47:00	13745	67	202	244	\N	29	15	120	70525	2.607678e+06	2.607798e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:18:17.248843	\N	\N	f
+3429	2026-06-09	17:58:00	13746	67	205	247	\N	29	15	100	20927	2.607798e+06	2.607898e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:18:44.884845	\N	\N	f
+3430	2026-06-09	18:10:00	13747	67	228	268	\N	29	15	110	6504	2.607899e+06	2.608009e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 01:09:13.343143	\N	\N	f
+3431	2026-06-09	18:25:00	13748	67	204	246	\N	29	15	120	444656	2.608009e+06	2.608129e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 01:09:59.462086	\N	\N	f
+3432	2026-06-09	19:30:00	13750	67	203	242	\N	29	15	150	129070	2.609108e+06	2.609258e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 01:47:17.649757	\N	\N	f
+3433	2026-06-10	07:20:00	11928	67	208	250	146	30	16	100	1.03268e+06	933368	933468	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 13:22:52.582317	253	250	f
+3434	2026-06-10	07:22:00	11929	67	197	240	146	30	16	120	25103	933468	933588	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 13:24:39.018094	253	240	f
+3435	2026-06-10	07:24:00	11930	67	252	272	146	30	16	150	2375	933588	933738	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 13:26:50.898716	253	272	f
+3436	2026-06-10	07:26:00	11931	67	212	273	146	30	16	50	48836	933738	933788	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 13:28:50.451473	253	273	f
+3437	2026-06-10	11:03:00	11932	67	226	266	157	30	16	120	54896	933788	933908	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 17:05:44.340457	253	266	f
+3438	2026-06-10	11:05:00	11933	67	228	268	157	30	16	100	6728	933908	934008	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 17:07:17.727914	253	268	f
+3439	2026-06-10	11:07:00	11934	67	232	267	157	30	16	100	481040	934008	934108	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 17:20:44.402948	253	267	f
+3440	2026-06-10	11:34:00	11935	67	209	251	157	30	16	50	44885	934108	934158	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 17:36:24.609259	253	251	f
+3441	2026-06-10	11:36:00	11936	67	198	241	157	30	16	100	81392	934158	934258	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 17:38:29.109057	253	241	f
+3442	2026-06-09	19:46:00	13751	67	199	280	\N	29	15	130	138998	2.609259e+06	2.609389e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 22:50:34.810525	\N	\N	f
+3443	2026-06-10	13:40:00	13752	67	242	252	\N	29	15	120	46120	2.609389e+06	2.609509e+06	patio	normal	KM REALES 2059	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 22:51:52.464293	\N	\N	f
+3444	2026-06-10	13:50:00	13753	67	214	257	\N	29	15	110	67789	2.60951e+06	2.60962e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 22:53:27.906132	\N	\N	f
+3445	2026-06-10	13:07:00	11937	67	201	243	137	30	16	100	16060	934260	934360	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 22:56:40.344891	\N	243	f
+3446	2026-06-10	15:20:00	13755	67	248	258	\N	29	15	40	562926	2.610651e+06	2.610691e+06	patio	normal	PRUEBA HACIA GRUTAS,  ( SIN HUMO )	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 22:58:36.185682	\N	\N	f
+3447	2026-06-10	15:31:00	13756	67	211	254	\N	29	15	100	36259	2.610691e+06	2.610791e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 23:03:03.214592	\N	\N	f
+3448	2026-06-10	15:44:00	13757	67	199	280	\N	29	15	120	139314	2.610791e+06	2.610911e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 23:15:56.269307	\N	\N	f
+3449	2026-06-10	15:55:00	13758	67	213	256	\N	29	15	100	1.370709e+06	2.610912e+06	2.611012e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 23:16:49.185296	\N	\N	f
+3450	2026-06-10	16:06:00	13759	67	206	248	\N	29	15	100	519879	2.611012e+06	2.611112e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 23:17:45.123583	\N	\N	f
+3347	2026-06-06	00:00:00	13684	67	209	251	\N	29	15	80	44129	2.601748e+06	2.601848e+06	patio	normal	Carga postfechada nivel bajo	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 00:08:09.261529	\N	\N	f
+3451	2026-06-10	17:45:00	11938	67	216	259	138	30	16	70	5319	934360	934430	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-10 23:49:06.478947	253	259	f
+3452	2026-06-10	16:20:00	13760	67	245	279	160	29	15	60	562636	2.611112e+06	2.611172e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 00:12:07.566739	\N	\N	f
+3453	2026-06-10	17:02:00	13761	67	200	258	\N	29	15	110	643635	2.611172e+06	2.611282e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 00:14:58.350848	\N	\N	f
+3454	2026-06-10	17:08:00	13762	67	202	244	\N	29	15	100	70857	2.611283e+06	2.611383e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 00:15:33.781654	\N	\N	f
+3455	2026-06-10	17:16:00	13763	67	209	251	\N	29	15	80	44998	2.611383e+06	2.611463e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 00:16:14.034892	\N	\N	f
+3456	2026-06-10	17:41:00	13764	67	205	247	\N	29	15	100	21225	2.611463e+06	2.611563e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 00:16:44.163123	\N	\N	f
+3457	2026-06-10	18:30:00	13765	67	212	255	\N	29	15	130	49128	2.611563e+06	2.611693e+06	patio	normal	Aguja en el piso 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 00:46:36.450757	\N	\N	f
+3458	2026-06-11	07:14:00	11939	67	197	240	146	30	16	100	25393	934430	934530	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-11 13:16:05.089513	253	240	f
+3459	2026-06-11	07:16:00	11940	67	252	272	146	30	16	120	2717	934530	934650	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-11 13:17:17.850048	253	272	f
+3460	2026-06-11	07:17:00	11941	67	208	250	146	30	16	100	1.032934e+06	934650	934750	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-11 13:18:41.153324	253	250	f
+3461	2026-06-11	09:54:00	11942	67	224	262	156	30	16	100	3873	934750	934850	campo	normal	Ariva de 3/4aprox	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-11 15:57:33.340983	253	262	f
+3462	2026-06-11	10:38:00	11943	67	201	243	137	30	16	100	16305	934850	934950	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-11 16:40:39.318187	253	243	f
+3463	2026-06-11	11:23:00	11944	67	225	270	142	30	16	305	2715.3	934950	935255	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-11 17:26:08.961319	253	270	f
+3464	2026-06-11	13:41:00	11945	67	228	268	146	30	16	100	7036	935255	935355	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-11 19:43:51.062786	253	268	f
+3465	2026-06-11	13:43:00	118517	67	226	266	146	30	16	120	55242	935355	935475	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-11 20:08:23.94126	253	266	f
+3466	2026-06-11	14:08:00	11947	67	232	267	146	30	16	7	481390	935475	935482	campo	normal	Se termina carga  del diesel nissan	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-11 20:11:10.748369	253	267	f
+3472	2026-06-11	15:50:00	13772	67	212	255	\N	29	15	100	49365	2.613144e+06	2.613244e+06	patio	normal	NIVEL MUY BAJO ,  LITROS EXTRA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 22:41:05.503561	\N	\N	f
+3521	2026-06-12	19:03:00	13809	67	204	246	\N	29	15	130	445169	2.616064e+06	2.616194e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:29:47.634563	\N	\N	f
+3467	2026-06-11	20:25:00	13767	67	241	239	\N	29	15	80	19345	2.611694e+06	2.611734e+06	patio	normal	se lleva 80 litros en botes el arq jose para planta y para retro komatsu	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 22:32:49.866182	\N	\N	f
+3468	2026-06-11	\N	\N	67	221	\N	154	31	\N	40	\N	\N	\N	externo	normal	[botes arq jose] vino el arq jose, se llevó 80 litros = 40 planta + 40 R02	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 22:35:26.427543	\N	\N	f
+3469	2026-06-11	22:26:00	13768	67	203	242	\N	29	15	120	129564	2.611774e+06	2.611894e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 22:36:51.146959	\N	\N	f
+3470	2026-06-11	12:17:00	13769	67	219	239	\N	29	15	19	2769	2.611895e+06	2.611914e+06	patio	normal	movimiento cucharones	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 22:37:29.83609	\N	\N	f
+3471	2026-06-11	13:20:00	13770	67	199	280	\N	29	15	80	139489	2.611915e+06	2.611995e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 22:38:07.588532	\N	\N	f
+3474	2026-06-12	07:22:00	11948	67	198	241	146	30	16	70	81695	935482	935552	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-12 13:24:40.388096	253	241	f
+3475	2026-06-12	07:24:00	11949	67	208	250	146	30	16	100	1.033179e+06	935552	935652	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-12 13:26:55.379215	253	250	f
+3476	2026-06-12	07:26:00	15351	67	197	240	146	30	16	100	25664	935652	935752	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-12 13:28:57.71522	253	240	f
+3477	2026-06-11	16:26:00	13774	67	202	244	\N	29	15	100	71154	2.613344e+06	2.613444e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:41:07.140202	\N	\N	f
+3478	2026-06-11	16:35:00	13775	67	211	254	\N	29	15	75	36449	2.613444e+06	2.613519e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:41:52.108269	\N	\N	f
+3479	2026-06-11	16:48:00	13776	67	200	258	\N	29	15	70	644048	2.613519e+06	2.613589e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:42:25.235956	\N	\N	f
+3480	2026-06-11	16:57:00	13777	67	232	267	\N	29	15	90	481420	2.61359e+06	2.61368e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:51:57.884801	\N	\N	f
+3481	2026-06-11	17:05:00	13778	67	213	256	\N	29	15	100	1.370911e+06	2.61368e+06	2.61378e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:52:30.972863	\N	\N	f
+3482	2026-06-11	17:20:00	13779	67	205	247	\N	29	15	100	21391	2.61378e+06	2.61388e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:53:09.231609	\N	\N	f
+3483	2026-06-11	17:28:00	13780	67	245	279	\N	29	15	70	562921	2.613881e+06	2.613951e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:53:50.363762	\N	\N	f
+3484	2026-06-11	17:40:00	13781	67	206	248	\N	29	15	99	520191	2.613951e+06	2.61405e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:57:13.153199	\N	\N	f
+3485	2026-06-11	17:51:00	13782	67	204	246	\N	29	15	120	444905	2.614051e+06	2.614171e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:57:40.178665	\N	\N	f
+3486	2026-06-11	18:15:00	13783	67	209	251	\N	29	15	90	45290	2.614172e+06	2.614262e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-12 13:58:27.692732	\N	\N	f
+3487	2026-06-12	11:31:00	15352	67	203	242	146	30	16	60	129758	935752	935812	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-12 17:32:41.914606	253	242	f
+3488	2026-06-12	11:32:00	15353	67	252	272	146	30	16	60	3185	935812	935872	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-12 17:34:18.462379	253	272	f
+3489	2026-06-12	11:34:00	15354	67	201	243	157	30	16	50	16576	935872	935922	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-12 18:53:50.308092	253	243	f
+3490	2026-06-12	17:50:00	15355	67	206	248	160	30	16	10	520464	935922	935932	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-12 23:53:00.537665	253	248	f
+3491	2026-06-12	09:04:00	131234	67	247	239	\N	29	15	50	7868	2.614262e+06	2.614312e+06	patio	normal	MOVIMIENTOS EN TALLER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 14:42:06.965786	\N	\N	f
+3492	2026-06-12	09:30:00	13785	67	241	239	\N	29	15	40	19345	2.614312e+06	2.614352e+06	patio	normal	MARAVILLAS 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 14:58:58.029067	\N	\N	f
+3493	2026-06-12	16:04:00	13787	67	242	252	\N	29	15	1	46120	2.614808e+06	2.614809e+06	patio	normal	KMS REALES 2448	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 15:31:17.014748	\N	\N	f
+3494	2026-06-13	16:10:00	13788	68	242	252	\N	29	15	100	46120	2.614809e+06	2.614909e+06	patio	normal	CARGA POSTFECHADA , NIVEL MUY BAJO KMS REALES 2448	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 15:33:23.589426	\N	\N	f
+3495	2026-06-12	16:45:00	13789	67	229	257	\N	29	15	100	791774	2.614909e+06	2.615009e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 15:34:32.301091	\N	\N	f
+3496	2026-06-12	17:02:00	13790	67	211	254	\N	29	15	1	36608	2.615009e+06	2.61501e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 15:35:26.438149	\N	\N	f
+3497	2026-06-13	00:00:00	13791	68	211	254	\N	29	15	100	36608	2.61501e+06	2.61511e+06	patio	normal	CARGA POSTFECHADA, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 15:36:31.129672	\N	\N	f
+3498	2026-06-12	17:17:00	13792	67	202	244	\N	29	15	1	71475	2.615111e+06	2.615112e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 15:53:54.340155	\N	\N	f
+3499	2026-06-13	00:00:00	13793	68	202	244	\N	29	15	100	71475	2.615112e+06	2.615212e+06	patio	normal	CARGA POSTFECHADA NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 15:55:59.591932	\N	\N	f
+3500	2026-06-12	17:30:00	13794	67	226	266	\N	29	15	40	55599	2.615212e+06	2.615252e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 15:56:37.79876	\N	\N	f
+3501	2026-06-13	00:00:00	13795	68	226	266	\N	29	15	100	55599	2.615253e+06	2.615353e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:01:44.308654	\N	\N	f
+3502	2026-06-12	17:36:00	13796	67	228	268	\N	29	15	50	7290	2.615353e+06	2.615403e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:03:09.3895	\N	\N	f
+3503	2026-06-13	00:00:00	13797	68	228	268	\N	29	15	100	7290	2.615403e+06	2.615503e+06	patio	normal	CARGA POSTFECHADA, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:06:24.298636	\N	\N	f
+3504	2026-06-12	17:54:00	13798	67	200	258	\N	29	15	50	644593	2.615504e+06	2.615554e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:07:09.161033	\N	\N	f
+3505	2026-06-12	18:03:00	13799	67	232	267	\N	29	15	5	481745	2.615554e+06	2.615559e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:11:23.662091	\N	\N	f
+3506	2026-06-13	10:09:00	15356	68	198	241	146	30	16	100	81914	935932	936032	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-13 16:11:53.362931	253	241	f
+3507	2026-06-13	10:11:00	15357	68	208	250	146	30	16	100	1.033434e+06	936032	936132	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-13 16:13:32.954868	253	250	f
+3508	2026-06-13	00:00:00	13800	68	232	267	\N	29	15	100	481745	2.615559e+06	2.615659e+06	patio	normal	CARGA POSTFECHADA, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:14:21.40008	\N	\N	f
+3509	2026-06-13	10:13:00	15358	68	197	240	146	30	16	120	25889	936132	936252	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-13 16:15:03.708524	253	240	f
+3510	2026-06-13	10:15:00	15359	68	201	243	146	30	16	100	16669	936252	936352	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-13 16:16:33.434492	253	243	f
+3511	2026-06-13	10:16:00	15360	68	216	259	138	30	16	70	5331	936352	936422	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-13 16:17:55.643641	253	259	f
+3512	2026-06-13	10:17:00	15361	68	217	259	138	30	16	24	1042.1	936422	936446	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-13 16:20:07.584065	253	259	f
+3513	2026-06-12	18:27:00	13801	67	212	255	\N	29	15	1	49589	2.61566e+06	2.615661e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:21:01.988406	\N	\N	f
+3514	2026-06-13	00:00:00	13802	68	212	255	\N	29	15	100	49589	2.615661e+06	2.615761e+06	patio	normal	CARGA POSTFECHADA, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:21:38.379314	\N	\N	f
+3515	2026-06-12	18:32:00	13804	67	245	279	\N	29	15	30	563243	2.615762e+06	2.615792e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:23:01.541691	\N	\N	f
+3516	2026-06-12	18:40:00	13805	67	205	247	\N	29	15	20	21598	2.615812e+06	2.615832e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:23:48.517839	\N	\N	f
+3517	2026-06-13	00:00:00	13806	68	205	247	\N	29	15	100	21598	2.615832e+06	2.615932e+06	patio	normal	CARGA POSTFECHADA, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:25:29.006898	\N	\N	f
+3518	2026-06-12	18:52:00	13807	67	209	251	\N	29	15	1	45464	2.615933e+06	2.615934e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:26:39.961711	\N	\N	f
+3519	2026-06-13	00:00:00	13808	68	209	251	\N	29	15	130	45464	2.615934e+06	2.616064e+06	patio	normal	CARGA POSTFECHADA, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:27:40.649127	\N	\N	f
+3520	2026-06-12	18:25:00	13803	67	206	248	\N	29	15	20	520465	2.615762e+06	2.615782e+06	patio	normal	SE CARGA AFUERA DE TALLER, LLEGO SIN DIESEL A GUERRERO Y SE APAGO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:29:15.522209	\N	\N	f
+3522	2026-06-13	00:00:00	13810	68	206	248	\N	29	15	150	520466	2.616194e+06	2.616344e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:30:49.045776	\N	\N	f
+3523	2026-06-09	11:10:00	13733	67	250	239	\N	29	15	100	1	2.606576e+06	2.606676e+06	patio	normal	SE CARGA HILUX, REPARTE 50 A CA27 Y 50 A CA21	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:32:16.840252	\N	\N	t
+3524	2026-06-09	\N	\N	67	201	\N	145	31	\N	50	15689	\N	\N	externo	normal	[Externo] 50 LITROS DE HILUX, FOLIO 13733	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:35:03.138537	\N	\N	f
+3527	2026-06-12	\N	\N	67	252	\N	162	31	\N	1	3323	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:42:55.401585	\N	\N	f
+3528	2026-06-12	\N	\N	67	197	\N	162	31	\N	1	25871	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:43:31.565984	\N	\N	f
+3525	2026-06-09	\N	\N	67	204	\N	145	31	\N	50	444531	\N	\N	externo	normal	[Externo] SURTE HILUX 50 FOLIO: 13733	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:35:36.528947	\N	\N	f
+3526	2026-06-12	\N	\N	67	203	\N	162	31	\N	1	129896	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:42:20.914535	\N	\N	f
+3529	2026-06-12	\N	\N	67	198	\N	162	31	\N	1	81893	\N	\N	externo	normal	[CORTE KMS]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:44:24.479304	\N	\N	f
+3473	2026-06-11	16:06:00	13773	67	242	252	\N	29	15	99	46120	2.613244e+06	2.613343e+06	patio	normal	KM REALES, 2261 NIVEL MUY BAJO , LITROS EXTRA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-11 22:43:55.258111	\N	\N	f
+3530	2026-06-13	11:35:00	15362	68	199	280	137	30	16	110	139825	936446	936556	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-13 17:36:42.589913	253	280	f
+3531	2026-06-13	09:36:00	13811	68	241	239	\N	29	15	40	19345	2.616345e+06	2.616385e+06	patio	normal	Llega el Arq Jose para llevar diésel a maravillas 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:01:56.630802	\N	\N	f
+3532	2026-06-13	09:40:00	13812	68	221	264	\N	29	15	40	6902	2.616385e+06	2.616425e+06	patio	normal	Arq Jose lleva 2 yogas 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:02:46.551608	\N	\N	f
+3533	2026-06-13	12:15:00	13813	68	252	272	\N	29	15	150	3418	2.616425e+06	2.616575e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:04:31.062925	\N	\N	f
+3534	2026-06-13	00:20:00	13814	68	203	242	\N	29	15	150	129987	2.616575e+06	2.616725e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:05:16.535771	\N	\N	f
+3535	2026-06-13	00:35:00	13815	68	197	240	\N	29	15	30	25985	2.616725e+06	2.616755e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:06:13.780916	\N	\N	f
+3536	2026-06-13	12:55:00	13816	68	200	244	\N	29	15	100	644798	2.616755e+06	2.616855e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:06:58.500395	\N	\N	f
+3537	2026-06-13	13:01:00	13817	68	213	256	\N	29	15	100	1.371144e+06	2.616855e+06	2.616955e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:08:33.059626	\N	\N	f
+3538	2026-06-13	13:08:00	13818	68	211	254	\N	29	15	50	36688	2.616956e+06	2.617006e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:09:50.001637	\N	\N	f
+3539	2026-06-13	13:20:00	13819	68	229	269	\N	29	15	70	791862	2.617006e+06	2.617076e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:11:51.149691	\N	\N	f
+3541	2026-06-13	13:40:00	13821	68	212	255	\N	29	15	50	49687	2.617197e+06	2.617247e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:13:33.29558	\N	\N	f
+3542	2026-06-13	13:47:00	13822	68	242	252	\N	29	15	50	46120	2.617247e+06	2.617297e+06	patio	normal	Kilómetros reales 2555	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:14:20.391516	\N	\N	f
+3543	2026-06-13	16:10:00	13823	68	209	251	\N	29	15	50	45624	2.617297e+06	2.617347e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 21:05:55.732162	\N	\N	f
+3544	2026-06-13	14:35:00	13824	68	204	246	\N	29	15	100	445336	2.617348e+06	2.617448e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 21:06:49.996885	\N	\N	f
+3545	2026-06-13	14:51:00	13825	68	245	279	\N	29	15	100	563419	2.617448e+06	2.617548e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 21:07:24.988819	\N	\N	f
+3546	2026-06-13	17:01:00	15363	68	244	253	171	30	16	39	150673	936556	936595	campo	normal	157506 A 157934  km pasado de 400 km	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-13 23:07:34.455172	253	253	t
+3547	2026-06-15	08:19:00	15364	68	234	271	168	30	16	259	3759.1	936595	936854	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-15 14:23:11.597384	253	271	f
+3548	2026-06-15	12:33:00	15365	68	218	262	156	30	16	41	1453.3	936854	936895	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-15 18:36:06.090461	253	262	f
+3549	2026-06-15	12:36:00	15366	68	224	262	156	30	16	100	3894	936895	936995	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-15 18:38:41.373772	253	262	f
+3550	2026-06-15	12:38:00	15367	68	226	266	145	30	16	120	55902	936995	937115	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-15 18:40:38.426401	253	266	f
+3552	2026-06-15	17:09:00	15369	68	197	240	145	30	16	120	26137	937215	937335	campo	normal	Hora de carga 12:24pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-15 23:12:26.332089	253	240	f
+3551	2026-06-15	17:05:00	15368	68	201	243	145	30	16	100	16689	937115	937215	campo	normal	Km16912 12:15 pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-15 23:09:38.739796	253	243	t
+3554	2026-06-15	08:09:00	13828	68	250	239	\N	29	15	60	1	2.618503e+06	2.618563e+06	patio	normal	CARGA PARA CAMION QUE SE RECOGE CON REY CANALES - DALTO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:05:35.824103	\N	\N	f
+3555	2026-06-15	10:31:00	13829	68	242	252	\N	29	15	100	46120	2.618563e+06	2.618663e+06	patio	normal	KMS REALES 2662	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:06:04.988107	\N	\N	f
+3556	2026-06-15	15:12:00	13851	68	199	280	\N	29	15	110	140184	2.618665e+06	2.618775e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:08:44.780099	\N	\N	f
+3557	2026-06-15	15:26:00	13852	68	211	254	\N	29	15	110	36847	2.618775e+06	2.618885e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:10:56.098091	\N	\N	f
+3558	2026-06-15	16:08:00	13853	68	229	269	\N	29	15	100	792110	2.618885e+06	2.618985e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:11:28.478964	\N	\N	f
+3559	2026-06-15	16:19:00	13854	68	209	251	\N	29	15	110	45835	2.618985e+06	2.619095e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:12:17.637889	\N	\N	f
+3560	2026-06-15	16:25:00	13855	68	248	244	\N	29	15	100	562966	2.619095e+06	2.619195e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:12:51.196701	\N	\N	f
+3561	2026-06-15	16:35:00	13856	68	206	248	\N	29	15	100	520822	2.619197e+06	2.619297e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:19:47.354218	\N	\N	f
+3562	2026-06-15	16:41:00	13857	68	205	248	\N	29	15	100	21863	2.619297e+06	2.619397e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:20:11.245182	\N	\N	f
+3563	2026-06-15	17:00:00	13858	68	212	255	\N	29	15	100	49982	2.619397e+06	2.619497e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:21:35.468941	\N	\N	f
+3564	2026-06-15	17:12:00	13859	68	228	268	\N	29	15	100	7688	2.619497e+06	2.619597e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:22:01.247486	\N	\N	f
+3565	2026-06-16	07:49:00	15370	68	198	241	146	30	16	100	82209	937335	937435	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-16 13:51:01.59338	253	241	f
+3566	2026-06-15	18:25:00	13860	68	213	256	\N	29	15	100	1.371359e+06	2.619597e+06	2.619697e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:29:43.809114	\N	\N	f
+3567	2026-06-16	08:40:00	13861	68	208	250	\N	29	15	85	1.033727e+06	2.619698e+06	2.619783e+06	patio	normal	Prueba de rendimiento 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:31:02.255594	\N	\N	f
+3568	2026-06-16	15:54:00	13863	68	232	267	\N	29	15	100	482166	2.620693e+06	2.620793e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:34:20.650111	\N	\N	f
+3569	2026-06-16	16:01:00	13864	68	201	243	\N	29	15	120	17141	2.620793e+06	2.620913e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:35:02.089436	\N	\N	f
+3570	2026-06-16	16:14:00	131238	68	213	256	\N	29	15	100	1.371538e+06	2.620913e+06	2.621013e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:35:45.500553	\N	\N	f
+3571	2026-06-16	16:25:00	13866	68	211	254	\N	29	15	100	37072	2.621013e+06	2.621113e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:36:11.415631	\N	\N	f
+3572	2026-06-16	16:35:00	13867	68	245	279	\N	29	15	100	563778	2.621113e+06	2.621213e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:42:02.080002	\N	\N	f
+3573	2026-06-16	16:45:00	13868	68	242	252	\N	29	15	100	46120	2.621213e+06	2.621313e+06	patio	normal	KMS REALES 2911	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:42:53.859245	\N	\N	f
+3574	2026-06-16	16:52:00	13869	68	205	247	\N	29	15	50	22044	2.621313e+06	2.621363e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:43:34.339798	\N	\N	f
+3575	2026-06-16	16:54:00	13870	68	209	251	\N	29	15	110	46076	2.621364e+06	2.621474e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:44:04.904485	\N	\N	f
+3576	2026-06-16	17:07:00	13871	68	212	255	\N	29	15	100	50167	2.621474e+06	2.621574e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-17 00:44:28.126407	\N	\N	f
+3577	2026-06-17	06:35:00	15374	68	229	269	146	30	16	100	792396	937435	937535	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-17 12:56:50.727467	253	269	f
+3578	2026-06-17	06:56:00	15375	68	206	248	146	30	16	100	521131	937535	937635	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-17 12:58:18.605893	253	248	f
+3579	2026-06-17	06:58:00	15376	68	197	240	146	30	16	120	26404	937635	937755	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-17 12:59:54.018083	253	240	f
+3580	2026-06-17	06:59:00	15377	68	204	246	146	30	16	120	445798	937755	937875	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-17 13:01:13.244142	253	246	f
+3581	2026-06-17	13:50:00	15378	68	225	270	142	30	16	271	2743.5	937875	938146	campo	normal	Hora de carga 9:32am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-17 19:53:15.002616	253	270	f
+3582	2026-06-17	13:53:00	15379	68	216	259	138	30	16	88	5343	938146	938234	campo	normal	Hora de carga 12:56 pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-17 19:55:45.274335	253	259	f
+3583	2026-06-17	10:00:00	13872	68	207	239	\N	29	15	100	485761	2.621574e+06	2.621674e+06	patio	normal	LO TOMA VICTORIANO PARA PRUEBA  (INY.)	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:17:37.514844	\N	\N	f
+3584	2026-06-17	16:16:00	13873	68	213	256	\N	29	15	100	1.371707e+06	2.621674e+06	2.621774e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:18:58.993446	\N	\N	f
+3585	2026-06-17	16:25:00	13874	68	226	266	\N	29	15	150	56234	2.621774e+06	2.621924e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:19:43.925099	\N	\N	f
+3586	2026-06-17	16:32:00	13875	68	228	268	\N	29	15	100	8070	2.621924e+06	2.622024e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:20:50.674705	\N	\N	f
+3587	2026-06-17	16:08:00	13876	68	242	252	\N	29	15	100	46120	2.622024e+06	2.622124e+06	patio	normal	KMS REALES: 3129	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:22:19.07567	\N	\N	f
+3588	2026-06-17	16:50:00	13877	68	209	251	\N	29	15	100	46326	2.622125e+06	2.622225e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:22:58.948463	\N	\N	f
+3589	2026-06-17	17:00:00	13878	68	229	269	\N	29	15	80	792551	2.622225e+06	2.622305e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:23:32.916366	\N	\N	f
+3590	2026-06-17	17:14:00	13879	68	212	255	\N	29	15	100	50413	2.622305e+06	2.622405e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:26:07.712846	\N	\N	f
+3591	2026-06-17	17:25:00	13880	68	205	247	\N	29	15	100	22239	2.622405e+06	2.622505e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:29:03.112631	\N	\N	f
+3592	2026-06-17	17:31:00	13881	68	204	246	\N	29	15	100	446062	2.622505e+06	2.622605e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:29:38.097497	\N	\N	f
+3593	2026-06-17	17:40:00	13882	68	211	254	\N	29	15	100	37277	2.622605e+06	2.622705e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:30:06.252042	\N	\N	f
+3594	2026-06-17	17:40:00	13883	68	214	257	\N	29	15	100	68312	2.622705e+06	2.622805e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:34:40.49812	\N	\N	f
+3595	2026-06-17	18:02:00	13884	68	206	248	\N	29	15	100	521348	2.622805e+06	2.622905e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:36:43.261503	\N	\N	f
+3596	2026-06-17	18:11:00	13885	68	232	267	\N	29	15	100	482415	2.622905e+06	2.623005e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:37:39.211974	\N	\N	f
+3597	2026-06-17	18:20:00	13886	68	199	280	\N	29	15	110	140749	2.623005e+06	2.623115e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-18 00:39:41.80205	\N	\N	f
+3598	2026-06-18	06:46:00	15380	68	198	241	146	30	16	100	82451	938234	938334	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-18 12:48:23.425125	253	241	f
+3599	2026-06-18	06:48:00	15381	68	252	272	146	30	16	150	3882	938334	938484	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-18 12:50:10.80635	253	272	f
+3600	2026-06-18	18:20:00	15382	68	197	240	172	30	16	52	26760	938484	938536	campo	normal	Hora de carga 12;41 pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 00:24:48.221887	253	240	f
+3601	2026-06-18	07:52:00	13887	68	208	250	\N	29	15	114	1.033971e+06	2.623115e+06	2.623229e+06	patio	normal	PRUEBA DE RENDIMIENTO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 03:02:58.6331	\N	\N	f
+3602	2026-06-18	10:54:00	13888	68	237	258	\N	29	15	80	372625	2.623229e+06	2.623309e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 03:03:56.317283	\N	\N	f
+3603	2026-06-18	03:34:00	13890	68	204	246	\N	29	15	100	446267	2.623309e+06	2.623409e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 03:04:55.129953	\N	\N	f
+3604	2026-06-18	15:17:00	13889	68	209	251	\N	29	15	80	46539	2.623409e+06	2.623489e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 03:05:28.199039	\N	\N	f
+3605	2026-06-18	\N	\N	68	208	\N	\N	31	\N	93	1.034185e+06	\N	\N	externo	normal	[OXXO GAS] PRUEBA DE RENDIMIENTO, CARGA FINAL	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 03:06:50.572884	\N	\N	f
+3553	2026-06-15	07:35:00	13827	68	208	250	\N	29	15	309	1.03357e+06	2.618194e+06	2.618503e+06	patio	normal	PRUEBA DE RENDIMIENTO DIA 1	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:04:47.091525	\N	\N	f
+3606	2026-06-19	06:00:00	13891	68	250	239	160	29	15	62	1	2.62349e+06	2.623552e+06	patio	normal	Se vacía contenido de tanque en taller, \nTanque totalmente vacío \nRemanente teórico 347lt	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 14:30:58.241523	\N	\N	f
+3607	2026-06-19	08:20:00	13892	68	242	252	\N	29	15	90	46120	2.623552e+06	2.623642e+06	patio	normal	Kms 3384	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 15:06:41.041709	\N	\N	f
+3608	2026-06-19	08:53:00	13893	68	206	248	\N	29	15	120	521671	2.623642e+06	2.623762e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 15:08:27.042228	\N	\N	f
+3610	2026-06-19	09:00:00	13894	68	228	268	\N	29	15	120	8369	2.623763e+06	2.623883e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 18:21:46.380795	\N	\N	f
+3611	2026-06-19	09:20:00	13895	68	202	244	\N	29	15	100	71629	2.623883e+06	2.623983e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 18:22:15.304825	\N	\N	f
+3612	2026-06-19	09:24:00	13897	68	211	254	\N	29	15	90	37515	2.623983e+06	2.624073e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 18:23:02.414211	\N	\N	f
+3613	2026-06-19	09:39:00	13898	68	229	269	\N	29	15	140	792868	2.624074e+06	2.624214e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 18:23:56.470425	\N	\N	f
+3615	2026-06-19	12:43:00	15383	68	198	241	146	30	16	70	82620	938536	938606	campo	normal	Hora de carga 11;40 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 18:45:35.325437	253	241	f
+3616	2026-06-19	12:45:00	15384	68	213	256	146	30	16	100	1.371936e+06	938606	938706	campo	normal	Hora de carga 11:47 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 18:47:42.663211	253	256	f
+3617	2026-06-19	12:47:00	15385	68	203	242	146	30	16	110	130742	938706	938816	campo	normal	Hora de carga 11;55 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 18:50:13.051393	253	242	f
+3618	2026-06-19	12:50:00	15386	68	197	240	146	30	16	100	26960	938816	938916	campo	normal	Hora de carga 12;01 pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 18:53:12.396642	253	240	f
+3619	2026-06-19	14:23:00	15387	68	252	272	157	30	16	80	4376	938916	938996	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 20:26:07.657706	253	272	f
+3620	2026-06-19	14:26:00	15388	68	209	251	157	30	16	19	46710	938996	939015	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 20:28:29.349488	253	251	f
+3621	2026-06-19	14:28:00	15389	68	226	266	157	30	16	120	56728	939015	939135	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 20:41:52.186337	253	266	f
+3622	2026-06-19	15:28:00	15390	68	199	280	157	30	16	100	141000	939135	939235	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 21:30:05.708184	253	280	f
+3623	2026-06-19	15:30:00	15391	68	232	267	157	30	16	100	482854	939235	939335	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 21:31:49.723977	253	267	f
+3624	2026-06-19	15:31:00	15392	68	214	257	157	30	16	100	68683	939335	939435	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-19 21:33:28.75376	253	257	f
+3625	2026-06-19	11:40:00	13901	68	205	247	\N	29	15	100	22525	2.625433e+06	2.625533e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 00:24:36.642776	\N	\N	f
+3629	2026-06-20	00:00:00	13905	69	211	254	\N	29	15	50	37629	2.625713e+06	2.625763e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 00:27:27.987569	\N	\N	f
+3630	2026-06-19	20:56:00	15393	68	204	246	163	30	16	100	446559	939435	939535	campo	normal	Carga autorizada  por beto	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-20 02:59:46.047369	253	246	f
+3631	2026-06-19	18:28:00	13906	68	229	269	\N	29	15	60	793062	2.625764e+06	2.625824e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:19:23.996513	\N	\N	f
+3651	2026-06-16	\N	\N	70	214	\N	\N	31	\N	120	68100	\N	\N	externo	normal	[OXXOGAS] MAGO CARGA EN OXXOGAS	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 17:55:20.201602	\N	\N	f
+3652	2026-06-20	08:43:00	13907	69	206	248	\N	29	15	100	521848	2.625825e+06	2.625925e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 18:42:16.120809	\N	\N	f
+3540	2026-06-13	13:30:00	13820	68	215	258	\N	29	15	1	47356	2.617076e+06	2.617196e+06	patio	normal	Sale de taller Kenworth \nSE REAJUSTAN LITROS POR QUE LE SACAMOS 200 AL TANQUE PARA METER DE OXXO GAS EL DIA 15 DE JUNIO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 20:12:42.394681	\N	\N	f
+3626	2026-06-19	14:30:00	13902	68	215	258	\N	29	15	120	47697	2.625533e+06	2.625653e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 00:25:19.13905	\N	\N	f
+3633	2026-06-19	\N	\N	68	203	\N	162	31	\N	1	130801	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:35:16.323198	\N	\N	f
+3634	2026-06-19	\N	\N	68	214	\N	162	31	\N	1	68710	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:35:48.488316	\N	\N	f
+3635	2026-06-19	\N	\N	68	252	\N	162	31	\N	1	4383	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:36:39.160552	\N	\N	f
+3636	2026-06-19	\N	\N	68	226	\N	162	31	\N	1	56761	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:37:10.520373	\N	\N	f
+3637	2026-06-19	\N	\N	68	213	\N	162	31	\N	1	1.372003e+06	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:38:26.94167	\N	\N	f
+3638	2026-06-19	\N	\N	68	232	\N	162	31	\N	1	482882	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:39:06.446457	\N	\N	f
+3639	2026-06-19	\N	\N	68	228	\N	162	31	\N	1	8516	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:39:34.17076	\N	\N	f
+3640	2026-06-19	\N	\N	68	209	\N	162	31	\N	1	46736	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:41:17.085599	\N	\N	f
+3641	2026-06-19	\N	\N	68	206	\N	162	31	\N	1	521842	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:41:44.615375	\N	\N	f
+3642	2026-06-19	\N	\N	68	197	\N	162	31	\N	1	27059	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:42:12.743135	\N	\N	f
+3643	2026-06-19	\N	\N	68	205	\N	162	31	\N	1	22635	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:42:33.475354	\N	\N	f
+3644	2026-06-19	\N	\N	68	198	\N	162	31	\N	1	82709	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:42:57.868138	\N	\N	f
+3645	2026-06-19	\N	\N	68	211	\N	162	31	\N	1	37629	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:43:38.480539	\N	\N	f
+3628	2026-06-19	18:26:00	13904	68	237	279	\N	29	15	50	372925	2.625663e+06	2.625713e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 00:26:43.87332	\N	\N	t
+3653	2026-06-20	09:35:00	13909	69	202	244	\N	29	15	100	71794	2.625925e+06	2.626025e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 18:43:22.43524	\N	\N	f
+3648	2026-06-18	\N	\N	68	241	\N	154	31	\N	40	\N	\N	\N	externo	normal	[Externo] SE MANDAN 40 LITROS DE STOCK EN TALLER (CA06) CON ARQ JOSE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:58:17.166962	\N	\N	f
+3649	2026-06-18	\N	\N	68	221	\N	154	31	\N	40	\N	\N	\N	externo	normal	[Externo] SE MANDAN 40 LITROS DE STOCK EN TALLER (CA06) CON ARQ JOSE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:58:34.267083	\N	\N	f
+3647	2026-06-19	\N	\N	68	221	\N	154	31	\N	40	\N	\N	\N	externo	normal	[Externo] SE MANDAN 40 LITROS DE STOCK EN TALLER (CA06) CON ARQ JOSE, FUERON 2 DIAS SEGUIDOS QUE VINO JOSE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:45:28.484213	\N	\N	f
+3646	2026-06-19	\N	\N	68	241	\N	154	31	\N	40	\N	\N	\N	externo	normal	[STOCK TALLER] SE MANDAN 40 LITROS DE STOCK EN TALLER (CA06) CON ARQ JOSE,FUERON 2 DIAS SEGUIDOS QUE VINO JOSE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:45:06.366584	\N	\N	f
+3632	2026-06-15	\N	442650000	68	215	\N	\N	31	\N	185	\N	\N	\N	externo	normal	[OXXOGAS] SE RELLENAN 185 LITROS DE OXXOGAS, PREVIAMENTE HABIAMOS RETIRADO 200 LITROS DE ESTE CAMION  ( QUEDARON DE STOCK )	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 16:29:52.934311	\N	\N	f
+3650	2026-06-16	\N	\N	70	203	\N	\N	31	\N	120	\N	\N	\N	externo	normal	[OXXO GAS] MAGO CARGA EN OXXO GAS , TICKET 384658330	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 17:54:12.346364	\N	\N	f
+3655	2026-06-20	10:17:00	13911	69	226	266	\N	29	15	50	56766	2.626125e+06	2.626175e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 18:44:48.624057	\N	\N	f
+3656	2026-06-20	10:21:00	13912	69	215	258	\N	29	15	100	47725	2.626176e+06	2.626276e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 18:47:45.979803	\N	\N	f
+3658	2026-06-20	10:57:00	13914	69	211	254	\N	29	15	60	37643	2.626377e+06	2.626437e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 18:48:53.532254	\N	\N	f
+3659	2026-06-20	11:15:00	13915	69	209	251	\N	29	15	100	46749	2.626437e+06	2.626537e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 18:49:24.927277	\N	\N	f
+3660	2026-06-20	11:22:00	13916	69	203	242	\N	29	15	120	130862	2.626537e+06	2.626657e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 18:50:12.341121	\N	\N	f
+3661	2026-06-20	11:35:00	13917	69	237	279	\N	29	15	64	372931	2.626657e+06	2.626721e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 19:03:10.479628	\N	\N	f
+3662	2026-06-20	11:51:00	13918	69	213	256	\N	29	15	60	1.372087e+06	2.626721e+06	2.626781e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 19:04:19.358465	\N	\N	f
+3663	2026-06-20	12:00:00	13919	69	228	268	\N	29	15	100	8522	2.626782e+06	2.626882e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 19:05:45.578792	\N	\N	f
+3664	2026-06-20	12:15:00	13920	69	214	257	\N	29	15	100	68847	2.626882e+06	2.626982e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 19:06:40.456045	\N	\N	f
+3665	2026-06-20	12:22:00	13921	69	204	246	\N	29	15	100	446718	2.626983e+06	2.627083e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 19:07:59.442963	\N	\N	f
+3666	2026-06-22	08:36:00	159140	69	244	253	163	30	16	66	150673	939535	939601	campo	normal	159140 tanwue lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-22 14:38:35.520972	253	253	t
+3667	2026-06-22	08:38:00	15395	69	234	271	168	30	16	294	3791.3	939601	939895	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-22 14:41:32.142735	253	271	f
+3668	2026-06-22	05:20:00	13926	69	198	241	\N	29	15	100	82847	2.628356e+06	2.628456e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-22 15:17:59.107079	\N	\N	f
+3669	2026-06-22	10:51:00	15396	69	225	270	142	30	16	295	2771.5	939895	940190	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-22 16:54:15.190067	253	270	f
+3627	2026-06-19	16:00:00	13903	68	242	252	\N	29	15	10	3537	2.625653e+06	2.625663e+06	patio	normal	Kms 3537	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 00:26:14.847086	\N	\N	f
+3657	2026-06-20	10:47:00	13913	69	212	255	\N	29	15	100	0	2.626276e+06	2.626376e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 18:48:23.906367	\N	\N	f
+3670	2026-06-20	12:30:00	13923	69	199	280	\N	29	15	120	141105	2.627083e+06	2.627203e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-22 18:30:51.385689	\N	\N	f
+3671	2026-06-20	13:02:00	13924	69	229	269	\N	29	15	100	793215	2.627203e+06	2.627303e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-22 18:31:20.207712	\N	\N	f
+3672	2026-06-22	14:22:00	15397	69	201	243	173	30	16	100	17389	940190	940290	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-22 20:24:05.443029	253	243	f
+3673	2026-06-22	09:40:00	13927	69	241	239	\N	29	15	62	19345	2.628459e+06	2.628521e+06	patio	normal	PASA ARQ JOSÉ POR 3 BOTES PARA LA PLANTA VERDE 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:31:58.615498	\N	\N	f
+3674	2026-06-22	09:40:00	13928	69	217	239	\N	29	15	20	1042.1	2.628521e+06	2.628541e+06	patio	normal	PASA ARQ JOSE POR 1 BOTE PARA RODILLO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:32:33.005461	\N	\N	f
+3675	2026-06-22	16:11:00	13929	69	232	267	\N	29	15	100	483131	2.628581e+06	2.628681e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:33:28.388758	\N	\N	f
+3676	2026-06-22	16:20:00	13930	69	229	269	\N	29	15	100	793328	2.628641e+06	2.628741e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:34:20.454737	\N	\N	f
+3677	2026-06-22	16:29:00	13931	69	226	266	\N	29	15	120	56932	2.628742e+06	2.628862e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:34:56.429826	\N	\N	f
+3678	2026-06-22	16:41:00	13932	69	215	258	\N	29	15	100	47910	2.628862e+06	2.628962e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:35:46.909655	\N	\N	f
+3679	2026-06-22	16:58:00	13933	69	202	244	\N	29	15	75	71960	2.628963e+06	2.629038e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:36:20.399189	\N	\N	f
+3680	2026-06-22	17:10:00	13934	69	199	280	\N	29	15	100	141385	2.629038e+06	2.629138e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:37:54.560831	\N	\N	f
+3681	2026-06-22	17:20:00	13935	69	228	268	\N	29	15	100	8771	2.629138e+06	2.629238e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:38:26.504691	\N	\N	f
+3682	2026-06-22	17:30:00	13936	69	206	248	\N	29	15	100	522087	2.629238e+06	2.629338e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:40:16.191432	\N	\N	f
+3683	2026-06-22	17:45:00	13937	69	211	254	\N	29	15	100	37818	2.629338e+06	2.629438e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:40:39.736822	\N	\N	f
+3684	2026-06-22	18:15:00	13938	69	209	251	\N	29	15	120	46965	2.629439e+06	2.629559e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 01:41:06.961318	\N	\N	f
+3685	2026-06-23	05:20:00	13939	69	198	241	\N	29	15	50	83026	2.629559e+06	2.629609e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-23 11:40:08.211926	\N	\N	f
+3686	2026-06-23	05:44:00	15398	69	252	272	163	30	16	120	4613	940290	940410	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-23 12:22:29.838036	253	272	f
+3687	2026-06-23	09:37:00	15399	69	216	259	138	30	16	66	5354	940410	940476	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-23 15:39:53.080918	253	259	f
+3688	2026-06-23	07:00:00	13940	69	205	247	\N	29	15	100	22795	2.629609e+06	2.629709e+06	patio	normal	MANTENIMIENTO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:29:11.249479	\N	\N	f
+3689	2026-06-23	07:50:00	13941	69	197	240	\N	29	15	120	27254	2.62971e+06	2.62983e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:29:58.640908	\N	\N	f
+3690	2026-06-23	12:15:00	13942	69	213	256	\N	29	15	100	1.372229e+06	2.62983e+06	2.62993e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:30:29.238495	\N	\N	f
+3691	2026-06-23	16:05:00	13944	69	201	243	\N	29	15	100	17572	2.630882e+06	2.630982e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:33:21.000481	\N	\N	f
+3692	2026-06-23	16:15:00	13945	69	226	266	\N	29	15	100	57156	2.630982e+06	2.631082e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:33:47.033546	\N	\N	f
+3693	2026-06-23	16:25:00	13946	69	232	267	\N	29	15	100	483371	2.631082e+06	2.631182e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:34:14.761283	\N	\N	f
+3696	2026-06-23	16:47:00	13948	69	206	248	\N	29	15	100	522387	2.631282e+06	2.631382e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:38:27.829498	\N	\N	f
+3697	2026-06-23	17:23:00	13949	69	199	280	\N	29	15	110	141700	2.631382e+06	2.631492e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:39:05.992511	\N	\N	f
+3698	2026-06-23	17:34:00	13950	69	204	246	\N	29	15	120	447063	2.631493e+06	2.631613e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:39:34.978742	\N	\N	f
+3699	2026-06-23	17:47:00	14152	69	209	280	\N	29	15	100	47159	2.631613e+06	2.631713e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:40:52.721856	\N	\N	f
+3700	2026-06-23	\N	\N	69	242	\N	160	31	\N	1	3686	\N	\N	externo	normal	[TALLER] PRUEBA RESETEO HUBODOMETRO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:44:20.235572	\N	\N	f
+3654	2026-06-20	09:57:00	13910	69	242	252	\N	29	15	100	3544	2.626025e+06	2.626125e+06	patio	normal	KMS 3544	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 18:44:19.830115	\N	\N	f
+3614	2026-06-19	09:55:00	13899	68	212	255	\N	29	15	100	0	2.624214e+06	2.624314e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-19 18:29:08.544483	\N	\N	f
+3695	2026-06-23	16:35:00	13947	69	212	255	\N	29	15	100	246	2.631182e+06	2.631282e+06	patio	normal	RESET HUBODOMETRO 239 KM	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:37:02.631656	\N	\N	f
+3701	2026-06-23	17:56:00	14153	69	242	252	\N	29	15	60	3687	2.631713e+06	2.631773e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:51:11.12093	\N	\N	f
+3702	2026-06-23	18:02:00	14154	69	229	269	\N	29	15	100	793670	2.631773e+06	2.631873e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 00:51:40.210089	\N	\N	f
+3703	2026-06-24	06:38:00	14101	69	214	257	146	30	16	110	69135	940476	940586	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-24 12:40:43.190762	253	257	f
+3704	2026-06-24	06:40:00	14102	69	252	272	146	30	16	120	4789	940586	940706	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-24 12:42:45.330711	253	272	f
+3705	2026-06-24	05:03:00	14155	69	198	241	\N	29	15	70	83201	2.631874e+06	2.631944e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 13:04:58.436652	\N	\N	f
+3706	2026-06-24	07:04:00	14156	69	205	247	\N	29	15	100	22948	2.631944e+06	2.632044e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-24 13:06:37.681528	\N	\N	f
+3707	2026-06-24	11:27:00	14103	69	211	254	146	30	16	100	38025	940706	940806	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-24 17:29:48.269111	253	254	f
+3709	2026-06-24	17:45:00	14105	69	216	259	138	30	16	87	5367	940881	940968	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-24 23:47:22.330717	253	259	f
+3710	2026-06-24	17:47:00	14106	69	209	251	136	30	16	100	47352	940968	941068	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-24 23:49:00.353192	253	251	f
+3711	2026-06-24	17:49:00	14107	69	215	258	\N	30	16	110	48246	941068	941178	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-24 23:50:18.96092	253	258	f
+3712	2026-06-24	17:50:00	14108	69	212	255	136	30	16	100	409	941178	941278	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-24 23:53:18.062884	253	255	f
+3713	2026-06-24	19:50:00	14157	69	197	240	\N	29	15	100	27380	2.632044e+06	2.632144e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 00:17:41.045904	\N	\N	f
+3714	2026-06-24	15:16:00	14158	69	199	280	\N	29	15	120	141900	2.632145e+06	2.632265e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 00:18:14.012167	\N	\N	f
+3715	2026-06-24	15:28:00	14159	69	202	244	\N	29	15	100	72357	2.632265e+06	2.632365e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 00:18:44.303578	\N	\N	f
+3716	2026-06-24	15:38:00	14160	69	201	243	\N	29	15	100	17830	2.632365e+06	2.632465e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 00:19:13.586009	\N	\N	f
+3717	2026-06-24	16:06:00	14161	69	213	256	\N	29	15	100	1.372436e+06	2.632465e+06	2.632565e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 00:20:18.544188	\N	\N	f
+3718	2026-06-24	16:24:00	14162	69	242	252	\N	29	15	100	3829	2.632565e+06	2.632665e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 00:20:43.126655	\N	\N	f
+3719	2026-06-25	06:10:00	14109	69	244	253	163	30	16	60	150673	941278	941338	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-25 12:12:28.841276	253	253	t
+3720	2026-06-25	06:12:00	14110	69	226	266	174	30	16	100	57481	941338	941438	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-25 12:16:13.575894	253	266	f
+3721	2026-06-25	06:16:00	14111	69	229	269	174	30	16	100	793887	941438	941538	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-25 12:34:42.482732	253	269	f
+3722	2026-06-25	06:34:00	14112	69	211	254	174	30	16	50	38188	941538	941588	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-25 12:51:36.61905	253	254	f
+3723	2026-06-25	08:43:00	14113	69	208	250	146	30	16	100	1.034828e+06	941588	941688	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-25 14:45:25.199873	253	250	f
+3724	2026-06-25	08:45:00	14114	69	214	257	146	30	16	100	69454	941688	941788	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-25 14:46:55.225392	253	257	f
+3725	2026-06-25	08:46:00	14115	69	252	272	\N	30	16	100	5105	941788	941888	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-25 14:48:08.787806	253	272	f
+3726	2026-06-25	12:03:00	14116	69	234	271	168	30	16	280	3813	941888	942168	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-25 18:06:00.188992	253	271	f
+3727	2026-06-24	18:35:00	14164	69	255	248	\N	29	15	237	165	2.633486e+06	2.633723e+06	patio	normal	35 LITROS DE UREA, TANQUE LLENO DE DIESEL 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 23:54:14.476481	\N	\N	f
+3730	2026-06-25	08:48:00	14167	69	206	241	\N	29	15	100	522685	2.633874e+06	2.633974e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 23:55:52.045335	\N	\N	f
+3729	2026-06-25	07:50:00	14166	69	197	240	\N	29	15	50	27551	2.633824e+06	2.633874e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 23:55:25.08939	\N	\N	f
+3728	2026-06-25	07:10:00	14165	69	205	247	\N	29	15	100	23116	2.633724e+06	2.633824e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-25 23:54:55.270509	\N	\N	f
+3731	2026-06-25	09:00:00	14168	69	203	242	\N	29	15	120	130862	2.633974e+06	2.634094e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 00:11:35.779655	\N	\N	t
+3732	2026-06-25	15:10:00	14169	69	204	246	\N	29	15	120	447386	2.634095e+06	2.634215e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 00:13:17.470584	\N	\N	f
+3733	2026-06-25	15:45:00	14170	69	201	243	\N	29	15	100	18050	2.634215e+06	2.634315e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 00:16:21.939022	\N	\N	f
+3734	2026-06-25	15:56:00	14171	69	211	254	\N	29	15	100	38328	2.634315e+06	2.634415e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 00:17:02.902398	\N	\N	f
+3735	2026-06-25	16:05:00	14172	69	242	252	\N	29	15	100	4004	2.634415e+06	2.634515e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 00:17:56.394763	\N	\N	f
+3736	2026-06-25	16:18:00	14173	69	213	256	\N	29	15	100	1.372628e+06	2.634515e+06	2.634615e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 00:21:50.519246	\N	\N	f
+3737	2026-06-25	16:33:00	14174	69	202	244	\N	29	15	90	72601	2.634615e+06	2.634705e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 00:22:24.287586	\N	\N	f
+3738	2026-06-25	16:38:00	14175	69	198	241	\N	29	15	70	83371	2.634705e+06	2.634775e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 00:22:50.75439	\N	\N	f
+3739	2026-06-25	16:52:00	14176	69	206	267	\N	29	15	100	522877	2.634775e+06	2.634875e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 00:23:18.008938	\N	\N	f
+3740	2026-06-26	07:16:00	14117	69	229	269	174	30	16	80	794118	942168	942248	campo	normal	Hora de carga 6.53	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-26 13:19:54.616609	253	269	f
+3741	2026-06-26	10:55:00	14118	69	214	257	157	30	16	50	69700	942248	942298	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-26 16:57:51.20066	253	257	f
+3742	2026-06-26	13:17:00	14119	69	216	259	138	30	16	67	5377	942298	942365	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-26 19:20:00.976496	253	259	f
+3743	2026-06-26	14:40:00	14120	69	252	272	175	30	16	20	5450	942365	942385	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-26 20:42:59.506495	253	272	f
+3744	2026-06-26	14:42:00	14122	69	203	242	175	30	16	32	131617	942385	942417	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-26 20:46:26.896017	253	242	f
+3745	2026-06-26	14:46:00	14124	69	201	243	175	30	16	30	18268	942417	942447	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-26 20:55:18.50658	253	243	f
+3746	2026-06-26	14:55:00	14125	69	208	250	175	30	16	20	1.035175e+06	942447	942467	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-26 21:31:13.565198	253	250	f
+3747	2026-06-25	17:56:00	14178	69	209	251	\N	29	15	80	47627	2.635774e+06	2.635854e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 23:24:34.351899	\N	\N	f
+3748	2026-06-26	08:00:00	14179	69	197	240	\N	29	15	80	27661	2.635854e+06	2.635934e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 23:27:26.670608	\N	\N	f
+3749	2026-06-26	\N	\N	69	233	\N	154	31	\N	40	1629	\N	\N	externo	normal	[FOLIO 14180] 40 LITROS ARQ JOSE, MARAVILLAS\nFOLIO:; 14180	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 23:28:52.945067	\N	\N	f
+3750	2026-06-26	\N	\N	69	241	\N	154	31	\N	40	\N	\N	\N	externo	normal	[Externo] 40 LITROS EN BOTES ARQ JOSE. FOLIO : 14180	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 23:29:20.621675	\N	\N	f
+3751	2026-06-26	16:15:00	14180	69	229	269	\N	29	15	50	794278	2.636014e+06	2.636064e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 23:29:53.670235	\N	\N	f
+3752	2026-06-26	16:20:00	14182	69	202	244	\N	29	15	1	72829	2.636064e+06	2.636065e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 23:30:30.553877	\N	\N	f
+3753	2026-06-26	16:50:00	14183	69	204	246	\N	29	15	100	447623	2.636065e+06	2.636165e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-26 23:30:58.791196	\N	\N	f
+3754	2026-06-26	17:02:00	14184	69	199	280	\N	29	15	1	142388	2.636165e+06	2.636166e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:27:47.323902	\N	\N	f
+3755	2026-06-27	00:00:00	14185	71	199	280	\N	29	15	110	142388	2.636166e+06	2.636276e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:28:22.092551	\N	\N	f
+3756	2026-06-27	00:00:00	14186	71	211	254	\N	29	15	1	38477	2.636277e+06	2.636278e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:28:59.650052	\N	\N	f
+3757	2026-06-27	00:00:00	14187	71	211	254	\N	29	15	100	38477	2.636278e+06	2.636378e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:30:04.917883	\N	\N	f
+3758	2026-06-26	17:45:00	14188	69	232	251	\N	29	15	100	483878	2.636379e+06	2.636479e+06	patio	normal	SE LLEVA EL CAMION JULIO, DEJA EL CA17 EN REPARACION DE MUELLE DELANTERA ROTA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:30:42.531406	\N	\N	f
+3759	2026-06-26	18:14:00	14189	69	212	255	\N	29	15	16	698	2.636479e+06	2.636495e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:31:16.440358	\N	\N	f
+3760	2026-06-27	10:00:00	14190	71	212	255	\N	29	15	100	698	2.636495e+06	2.636595e+06	patio	normal	CARGA POSTFECHADA , NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:31:45.086378	\N	\N	f
+3761	2026-06-26	18:22:00	14191	69	242	252	\N	29	15	10	4248	2.636585e+06	2.636595e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:32:14.580191	\N	\N	f
+3762	2026-06-27	00:00:00	14192	71	242	252	\N	29	15	100	4248	2.636595e+06	2.636695e+06	patio	normal	CARGA ´POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:32:51.807439	\N	\N	f
+3763	2026-06-26	18:33:00	14193	69	226	266	\N	29	15	50	57930	2.636695e+06	2.636745e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:33:17.889379	\N	\N	f
+3764	2026-06-27	00:00:00	14194	71	226	266	\N	29	15	120	57930	2.636745e+06	2.636865e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:33:47.568726	\N	\N	f
+3765	2026-06-26	18:47:00	14195	69	206	267	\N	29	15	10	523163	2.636865e+06	2.636875e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:34:19.754874	\N	\N	f
+3766	2026-06-27	00:00:00	14196	71	232	267	\N	29	15	100	483878	2.636875e+06	2.636975e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 01:34:50.70171	\N	\N	f
+3771	2026-06-27	07:30:00	14197	71	198	241	\N	29	15	100	83531	2.636977e+06	2.637077e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 14:54:53.076415	\N	\N	f
+3772	2026-06-27	07:35:00	14198	71	205	247	\N	29	15	100	23480	2.637077e+06	2.637177e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 14:55:50.243258	\N	\N	f
+3773	2026-06-27	08:00:00	14199	71	197	240	\N	29	15	120	27885	2.637177e+06	2.637297e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 14:56:25.305352	\N	\N	f
+3775	2026-06-26	\N	\N	69	255	\N	162	31	\N	1	650	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 15:08:29.49365	\N	\N	f
+3767	2026-06-27	07:55:00	14121	71	252	272	\N	30	16	100	5568	942467	942567	campo	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO, AUTORIZADO BETO N.	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-27 13:58:11.997219	253	272	f
+3768	2026-06-27	07:58:00	14123	71	203	242	\N	30	16	100	131661	942567	942667	campo	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO, AUTORIZADO BETO N.	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-27 14:00:11.185249	253	242	f
+3769	2026-06-27	08:00:00	14126	71	208	250	\N	30	16	100	1.035233e+06	942667	942767	campo	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO, AUTORIZADO BETO N.	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-27 14:01:36.870044	253	250	f
+3770	2026-06-27	08:01:00	14127	71	201	243	145	30	16	100	18346	942767	942867	campo	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO, AUTORIZADO BETO N.	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-27 14:03:37.680598	253	243	f
+3777	2026-06-26	\N	\N	69	197	\N	162	31	\N	1	27885	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 15:41:50.813882	\N	\N	f
+3778	2026-06-26	\N	\N	69	205	\N	162	31	\N	1	23480	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 15:43:26.91769	\N	\N	f
+3708	2026-06-24	17:42:00	14104	69	253	274	138	30	16	75	3661.2	940806	940881	campo	normal	Tsnsue lleno hora de carga2.40 pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-24 23:45:11.921896	253	274	f
+3779	2026-06-26	\N	\N	69	213	\N	162	31	\N	1	1.372788e+06	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 16:18:29.518324	\N	\N	f
+3780	2026-06-26	\N	\N	69	215	\N	162	31	\N	1	48432	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 16:30:26.219631	\N	\N	f
+3781	2026-06-26	\N	\N	69	214	\N	162	31	\N	1	69831	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 16:55:23.33521	\N	\N	f
+3782	2026-06-26	\N	\N	69	209	\N	162	31	\N	1	47781	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 17:19:23.116984	\N	\N	f
+3774	2026-06-26	\N	\N	69	208	\N	162	31	\N	1	1.035178e+06	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 15:07:48.752707	\N	\N	f
+3783	2026-06-26	\N	\N	69	228	\N	162	31	\N	1	9033	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 17:43:28.426738	\N	\N	f
+3784	2026-06-26	\N	\N	69	198	\N	162	31	\N	1	83531	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 17:44:10.739939	\N	\N	f
+3776	2026-06-26	\N	\N	69	226	\N	162	31	\N	1	57831	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 15:12:36.374294	\N	\N	f
+3785	2026-06-27	11:42:00	14252	71	215	258	\N	29	15	130	48542	2.638026e+06	2.638156e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:08:40.672104	\N	\N	f
+3786	2026-06-27	11:53:00	14253	71	214	257	\N	29	15	120	69930	2.638156e+06	2.638276e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:09:44.321804	\N	\N	f
+3787	2026-06-27	12:05:00	14254	71	229	269	\N	29	15	100	794429	2.638276e+06	2.638376e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:10:29.106894	\N	\N	f
+3788	2026-06-27	12:15:00	14256	71	202	244	\N	29	15	100	73009	2.638376e+06	2.638476e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:10:51.925887	\N	\N	f
+3789	2026-06-27	12:25:00	14257	71	255	248	\N	29	15	150	814	2.638476e+06	2.638626e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:11:39.415319	\N	\N	f
+3790	2026-06-27	12:41:00	14258	71	206	267	\N	29	15	50	523321	2.638626e+06	2.638676e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:12:43.877829	\N	\N	f
+3791	2026-06-27	12:46:00	14259	71	242	252	\N	29	15	60	4420	2.638676e+06	2.638736e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:13:12.217341	\N	\N	f
+3792	2026-06-27	12:55:00	14260	71	212	255	\N	29	15	50	802	2.638736e+06	2.638786e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:13:35.723768	\N	\N	f
+3793	2026-06-27	13:11:00	14262	71	213	256	\N	29	15	100	1.372922e+06	2.638786e+06	2.638886e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:14:10.301625	\N	\N	f
+3794	2026-06-27	13:21:00	14263	71	228	268	\N	29	15	100	9114	2.638887e+06	2.638987e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:14:33.640067	\N	\N	f
+3795	2026-06-27	13:33:00	14264	71	232	251	\N	29	15	50	484034	2.638987e+06	2.639037e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 20:15:13.626389	\N	\N	f
+3796	2026-06-29	06:11:00	14128	71	244	253	163	30	16	53	150673	942867	942920	campo	normal	Km 160435  tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-29 12:14:09.390545	253	253	t
+3797	2026-06-29	08:14:00	14129	71	234	271	168	30	16	272	3830.1	942920	943192	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-29 14:17:21.424331	253	271	f
+3798	2026-06-29	10:57:00	14130	71	252	272	138	30	16	120	5805	943192	943312	campo	normal	Hora de carga 9.15 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-29 16:59:54.892895	253	272	f
+3799	2026-06-29	12:42:00	14131	71	226	266	146	30	16	120	58255	943312	943432	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-29 18:44:35.935866	253	266	f
+3800	2026-06-27	14:11:00	14265	71	201	243	\N	29	15	50	18434	2.639038e+06	2.639088e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:44:16.786929	\N	\N	f
+3801	2026-06-29	20:30:00	14266	71	208	250	\N	29	15	100	1.035363e+06	2.639088e+06	2.639188e+06	patio	normal	SALE RECIEN REPARADO DE SOPORTE Y TORNILLO DE CENTRO MUELLES DELANTERAS DE LADO DE CHOFER\n	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:45:25.206713	\N	\N	f
+3802	2026-06-29	17:46:00	12467	71	203	250	\N	29	15	120	131831	2.639189e+06	2.639309e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:46:31.769329	\N	\N	f
+3804	2026-06-29	15:12:00	14286	71	201	243	\N	29	15	120	18644	2.639309e+06	2.639429e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:48:44.866314	\N	\N	f
+3805	2026-06-29	15:38:00	14269	71	213	256	\N	29	15	100	1.373154e+06	2.639429e+06	2.639529e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:49:26.456374	\N	\N	f
+3806	2026-06-29	15:53:00	14270	71	229	269	\N	29	15	70	794595	2.639533e+06	2.639603e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:49:57.37576	\N	\N	f
+3807	2026-06-29	16:13:00	14271	71	199	280	\N	29	15	120	142821	2.639603e+06	2.639723e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:50:29.194925	\N	\N	f
+3808	2026-06-29	16:35:00	14272	71	206	267	\N	29	15	100	523612	2.639723e+06	2.639823e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:51:01.658155	\N	\N	f
+3809	2026-06-29	16:41:00	14273	71	214	269	\N	29	15	80	70212	2.639823e+06	2.639903e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:52:48.653675	\N	\N	f
+3810	2026-06-29	16:51:00	14274	71	232	239	\N	29	15	50	484324	2.639903e+06	2.639953e+06	patio	normal	deja peludo el camion, agarra el 17	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-30 00:14:19.33131	\N	\N	f
+3811	2026-06-29	17:19:00	14275	71	209	251	\N	29	15	100	47781	2.639953e+06	2.640053e+06	patio	normal	SALE RECIEN REPARADO, MUELLE NUEVA DELANTERA, BUJES, SELLOS DE CAJA DE DIRECCION, MANTENIMIENTO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-30 00:15:52.715361	\N	\N	f
+3812	2026-06-29	17:29:00	14276	71	205	247	\N	29	15	120	23798	2.640053e+06	2.640173e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-30 00:16:16.371995	\N	\N	f
+3813	2026-06-29	17:38:00	14277	71	202	244	\N	29	15	100	73269	2.640173e+06	2.640273e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-30 00:28:44.685795	\N	\N	f
+3814	2026-06-29	17:50:00	14278	71	211	254	\N	29	15	120	38771	2.640273e+06	2.640393e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-30 00:29:18.615738	\N	\N	f
+3815	2026-06-29	18:05:00	14279	71	228	268	\N	29	15	100	9349	2.640393e+06	2.640493e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-30 00:29:53.913402	\N	\N	f
+3816	2026-06-29	18:13:00	14280	71	204	246	\N	29	15	130	447999	2.640494e+06	2.640624e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-30 00:30:36.316662	\N	\N	f
+3817	2026-06-30	06:28:00	14132	71	198	241	146	30	16	100	83777	943432	943532	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-30 12:30:19.348463	253	241	f
+3818	2026-06-30	10:06:00	14133	71	252	272	157	30	16	120	6057	943532	943652	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-30 17:04:18.050845	253	272	f
+3819	2026-06-30	12:57:00	14134	71	208	250	176	30	16	100	1.03566e+06	943652	943752	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-30 19:00:28.011227	253	250	f
+3820	2026-06-30	13:00:00	14135	71	216	259	138	30	16	92	5390	943752	943844	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-30 19:38:24.697139	253	259	f
+3821	2026-06-29	18:25:00	14282	71	212	255	\N	29	15	100	1054	2.640624e+06	2.640724e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:45:17.124023	\N	\N	f
+3822	2026-06-29	18:41:00	14283	71	255	248	\N	29	15	100	1112	2.640724e+06	2.640824e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:46:17.381511	\N	\N	f
+3823	2026-06-30	20:49:00	14284	71	218	239	\N	29	15	14	1459.7	2.640844e+06	2.640858e+06	patio	normal	SALE A ARBOLEDA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:47:13.6436	\N	\N	f
+3824	2026-06-30	20:50:00	14285	71	232	255	\N	29	15	100	484325	2.640858e+06	2.640958e+06	patio	normal	SE LLEVA FRANCISCO CA13 , DEJA CA15 FALLA DE CLUTCH	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:48:15.725458	\N	\N	f
+3825	2026-06-30	22:45:00	142866	71	256	239	\N	29	15	130	7204	2.640859e+06	2.640989e+06	patio	normal	SALE A OBRA, JAVIER PELON SE LA LLEVA, MANTENIMIENTO A LAS 7150	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:50:37.43871	\N	\N	f
+3826	2026-06-30	13:50:00	14287	71	241	239	\N	29	15	40	19345	2.64097e+06	2.64101e+06	patio	normal	PASO ARQ JAVIER POR 20 LITROS PARA PLANTA + 20 LITROS PARA RETRO R04	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:51:54.173982	\N	\N	f
+3827	2026-06-30	13:59:00	1428677	71	233	239	\N	29	15	20	1629	2.64109e+06	2.64111e+06	patio	normal	PASO ARQ JAVIER POR 20 LITROS PARA PLANTA + 20 LITROS PARA RETRO R04	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:52:25.916647	\N	\N	f
+3828	2026-06-30	16:17:00	14289	71	201	243	\N	29	15	120	18864	2.642106e+06	2.642226e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:54:17.606855	\N	\N	f
+3829	2026-06-30	16:30:00	14290	71	214	257	\N	29	15	100	70426	2.642227e+06	2.642327e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:54:50.333408	\N	\N	f
+3830	2026-06-30	16:41:00	14291	71	205	247	\N	29	15	80	23945	2.642327e+06	2.642407e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:55:30.327174	\N	\N	f
+3831	2026-06-30	16:50:00	14292	71	213	256	\N	29	15	100	1.373341e+06	2.642407e+06	2.642507e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:56:20.222792	\N	\N	f
+3832	2026-06-30	17:06:00	14293	71	211	254	\N	29	15	100	38937	2.642507e+06	2.642607e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:56:53.907145	\N	\N	f
+3833	2026-06-30	17:15:00	14294	71	202	244	\N	29	15	100	73493	2.642607e+06	2.642707e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:57:22.280857	\N	\N	f
+3834	2026-06-30	17:23:00	14295	71	206	267	\N	29	15	100	523880	2.642707e+06	2.642807e+06	patio	normal	HOY SE LE PUSIERON 2 GALLOS Y SE PARCHO UNA LLANTA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:58:19.181256	\N	\N	f
+3835	2026-06-30	17:32:00	14296	71	228	268	\N	29	15	100	9632	2.642807e+06	2.642907e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:58:49.816579	\N	\N	f
+3836	2026-06-30	17:41:00	14297	71	199	280	\N	29	15	120	143098	2.642908e+06	2.643028e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 01:59:55.057142	\N	\N	f
+3837	2026-06-30	17:59:00	14298	71	204	246	\N	29	15	39	448289	2.643028e+06	2.643067e+06	patio	normal	TANQUE VACIO TALLER\n	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 02:00:33.499558	\N	\N	f
+3838	2026-07-01	07:16:00	14136	71	255	248	145	30	16	120	1473	943844	943964	campo	normal	Hora de carga 6.09 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-01 13:19:45.927254	253	248	f
+3839	2026-07-01	07:19:00	14137	71	226	266	146	30	16	120	58547	943964	944084	campo	normal	Hora de carga 6.47 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-01 13:23:01.315404	253	266	f
+3840	2026-07-01	07:23:00	14138	71	204	246	146	30	16	120	448323	944084	944204	campo	normal	Hora de carga 6.54 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-01 13:25:23.687333	253	246	f
+3841	2026-07-01	07:25:00	14139	71	229	269	146	30	16	120	794938	944204	944324	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-01 13:29:02.496724	253	269	f
+3842	2026-07-01	09:45:00	14140	71	215	258	145	30	16	120	48974	944324	944444	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-01 15:49:55.496599	253	258	f
+3843	2026-07-01	09:49:00	14141	71	252	272	145	30	16	100	6248	944444	944544	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-01 15:52:46.714935	253	272	f
+3844	2026-07-01	09:52:00	14142	71	209	251	145	30	16	100	48064	944544	944644	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-01 15:54:41.558689	253	251	f
+3845	2026-07-01	09:54:00	14143	71	197	240	145	30	16	100	28112	944644	944744	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-01 15:56:41.196019	253	240	f
+3846	2026-07-01	10:53:00	14144	71	203	242	157	30	16	120	132325	944744	944864	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-01 16:55:00.583452	253	242	f
+3847	2026-07-01	14:10:00	14299	71	205	247	\N	29	15	80	23945	2.643067e+06	2.643145e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 22:08:50.94484	\N	\N	f
+3848	2026-07-01	15:55:00	14300	71	213	256	\N	29	15	60	1.373474e+06	2.643147e+06	2.643207e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 22:09:18.508693	\N	\N	f
+3849	2026-07-01	16:04:00	13951	71	228	268	\N	29	15	100	9826	2.643207e+06	2.643307e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 23:39:22.660596	\N	\N	f
+3850	2026-07-01	16:40:00	13952	71	245	279	\N	29	15	80	564281	2.643307e+06	2.643387e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 23:40:06.929208	\N	\N	f
+3851	2026-07-01	16:22:00	13953	71	214	257	\N	29	15	100	70552	2.643387e+06	2.643487e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 23:45:25.462358	\N	\N	f
+3852	2026-07-01	16:36:00	13954	71	202	244	\N	29	15	100	73638	2.643488e+06	2.643588e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 23:46:00.081379	\N	\N	f
+3853	2026-07-01	16:56:00	13955	71	211	254	\N	29	15	100	39134	2.643588e+06	2.643688e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 23:46:19.841449	\N	\N	f
+3854	2026-07-01	17:22:00	13956	71	229	269	\N	29	15	100	795065	2.643688e+06	2.643788e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-01 23:46:41.3893	\N	\N	f
+3855	2026-07-02	08:12:00	14145	71	206	267	174	30	16	100	524115	944864	944964	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 14:15:30.273916	253	267	f
+3856	2026-07-02	08:15:00	14146	71	199	280	174	30	16	120	143380	944964	945084	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 14:17:01.026961	253	280	f
+3857	2026-07-02	08:17:00	14147	71	232	255	174	30	16	100	484686	945084	945184	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 14:40:48.609959	253	255	f
+3858	2026-07-02	08:40:00	14148	71	255	248	174	30	16	100	1702	945184	945284	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 14:43:19.931122	253	248	f
+3859	2026-07-02	08:43:00	14149	71	209	251	174	30	16	100	48245	945284	945384	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 14:44:47.902101	253	251	f
+3904	2026-07-03	\N	\N	73	252	\N	162	31	\N	1	6794	\N	\N	externo	normal	[Externo] 1 CUARTO DE DIESEL	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 16:45:13.155168	\N	\N	f
+3860	2026-07-02	08:44:00	159141	71	244	253	146	30	16	67	150673	945384	945451	campo	normal	Km 161190 tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 14:46:59.130533	253	253	t
+3861	2026-07-02	09:33:00	11701	71	198	241	157	30	16	100	84028	945451	945551	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 15:34:58.032256	253	241	f
+3862	2026-07-02	10:55:00	11702	71	226	266	157	30	16	110	58871	945551	945661	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 16:57:14.814504	253	266	f
+3863	2026-07-02	13:54:00	11703	71	203	242	157	30	16	100	132617	945661	945761	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 19:58:06.644855	253	242	f
+3864	2026-07-02	13:58:00	11704	71	201	243	157	30	16	100	19297	945761	945861	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 19:59:20.394082	253	243	f
+3865	2026-07-02	07:10:00	13958	71	215	258	\N	29	15	70	49115	2.644799e+06	2.644869e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-02 22:39:46.487987	\N	\N	f
+3866	2026-07-02	08:00:00	13959	71	208	250	\N	29	15	130	1.035947e+06	2.644869e+06	2.644999e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-02 22:40:33.622622	\N	\N	f
+3867	2026-07-02	17:45:00	11705	71	204	246	136	30	16	120	448684	945861	945981	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 23:47:08.792322	253	246	f
+3868	2026-07-02	17:47:00	11706	71	229	269	136	30	16	50	795257	945981	946031	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 23:48:39.196014	253	269	f
+3869	2026-07-02	17:48:00	11707	71	211	254	136	30	16	100	39331	946031	946131	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 23:50:01.389182	253	254	f
+3870	2026-07-02	17:50:00	14708	71	214	257	136	30	16	50	70727	946131	946181	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 23:51:26.448599	253	257	f
+3871	2026-07-02	17:51:00	11709	71	202	244	136	30	16	90	73827	946181	946271	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 23:52:42.320194	253	244	f
+3872	2026-07-02	17:52:00	11710	71	199	280	136	30	16	60	143585	946271	946331	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 23:54:08.841424	253	280	f
+3873	2026-07-02	17:54:00	14711	71	228	268	136	30	16	50	10043	946331	946381	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 23:55:35.200565	253	268	f
+3874	2026-07-02	17:55:00	11712	71	205	247	136	30	16	100	24321	946381	946481	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 23:56:50.767757	253	247	f
+3875	2026-07-02	17:56:00	11713	71	213	256	136	30	16	100	1.373644e+06	946481	946581	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-02 23:58:02.644359	253	256	f
+3876	2026-07-03	07:04:00	11714	71	209	251	145	30	16	98	48506	946581	946679	campo	normal	Hora de carga 6.22 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-03 13:07:56.02361	253	251	f
+3877	2026-07-03	07:07:00	11715	71	252	272	146	30	16	100	6613	946679	946779	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-03 13:09:39.750645	253	272	f
+3878	2026-07-03	09:56:00	11716	71	216	259	138	30	16	90	5407	946779	946869	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-03 15:58:17.232452	253	259	f
+3879	2026-07-03	09:58:00	11717	71	217	260	138	30	16	17	1048.1	946869	946886	campo	normal	Tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-03 16:00:34.49537	253	260	f
+3880	2026-07-03	11:40:00	11718	71	208	250	146	30	16	85	1.036222e+06	946886	946971	campo	normal	Tanque bacio nissan	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-03 17:47:28.346496	253	250	f
+3881	2026-07-02	18:40:00	13961	71	255	248	\N	29	15	60	1932	2.645994e+06	2.646054e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-03 22:53:32.894862	\N	\N	f
+3882	2026-07-03	07:10:00	13962	71	197	240	\N	29	15	75	28428	2.646054e+06	2.646129e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-03 22:53:59.652406	\N	\N	f
+3884	2026-07-03	\N	\N	71	241	\N	154	31	\N	20	0	\N	\N	externo	normal	[Externo] FOLIO 13963 20 LITROS EN YOGA CON LUIS FLACO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-03 22:55:26.625564	\N	\N	f
+3885	2026-07-03	15:49:00	13966	71	215	258	\N	29	15	30	49436	2.647336e+06	2.647366e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-03 22:56:35.059019	\N	\N	f
+3886	2026-07-03	16:20:00	13968	71	201	243	\N	29	15	50	19693	2.647486e+06	2.647536e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-03 22:57:24.837241	\N	\N	f
+3887	2026-07-03	16:56:00	11719	71	218	274	177	30	16	32	1485.3	946971	947003	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-03 23:39:29.847668	253	274	f
+3888	2026-07-04	12:00:00	13967	72	215	258	\N	29	15	120	49436	2.64736e+06	2.64748e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 00:58:43.648273	\N	\N	f
+3889	2026-07-03	17:54:00	13979	71	232	255	\N	29	15	1	485040	2.647481e+06	2.647482e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 00:59:15.367635	\N	\N	f
+3890	2026-07-04	12:00:00	13980	72	232	269	\N	29	15	120	485043	2.647482e+06	2.647602e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO\nDEJA FRANCISCO CAMION PARA QUE SE LO LLEVE MEDINA, CA26 EN REPARACION DE VALVULA DE AIRE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 01:00:02.774187	\N	\N	f
+3891	2026-07-03	18:09:00	13981	71	226	266	\N	29	15	1	59224	2.648403e+06	2.648404e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 01:00:49.166639	\N	\N	f
+3892	2026-07-04	12:00:00	13982	72	226	266	\N	29	15	130	59224	2.648404e+06	2.648534e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 01:01:10.9162	\N	\N	f
+3893	2026-07-04	10:16:00	11720	72	214	257	145	30	16	100	71061	947003	947103	campo	normal	Hora de carga  6.01 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:19:13.251714	253	257	f
+3894	2026-07-04	10:19:00	11721	72	255	248	145	30	16	100	2246	947103	947203	campo	normal	Hora de carga 6.15 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:21:01.679709	253	248	f
+3895	2026-07-04	10:21:00	11722	72	201	243	145	30	16	100	19719	947203	947303	campo	normal	Hora de carga 6.30 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:22:48.204657	253	243	f
+3896	2026-07-04	10:22:00	11723	72	205	247	145	30	16	100	24480	947303	947403	campo	normal	Hora de carga 6.45 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:24:35.680706	253	247	f
+3897	2026-07-04	10:24:00	11724	72	209	251	145	30	16	100	48679	947403	947503	campo	normal	Hora de carga 6.57 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:26:42.421641	253	251	f
+3898	2026-07-04	10:26:00	11725	72	198	241	146	30	16	100	84261	947503	947603	campo	normal	Hira de carga 7.28 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:28:13.84894	253	241	f
+3899	2026-07-04	10:28:00	11726	72	203	242	178	30	16	120	132963	947603	947723	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:30:24.041244	253	242	f
+3900	2026-07-04	10:30:00	11727	72	202	244	178	30	16	100	74126	947723	947823	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:36:07.207819	253	244	f
+3901	2026-07-04	10:36:00	11728	72	208	250	178	30	16	70	1.036348e+06	947823	947893	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:37:59.552057	253	250	f
+3902	2026-07-04	00:00:00	13983	72	213	256	\N	29	15	100	1.373956e+06	2.648534e+06	2.648634e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 16:42:07.040422	\N	\N	f
+3903	2026-07-04	10:40:00	159142	72	256	262	178	30	16	119	7229	947893	948012	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-04 16:42:18.162974	253	262	f
+3883	2026-07-03	08:40:00	13963	71	233	264	\N	29	15	40	1652	2.646129e+06	2.646169e+06	patio	normal	MANDAMOS YOGAS CON FLACO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-03 22:54:51.822494	\N	\N	f
+3905	2026-07-03	\N	\N	71	208	\N	162	31	\N	1	1.036269e+06	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 16:45:51.130001	\N	\N	f
+3906	2026-07-03	\N	\N	71	203	\N	162	31	\N	1	132880	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 16:59:53.144489	\N	\N	f
+3907	2026-07-03	\N	\N	71	214	\N	162	31	\N	1	71047	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:00:53.763217	\N	\N	f
+3908	2026-07-03	\N	\N	71	202	\N	162	31	\N	1	74037	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:01:58.608035	\N	\N	f
+3909	2026-07-03	\N	\N	71	205	\N	162	31	\N	1	24469	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:03:11.438073	\N	\N	f
+3910	2026-07-03	\N	\N	71	255	\N	162	31	\N	1	2229	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:39:06.323786	\N	\N	f
+3911	2026-07-03	\N	\N	71	213	\N	162	31	\N	1	1.373956e+06	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:40:34.005673	\N	\N	f
+3912	2026-07-03	\N	\N	71	197	\N	162	31	\N	1	28620	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:42:00.821989	\N	\N	f
+3913	2026-07-03	16:31:00	13969	71	229	269	\N	29	15	100	795565	2.647548e+06	2.647648e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:50:19.209912	\N	\N	f
+3914	2026-07-03	16:39:00	13970	71	204	246	\N	29	15	130	448983	2.647648e+06	2.647778e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:50:55.333583	\N	\N	f
+3915	2026-07-03	16:30:00	13971	71	206	267	\N	29	15	10	524396	2.647779e+06	2.647789e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:52:32.197308	\N	\N	f
+3916	2026-07-04	00:00:00	13972	72	206	267	\N	29	15	100	524396	2.647789e+06	2.647889e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:53:13.140872	\N	\N	f
+3917	2026-07-03	17:02:00	13973	71	211	254	\N	29	15	30	39639	2.647889e+06	2.647919e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:53:37.506389	\N	\N	f
+3918	2026-07-04	00:00:00	13974	72	211	254	\N	29	15	100	39639	2.647919e+06	2.648019e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:54:01.593735	\N	\N	f
+3919	2026-07-03	17:18:00	13975	71	228	268	\N	29	15	20	10399	2.64802e+06	2.64804e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:55:19.429137	\N	\N	f
+3920	2026-07-04	00:00:00	13976	72	228	268	\N	29	15	100	10399	2.64804e+06	2.64814e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:55:37.765016	\N	\N	f
+3921	2026-07-03	17:40:00	13977	71	199	280	\N	29	15	20	144000	2.648141e+06	2.648161e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:56:07.574746	\N	\N	f
+3922	2026-07-04	00:00:00	13978	72	199	280	\N	29	15	120	144000	2.648161e+06	2.648281e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:56:29.716654	\N	\N	f
+3923	2026-07-04	07:59:00	13984	72	197	240	\N	29	15	120	28620	2.648635e+06	2.648755e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:57:05.510214	\N	\N	f
+3924	2026-07-04	08:30:00	13985	72	227	279	\N	29	15	70	452639	2.648755e+06	2.648825e+06	patio	normal	SALE A ARREGLAR CLIMA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:57:41.875905	\N	\N	f
+3925	2026-07-03	\N	\N	71	198	\N	162	31	\N	1	84269	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 17:58:55.32352	\N	\N	f
+3926	2026-07-03	\N	\N	71	209	\N	162	31	\N	1	48655	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 18:07:17.278085	\N	\N	f
+3927	2026-07-04	12:55:00	13987	72	208	250	\N	29	15	100	1.036415e+06	2.649897e+06	2.649997e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 19:48:00.28552	\N	\N	f
+3928	2026-07-06	13:07:00	13988	72	213	256	\N	29	15	100	1.374163e+06	2.649998e+06	2.650098e+06	patio	normal	CARGA POSTFECHADA PARA EL LUNES. NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 19:49:11.255397	\N	\N	f
+3929	2026-07-04	13:27:00	13989	72	209	251	\N	29	15	50	48806	2.650098e+06	2.650148e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 19:49:36.4399	\N	\N	f
+3930	2026-07-04	13:36:00	13990	72	252	272	\N	29	15	120	6961	2.650148e+06	2.650268e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 19:50:02.089429	\N	\N	f
+3803	2026-06-29	17:46:00	12467	71	203	242	\N	29	15	120	131831	2.639189e+06	2.639309e+06	patio	normal	SE CAMBIA VALVULA REPARTIDORA DE AIRE\n	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-29 23:47:21.742441	\N	\N	f
+3931	2026-07-06	07:06:00	11730	72	197	240	146	30	16	100	28833	948012	948112	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-06 13:08:00.496682	253	240	f
+3932	2026-07-06	08:55:00	11731	72	244	253	145	30	16	67	150673	948112	948179	campo	normal	Km 161932 tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-06 14:57:48.061579	253	253	t
+3933	2026-07-06	08:57:00	11732	72	226	266	145	30	16	120	59402	948179	948299	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-06 16:42:06.681846	253	266	f
+3934	2026-07-06	10:42:00	11733	72	211	254	142	30	16	100	39889	948299	948399	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-06 16:43:26.268007	253	254	f
+3935	2026-07-04	14:12:00	13991	72	227	267	\N	29	15	100	452692	2.650269e+06	2.650369e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 21:41:52.086741	\N	\N	f
+3936	2026-07-04	15:41:00	13992	72	212	255	\N	29	15	100	1294	2.650369e+06	2.650469e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 21:42:54.110424	\N	\N	f
+3937	2026-07-04	16:04:00	13993	72	206	239	\N	29	15	100	524493	2.65047e+06	2.65057e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 21:44:01.828024	\N	\N	f
+3939	2026-07-06	\N	\N	72	241	\N	154	31	\N	20	\N	\N	\N	externo	normal	[Externo] folio 13994 3 botes alain	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 21:45:48.992199	\N	\N	f
+3940	2026-07-06	11:29:00	13995	72	207	279	\N	29	15	100	486118	2.650669e+06	2.650769e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 22:26:09.805665	\N	\N	f
+3941	2026-07-06	15:25:00	13996	72	214	257	\N	29	15	120	71344	2.650769e+06	2.650889e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 22:26:40.49909	\N	\N	f
+3942	2026-07-06	15:43:00	13997	72	215	258	\N	29	15	120	49829	2.650889e+06	2.651009e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 22:27:16.753533	\N	\N	f
+3943	2026-07-06	16:00:00	13998	72	228	268	\N	29	15	120	10766	2.651009e+06	2.651129e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 22:27:41.854221	\N	\N	f
+3944	2026-07-06	16:09:00	13999	72	202	244	\N	29	15	100	74379	2.651129e+06	2.651229e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 22:28:05.230912	\N	\N	f
+3945	2026-07-06	16:18:00	14000	72	212	255	\N	29	15	100	1487	2.651229e+06	2.651329e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 22:28:47.710504	\N	\N	f
+3938	2026-07-06	09:02:00	13994	72	233	239	\N	29	15	40	1652	2.65057e+06	2.65063e+06	patio	normal	viene alain por 3 botes,  20litros son para la planta verde de maravillas	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-06 21:44:58.974754	\N	\N	f
+3946	2026-07-06	16:34:00	11734	72	204	246	151	30	16	120	449295	948399	948519	campo	normal	Hora de carga 1.42 pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-06 22:36:27.875548	253	246	f
+3947	2026-07-06	16:36:00	11735	72	203	242	157	30	16	100	133216	948519	948619	campo	normal	Hora de carga 3.47 ñm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-06 22:38:21.189608	253	242	f
+3948	2026-07-06	16:27:00	14302	72	201	243	\N	29	15	150	19861	2.65133e+06	2.65148e+06	patio	normal	NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 00:05:32.957291	\N	\N	f
+3949	2026-07-06	17:12:00	14303	72	213	256	\N	29	15	100	1.374341e+06	2.65148e+06	2.65158e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 00:06:14.738605	\N	\N	f
+3950	2026-07-06	17:22:00	14304	72	206	281	\N	29	15	100	524672	2.651581e+06	2.651681e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 00:08:12.100039	\N	\N	f
+3951	2026-07-06	17:35:00	14305	72	199	280	\N	29	15	110	144350	2.651681e+06	2.651791e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 00:11:57.027991	\N	\N	f
+3952	2026-07-06	17:48:00	14306	72	209	251	\N	29	15	110	49098	2.651791e+06	2.651901e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 00:12:20.878843	\N	\N	f
+3953	2026-07-07	07:47:00	11736	72	216	259	138	30	16	90	5424	948619	948709	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-07 13:48:58.344552	253	259	f
+3954	2026-07-07	07:48:00	11737	72	198	241	146	30	16	100	84517	948709	948809	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-07 13:50:17.829091	253	241	f
+3955	2026-07-07	07:50:00	11738	72	255	248	145	30	16	100	2567	948809	948909	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-07 13:51:28.323908	253	248	f
+3956	2026-07-07	07:51:00	11739	72	226	266	179	30	16	110	59617	948909	949019	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-07 15:21:13.615116	253	266	f
+3957	2026-07-07	11:02:00	11740	72	197	240	179	30	16	95	29136	949019	949114	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-07 17:03:29.377495	253	240	f
+3960	2026-07-07	19:55:00	14309	72	208	250	\N	29	15	100	1.036561e+06	2.652062e+06	2.652162e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:23:20.650745	\N	\N	f
+3959	2026-07-06	18:08:00	14308	72	211	254	\N	29	15	60	40018	2.652002e+06	2.652062e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:22:36.611119	\N	\N	f
+3958	2026-07-06	17:59:00	14307	72	232	269	\N	29	15	100	485325	2.651901e+06	2.652001e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:22:07.236087	\N	\N	f
+3961	2026-07-07	08:00:00	14310	72	252	272	\N	29	15	261	7124	2.652162e+06	2.652423e+06	patio	normal	PRUEBA DE RENDIMIENTO (1)	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:31:13.271758	\N	\N	f
+3962	2026-07-07	10:00:00	14311	72	241	239	\N	29	15	42	0	2.652423e+06	2.652465e+06	patio	normal	MARAVILLAS VINO ALAIN POR DOS BOTES	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:32:09.15843	\N	\N	t
+3963	2026-07-07	12:30:00	14312	72	236	239	\N	29	15	8	1355	2.652466e+06	2.652474e+06	patio	normal	SALE A OBRA LOS PUERTOS CON ARQ JOSE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:33:14.146946	\N	\N	f
+3964	2026-07-07	12:40:00	14313	72	229	267	\N	29	15	101	795565	2.652474e+06	2.652575e+06	patio	normal	SALE RECIEN REPARADO DE EMPAQUE DEL TURBO Y REPUESTO INTERNO DE VALVULA DE AIRE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:34:13.6766	\N	\N	f
+3965	2026-07-07	15:40:00	14314	72	252	272	\N	29	15	60	7287	2.652575e+06	2.652635e+06	patio	normal	PRUEBA DE RENDIMIENTO (2)	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:35:07.191789	\N	\N	f
+3966	2026-07-07	15:48:00	14315	72	201	243	\N	29	15	80	20076	2.652635e+06	2.652715e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:36:09.278375	\N	\N	f
+3967	2026-07-07	15:59:00	14316	72	215	258	\N	29	15	80	50000	2.652716e+06	2.652796e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:37:09.028901	\N	\N	f
+3968	2026-07-07	16:07:00	14317	72	214	257	\N	29	15	100	71530	2.652796e+06	2.652896e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:37:37.539393	\N	\N	f
+3969	2026-07-07	16:15:00	14318	72	204	246	\N	29	15	120	449481	2.652896e+06	2.653016e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:38:07.533994	\N	\N	f
+3970	2026-07-07	16:26:00	14319	72	211	254	\N	29	15	100	40192	2.653016e+06	2.653116e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:45:04.610383	\N	\N	f
+3971	2026-07-07	16:35:00	14321	72	202	244	\N	29	15	100	74587	2.653116e+06	2.653216e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:52:25.233037	\N	\N	f
+3972	2026-07-07	16:46:00	14322	72	228	268	\N	29	15	100	10974	2.653217e+06	2.653317e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:52:56.888441	\N	\N	f
+3973	2026-07-07	17:00:00	14323	72	199	280	\N	29	15	130	144583	2.653317e+06	2.653447e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:53:51.916406	\N	\N	f
+3974	2026-07-07	17:10:00	14324	72	209	251	\N	29	15	110	49349	2.653447e+06	2.653557e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-07 23:54:26.308265	\N	\N	f
+3975	2026-07-07	17:25:00	14325	72	212	255	\N	29	15	100	1725	2.653557e+06	2.653657e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 16:16:13.314942	\N	\N	f
+3976	2026-07-07	17:38:00	14326	72	213	256	\N	29	15	60	1.374578e+06	2.653658e+06	2.653718e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 16:17:08.055915	\N	\N	f
+3977	2026-07-07	17:45:00	14327	72	206	281	\N	29	15	50	524794	2.653718e+06	2.653768e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 16:17:52.635559	\N	\N	f
+3978	2026-07-07	17:56:00	14328	72	255	248	\N	29	15	100	2786	2.653769e+06	2.653869e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 16:18:31.172802	\N	\N	f
+3979	2026-07-08	07:05:00	14330	72	208	250	\N	29	15	50	1.036701e+06	2.655013e+06	2.655063e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 16:20:36.944369	\N	\N	f
+3980	2026-07-08	10:33:00	11741	72	197	240	146	30	16	100	29357	949114	949214	campo	normal	Hora de carga 9.08 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-08 16:36:16.904572	253	240	f
+3981	2026-07-08	12:23:00	11742	72	203	242	157	30	16	100	133506	949214	949314	campo	normal	Hora de carga 11.33 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-08 18:25:14.513284	253	242	f
+3982	2026-07-08	12:25:00	11743	72	198	241	157	30	16	100	84790	949314	949414	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-08 18:26:50.372116	253	241	f
+3983	2026-07-08	12:26:00	11744	72	226	266	157	30	16	100	59969	949414	949514	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-08 18:27:55.325585	253	266	f
+3984	2026-07-08	15:19:00	11745	72	256	262	179	30	16	108	7250	949514	949622	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-08 21:20:50.211736	253	262	f
+3985	2026-07-08	11:00:00	14331	72	220	239	\N	29	15	20	19051	2.655062e+06	2.655082e+06	patio	normal	HOROMETRO 0	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 22:29:41.788043	\N	\N	f
+3986	2026-07-08	16:53:00	11746	72	216	259	138	30	16	88	5439	949622	949710	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-08 22:54:58.815228	253	259	f
+3987	2026-07-08	14:30:00	14332	72	213	256	\N	29	15	100	1.374773e+06	2.655082e+06	2.655182e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 23:17:26.752335	\N	\N	f
+3988	2026-07-08	14:58:00	14333	72	252	272	\N	29	15	75	7478	2.655182e+06	2.655257e+06	patio	normal	PRUEBA DE RENDIMIENTO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 23:21:49.50858	\N	\N	f
+3989	2026-07-08	15:48:00	14334	72	204	246	\N	29	15	70	449711	2.655257e+06	2.655327e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 23:22:25.529449	\N	\N	f
+3990	2026-07-08	15:59:00	14335	72	215	258	160	29	15	80	50235	2.655327e+06	2.655407e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 23:22:46.306341	\N	\N	f
+3991	2026-07-08	16:16:00	14336	72	206	281	\N	29	15	50	524958	2.655408e+06	2.655458e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-08 23:23:55.616365	\N	\N	f
+3992	2026-07-08	16:25:00	14337	72	199	280	\N	29	15	110	144870	2.655458e+06	2.655568e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 00:06:54.935712	\N	\N	f
+3993	2026-07-08	16:40:00	14338	72	211	254	\N	29	15	100	40370	2.655568e+06	2.655668e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 00:07:41.97288	\N	\N	f
+3994	2026-07-08	16:49:00	14339	72	227	267	\N	29	15	100	452966	2.655668e+06	2.655768e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 00:08:11.309645	\N	\N	f
+3995	2026-07-08	17:00:00	14340	72	255	248	\N	29	15	100	3039	2.655768e+06	2.655868e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 00:08:47.641234	\N	\N	f
+3996	2026-07-08	17:14:00	14341	72	209	251	\N	29	15	100	49604	2.655869e+06	2.655969e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 00:09:22.783114	\N	\N	f
+3997	2026-07-08	17:25:00	14342	72	228	268	\N	29	15	70	11172	2.655969e+06	2.656039e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 00:09:58.681307	\N	\N	f
+3998	2026-07-08	17:37:00	14343	72	201	243	\N	29	15	130	20279	2.65604e+06	2.65617e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 00:10:33.353721	\N	\N	f
+3999	2026-07-09	06:14:00	11747	72	214	257	145	30	16	100	71737	949710	949810	campo	normal	Hora de carga 5.30 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-09 12:16:29.429324	253	257	f
+4000	2026-07-09	06:16:00	11748	72	202	244	145	30	16	100	74816	949810	949910	campo	normal	Hora de carga 5.40 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-09 12:18:25.724588	253	244	f
+4001	2026-07-08	18:26:00	14344	72	212	255	\N	29	15	70	1725	2.65617e+06	2.65624e+06	patio	normal	Hubodometro dañado 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 17:34:18.429298	\N	\N	f
+4002	2026-07-09	07:24:00	14346	72	208	250	\N	29	15	70	1.036947e+06	2.657071e+06	2.657141e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 17:35:04.695575	\N	\N	f
+4003	2026-07-09	07:40:00	14347	72	232	247	\N	29	15	77	485441	2.657141e+06	2.657218e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-09 17:35:36.914003	\N	\N	f
+4004	2026-07-09	13:08:00	15201	72	224	265	156	30	16	50	3909	949910	949960	campo	normal	Hora de carga 9.40 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-09 19:11:27.234408	253	265	f
+4005	2026-07-09	15:45:00	14348	72	227	267	\N	29	15	100	453159	2.657218e+06	2.657318e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 00:35:02.010608	\N	\N	f
+4006	2026-07-09	15:55:00	14349	72	211	254	\N	29	15	70	40508	2.657318e+06	2.657388e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 00:35:30.609152	\N	\N	f
+4007	2026-07-09	16:00:00	14350	72	215	258	\N	29	15	70	50454	2.657388e+06	2.657458e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 00:37:19.620683	\N	\N	f
+4008	2026-07-09	16:20:00	14551	72	209	251	\N	29	15	80	49820	2.657458e+06	2.657538e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 00:37:46.468364	\N	\N	f
+4009	2026-07-09	16:27:00	14552	72	226	266	\N	29	15	80	60319	2.657539e+06	2.657619e+06	patio	normal	2 llantas nuevas de la safra de esta semana	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 00:38:33.743086	\N	\N	f
+4010	2026-07-09	16:37:00	14553	72	199	280	\N	29	15	90	145170	2.657619e+06	2.657709e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 00:38:58.815712	\N	\N	f
+4011	2026-07-09	16:45:00	14554	72	206	281	\N	29	15	50	525095	2.657709e+06	2.657759e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 00:39:29.62462	\N	\N	f
+4012	2026-07-09	05:11:00	14555	72	229	269	\N	29	15	100	795975	2.65776e+06	2.65786e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 14:09:58.832905	\N	\N	f
+4013	2026-07-10	07:30:00	14556	72	252	272	\N	29	15	105	7761	2.65786e+06	2.657965e+06	patio	normal	fin prueba rendmito	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 14:10:49.153521	\N	\N	f
+4014	2026-07-10	07:40:00	14557	72	208	250	\N	29	15	80	1.037162e+06	2.657965e+06	2.658045e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-10 14:11:13.032988	\N	\N	f
+4015	2026-07-10	09:03:00	15202	72	244	253	180	30	16	60	150673	949960	950020	campo	normal	Km 162624 tanque lleno	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 15:06:13.263859	253	253	t
+4016	2026-07-10	09:06:00	15203	72	202	244	180	30	16	50	75053	950020	950070	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 15:07:33.291071	253	244	f
+4017	2026-07-10	09:07:00	15204	72	198	241	180	30	16	50	85018	950070	950120	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 15:09:14.990107	253	241	f
+4018	2026-07-10	09:09:00	15205	72	214	257	180	30	16	50	71988	950120	950170	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 15:10:33.43745	253	257	f
+4019	2026-07-10	09:10:00	15206	72	203	242	180	30	16	40	133757	950170	950210	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 15:11:54.308295	253	242	f
+4020	2026-07-10	09:11:00	15207	72	197	240	151	30	16	100	29692	950210	950310	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 15:14:05.381909	253	240	f
+4021	2026-07-10	09:14:00	15208	72	213	256	143	30	16	100	1.37495e+06	950310	950410	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 15:16:10.728029	253	256	f
+4022	2026-07-10	12:09:00	15209	72	228	268	145	30	16	50	11655	950410	950460	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 18:10:56.259969	253	268	f
+4023	2026-07-10	12:10:00	15210	72	255	248	146	30	16	50	3302	950460	950510	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 18:12:34.652654	253	248	f
+4024	2026-07-10	13:19:00	15211	72	211	254	157	30	16	25	40635	950510	950535	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 19:22:07.323322	253	254	f
+4025	2026-07-10	15:09:00	15212	72	201	243	145	30	16	70	21008	950535	950605	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-10 21:11:00.483466	253	243	f
+4026	2026-07-10	17:49:00	14578	72	229	269	\N	29	15	100	796242	2.65983e+06	2.65993e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 00:35:34.187686	\N	\N	f
+4028	2026-07-11	00:00:00	14565	74	227	267	\N	29	15	100	453448	2.658977e+06	2.659077e+06	patio	normal	NIVEL BAJO, CARGA POSTFECHADA PARA SABADO. (VIERNES10/07)	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 00:38:43.780382	\N	\N	f
+4027	2026-07-10	16:04:00	14564	72	227	267	\N	29	15	1	453448	2.658976e+06	2.658977e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 00:36:47.756571	\N	\N	f
+4029	2026-07-10	16:28:00	14566	72	212	255	\N	29	15	49	2245	2.659078e+06	2.659127e+06	patio	normal	SIN HUBODOMETRO, RESULTÓ DAÑADO DIA MIERCOLES POR MAQUINA QUE LE CARGÓ  (SE USO GPS)	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 00:46:10.349334	\N	\N	f
+4030	2026-07-11	00:00:00	14567	74	212	255	\N	29	15	100	2245	2.659126e+06	2.659226e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 00:47:17.59985	\N	\N	f
+4031	2026-07-10	16:51:00	14568	72	209	251	\N	29	15	1	50031	2.659226e+06	2.659227e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 00:48:05.693733	\N	\N	f
+4032	2026-07-11	00:00:00	14569	74	209	251	\N	29	15	110	50031	2.659227e+06	2.659337e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:01:43.748982	\N	\N	f
+4033	2026-07-10	11:00:00	14558	72	233	239	\N	29	15	43	1688	2.658045e+06	2.658088e+06	patio	normal	PASO ALAIN POR 2 YOGAS PARA R04	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:03:03.727461	\N	\N	f
+4034	2026-07-10	11:20:00	14559	72	204	246	\N	29	15	71	449904	2.658088e+06	2.658159e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:03:50.713776	\N	\N	f
+4035	2026-07-10	15:38:00	14560	72	214	257	\N	29	15	1	72171	2.658158e+06	2.658159e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:04:29.903364	\N	\N	f
+4036	2026-07-11	00:00:00	14561	74	214	257	\N	29	15	100	72171	2.658159e+06	2.658259e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:05:36.616224	\N	\N	f
+4037	2026-07-10	17:02:00	14570	72	226	266	\N	29	15	1	60553	2.659337e+06	2.659338e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:25:32.154111	\N	\N	f
+4038	2026-07-11	00:00:00	14571	74	226	266	\N	29	15	120	60553	2.659338e+06	2.659458e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:26:23.595301	\N	\N	f
+4039	2026-07-10	17:10:00	14572	72	215	258	\N	29	15	30	50740	2.660647e+06	2.660677e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:27:29.405595	\N	\N	f
+4040	2026-07-11	00:00:00	14573	74	215	258	\N	29	15	120	50740	2.659489e+06	2.659609e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:28:26.333539	\N	\N	f
+4041	2026-07-10	17:25:00	14574	72	206	281	\N	29	15	10	525358	2.659609e+06	2.659619e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:28:58.214247	\N	\N	f
+4042	2026-07-11	00:00:00	14575	74	206	281	\N	29	15	100	525358	2.659619e+06	2.659719e+06	patio	normal	CARGA POSTFECHADA SABADO , NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:29:31.779137	\N	\N	f
+4043	2026-07-10	17:37:00	14576	72	255	248	\N	29	15	1	3465	2.659719e+06	2.65972e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:30:16.469998	\N	\N	f
+4044	2026-07-11	00:00:00	14577	74	255	248	\N	29	15	110	3465	2.65972e+06	2.65983e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:30:40.627168	\N	\N	f
+4045	2026-07-10	18:14:00	14579	72	204	246	\N	29	15	55	450039	2.65993e+06	2.659985e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:55:03.96969	\N	\N	f
+4046	2026-07-11	00:00:00	14580	74	204	246	\N	29	15	80	450039	2.659985e+06	2.660065e+06	patio	normal	CARGA POSTFECHADA SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 01:56:37.147279	\N	\N	f
 \.
 
 
@@ -1920,10 +2848,12 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 --
 
 COPY public.configuracion (clave, valor, updated_at) FROM stdin;
-folio_base	13108	2026-05-08 22:05:19.279
 folio_base_campo	11645	2026-05-22 17:17:57.097
 tolerancia_rendimiento	0.0500	2026-05-25 14:29:00.632
 alerta_rendimiento_dias	3	2026-05-25 14:29:07.425
+folio_base	13951	2026-07-01 23:37:50.485
+folio_min_patio	0	2026-07-11 01:24:52.244
+folio_max_patio	0	2026-07-11 01:24:52.245
 \.
 
 
@@ -1978,6 +2908,16 @@ COPY public.obras (id, nombre, cliente, activo, fecha_inicio, fecha_fin, notas, 
 168	Valle del roble	\N	t	\N	\N	\N	2026-06-01 23:13:37.605881
 169	Minorte	\N	t	\N	\N	\N	2026-06-02 20:34:46.702699
 170	Ave felix u	\N	t	\N	\N	\N	2026-06-05 23:53:04.944635
+171	Las vias y panteones	\N	t	\N	\N	\N	2026-06-13 23:03:47.795713
+172	Alterra	\N	t	\N	\N	\N	2026-06-19 00:22:23.922707
+173	Soli taller climas	\N	t	\N	\N	\N	2026-06-22 20:23:32.190064
+174	Los tubos	\N	t	\N	\N	\N	2026-06-25 12:14:10.655292
+175	Secundaria jh	\N	t	\N	\N	\N	2026-06-26 20:41:55.883923
+176	Almaguer guadaluoe	\N	t	\N	\N	\N	2026-06-30 18:59:48.431555
+177	Botanica	\N	t	\N	\N	\N	2026-07-03 22:59:56.915712
+178	Santa elena	\N	t	\N	\N	\N	2026-07-04 16:29:25.044662
+179	Plaza los puertos	\N	t	\N	\N	\N	2026-07-07 15:20:35.297402
+180	Ral del valle	\N	t	\N	\N	\N	2026-07-10 15:04:32.924292
 \.
 
 
@@ -1995,7 +2935,6 @@ COPY public.operadores (id, nombre, tipo, telefono, activo, created_at) FROM std
 246	Enrique Mena	chofer	\N	t	2026-04-25 00:21:54.759065
 247	Estrada	chofer	\N	t	2026-04-25 00:21:54.759065
 248	Carlos Maldonado	chofer	\N	t	2026-04-25 00:21:54.759065
-250	Jose Arroyo	chofer	\N	t	2026-04-25 00:21:54.759065
 251	Julio	chofer	\N	t	2026-04-25 00:21:54.759065
 252	Maldonado	chofer	\N	t	2026-04-25 00:21:54.759065
 253	MAGO	chofer	\N	t	2026-04-25 00:21:54.759065
@@ -2023,6 +2962,10 @@ COPY public.operadores (id, nombre, tipo, telefono, activo, created_at) FROM std
 249	Antonio Torres	chofer	\N	f	2026-04-25 00:21:54.759065
 278	Luis Flaco	maquinista	\N	t	2026-05-08 18:57:07.133239
 277	Arq Cordero	chofer	\N	t	2026-04-29 20:34:30.125641
+279	Brayan	chofer	\N	t	2026-06-08 23:12:10.271804
+280	Laines	chofer	\N	t	2026-06-09 23:01:40.194389
+250	Jose Ines Arroyo	chofer	\N	t	2026-04-25 00:21:54.759065
+281	Raul Govea	chofer	8116127570	t	2026-07-07 00:08:44.754214
 \.
 
 
@@ -2055,6 +2998,7 @@ COPY public.pb_novedades (id, titulo, contenido, tipo, modulo_id, leido, created
 --
 
 COPY public.pb_tickets (id, titulo, descripcion, tipo, estado, prioridad, modulo_id, creado_por_id, creado_por_nombre, resuelta_at, created_at, updated_at) FROM stdin;
+1	STOCK TANQUES 0	Buenas tardes\npor error borré en Configuracion - Ajustar stock de tanques, puse todo a 0,  segun yo estaba probando el funcionamiento del control de folios en las casillas y sin querer utilicé el de ajustar stock, la pregunta es si existe un registro de que nivel tenia el tanque de taller antes de yo poner todo a 0, por que nos queda poco y para tener mas detalle porfa,  mas o menos recuerdo que tenia algo asi como 3,675 apox\ngracias.	question	open	urgent	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	Taller WB	\N	2026-07-11 01:15:02.378888	2026-07-11 01:15:02.378888
 \.
 
 
@@ -2068,8 +3012,16 @@ COPY public.periodos (id, nombre, fecha_inicio, fecha_fin, cerrado, cerrado_por_
 60	2 de mayo al 8 de mayo de 2026	2026-05-02	2026-05-08	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-05-09 16:40:04.022	2026-05-02 00:48:07.49846
 63	9 de mayo al 15 de mayo de 2026	2026-05-09	2026-05-15	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-05-16 16:55:05.185	2026-05-09 01:02:25.818485
 64	16 de mayo al 22 de mayo de 2026	2026-05-16	2026-05-22	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-05-23 17:39:35.72	2026-05-16 00:16:18.98302
-66	30 de mayo al 5 de junio de 2026	2026-05-30	2026-06-05	f	\N	\N	2026-05-30 01:19:22.141683
 65	23 de mayo al 29 de mayo de 2026	2026-05-23	2026-05-29	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-05-30 03:58:38.553	2026-05-23 15:32:10.118799
+66	30 de mayo al 5 de junio de 2026	2026-05-30	2026-06-05	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-06 17:52:03.618	2026-05-30 01:19:22.141683
+67	6 de junio al 12 de junio de 2026	2026-06-06	2026-06-12	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 17:18:44.67	2026-06-05 23:59:19.359751
+68	13 de junio al 19 de junio de 2026	2026-06-13	2026-06-19	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 17:24:15.18	2026-06-13 00:10:11.906579
+70	13 de junio al 19 de junio de 2026	2026-06-13	2026-06-19	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 17:45:25.6	2026-06-20 17:54:12.244122
+69	20 de junio al 26 de junio de 2026	2026-06-20	2026-06-26	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 17:45:35.499	2026-06-20 00:04:31.196753
+72	4 de julio al 10 de julio de 2026	2026-07-04	2026-07-10	f	\N	\N	2026-07-04 00:57:43.762721
+73	25 de julio al 31 de julio de 2026	2026-07-25	2026-07-31	f	\N	\N	2026-07-04 16:45:13.141618
+71	27 de junio al 3 de julio de 2026	2026-06-27	2026-07-03	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 18:15:44.311	2026-06-27 00:19:32.142748
+74	11 de julio al 17 de julio de 2026	2026-07-11	2026-07-17	f	\N	\N	2026-07-11 00:33:06.30846
 \.
 
 
@@ -2081,6 +3033,9 @@ COPY public.recargas_tanque (id, fecha, litros, proveedor, folio_factura, precio
 33	2026-05-02	19807	DOS AGUILAS (PEMEX)	MT41953	26.21	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-05-02 19:05:54.186131	2.543768e+06
 34	2026-05-14	19823	2 Aguilas (PEMEX)	MT 42409	26.21	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-05-14 16:39:45.216819	2.563222e+06
 35	2026-05-27	20000	\N	\N	\N	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-05-27 17:53:35.008499	2.582804e+06
+36	2026-06-08	19997	2 Aguilas (PEMEX)	FACT: MT 43572 19,997 TEMP NATURAL, 19,821 TEMP A 20°	26.2	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-06-08 19:42:41.498461	2.603771e+06
+37	2026-06-19	19999	2 Aguilas (PEMEX)	fact: mt44209	\N	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	DENSIMETRO POR DEBAJO DE LOS .800 (MARCA APROX .780)	2026-06-19 14:37:59.201516	2.623552e+06
+38	2026-07-01	20000	2 Aguilas (PEMEX)	Factura: MT44545	26.12	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-07-01 21:39:36.126634	2.643067e+06
 \.
 
 
@@ -2273,6 +3228,177 @@ COPY public.rendimientos (id, periodo_id, unidad_id, operador_id, odometro_inici
 453	65	236	\N	1353	1354	1	26	26	\N	\N	\N	\N	2026-05-30 03:58:38.542473
 454	65	240	\N	11223.9	11259	35.1	120	3.4188035	\N	\N	\N	\N	2026-05-30 03:58:38.542473
 455	65	241	\N	\N	\N	\N	70	\N	\N	\N	\N	\N	2026-05-30 03:58:38.542473
+456	66	206	\N	517510	518919	1409	551	2.5571687	2.8	-0.24283122	f	\N	2026-06-06 17:52:03.603034
+457	66	213	\N	1.3691e+06	1.370077e+06	977	505	1.9346535	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+458	66	214	\N	65681	67057	1376	550	2.5018182	3.26	-0.7581818	f	\N	2026-06-06 17:52:03.603034
+459	66	242	\N	46117	46118	1	601	0.0016638935	2.3	-2.298336	f	\N	2026-06-06 17:52:03.603034
+460	66	211	\N	34498	35522	1024	551	1.8584392	2.17	-0.3115608	f	\N	2026-06-06 17:52:03.603034
+461	66	212	\N	46588	48181	1593	640	2.4890625	2.97	-0.4809375	f	\N	2026-06-06 17:52:03.603034
+462	66	202	\N	67958	69781	1823	620	2.9403226	2.32	0.6203226	f	\N	2026-06-06 17:52:03.603034
+463	66	232	\N	478844	480058	1214	400	3.035	3.78	-0.745	f	\N	2026-06-06 17:52:03.603034
+464	66	208	\N	1.031193e+06	1.032201e+06	1008	501	2.011976	2.47	-0.45802397	f	\N	2026-06-06 17:52:03.603034
+465	66	198	\N	79879	80855	976	351	2.7806268	3.21	-0.4293732	f	\N	2026-06-06 17:52:03.603034
+466	66	230	\N	4318	4373	55	901	16.381819	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+467	66	209	\N	42813	44129	1316	546	2.4102564	2.46	-0.04974359	t	\N	2026-06-06 17:52:03.603034
+468	66	251	\N	\N	\N	\N	32	\N	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+469	66	203	\N	127566	128827	1261	411	3.0681264	2.95	0.11812652	t	\N	2026-06-06 17:52:03.603034
+470	66	228	\N	4225	5738	1513	580	2.6086206	3	-0.3913793	f	\N	2026-06-06 17:52:03.603034
+471	66	252	\N	471	1639	1168	551	2.1197822	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+472	66	244	\N	150391	150391	\N	65	\N	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+473	66	204	\N	442433	443941	1508	600	2.5133333	2.41	0.10333333	t	\N	2026-06-06 17:52:03.603034
+474	66	226	\N	53058	54435	1377	610	2.2573771	2.84	-0.58262295	f	\N	2026-06-06 17:52:03.603034
+475	66	197	\N	23180	24459	1279	421	3.0380046	2.61	0.42800474	f	\N	2026-06-06 17:52:03.603034
+476	66	199	\N	137212	138357	1145	360	3.1805556	3.19	-0.009444444	t	\N	2026-06-06 17:52:03.603034
+477	66	241	\N	19345	19345	\N	40	\N	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+478	66	233	\N	1512	1524	12	94	7.8333335	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+479	66	216	\N	5286	5308	22	120	5.4545455	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+480	66	234	\N	3689.4	3699.1	9.7	359	37.01031	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+481	66	205	\N	19279	20293	1014	370	2.7405405	2.7	0.04054054	t	\N	2026-06-06 17:52:03.603034
+482	66	240	\N	11259	11266	7	110	15.714286	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+483	66	229	\N	789547	791200	1653	600	2.755	2.26	0.495	f	\N	2026-06-06 17:52:03.603034
+484	66	227	\N	452389	452560	171	60	2.85	2.48	0.37	f	\N	2026-06-06 17:52:03.603034
+485	66	250	\N	1	1	\N	100	\N	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+486	66	253	\N	3629	3629	\N	60	\N	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+487	66	254	\N	\N	\N	\N	40	\N	\N	\N	\N	\N	2026-06-06 17:52:03.603034
+488	67	213	\N	1.370077e+06	1.370911e+06	834	520	1.6038462	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+489	67	211	\N	35522	36608	1086	566	1.9187279	2.17	-0.25127208	f	\N	2026-06-13 17:18:44.627868
+490	67	197	\N	24459	25871	1412	611	2.3109655	2.61	-0.29903436	f	\N	2026-06-13 17:18:44.627868
+491	67	205	\N	20293	21598	1305	540	2.4166667	2.7	-0.28333333	f	\N	2026-06-13 17:18:44.627868
+492	67	226	\N	54435	55599	1164	430	2.7069767	2.84	-0.13302326	t	\N	2026-06-13 17:18:44.627868
+493	67	242	\N	46118	46120	2	610	0.0032786885	2.3	-2.2967212	f	\N	2026-06-13 17:18:44.627868
+494	67	206	\N	518919	520465	1546	629	2.4578695	2.8	-0.34213036	f	\N	2026-06-13 17:18:44.627868
+495	67	199	\N	138357	139489	1132	500	2.264	3.19	-0.926	f	\N	2026-06-13 17:18:44.627868
+496	67	202	\N	69781	71475	1694	521	3.2514396	2.32	0.9314395	f	\N	2026-06-13 17:18:44.627868
+497	67	198	\N	80855	81893	1038	421	2.4655583	3.21	-0.7444418	f	\N	2026-06-13 17:18:44.627868
+498	67	214	\N	67057	67789	732	350	2.0914285	3.26	-1.1685715	f	\N	2026-06-13 17:18:44.627868
+499	67	212	\N	48181	49589	1408	551	2.5553539	2.97	-0.4146461	f	\N	2026-06-13 17:18:44.627868
+500	67	252	\N	1639	3323	1684	551	3.0562613	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+501	67	254	\N	476767	476767	\N	40	\N	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+502	67	208	\N	1.032201e+06	1.033179e+06	978	490	1.9959184	2.47	-0.47408164	f	\N	2026-06-13 17:18:44.627868
+503	67	203	\N	128827	129896	1069	401	2.6658354	2.95	-0.28416458	f	\N	2026-06-13 17:18:44.627868
+504	67	204	\N	443941	445169	1228	490	2.5061224	2.41	0.09612245	t	\N	2026-06-13 17:18:44.627868
+505	67	201	\N	15143	16576	1433	470	3.0489361	2.56	0.48893616	f	\N	2026-06-13 17:18:44.627868
+506	67	209	\N	44129	45464	1335	601	2.2212977	2.46	-0.23870216	f	\N	2026-06-13 17:18:44.627868
+507	67	229	\N	791200	791774	574	298	1.9261745	2.26	-0.3338255	f	\N	2026-06-13 17:18:44.627868
+508	67	245	\N	561895	563243	1348	340	3.964706	5.03	-1.0652941	f	\N	2026-06-13 17:18:44.627868
+509	67	215	\N	47080	47235	155	60	2.5833333	2.64	-0.05666667	t	\N	2026-06-13 17:18:44.627868
+510	67	234	\N	3699.1	3726	26.9	207	7.695167	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+511	67	221	\N	6902	6902	\N	80	\N	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+512	67	232	\N	480058	481745	1687	502	3.3605578	3.78	-0.41944224	f	\N	2026-06-13 17:18:44.627868
+513	67	228	\N	5738	7290	1552	540	2.874074	3	-0.12592593	t	\N	2026-06-13 17:18:44.627868
+514	67	244	\N	150391	150673	282	66	0.23404256	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+515	67	200	\N	642720	644593	1873	450	4.1622224	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+516	67	224	\N	3848	3873	25	300	12	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+517	67	241	\N	19345	19345	\N	160	\N	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+518	67	248	\N	562888	562926	38	40	0.95	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+519	67	216	\N	5308	5319	11	70	6.3636365	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+520	67	225	\N	2675.7	2715.3	39.6	305	7.70202	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+521	67	219	\N	2769	2769	\N	19	\N	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+522	67	247	\N	7868	7868	\N	50	\N	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+523	67	250	\N	1	1	\N	100	\N	\N	\N	\N	\N	2026-06-13 17:18:44.627868
+525	68	211	\N	36608	37629	1021	551	1.8529946	2.17	-0.31700546	f	\N	2026-06-20 17:24:15.165323
+526	68	202	\N	71475	71629	154	200	0.77	2.32	-1.55	f	\N	2026-06-20 17:24:15.165323
+527	68	226	\N	55599	56761	1162	491	2.3665988	2.84	-0.47340122	f	\N	2026-06-20 17:24:15.165323
+528	68	228	\N	7290	8516	1226	421	2.912114	3	-0.08788598	t	\N	2026-06-20 17:24:15.165323
+529	68	198	\N	81893	82709	816	371	2.199461	3.21	-1.010539	f	\N	2026-06-20 17:24:15.165323
+530	68	208	\N	1.033179e+06	1.034185e+06	1006	701	1.4350927	2.47	-1.0349072	f	\N	2026-06-20 17:24:15.165323
+531	68	232	\N	481745	482882	1137	401	2.8354115	3.78	-0.94458854	f	\N	2026-06-20 17:24:15.165323
+532	68	197	\N	25871	27059	1188	543	2.1878452	2.61	-0.4221547	f	\N	2026-06-20 17:24:15.165323
+533	68	201	\N	16576	17141	565	320	1.765625	2.56	-0.794375	f	\N	2026-06-20 17:24:15.165323
+534	68	216	\N	5319	5343	24	158	6.5833335	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+535	68	217	\N	1042.1	1042.1	\N	24	\N	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+537	68	205	\N	21598	22635	1037	451	2.2993348	2.7	-0.4006652	f	\N	2026-06-20 17:24:15.165323
+538	68	209	\N	45464	46736	1272	600	2.12	2.46	-0.34	f	\N	2026-06-20 17:24:15.165323
+539	68	206	\N	520465	521842	1377	571	2.4115586	2.8	-0.38844132	f	\N	2026-06-20 17:24:15.165323
+540	68	199	\N	139489	141000	1511	430	3.5139534	3.19	0.32395348	f	\N	2026-06-20 17:24:15.165323
+541	68	241	\N	19345	19345	\N	120	\N	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+542	68	221	\N	6902	6902	\N	120	\N	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+543	68	252	\N	3323	4383	1060	381	2.7821522	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+544	68	203	\N	129896	130801	905	261	3.467433	2.95	0.5174329	f	\N	2026-06-20 17:24:15.165323
+545	68	200	\N	644593	644798	205	100	2.05	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+546	68	213	\N	1.370911e+06	1.372003e+06	1092	501	2.1796408	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+547	68	229	\N	791774	793062	1288	550	2.341818	2.26	0.08181818	t	\N	2026-06-20 17:24:15.165323
+548	68	204	\N	445169	446559	1390	520	2.6730769	2.41	0.26307693	f	\N	2026-06-20 17:24:15.165323
+549	68	245	\N	563243	563778	535	200	2.675	5.03	-2.355	f	\N	2026-06-20 17:24:15.165323
+550	68	244	\N	150673	150673	\N	39	\N	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+551	68	234	\N	3726	3759.1	33.1	259	7.8247733	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+552	68	218	\N	1437	1453.3	16.3	41	2.5153375	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+553	68	224	\N	3873	3894	21	100	4.7619047	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+554	68	250	\N	1	1	\N	122	\N	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+555	68	248	\N	562926	562966	40	100	0.4	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+556	68	225	\N	2715.3	2743.5	28.2	271	9.609929	\N	\N	\N	\N	2026-06-20 17:24:15.165323
+557	68	207	\N	485591	485761	170	100	1.7	4	-2.3	f	\N	2026-06-20 17:24:15.165323
+558	68	214	\N	67789	68710	921	201	4.5820894	3.26	1.3220896	f	\N	2026-06-20 17:24:15.165323
+559	68	237	\N	372171	372925	754	130	5.8	4.8	1	f	\N	2026-06-20 17:24:15.165323
+562	68	215	\N	47356	47697	341	306	1.114379	2.64	-1.5256209	f	\N	2026-06-20 17:29:30.128187
+563	68	242	\N	3537	46120	42583	550	77.42364	2.3	75.123634	f	\N	2026-06-24 00:45:10.497283
+564	68	212	\N	49589	50413	824	550	1.4981818	2.97	-1.4718182	f	\N	2026-06-24 00:48:52.702516
+565	70	214	\N	67789	68100	311	120	2.5916667	3.26	-0.66833335	f	\N	2026-06-27 17:45:25.591058
+566	70	203	\N	129896	\N	\N	120	\N	2.95	\N	\N	\N	2026-06-27 17:45:25.591058
+567	69	211	\N	37629	38328	699	460	1.5195652	2.17	-0.6504348	f	\N	2026-06-27 17:45:35.494935
+568	69	206	\N	521842	523163	1321	510	2.5901961	2.8	-0.20980392	f	\N	2026-06-27 17:45:35.494935
+569	69	202	\N	71629	72829	1200	366	3.2786884	2.32	0.9586885	f	\N	2026-06-27 17:45:35.494935
+571	69	215	\N	47697	48432	735	311	2.363344	2.64	-0.27665594	f	\N	2026-06-27 17:45:35.494935
+572	69	209	\N	46736	47781	1045	501	2.0858283	2.46	-0.37417164	f	\N	2026-06-27 17:45:35.494935
+573	69	203	\N	130801	131617	816	272	3	2.95	0.05	t	\N	2026-06-27 17:45:35.494935
+574	69	237	\N	372925	372931	6	64	0.09375	4.8	-4.70625	f	\N	2026-06-27 17:45:35.494935
+575	69	213	\N	1.372003e+06	1.372788e+06	785	361	2.1745152	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+576	69	228	\N	8516	9033	517	201	2.5721393	3	-0.4278607	f	\N	2026-06-27 17:45:35.494935
+577	69	214	\N	68100	69831	1731	361	4.795014	3.26	1.5350138	f	\N	2026-06-27 17:45:35.494935
+578	69	204	\N	446559	447623	1064	440	2.418182	2.41	0.008181818	t	\N	2026-06-27 17:45:35.494935
+579	69	244	\N	150673	150673	\N	126	\N	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+580	69	234	\N	3759.1	3813	53.9	574	10.649351	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+581	69	198	\N	82709	83531	822	291	2.8247423	3.21	-0.38525772	f	\N	2026-06-27 17:45:35.494935
+582	69	225	\N	2743.5	2771.5	28	295	10.535714	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+583	69	212	\N	50413	698	\N	316	\N	2.97	\N	\N	\N	2026-06-27 17:45:35.494935
+584	69	199	\N	141000	142388	1388	451	3.0776052	3.19	-0.112394676	t	\N	2026-06-27 17:45:35.494935
+585	69	229	\N	793062	794278	1216	530	2.2943397	2.26	0.03433962	t	\N	2026-06-27 17:45:35.494935
+586	69	201	\N	17141	18268	1127	430	2.6209302	2.56	0.060930233	t	\N	2026-06-27 17:45:35.494935
+587	69	241	\N	19345	19345	\N	102	\N	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+588	69	217	\N	1042.1	1042.1	\N	20	\N	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+589	69	232	\N	482882	483878	996	300	3.32	3.78	-0.46	f	\N	2026-06-27 17:45:35.494935
+590	69	252	\N	4383	5450	1067	360	2.963889	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+591	69	216	\N	5343	5377	34	220	6.470588	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+592	69	205	\N	22635	23480	845	301	2.807309	2.7	0.10730897	t	\N	2026-06-27 17:45:35.494935
+593	69	197	\N	27059	27885	826	351	2.3532763	2.61	-0.25672364	f	\N	2026-06-27 17:45:35.494935
+594	69	242	\N	46120	4248	\N	371	\N	2.3	\N	\N	\N	2026-06-27 17:45:35.494935
+595	69	208	\N	1.034185e+06	1.035178e+06	993	121	8.206612	2.47	5.7366114	f	\N	2026-06-27 17:45:35.494935
+596	69	255	\N	165	650	485	238	2.037815	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+597	69	233	\N	1524	1629	105	40	0.3809524	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+598	69	253	\N	3629	3661.2	32.2	75	2.3291926	\N	\N	\N	\N	2026-06-27 17:45:35.494935
+600	69	226	\N	56766	57930	1164	421	2.7648456	2.84	-0.075154394	t	\N	2026-06-27 17:56:33.18638
+601	71	199	\N	142388	144000	1612	550	2.9309092	3.19	-0.2590909	f	\N	2026-07-04 18:15:44.302202
+602	71	211	\N	38328	39639	1311	551	2.3793104	2.17	0.20931034	f	\N	2026-07-04 18:15:44.302202
+603	71	212	\N	698	1054	356	250	1.424	2.97	-1.546	f	\N	2026-07-04 18:15:44.302202
+604	71	242	\N	4248	4420	172	160	1.075	2.3	-1.225	f	\N	2026-07-04 18:15:44.302202
+605	71	226	\N	57930	59224	1294	471	2.7473462	2.84	-0.09265393	t	\N	2026-07-04 18:15:44.302202
+606	71	232	\N	483878	485040	1162	401	2.8977556	3.78	-0.8822444	f	\N	2026-07-04 18:15:44.302202
+607	71	198	\N	83531	84269	738	301	2.4518273	3.21	-0.75817275	f	\N	2026-07-04 18:15:44.302202
+608	71	205	\N	23480	24469	989	481	2.056133	2.7	-0.64386696	f	\N	2026-07-04 18:15:44.302202
+609	71	197	\N	27885	28620	735	296	2.483108	2.61	-0.1268919	t	\N	2026-07-04 18:15:44.302202
+610	71	252	\N	5450	6613	1163	540	2.1537037	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+612	71	208	\N	1.035178e+06	1.036269e+06	1091	516	2.114341	2.47	-0.35565892	f	\N	2026-07-04 18:15:44.302202
+613	71	201	\N	18268	19693	1425	540	2.6388888	2.56	0.078888886	t	\N	2026-07-04 18:15:44.302202
+614	71	215	\N	48432	49436	1004	350	2.8685715	2.64	0.22857143	f	\N	2026-07-04 18:15:44.302202
+615	71	214	\N	69831	71047	1216	451	2.6962306	3.26	-0.5637694	f	\N	2026-07-04 18:15:44.302202
+616	71	229	\N	794278	795565	1287	540	2.3833334	2.26	0.123333335	f	\N	2026-07-04 18:15:44.302202
+617	71	202	\N	72829	74037	1208	491	2.4602852	2.32	0.14028513	f	\N	2026-07-04 18:15:44.302202
+618	71	255	\N	650	2229	1579	531	2.9736347	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+619	71	206	\N	523163	524396	1233	360	3.425	2.8	0.625	f	\N	2026-07-04 18:15:44.302202
+620	71	213	\N	1.372788e+06	1.373956e+06	1168	461	2.5336225	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+621	71	228	\N	9033	10399	1366	470	2.906383	3	-0.09361702	t	\N	2026-07-04 18:15:44.302202
+622	71	244	\N	150673	150673	\N	120	\N	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+623	71	234	\N	3813	3830.1	17.1	272	15.906433	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+624	71	209	\N	47781	48655	874	399	2.1904762	2.46	-0.2695238	f	\N	2026-07-04 18:15:44.302202
+625	71	204	\N	447623	448983	1360	539	2.5231912	2.41	0.1131911	t	\N	2026-07-04 18:15:44.302202
+626	71	216	\N	5377	5407	30	182	6.0666666	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+627	71	218	\N	1453.3	1485.3	32	46	1.4375	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+628	71	256	\N	7204	7204	\N	130	\N	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+629	71	241	\N	19345	19345	\N	60	\N	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+630	71	233	\N	1629	1652	23	60	2.6086957	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+631	71	245	\N	563778	564281	503	80	6.2875	5.03	1.2575	f	\N	2026-07-04 18:15:44.302202
+632	71	217	\N	1042.1	1048.1	6	17	2.8333333	\N	\N	\N	\N	2026-07-04 18:15:44.302202
+634	71	203	\N	131661	132880	1219	561	2.1729054	2.95	-0.7770945	f	\N	2026-07-04 20:45:53.815939
 \.
 
 
@@ -2298,8 +3424,8 @@ wendy2	Admin	["dashboard","cargas.nueva_campo","cargas.nueva_patio","catalogo","
 --
 
 COPY public.tanques (id, nombre, capacidad_max, litros_actuales, cuentalitros_actual, ajuste_porcentaje, ultima_actualizacion) FROM stdin;
-16	NISSAN	1200	290	931630	2	2026-06-05 23:54:09.398
-15	Taller	21001	2625	2.601444e+06	2	2026-06-05 19:46:11.681
+16	NISSAN	1200	1200	950605	2	2026-07-11 01:06:32.005
+15	Taller	21001	3138	2.660677e+06	2	2026-07-11 01:56:37.15
 \.
 
 
@@ -2338,6 +3464,27 @@ COPY public.transferencias_tanque (id, fecha, litros, tanque_origen_id, tanque_d
 57	2026-06-03	500	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	folio 13658, remanente 0, cuentalitros : 930411	2026-06-04 14:19:41.844502	131226	2.598496e+06	2.598996e+06
 58	2026-06-04	500	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	Folio: 13662, cuenta l: 930922 rem:30	2026-06-05 00:19:24.057846	131227	2.599256e+06	2.599756e+06
 59	2026-06-05	500	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	FOLIO: 13678, CUENTAL: 931420	2026-06-05 19:46:11.684715	131229	2.600944e+06	2.601444e+06
+60	2026-06-08	1131	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS: 932409\nFOLIO:13718, REMANENTE 0	2026-06-08 21:01:14.08337	131230	2.603891e+06	2.605022e+06
+61	2026-06-09	979	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	cuentalitros 933369 , folio 13749	2026-06-10 01:46:26.111382	131231	2.608129e+06	2.609108e+06
+62	2026-06-10	1031	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS 934360 , FOLIO: 13754	2026-06-10 22:57:28.546883	131232	2.609628e+06	2.610659e+06
+63	2026-06-11	1149	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	cuentalitros: 935484 , folio : 13771 , rem:70	2026-06-11 22:38:40.362231	131233	2.611995e+06	2.613144e+06
+64	2026-06-12	456	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS 935925 ,FOLIO 13786	2026-06-13 15:17:36.518379	131235	2.614352e+06	2.614808e+06
+65	2026-06-13	646	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	Cuentalitros 936560 folio 13826	2026-06-13 21:35:58.565883	131236	\N	\N
+66	2026-06-16	909	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	cuentalitros: 937440, folio: 13862	2026-06-17 00:33:49.861295	131237	2.619784e+06	2.620693e+06
+67	2026-06-19	1118	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS: 938543, FOLIO:13900, REMAN: 99LT	2026-06-19 17:37:04.714802	131239	2.624315e+06	2.625433e+06
+68	2026-06-20	1051	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	939543	2026-06-22 13:16:52.566334	131240	2.627305e+06	2.628356e+06
+69	2026-06-23	951	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS : 940484, FOLIO: 13943 , REM: 259	2026-06-24 00:31:31.46369	131241	2.62993e+06	2.630881e+06
+70	2026-06-24	820	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	cuentalitros: 941288 , folio:14163 , reman 396	2026-06-25 00:22:34.045153	131242	2.632665e+06	2.633485e+06
+71	2026-06-25	898	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	cuentalitros: 942180 1 folio: 14177 , reman :310	2026-06-26 00:24:51.500282	131243	2.634875e+06	2.635773e+06
+72	2026-06-27	728	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTAIT: 942882 ,FOLIO: 14251 , REMAN: 501	2026-06-27 20:07:00.78433	131244	2.637298e+06	2.638026e+06
+73	2026-06-30	996	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	REMAN 223 , FOLIO: 14288 , CUENTALITROS: 943861	2026-07-01 01:53:22.701052	1428678	2.64111e+06	2.642106e+06
+74	2026-07-01	1010	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	Folio 13957, cuentalitros 944882 reman 180	2026-07-02 13:14:09.00927	1428679	2.643788e+06	2.644798e+06
+75	2026-07-02	1004	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	folio: 13960 , cuentalitro: 945880 reman 190	2026-07-02 22:31:10.894312	1428680	2.64499e+06	2.645994e+06
+76	2026-07-03	1146	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	FOLIO : 13964, CUENTALITROS  946993 , REMAN; 87	2026-07-03 22:55:56.234231	1428682	2.646169e+06	2.647315e+06
+77	2026-07-04	1073	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	FOLIO:13986 , CUENTALITROS: 948040 , REMAN 170	2026-07-04 19:47:11.60151	1428683	2.648825e+06	2.649898e+06
+78	2026-07-07	1144	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	reman 98 , folio 14239 , cuentalitros 949145	2026-07-08 16:19:16.951821	1428684	2.653869e+06	2.655013e+06
+79	2026-07-09	830	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	Folio: 14345, reman 404 cuentalitros 949946	2026-07-09 17:33:15.246866	1428685	2.65617e+06	2.657e+06
+80	2026-07-10	717	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	REMAN:505 , FOLIO: 14562, CUENTALITROS: 950648	2026-07-11 01:06:32.009686	1428686	2.65993e+06	2.660647e+06
 \.
 
 
@@ -2346,61 +3493,63 @@ COPY public.transferencias_tanque (id, fecha, litros, tanque_origen_id, tanque_d
 --
 
 COPY public.unidades (id, codigo, nombre, tipo, modelo, operador_default_id, capacidad_tanque, odometro_actual, rendimiento_referencia, activo, notas, created_at) FROM stdin;
-217	RODILLO BOMAG	RODILLO BOMAG	maquina	\N	\N	\N	0	\N	t	\N	2026-04-25 00:21:54.725736
 222	R03-JCB3X	R03-JCB3X	maquina	\N	\N	\N	0	\N	t	\N	2026-04-25 00:21:54.725736
 235	EX12-JD50D	EX12-JD50D	maquina	\N	\N	\N	0	\N	t	\N	2026-04-25 00:21:54.725736
-199	CA31	CA31	camion	\N	\N	550	137926	3.19	t	\N	2026-04-25 00:21:54.725736
-205	CA33	CA33	camion	\N	\N	600	20063	2.7	t	\N	2026-04-25 00:21:54.725736
-210	NISSAN 03	NISSAN 03	nissan	\N	\N	\N	901915	\N	t	\N	2026-04-25 00:21:54.725736
-206	CA18	CA18	camion	\N	\N	550	518636	2.8	t	\N	2026-04-25 00:21:54.725736
-245	CA02 - 7M3	RA8157A	camion	FREIGHTLINER M2	\N	350	561895	5.03	t	\N	2026-05-13 00:45:11.199167
-204	CA27	CA27	camion	\N	\N	550	443671	2.41	t	\N	2026-04-25 00:21:54.725736
-202	CA22	CA22	camion	\N	\N	600	69386	2.32	t	\N	2026-04-25 00:21:54.725736
-238	M01-CAT262D3	M01-CAT262D3	maquina	262D3	\N	\N	5658	\N	t	\N	2026-04-28 19:30:37.015141
-207	CA12 - 14M3	PV5173B	camion	2018 FREIGHTLINER M2  VIN: 3ALHCYDJXJDJT8699	\N	550	485591	4	t	\N	2026-04-25 00:21:54.725736
-229	CA26 - 14M3	PZ4040B	camion	INTERNATIONAL PROSTAR 2010 VIN: 3HSCUAPR5AN178353	\N	550	790928	2.26	t	\N	2026-04-25 00:21:54.725736
-198	CA29	CA29	camion	\N	\N	550	80524	3.21	t	\N	2026-04-25 00:21:54.725736
-224	EX09-PC130	EX09-PC130	maquina	\N	\N	\N	3848	\N	t	\N	2026-04-25 00:21:54.725736
-244	NISSAN 03...	Mago	otro	\N	\N	\N	150391	\N	t	\N	2026-05-09 15:14:15.297908
-216	EX02-PC88	EX02-PC88	maquina	\N	\N	\N	5308	\N	t	\N	2026-04-25 00:21:54.725736
-249	HAMM PATA	Rodillo para grande	maquina	Hamm	\N	\N	0	\N	t	\N	2026-05-26 22:13:59.1088
-230	EX05-PC200	EX05-PC200	maquina	\N	\N	\N	4373	\N	t	\N	2026-04-25 00:21:54.725736
-208	CA19	CA19	camion	\N	\N	550	1.032063e+06	2.47	t	\N	2026-04-25 00:21:54.725736
-215	CA06 - 14M3	RH8840B	camion	2026 KENWORTH T480 VIN: 3BK5LJ0X3TF402168	\N	550	47080	2.64	t	\N	2026-04-25 00:21:54.725736
-197	CA32	CA32	camion	\N	\N	660	24022	2.61	t	\N	2026-04-25 00:21:54.725736
-242	CA20	\N	camion	\N	\N	\N	46118	2.3	t	\N	2026-05-07 22:59:35.188763
-227	CA07 - 14M3	PM1846A	camion	2020 KENWORTH T370  VIN: 3BKHLN9X3LF318701	\N	550	452560	2.48	t	\N	2026-04-25 00:21:54.725736
-228	CA25	CA25	camion	\N	\N	550	5510	3	t	\N	2026-04-25 00:21:54.725736
-219	M03-KOM1020	M03-KOM1020	maquina	\N	\N	\N	2769	\N	t	\N	2026-04-25 00:21:54.725736
-221	R02-KOMWB140	R02-KOMWB140	maquina	\N	\N	\N	6902	\N	t	\N	2026-04-25 00:21:54.725736
-220	PLANTA AZUL	PLANTA AZUL	otro	\N	\N	\N	19051	\N	t	\N	2026-04-25 00:21:54.725736
-253	M02	MINI02	maquina	236D SKID	\N	\N	3629	\N	t	\N	2026-06-05 19:36:25.67593
-236	RODILLO HAMM	HAMM 02	maquina	\N	\N	\N	1354	\N	t	\N	2026-04-27 22:56:09.65564
-254	CAMION	CAMION EN VENTA	camion	COMODIN	\N	\N	0	\N	t	\N	2026-06-05 19:42:41.278249
-211	CA16	CA16	camion	\N	\N	550	35482	2.17	t	\N	2026-04-25 00:21:54.725736
-214	CA28	CA28	camion	\N	\N	550	67057	3.26	t	\N	2026-04-25 00:21:54.725736
-239	R05-CAT416F	CAT 416 F	maquina	CAT 416F RETRO	\N	\N	29982	\N	t	\N	2026-04-30 21:25:11.714929
-252	CA04 - 14M3	\N	camion	\N	\N	\N	1617	\N	t	\N	2026-06-01 14:05:33.069432
-237	CA01-7M3	PR4832B	camion	FREIGHTLINER M2	\N	\N	372171	4.8	t	\N	2026-04-28 00:32:08.529877
-203	CA30	CA30	camion	\N	\N	550	128532	2.95	t	\N	2026-04-25 00:21:54.725736
+225	EX14-PC200	EX14-PC200	maquina	\N	\N	\N	2771.5	\N	t	\N	2026-04-25 00:21:54.725736
 250	US01	HILUX	otro	TOYOTA	\N	\N	1	\N	t	\N	2026-05-28 20:12:41.388817
-240	EX08	Excavadora	maquina	EX08-CAT307D	\N	\N	11266	\N	t	\N	2026-05-06 18:18:52.045085
-212	CA15 - 14M3	RC4095A	camion	INTERNATIONAL 8600 2006 VIN: 1HSHWSBN76J248567	\N	550	48181	2.97	t	\N	2026-04-25 00:21:54.725736
-201	CA21	CA21	camion	\N	\N	550	15143	2.56	t	\N	2026-04-25 00:21:54.725736
-213	CA34	CA34	camion	\N	\N	\N	1.369677e+06	\N	t	\N	2026-04-25 00:21:54.725736
-247	EX10 - CAT312	Excavadora	maquina	329D	\N	\N	0	\N	t	\N	2026-05-16 00:21:33.48405
-209	CA17	CA17	camion	\N	\N	550	43870	2.46	t	\N	2026-04-25 00:21:54.725736
-200	CA23	CA23	camion	\N	\N	\N	642720	\N	t	\N	2026-04-25 00:21:54.725736
-196	EX07-308D	EX07-308D	maquina	\N	\N	\N	11266.3	\N	t	\N	2026-04-25 00:21:54.725736
+199	CA31	CA31	camion	\N	\N	550	145170	3.19	t	\N	2026-04-25 00:21:54.725736
+229	CA26 - 14M3	PZ4040B	camion	INTERNATIONAL PROSTAR 2010 VIN: 3HSCUAPR5AN178353	\N	550	796242	2.26	t	\N	2026-04-25 00:21:54.725736
+227	CA07 - 14M3	PM1846A	camion	2020 KENWORTH T370  VIN: 3BKHLN9X3LF318701	\N	550	453448	2.48	t	\N	2026-04-25 00:21:54.725736
+215	CA06 - 14M3	RH8840B	camion	2026 KENWORTH T480 VIN: 3BK5LJ0X3TF402168	\N	550	50740	2.64	t	\N	2026-04-25 00:21:54.725736
+219	M03-KOM1020	M03-KOM1020	maquina	\N	\N	\N	2769	\N	t	\N	2026-04-25 00:21:54.725736
+247	EX10 - CAT312	Excavadora	maquina	329D	\N	\N	7868	\N	t	\N	2026-05-16 00:21:33.48405
+238	M01-CAT262D3	M01-CAT262D3	maquina	262D3	\N	\N	5658	\N	t	\N	2026-04-28 19:30:37.015141
+210	NISSAN 03	NISSAN 03	nissan	\N	\N	\N	901915	\N	f	\N	2026-04-25 00:21:54.725736
+252	CA04 - 14M3	\N	camion	\N	\N	\N	7761	\N	t	\N	2026-06-01 14:05:33.069432
+256	EX-03	CAT 308E	maquina	CATERPILLAR	\N	\N	7250	\N	t	\N	2026-07-01 01:49:11.456938
+253	M02	MINI02	maquina	236D SKID	\N	\N	3661.2	\N	t	\N	2026-06-05 19:36:25.67593
+220	PLANTA AZUL	PLANTA AZUL	otro	\N	\N	\N	19051	\N	t	\N	2026-04-25 00:21:54.725736
+212	CA15 - 14M3	RC4095A	camion	INTERNATIONAL 8600 2006 VIN: 1HSHWSBN76J248567	\N	550	2245	2.97	t	\N	2026-04-25 00:21:54.725736
+208	CA19	CA19	camion	\N	\N	550	1.037162e+06	2.47	t	\N	2026-04-25 00:21:54.725736
+206	CA18	CA18	camion	\N	\N	550	525358	2.8	t	\N	2026-04-25 00:21:54.725736
+221	R02-KOMWB140	R02-KOMWB140	maquina	\N	\N	\N	6902	\N	t	\N	2026-04-25 00:21:54.725736
+249	HAMM PATA	Rodillo para grande	maquina	Hamm	\N	\N	0	\N	t	\N	2026-05-26 22:13:59.1088
+216	EX02-PC88	EX02-PC88	maquina	\N	\N	\N	5439	\N	t	\N	2026-04-25 00:21:54.725736
+230	EX05-PC200	EX05-PC200	maquina	\N	\N	\N	4373	\N	t	\N	2026-04-25 00:21:54.725736
 241	PLANTA VERDE	GENERADOR ELECTRICO	otro	\N	\N	\N	19345	\N	t	\N	2026-05-07 20:37:09.891019
-225	EX14-PC200	EX14-PC200	maquina	\N	\N	\N	2675.7	\N	t	\N	2026-04-25 00:21:54.725736
-218	EX01-JD35G	EX01-JD35G	maquina	\N	\N	\N	1437	\N	t	\N	2026-04-25 00:21:54.725736
-233	R04-NHB80C	R04-NHB80C	maquina	\N	\N	\N	1524	\N	t	\N	2026-04-25 00:21:54.725736
-248	CA10	\N	camion	\N	\N	\N	562888	\N	t	\N	2026-05-16 18:52:31.858443
-226	CA08 - 14M3	RK1054B	camion	2026 KENWORTH T480  VIN: 3BK5LJ0X6TF402438	\N	550	54147	2.84	t	\N	2026-04-25 00:21:54.725736
+217	RODILLO BOMAG	RODILLO BOMAG	maquina	\N	\N	\N	1048.1	\N	t	\N	2026-04-25 00:21:54.725736
+254	CAMION	CAMION EN VENTA	camion	COMODIN	\N	\N	476767	\N	t	\N	2026-06-05 19:42:41.278249
+244	NISSAN 03...	Mago	otro	\N	\N	\N	150673	\N	t	\N	2026-05-09 15:14:15.297908
+242	CA20	\N	camion	\N	\N	\N	4420	2.3	t	\N	2026-05-07 22:59:35.188763
+209	CA17-14M3	RH2191B - 2007 INTERNATIONAL	camion	VIN:1HSHWAHN17J451280,  MTO:	\N	550	50031	2.46	t	\N	2026-04-25 00:21:54.725736
+207	CA12 - 14M3	PV5173B	camion	2018 FREIGHTLINER M2  VIN: 3ALHCYDJXJDJT8699	\N	550	486118	4	t	\N	2026-04-25 00:21:54.725736
+255	CA05-14M3	PJ6420C	camion	KW T480	\N	380	3465	\N	t	\N	2026-06-25 23:53:23.433999
+233	R04-NHB80C	R04-NHB80C	maquina	\N	\N	\N	1688	\N	t	\N	2026-04-25 00:21:54.725736
+202	CA22	CA22	camion	\N	\N	600	75053	2.32	t	\N	2026-04-25 00:21:54.725736
+204	CA27	CA27	camion	\N	\N	550	450039	2.41	t	\N	2026-04-25 00:21:54.725736
+248	CA10	\N	camion	\N	\N	\N	562966	\N	t	\N	2026-05-16 18:52:31.858443
+239	R05-CAT416F	CAT 416 F	maquina	CAT 416F RETRO	\N	\N	29982	\N	t	\N	2026-04-30 21:25:11.714929
+200	CA23	CA23	camion	\N	\N	\N	644798	\N	t	\N	2026-04-25 00:21:54.725736
+232	CA13 - 14M3	PL0608A	camion	2019 FREIGHTLINER M2 VIN: 3ALHCYDJ9KDKR8266	\N	550	485441	3.78	t	\N	2026-04-25 00:21:54.725736
+224	EX09-PC130	EX09-PC130	maquina	\N	\N	\N	3909	\N	t	\N	2026-04-25 00:21:54.725736
+214	CA28	CA28	camion	\N	\N	550	72171	3.26	t	\N	2026-04-25 00:21:54.725736
+240	EX08	Excavadora	maquina	EX08-CAT307D	\N	\N	11266	\N	t	\N	2026-05-06 18:18:52.045085
+198	CA29	CA29	camion	\N	\N	550	85018	3.21	t	\N	2026-04-25 00:21:54.725736
+226	CA08 - 14M3	RK1054B	camion	2026 KENWORTH T480  VIN: 3BK5LJ0X6TF402438	\N	550	60553	2.84	t	\N	2026-04-25 00:21:54.725736
+203	CA30	CA30	camion	\N	\N	550	133757	2.95	t	\N	2026-04-25 00:21:54.725736
+196	EX07-308D	EX07-308D	maquina	\N	\N	\N	11266.3	\N	t	\N	2026-04-25 00:21:54.725736
+218	EX01-JD35G	EX01-JD35G	maquina	\N	\N	\N	1485.3	\N	t	\N	2026-04-25 00:21:54.725736
+234	EX13-PC210	EX13-PC210	maquina	\N	\N	\N	3830.1	\N	t	\N	2026-04-25 00:21:54.725736
+197	CA32	CA32	camion	\N	\N	660	29692	2.61	t	\N	2026-04-25 00:21:54.725736
+213	CA34	CA34	camion	\N	\N	\N	1.37495e+06	\N	t	\N	2026-04-25 00:21:54.725736
+237	CA01-7M3	PR4832B - FREIGHTLINER M2	camion	\N	\N	\N	372931	4.8	t	\N	2026-04-28 00:32:08.529877
 251	RODILLO CAT	RV06	maquina	CATERPILLAR	\N	\N	0	\N	t	\N	2026-06-01 13:54:28.629377
-232	CA13 - 14M3	PL0608A	camion	2019 FREIGHTLINER M2 VIN: 3ALHCYDJ9KDKR8266	\N	550	479771	3.78	t	\N	2026-04-25 00:21:54.725736
-234	EX13-PC210	EX13-PC210	maquina	\N	\N	\N	3699.1	\N	t	\N	2026-04-25 00:21:54.725736
+228	CA25	CA25	camion	\N	\N	550	11655	3	t	\N	2026-04-25 00:21:54.725736
+236	RODILLO HAMM	HAMM 02	maquina	\N	\N	\N	1355	\N	t	\N	2026-04-27 22:56:09.65564
+205	CA33	CA33	camion	\N	\N	600	24469	2.7	t	\N	2026-04-25 00:21:54.725736
+211	CA16-14M3	RH2190B	camion	2007 INTERNATIONAL.. VIN: 1HSHWAHN47J480725 ,MTO:	\N	550	40635	2.17	t	\N	2026-04-25 00:21:54.725736
+245	CA02 - 7M3	RA8157A FREIGHTLINER M2	camion	\N	\N	350	564281	5.03	t	\N	2026-05-13 00:45:11.199167
+201	CA21	CA21	camion	\N	\N	550	21008	2.56	t	\N	2026-04-25 00:21:54.725736
 \.
 
 
@@ -2422,14 +3571,14 @@ user_3D371BhUPGwBX31tK2moNUvyel3	larajimenezmargarito@gmail.com	Margarito Lara j
 -- Name: analytics_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.analytics_events_id_seq', 99, true);
+SELECT pg_catalog.setval('public.analytics_events_id_seq', 240, true);
 
 
 --
 -- Name: analytics_sessions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.analytics_sessions_id_seq', 55, true);
+SELECT pg_catalog.setval('public.analytics_sessions_id_seq', 132, true);
 
 
 --
@@ -2443,14 +3592,14 @@ SELECT pg_catalog.setval('public.archivos_id_seq', 14, true);
 -- Name: audit_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.audit_log_id_seq', 3, true);
+SELECT pg_catalog.setval('public.audit_log_id_seq', 11, true);
 
 
 --
 -- Name: cargas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.cargas_id_seq', 3340, true);
+SELECT pg_catalog.setval('public.cargas_id_seq', 4046, true);
 
 
 --
@@ -2464,14 +3613,14 @@ SELECT pg_catalog.setval('public.fuentes_diesel_id_seq', 32, true);
 -- Name: obras_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.obras_id_seq', 170, true);
+SELECT pg_catalog.setval('public.obras_id_seq', 180, true);
 
 
 --
 -- Name: operadores_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.operadores_id_seq', 278, true);
+SELECT pg_catalog.setval('public.operadores_id_seq', 281, true);
 
 
 --
@@ -2499,28 +3648,28 @@ SELECT pg_catalog.setval('public.pb_novedades_id_seq', 1, false);
 -- Name: pb_tickets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.pb_tickets_id_seq', 1, false);
+SELECT pg_catalog.setval('public.pb_tickets_id_seq', 1, true);
 
 
 --
 -- Name: periodos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.periodos_id_seq', 66, true);
+SELECT pg_catalog.setval('public.periodos_id_seq', 74, true);
 
 
 --
 -- Name: recargas_tanque_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.recargas_tanque_id_seq', 35, true);
+SELECT pg_catalog.setval('public.recargas_tanque_id_seq', 38, true);
 
 
 --
 -- Name: rendimientos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rendimientos_id_seq', 455, true);
+SELECT pg_catalog.setval('public.rendimientos_id_seq', 634, true);
 
 
 --
@@ -2534,14 +3683,14 @@ SELECT pg_catalog.setval('public.tanques_id_seq', 16, true);
 -- Name: transferencias_tanque_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.transferencias_tanque_id_seq', 59, true);
+SELECT pg_catalog.setval('public.transferencias_tanque_id_seq', 80, true);
 
 
 --
 -- Name: unidades_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.unidades_id_seq', 254, true);
+SELECT pg_catalog.setval('public.unidades_id_seq', 256, true);
 
 
 --
@@ -2754,5 +3903,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABL
 -- PostgreSQL database dump complete
 --
 
-\unrestrict XKyr3ntvQt8b84VSp9A8mRgPzQMNTn9oFWxApUiBdfXFnEnA2FLyYmZ0WRh4pdx
+\unrestrict DOahy3zQSuMKR8MMxwdH6al4RwSOg3i0wdBY1LldQ3oCpHbIOafVfzqqXQI6swL
 

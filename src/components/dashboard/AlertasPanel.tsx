@@ -150,27 +150,29 @@ export default function AlertasPanel({
           {visibleDivergencias.map((c) => (
             <div
               key={`conc-${c.tanqueId}`}
-              className="flex items-start gap-3 px-4 py-3 rounded-2xl border"
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl border"
               style={{
                 backgroundColor: "rgb(239 68 68 / 0.06)",
                 borderColor:     "rgb(239 68 68 / 0.25)",
               }}
             >
-              <div className="mt-0.5 p-1.5 rounded-lg shrink-0 bg-red-500/10 border border-red-500/20">
+              <div className="p-1.5 rounded-lg shrink-0 bg-red-500/10 border border-red-500/20">
                 <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-red-600">
-                  Tanque {c.nombre} — inventario no cuadra con los movimientos
+                  {c.nombre} — desviación {c.diferencia > 0 ? "+" : ""}{c.diferencia.toLocaleString()} L
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-                  Sistema: {c.actual.toLocaleString()} L · Según movimientos: {c.teorico.toLocaleString()} L ·
-                  Δ {c.diferencia > 0 ? "+" : ""}{c.diferencia.toLocaleString()} L (tolerancia ±{c.tolerancia.toLocaleString()} L)
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-                  Revisa cargas/recargas recientes o haz un ajuste de stock con medición física para recalibrar.
+                  Tolerancia ±{c.tolerancia.toLocaleString()} L · Sistema {c.actual.toLocaleString()} vs teórico {c.teorico.toLocaleString()} L
                 </p>
               </div>
+              <Link
+                href="/tanques"
+                className="text-xs font-semibold shrink-0 text-red-500 underline underline-offset-2"
+              >
+                Ver detalle
+              </Link>
               <button
                 onClick={() => setDismissedConciliacion((prev) => new Set([...prev, c.tanqueId]))}
                 className="p-1 rounded-lg hover:bg-red-500/10 transition-colors shrink-0"

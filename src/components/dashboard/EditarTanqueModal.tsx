@@ -150,7 +150,7 @@ export default function EditarTanqueModal({ tanque }: { tanque: TanqueInfo }) {
                   id="et-cap"
                   name="capacidadMax"
                   type="number"
-                  step="100"
+                  step="1"
                   min="1"
                   value={form.capacidadMax}
                   onChange={handleChange}
@@ -166,9 +166,8 @@ export default function EditarTanqueModal({ tanque }: { tanque: TanqueInfo }) {
                   id="et-ajuste"
                   name="ajustePorcentaje"
                   type="number"
-                  step="0.5"
+                  step="any"
                   min="0"
-                  max="10"
                   value={form.ajustePorcentaje}
                   onChange={handleChange}
                   className="font-mono"

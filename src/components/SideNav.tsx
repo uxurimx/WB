@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import {
   Fuel, LayoutDashboard, Settings, ChevronRight, ChevronDown,
   PlusCircle, ClipboardList, Truck, Users, HardHat, Menu, X,
-  Wrench, Calendar, Shield, TicketCheck, Megaphone, Blocks, BarChart2,
+  Wrench, Calendar, Shield, TicketCheck, Megaphone, Blocks, BarChart2, Gauge,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
@@ -19,11 +19,7 @@ type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ clas
 function getNavSections(permisos: NavPermission[], pbOpenTickets = 0) {
   const has = (p: NavPermission) => permisos.includes(p);
 
-  const cargasItems: NavItemDef[] = [
-    ...(has("cargas.nueva_patio") ? [{ name: "Nueva Carga Patio", href: "/cargas/nueva", icon: PlusCircle }] : []),
-    ...(has("cargas.nueva_campo") ? [{ name: "Nueva Carga Campo", href: "/cargas/campo", icon: Fuel }] : []),
-    ...(has("cargas.historial")   ? [{ name: "Historial",         href: "/cargas",       icon: ClipboardList }] : []),
-  ];
+  const cargasItems: NavItemDef[] = [];
 
   const catalogoItems: NavItemDef[] = has("catalogo") ? [
     { name: "Unidades",   href: "/catalogo/unidades",   icon: Truck },
@@ -55,17 +51,19 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0) {
       collapsible: true,
       items: catalogoItems,
     }] : []),
-    ...((has("periodos") || has("analiticas")) ? [{
+    ...((has("periodos") || has("analiticas") || has("tanques") || has("cargas.historial")) ? [{
       label: "Análisis",
-      collapsible: false,
+      collapsible: true,
       items: [
-        ...(has("periodos")    ? [{ name: "Períodos",   href: "/periodos",   icon: Calendar   }] : []),
-        ...(has("analiticas")  ? [{ name: "Analíticas", href: "/analiticas", icon: BarChart2  }] : []),
+        ...(has("tanques")          ? [{ name: "Tanques",    href: "/tanques",    icon: Gauge        }] : []),
+        ...(has("periodos")         ? [{ name: "Períodos",   href: "/periodos",   icon: Calendar     }] : []),
+        ...(has("cargas.historial") ? [{ name: "Historial",  href: "/cargas",     icon: ClipboardList }] : []),
+        ...(has("analiticas")       ? [{ name: "Analíticas", href: "/analiticas", icon: BarChart2    }] : []),
       ],
     }] : []),
     ...(sistemaItems.length ? [{
       label: "Sistema",
-      collapsible: false,
+      collapsible: true,
       items: sistemaItems,
     }] : []),
     ...(has("poxelbit") ? [{
@@ -150,13 +148,18 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   const navSections = getNavSections(permisos, pbOpenTickets);
 
-  // Catálogos / PoxelBit: abierto si la ruta actual está dentro
+  // Sección abierta solo si la ruta activa está dentro de ella
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
     const inCatalogos = pathname.startsWith("/catalogo");
     const inPoxelbit  = pathname.startsWith("/poxelbit");
+    const inAnalisis  = pathname.startsWith("/tanques") || pathname.startsWith("/periodos") ||
+                        pathname.startsWith("/cargas")  || pathname.startsWith("/analiticas");
+    const inSistema   = pathname.startsWith("/admin") || pathname.startsWith("/settings");
     const collapsed = new Set<string>();
     if (!inCatalogos) collapsed.add("Catálogos");
     if (!inPoxelbit)  collapsed.add("PoxelBit");
+    if (!inAnalisis)  collapsed.add("Análisis");
+    if (!inSistema)   collapsed.add("Sistema");
     return collapsed;
   });
 

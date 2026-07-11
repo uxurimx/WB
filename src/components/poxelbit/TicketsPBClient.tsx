@@ -89,7 +89,7 @@ export default function TicketsPBClient({
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:p-8 max-w-[1536px]">
       {/* Header */}
       <div className="mb-8">
         <Link href="/poxelbit" className="flex items-center gap-1.5 text-xs font-semibold mb-4 hover:text-indigo-400 transition-colors" style={{ color: "var(--fg-muted)" }}>

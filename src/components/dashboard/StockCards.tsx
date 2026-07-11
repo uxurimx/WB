@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Fuel, Truck, AlertTriangle } from "lucide-react";
-import RecargaTanqueModal from "./RecargaTanqueModal";
-import TransferirNissanModal from "./TransferirNissanModal";
+import { Fuel, Truck, AlertTriangle, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import EditarTanqueModal, { type TanqueInfo } from "./EditarTanqueModal";
 
 type StockData = {
@@ -142,7 +141,12 @@ export default function StockCards({
           <div className="flex items-center gap-2">
             {alertaTaller && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
             <EditarTanqueModal tanque={taller as TanqueInfo} />
-            <RecargaTanqueModal tanqueId={taller.id} cuentalitrosActual={taller.cuentalitros} />
+            <Link
+              href="/tanques"
+              className="flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:text-indigo-400 transition-colors"
+            >
+              Gestionar <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
         </div>
 
@@ -185,16 +189,12 @@ export default function StockCards({
           <div className="flex items-center gap-2">
             {alertaNissan && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
             <EditarTanqueModal tanque={nissan as TanqueInfo} />
-            <TransferirNissanModal
-              tanqueOrigenId={taller.id}
-              tanqueDestinoId={nissan.id}
-              litrosDisponibles={taller.litros}
-              cuentalitrosTaller={taller.cuentalitros}
-              onTransferComplete={(origenLitros, destinoLitros, origenCuentalitros) => {
-                setTaller((prev) => ({ ...prev, litros: origenLitros, cuentalitros: origenCuentalitros }));
-                setNissan((prev) => ({ ...prev, litros: destinoLitros }));
-              }}
-            />
+            <Link
+              href="/tanques"
+              className="flex items-center gap-1 text-xs font-semibold text-violet-500 hover:text-violet-400 transition-colors"
+            >
+              Gestionar <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
         </div>
 

@@ -3,11 +3,13 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { tanques, recargasTanque, transferenciasTanque, auditLog } from "@/db/schema";
-import { eq, inArray, gte, lte, and } from "drizzle-orm";
+import { tanques, recargasTanque, transferenciasTanque, auditLog, cargas } from "@/db/schema";
+import { eq, inArray, gte, lte, and, or, desc } from "drizzle-orm";
 import { requireManageRole } from "@/lib/authz";
 import { getSiguienteFolioPublic } from "./cargas";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
+import { conciliarTanques } from "@/lib/conciliacion";
+import { UMBRAL_TALLER, UMBRAL_NISSAN } from "@/lib/alertas-config";
 
 export type RecargaTanqueInput = {
   tanqueId: number;
@@ -537,4 +539,280 @@ export async function getTransferencias(
     origenNombre: byId[r.tanqueOrigenId] ?? `Tanque ${r.tanqueOrigenId}`,
     destinoNombre: byId[r.tanqueDestinoId] ?? `Tanque ${r.tanqueDestinoId}`,
   }));
+}
+
+// ─── Tipos para la página de tanques ─────────────────────────────────────────
+export type EventoTimeline = {
+  id: string;
+  fecha: string;
+  tipo: "recarga" | "transferencia_salida" | "transferencia_entrada" | "consumo_dia" | "ajuste";
+  litros: number;
+  detalle: string;
+  notas: string | null;
+  folio?: number | null;
+  proveedor?: string | null;
+  precioLitro?: number | null;
+  folioFactura?: string | null;
+};
+
+export type EstadisticasTanque = {
+  promedioDiario7d: number;
+  promedioDiario30d: number;
+  totalConsumo7d: number;
+  totalConsumo30d: number;
+  totalRecargado30d: number;
+  costoPromedioLitro: number | null;
+  totalCostoEstimado30d: number | null;
+  diasHastaUmbral: number | null;
+  fechaProyectadaUmbral: string | null;
+};
+
+export type TanqueDetalle = {
+  id: number;
+  nombre: string;
+  capacidadMax: number;
+  litrosActuales: number;
+  cuentalitrosActual: number;
+  ajustePorcentaje: number;
+  ultimaActualizacion: string | null;
+  umbral: number;
+  timeline: EventoTimeline[];
+  estadisticas: EstadisticasTanque;
+  conciliacion: {
+    actual: number;
+    teorico: number;
+    diferencia: number;
+    tolerancia: number;
+    ok: boolean;
+    anclaFecha: string | null;
+    anclaLitros: number;
+  };
+};
+
+// ─── Detalle completo de todos los tanques (para /tanques) ───────────────────
+export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
+  const tanquesData = await db.select().from(tanques);
+  const conciliaciones = await conciliarTanques();
+
+  const ahora = new Date();
+  const hace30 = new Date(ahora); hace30.setDate(hace30.getDate() - 30);
+  const hace7  = new Date(ahora); hace7.setDate(hace7.getDate() - 7);
+  const hace30Str = hace30.toISOString().split("T")[0];
+  const hace7Str  = hace7.toISOString().split("T")[0];
+
+  return Promise.all(
+    tanquesData.map(async (t) => {
+      const conc = conciliaciones.find((c) => c.tanqueId === t.id) ?? {
+        tanqueId: t.id, nombre: t.nombre,
+        actual: t.litrosActuales ?? 0, teorico: t.litrosActuales ?? 0,
+        diferencia: 0, tolerancia: 0, ok: true,
+        anclaFecha: null, anclaLitros: 0,
+      };
+
+      const [recargas, transferencias, cargasData, ajustesAudit] = await Promise.all([
+        db.query.recargasTanque.findMany({
+          where: (r, { eq: _eq }) => _eq(r.tanqueId, t.id),
+          orderBy: (r, { desc: _desc }) => [_desc(r.fecha), _desc(r.createdAt)],
+          limit: 60,
+        }),
+        db.select().from(transferenciasTanque)
+          .where(or(
+            eq(transferenciasTanque.tanqueOrigenId, t.id),
+            eq(transferenciasTanque.tanqueDestinoId, t.id),
+          ))
+          .orderBy(desc(transferenciasTanque.fecha))
+          .limit(60),
+        db.select({ fecha: cargas.fecha, litros: cargas.litros })
+          .from(cargas)
+          .where(and(eq(cargas.tanqueId, t.id), gte(cargas.fecha, hace30Str))),
+        db.select().from(auditLog)
+          .where(and(
+            eq(auditLog.accion, "ajuste_stock"),
+            eq(auditLog.entidad, "tanques"),
+            eq(auditLog.entidadId, String(t.id)),
+          ))
+          .orderBy(desc(auditLog.createdAt))
+          .limit(20),
+      ]);
+
+      // Nombres de tanques para transferencias
+      const tanquesNombres = Object.fromEntries(tanquesData.map((tt) => [tt.id, tt.nombre]));
+
+      // Construir timeline
+      const timeline: EventoTimeline[] = [];
+
+      for (const r of recargas) {
+        timeline.push({
+          id: `rec_${r.id}`,
+          fecha: r.fecha,
+          tipo: "recarga",
+          litros: r.litros,
+          detalle: r.proveedor ? `Pipa ${r.proveedor}` : "Recarga de pipa",
+          notas: r.notas,
+          proveedor: r.proveedor,
+          precioLitro: r.precioLitro,
+          folioFactura: r.folioFactura,
+        });
+      }
+
+      for (const tr of transferencias) {
+        if (tr.tanqueOrigenId === t.id) {
+          timeline.push({
+            id: `tr_out_${tr.id}`,
+            fecha: tr.fecha,
+            tipo: "transferencia_salida",
+            litros: tr.litros,
+            detalle: `→ ${tanquesNombres[tr.tanqueDestinoId] ?? `Tanque ${tr.tanqueDestinoId}`}`,
+            notas: tr.notas,
+            folio: tr.folio,
+          });
+        } else {
+          timeline.push({
+            id: `tr_in_${tr.id}`,
+            fecha: tr.fecha,
+            tipo: "transferencia_entrada",
+            litros: tr.litros,
+            detalle: `← ${tanquesNombres[tr.tanqueOrigenId] ?? `Tanque ${tr.tanqueOrigenId}`}`,
+            notas: tr.notas,
+            folio: tr.folio,
+          });
+        }
+      }
+
+      // Cargas agrupadas por fecha
+      const cargasPorFecha = new Map<string, number>();
+      for (const c of cargasData) {
+        cargasPorFecha.set(c.fecha, (cargasPorFecha.get(c.fecha) ?? 0) + (c.litros ?? 0));
+      }
+      for (const [fecha, litrosDia] of cargasPorFecha) {
+        timeline.push({
+          id: `cons_${t.id}_${fecha}`,
+          fecha,
+          tipo: "consumo_dia",
+          litros: litrosDia,
+          detalle: "Consumo del día",
+          notas: null,
+        });
+      }
+
+      for (const aj of ajustesAudit) {
+        let datos: { antes?: number; despues?: number; notas?: string } = {};
+        try { datos = JSON.parse(aj.datosJson ?? "{}"); } catch { /* ignore */ }
+        timeline.push({
+          id: `adj_${aj.id}`,
+          fecha: aj.createdAt!.toISOString().split("T")[0],
+          tipo: "ajuste",
+          litros: datos.despues ?? 0,
+          detalle: "Ajuste de inventario",
+          notas: datos.notas ?? null,
+        });
+      }
+
+      timeline.sort((a, b) => {
+        const d = b.fecha.localeCompare(a.fecha);
+        return d !== 0 ? d : b.id.localeCompare(a.id);
+      });
+
+      // Estadísticas
+      const totalConsumo30d = cargasData.reduce((s, c) => s + (c.litros ?? 0), 0);
+      const totalConsumo7d  = cargasData
+        .filter((c) => c.fecha >= hace7Str)
+        .reduce((s, c) => s + (c.litros ?? 0), 0);
+
+      const promedioDiario7d  = totalConsumo7d  / 7;
+      const promedioDiario30d = totalConsumo30d / 30;
+
+      const recargasRecientes = recargas.filter((r) => r.fecha >= hace30Str);
+      const totalRecargado30d = recargasRecientes.reduce((s, r) => s + r.litros, 0);
+
+      const recargasConPrecio = recargasRecientes.filter((r) => r.precioLitro && r.precioLitro > 0);
+      const costoPromedioLitro = recargasConPrecio.length > 0
+        ? recargasConPrecio.reduce((s, r) => s + r.precioLitro!, 0) / recargasConPrecio.length
+        : null;
+      const totalCostoEstimado30d = costoPromedioLitro !== null ? totalConsumo30d * costoPromedioLitro : null;
+
+      const umbral = t.nombre === "NISSAN" ? UMBRAL_NISSAN : UMBRAL_TALLER;
+      const litrosActuales = t.litrosActuales ?? 0;
+      const diasHastaUmbral = promedioDiario7d > 0
+        ? Math.max(0, (litrosActuales - umbral) / promedioDiario7d)
+        : null;
+      const fechaProyectadaUmbral = diasHastaUmbral !== null
+        ? (() => {
+            const d = new Date();
+            d.setDate(d.getDate() + Math.floor(diasHastaUmbral));
+            return d.toISOString().split("T")[0];
+          })()
+        : null;
+
+      return {
+        id: t.id,
+        nombre: t.nombre,
+        capacidadMax: t.capacidadMax,
+        litrosActuales,
+        cuentalitrosActual: t.cuentalitrosActual ?? 0,
+        ajustePorcentaje: t.ajustePorcentaje ?? 2,
+        ultimaActualizacion: t.ultimaActualizacion?.toISOString() ?? null,
+        umbral,
+        timeline: timeline.slice(0, 100),
+        estadisticas: {
+          promedioDiario7d,
+          promedioDiario30d,
+          totalConsumo7d,
+          totalConsumo30d,
+          totalRecargado30d,
+          costoPromedioLitro,
+          totalCostoEstimado30d,
+          diasHastaUmbral,
+          fechaProyectadaUmbral,
+        },
+        conciliacion: {
+          actual:      conc.actual,
+          teorico:     conc.teorico,
+          diferencia:  conc.diferencia,
+          tolerancia:  conc.tolerancia,
+          ok:          conc.ok,
+          anclaFecha:  conc.anclaFecha,
+          anclaLitros: conc.anclaLitros,
+        },
+      };
+    }),
+  );
+}
+
+// ─── Ajuste manual de stock (ancla para conciliación) ────────────────────────
+export async function ajustarStockTanque(
+  tanqueId: number,
+  litrosMedidos: number,
+  notas?: string,
+) {
+  const { userId } = await requireManageRole();
+
+  const tanque = await db.query.tanques.findFirst({ where: eq(tanques.id, tanqueId) });
+  if (!tanque) throw new Error("Tanque no encontrado");
+  if (litrosMedidos < 0) throw new Error("Los litros no pueden ser negativos");
+  if (litrosMedidos > tanque.capacidadMax)
+    throw new Error(`Los litros superan la capacidad máxima (${tanque.capacidadMax.toLocaleString()} L)`);
+
+  const antes = tanque.litrosActuales ?? 0;
+
+  await db.insert(auditLog).values({
+    usuarioId: userId,
+    accion: "ajuste_stock",
+    entidad: "tanques",
+    entidadId: String(tanqueId),
+    datosJson: JSON.stringify({ antes, despues: litrosMedidos, notas: notas ?? null }),
+  });
+
+  await db.update(tanques)
+    .set({ litrosActuales: litrosMedidos, ultimaActualizacion: new Date() })
+    .where(eq(tanques.id, tanqueId));
+
+  await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
+    tanque: tanque.nombre,
+    litrosActuales: litrosMedidos,
+  }).catch(() => {});
+
+  revalidatePath("/overview");
+  revalidatePath("/tanques");
+  return { ok: true, antes, despues: litrosMedidos };
 }

@@ -12,7 +12,7 @@ export default async function ImportarPage() {
   if (clerkUser?.publicMetadata?.role !== "admin") redirect("/overview");
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl">
+    <div className="p-6 md:p-8 max-w-[1536px]">
       {/* Header */}
       <div className="mb-8">
         <Link

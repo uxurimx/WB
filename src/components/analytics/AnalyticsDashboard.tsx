@@ -308,7 +308,7 @@ export default function AnalyticsDashboard() {
   const maxFunnel = data?.scrollFunnel[0]?.sessions ?? 1;
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl">
+    <div className="p-6 md:p-8 max-w-[1536px]">
 
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
