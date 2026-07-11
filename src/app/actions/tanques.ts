@@ -3,8 +3,9 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { tanques, recargasTanque, transferenciasTanque } from "@/db/schema";
+import { tanques, recargasTanque, transferenciasTanque, auditLog } from "@/db/schema";
 import { eq, inArray, gte, lte, and } from "drizzle-orm";
+import { requireManageRole } from "@/lib/authz";
 import { getSiguienteFolioPublic } from "./cargas";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
@@ -181,8 +182,7 @@ export async function updateTanque(
   id: number,
   data: { nombre?: string; capacidadMax?: number; ajustePorcentaje?: number }
 ) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
+  await requireManageRole();
 
   const patch: Record<string, unknown> = {};
   if (data.nombre !== undefined) patch.nombre = data.nombre.trim();
@@ -214,8 +214,7 @@ export async function updateRecargaTanque(
     notas?: string | null;
   }
 ) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
+  await requireManageRole();
 
   const recarga = await db.query.recargasTanque.findFirst({
     where: eq(recargasTanque.id, id),
@@ -274,8 +273,7 @@ export async function updateRecargaTanque(
 
 // ─── Eliminar recarga ─────────────────────────────────────────────────────────
 export async function deleteRecargaTanque(id: number) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
+  const { userId } = await requireManageRole();
 
   const recarga = await db.query.recargasTanque.findFirst({
     where: eq(recargasTanque.id, id),
@@ -293,6 +291,15 @@ export async function deleteRecargaTanque(id: number) {
       `No se puede eliminar: el balance resultante sería negativo (${nuevoBalance.toFixed(0)} L). ` +
         `Esos litros ya fueron consumidos.`
     );
+
+  // Snapshot completo antes de borrar — permite reconstruir la recarga si fue un error
+  await db.insert(auditLog).values({
+    usuarioId: userId,
+    accion: "delete",
+    entidad: "recarga_tanque",
+    entidadId: String(id),
+    datosJson: JSON.stringify(recarga),
+  });
 
   await db.delete(recargasTanque).where(eq(recargasTanque.id, id));
 
@@ -323,8 +330,7 @@ export async function updateTransferencia(
     cuentalitrosDestino?: number | null;
   }
 ) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
+  await requireManageRole();
 
   const transferencia = await db.query.transferenciasTanque.findFirst({
     where: eq(transferenciasTanque.id, id),
@@ -415,8 +421,7 @@ export async function updateTransferencia(
 
 // ─── Eliminar transferencia ───────────────────────────────────────────────────
 export async function deleteTransferencia(id: number) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
+  const { userId } = await requireManageRole();
 
   const transferencia = await db.query.transferenciasTanque.findFirst({
     where: eq(transferenciasTanque.id, id),
@@ -445,6 +450,15 @@ export async function deleteTransferencia(id: number) {
     origen.capacidadMax,
     (origen.litrosActuales ?? 0) + transferencia.litros
   );
+
+  // Snapshot completo antes de borrar — permite reconstruir la transferencia si fue un error
+  await db.insert(auditLog).values({
+    usuarioId: userId,
+    accion: "delete",
+    entidad: "transferencia_tanque",
+    entidadId: String(id),
+    datosJson: JSON.stringify(transferencia),
+  });
 
   await Promise.all([
     db.delete(transferenciasTanque).where(eq(transferenciasTanque.id, id)),

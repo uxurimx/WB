@@ -7,7 +7,7 @@ import {
 import Link from "next/link";
 import {
   UMBRAL_TALLER, UMBRAL_NISSAN,
-  type AlertaRendimiento, type AnomaliaActiva,
+  type AlertaRendimiento, type AnomaliaActiva, type ConciliacionTanque,
 } from "@/lib/alertas-config";
 
 type StockInfo = { id: number; litros: number; max: number };
@@ -17,6 +17,7 @@ interface AlertasPanelProps {
   nissan: StockInfo;
   alertasRendimiento: AlertaRendimiento[];
   anomaliasActivas: AnomaliaActiva[];
+  conciliacion: ConciliacionTanque[];
   ultimoPeriodoCerrado: { id: number; nombre: string } | null;
   periodoActivoId: number | null;
 }
@@ -28,6 +29,7 @@ export default function AlertasPanel({
   nissan,
   alertasRendimiento,
   anomaliasActivas,
+  conciliacion,
   ultimoPeriodoCerrado,
   periodoActivoId,
 }: AlertasPanelProps) {
@@ -36,6 +38,7 @@ export default function AlertasPanel({
   const [mounted, setMounted]                 = useState(false);
   const [dismissedStock, setDismissedStock]   = useState<Set<string>>(new Set());
   const [dismissedAnomalias, setDismissedAnomalias] = useState<Set<number>>(new Set());
+  const [dismissedConciliacion, setDismissedConciliacion] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     setMounted(true);
@@ -61,7 +64,8 @@ export default function AlertasPanel({
 
   const visibleStockAlertas  = stockAlertas.filter((a) => !dismissedStock.has(a.label));
   const visibleAnomalias     = anomaliasActivas.filter((_, i) => !dismissedAnomalias.has(i));
-  const totalVisible = visibleStockAlertas.length + visibleAnomalias.length + (showRend ? 1 : 0);
+  const visibleDivergencias  = conciliacion.filter((c) => !c.ok && !dismissedConciliacion.has(c.tanqueId));
+  const totalVisible = visibleStockAlertas.length + visibleAnomalias.length + visibleDivergencias.length + (showRend ? 1 : 0);
 
   return (
     <section className="mb-6">
@@ -141,6 +145,42 @@ export default function AlertasPanel({
               </div>
             );
           })}
+
+          {/* ── Conciliación de inventario ──────────────────── */}
+          {visibleDivergencias.map((c) => (
+            <div
+              key={`conc-${c.tanqueId}`}
+              className="flex items-start gap-3 px-4 py-3 rounded-2xl border"
+              style={{
+                backgroundColor: "rgb(239 68 68 / 0.06)",
+                borderColor:     "rgb(239 68 68 / 0.25)",
+              }}
+            >
+              <div className="mt-0.5 p-1.5 rounded-lg shrink-0 bg-red-500/10 border border-red-500/20">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-red-600">
+                  Tanque {c.nombre} — inventario no cuadra con los movimientos
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
+                  Sistema: {c.actual.toLocaleString()} L · Según movimientos: {c.teorico.toLocaleString()} L ·
+                  Δ {c.diferencia > 0 ? "+" : ""}{c.diferencia.toLocaleString()} L (tolerancia ±{c.tolerancia.toLocaleString()} L)
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
+                  Revisa cargas/recargas recientes o haz un ajuste de stock con medición física para recalibrar.
+                </p>
+              </div>
+              <button
+                onClick={() => setDismissedConciliacion((prev) => new Set([...prev, c.tanqueId]))}
+                className="p-1 rounded-lg hover:bg-red-500/10 transition-colors shrink-0"
+                style={{ color: "var(--fg-muted)" }}
+                aria-label="Cerrar alerta"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
 
           {/* ── Anomalías del período activo ────────────────── */}
           {visibleAnomalias.map((a, visIdx) => {

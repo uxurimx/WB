@@ -68,13 +68,15 @@ function ConfirmAction({
 }
 
 // ── Stock adjuster ─────────────────────────────────────────────
+type StockTarget = { tanque: "Taller" | "NISSAN" | "both"; litrosTaller: number; litrosNissan: number } | null;
+
 function StockAdjuster() {
-  const [pendingBoth, startBoth] = useTransition();
-  const [pendingTaller, startTaller] = useTransition();
-  const [pendingNissan, startNissan] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const [msg, setMsg] = useState("");
   const [taller, setTaller] = useState("6500");
   const [nissan, setNissan] = useState("450");
+  const [motivo, setMotivo] = useState("");
+  const [confirmTarget, setConfirmTarget] = useState<StockTarget>(null);
 
   const presets = [
     { label: "Full", t: 9500, n: 1100 },
@@ -84,41 +86,54 @@ function StockAdjuster() {
     { label: "Vacío", t: 0, n: 0 },
   ];
 
-  const anyPending = pendingBoth || pendingTaller || pendingNissan;
+  function prepareApply(target: StockTarget) {
+    setConfirmTarget(target);
+  }
 
-  function runBoth(t: number, n: number) {
-    startBoth(async () => {
-      const res = await ajustarStockTanques(t, n);
-      setMsg(res.msg);
-      setTimeout(() => setMsg(""), 4000);
+  function doApply() {
+    if (!confirmTarget) return;
+    if (!motivo.trim()) {
+      setMsg("El motivo del ajuste es obligatorio");
+      return;
+    }
+    startTransition(async () => {
+      try {
+        let res;
+        if (confirmTarget.tanque === "both") {
+          res = await ajustarStockTanques(confirmTarget.litrosTaller, confirmTarget.litrosNissan, motivo.trim());
+        } else {
+          const litros = confirmTarget.tanque === "Taller" ? confirmTarget.litrosTaller : confirmTarget.litrosNissan;
+          res = await ajustarStockTanque(confirmTarget.tanque, litros, motivo.trim());
+        }
+        setMsg(res.msg);
+        setConfirmTarget(null);
+        setMotivo("");
+        setTimeout(() => setMsg(""), 4000);
+      } catch (err) {
+        setMsg(err instanceof Error ? err.message : "Error");
+        setConfirmTarget(null);
+      }
     });
   }
 
-  function runTaller() {
-    startTaller(async () => {
-      const res = await ajustarStockTanque("Taller", parseFloat(taller) || 0);
-      setMsg(res.msg);
-      setTimeout(() => setMsg(""), 4000);
-    });
-  }
-
-  function runNissan() {
-    startNissan(async () => {
-      const res = await ajustarStockTanque("NISSAN", parseFloat(nissan) || 0);
-      setMsg(res.msg);
-      setTimeout(() => setMsg(""), 4000);
-    });
-  }
+  const confirmLabel = confirmTarget
+    ? confirmTarget.tanque === "both"
+      ? `Taller → ${confirmTarget.litrosTaller} L · NISSAN → ${confirmTarget.litrosNissan} L`
+      : confirmTarget.tanque === "Taller"
+      ? `Taller → ${confirmTarget.litrosTaller} L`
+      : `NISSAN → ${confirmTarget.litrosNissan} L`
+    : "";
 
   return (
     <div className="space-y-3">
+      {/* Presets: solo rellenan campos, no ejecutan */}
       <div className="flex flex-wrap gap-1.5">
         {presets.map((p) => (
           <button
             key={p.label}
             type="button"
-            disabled={anyPending}
-            onClick={() => { setTaller(String(p.t)); setNissan(String(p.n)); runBoth(p.t, p.n); }}
+            disabled={isPending}
+            onClick={() => { setTaller(String(p.t)); setNissan(String(p.n)); setConfirmTarget(null); }}
             className="px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors hover:bg-indigo-500/10 hover:border-indigo-500/40 disabled:opacity-50"
             style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
           >
@@ -129,33 +144,54 @@ function StockAdjuster() {
       <div className="flex gap-2 items-end">
         <div className="space-y-1 flex-1">
           <Label className="text-xs">Taller (L)</Label>
-          <Input value={taller} onChange={(e) => setTaller(e.target.value)} type="number" className="h-8 font-mono text-sm" />
+          <Input value={taller} onChange={(e) => { setTaller(e.target.value); setConfirmTarget(null); }} type="number" className="h-8 font-mono text-sm" />
         </div>
-        <Button
-          type="button"
-          size="sm"
-          className="h-8 shrink-0"
-          disabled={anyPending}
-          onClick={runTaller}
-        >
-          {pendingTaller ? "..." : "Aplicar"}
+        <Button type="button" size="sm" className="h-8 shrink-0" disabled={isPending}
+          onClick={() => prepareApply({ tanque: "Taller", litrosTaller: parseFloat(taller) || 0, litrosNissan: parseFloat(nissan) || 0 })}>
+          Aplicar
         </Button>
       </div>
       <div className="flex gap-2 items-end">
         <div className="space-y-1 flex-1">
           <Label className="text-xs">NISSAN (L)</Label>
-          <Input value={nissan} onChange={(e) => setNissan(e.target.value)} type="number" className="h-8 font-mono text-sm" />
+          <Input value={nissan} onChange={(e) => { setNissan(e.target.value); setConfirmTarget(null); }} type="number" className="h-8 font-mono text-sm" />
         </div>
-        <Button
-          type="button"
-          size="sm"
-          className="h-8 shrink-0"
-          disabled={anyPending}
-          onClick={runNissan}
-        >
-          {pendingNissan ? "..." : "Aplicar"}
+        <Button type="button" size="sm" className="h-8 shrink-0" disabled={isPending}
+          onClick={() => prepareApply({ tanque: "NISSAN", litrosTaller: parseFloat(taller) || 0, litrosNissan: parseFloat(nissan) || 0 })}>
+          Aplicar
         </Button>
       </div>
+
+      {/* Confirmación obligatoria antes de ejecutar */}
+      {confirmTarget && (
+        <div className="p-3 rounded-xl border border-amber-500/30 space-y-2" style={{ backgroundColor: "rgb(245 158 11 / 0.05)" }}>
+          <p className="text-xs text-amber-400 font-semibold">Vas a fijar: {confirmLabel}</p>
+          <div className="space-y-1">
+            <Label className="text-xs">Motivo del ajuste (obligatorio)</Label>
+            <Input
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Ej. corrección tras medición física del tanque"
+              className="h-8 text-sm"
+            />
+          </div>
+          <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+            Escribe <span className="font-mono font-bold text-amber-400">AJUSTAR</span> para confirmar
+          </p>
+          <ConfirmAction
+            keyword="AJUSTAR"
+            label="Confirmar"
+            variant="amber"
+            isPending={isPending}
+            onConfirm={doApply}
+          />
+          <button type="button" className="text-xs underline" style={{ color: "var(--fg-muted)" }}
+            onClick={() => setConfirmTarget(null)}>
+            Cancelar
+          </button>
+        </div>
+      )}
+
       {msg && <p className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{msg}</p>}
     </div>
   );

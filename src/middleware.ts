@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isPublicRoute = createRouteMatcher(['/', '/login', '/sign-in(.*)', '/sign-up(.*)', '/api/webhooks(.*)', '/api/uploadthing(.*)', '/offline', '/api/analytics/session', '/api/analytics/event']);
+// /api/cron se protege con CRON_SECRET dentro del route handler, no con Clerk
+const isPublicRoute = createRouteMatcher(['/', '/login', '/sign-in(.*)', '/sign-up(.*)', '/api/webhooks(.*)', '/api/uploadthing(.*)', '/offline', '/api/analytics/session', '/api/analytics/event', '/api/cron(.*)']);
 
 export default clerkMiddleware(async (auth, request) => {
     if (!isPublicRoute(request)) {

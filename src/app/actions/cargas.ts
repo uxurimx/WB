@@ -1,6 +1,6 @@
 "use server";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque, recargasTanque, rendimientos, periodos, auditLog, users } from "@/db/schema";
@@ -8,13 +8,7 @@ import { eq, max, desc, and, or, count, countDistinct, sum, gte, lte, like, ilik
 import { obras, operadores } from "@/db/schema";
 import { getTolerancia } from "@/app/actions/setup";
 
-const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
-
-async function requireManageRole() {
-  const user = await currentUser();
-  const role = user?.publicMetadata?.role as string;
-  if (!MANAGE_ROLES.includes(role)) throw new Error("Sin permisos para realizar esta acción");
-}
+import { requireManageRole } from "@/lib/authz";
 import { getOrCreatePeriodoActual } from "./periodos";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
@@ -682,6 +676,16 @@ export async function deleteCarga(id: number, notaModificacion?: string) {
   }
 
   const { periodoId, unidadId } = carga;
+
+  // Snapshot completo antes de borrar — permite reconstruir la carga si fue un error
+  await db.insert(auditLog).values({
+    usuarioId: userId,
+    accion: "delete",
+    entidad: "carga",
+    entidadId: String(id),
+    datosJson: JSON.stringify({ ...carga, nota: notaModificacion ?? null }),
+  });
+
   await db.delete(cargas).where(eq(cargas.id, id));
 
   // Si el período está cerrado, recalcular el snapshot de rendimiento para esta unidad

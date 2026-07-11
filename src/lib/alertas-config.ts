@@ -18,6 +18,18 @@ export type AlertaRendimiento = {
   periodoNombre:         string;
 };
 
+export type ConciliacionTanque = {
+  tanqueId:    number;
+  nombre:      string;
+  actual:      number;  // litros_actuales en el sistema
+  teorico:     number;  // ancla + recargas − cargas − transferencias salientes + entrantes
+  diferencia:  number;  // actual − teórico
+  tolerancia:  number;  // litros de divergencia permitidos (merma % sobre volumen movido)
+  ok:          boolean;
+  anclaFecha:  string | null; // ISO del último ajuste manual auditado; null = desde el origen
+  anclaLitros: number;
+};
+
 export type AnomaliaActiva = {
   tipo:          "multiple_cargas_dia" | "litros_excesivos";
   unidadCodigo:  string;

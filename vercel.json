@@ -8,5 +8,11 @@
     "src/app/api/**": {
       "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/conciliacion",
+      "schedule": "0 13 * * *"
+    }
+  ]
 }

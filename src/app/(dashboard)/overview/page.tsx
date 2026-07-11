@@ -43,7 +43,8 @@ export default async function OverviewPage() {
     (stats.taller.litros < UMBRAL_TALLER ? 1 : 0) +
     (stats.nissan.litros < UMBRAL_NISSAN ? 1 : 0) +
     (stats.alertasRendimiento.length > 0 ? 1 : 0) +
-    stats.anomaliasActivas.length;
+    stats.anomaliasActivas.length +
+    stats.conciliacion.filter((c) => !c.ok).length;
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
@@ -103,6 +104,7 @@ export default async function OverviewPage() {
         nissan={stats.nissan}
         alertasRendimiento={stats.alertasRendimiento}
         anomaliasActivas={stats.anomaliasActivas}
+        conciliacion={stats.conciliacion}
         ultimoPeriodoCerrado={stats.ultimoPeriodoCerrado}
         periodoActivoId={stats.periodoActivoId}
       />

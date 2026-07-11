@@ -8,6 +8,7 @@ import {
   type AnomaliaActiva,
   ALERTA_RENDIMIENTO_DIAS_DEFAULT,
 } from "@/lib/alertas-config";
+import { conciliarTanques } from "@/lib/conciliacion";
 
 // Umbral: más de este número de cargas en el mismo día para la misma unidad = anomalía
 const UMBRAL_CARGAS_DIA = 2;
@@ -17,7 +18,7 @@ const UMBRAL_LITROS_CARGA = 400;
 export async function getOverviewStats() {
   const hoy = new Date().toISOString().split("T")[0];
 
-  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow] =
+  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion] =
     await Promise.all([
       db.select().from(tanques),
       db.select({ litros: cargas.litros }).from(cargas).where(eq(cargas.fecha, hoy)),
@@ -37,6 +38,7 @@ export async function getOverviewStats() {
       db.query.configuracion.findFirst({
         where: eq(configuracion.clave, "alerta_rendimiento_dias"),
       }),
+      conciliarTanques(),
     ]);
 
   const taller   = tanquesData.find((t) => t.nombre === "Taller");
@@ -183,6 +185,7 @@ export async function getOverviewStats() {
     recientes,
     alertasRendimiento,
     anomaliasActivas,
+    conciliacion,
     alertaDias,
     ultimoPeriodoCerrado: ultimoPeriodoCerrado
       ? { id: ultimoPeriodoCerrado.id, nombre: ultimoPeriodoCerrado.nombre }

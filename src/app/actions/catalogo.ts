@@ -1,18 +1,10 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { unidades, operadores, obras, cargas, rendimientos, periodos } from "@/db/schema";
 import { eq, count, inArray, and, sql } from "drizzle-orm";
-
-const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
-
-async function requireManageRole() {
-  const user = await currentUser();
-  const role = user?.publicMetadata?.role as string;
-  if (!MANAGE_ROLES.includes(role)) throw new Error("Sin permisos para realizar esta acción");
-}
+import { requireManageRole } from "@/lib/authz";
 
 // ─────────────────────────────────────────────────────────────
 // UNIDADES

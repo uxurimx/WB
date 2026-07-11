@@ -8,6 +8,14 @@ import {
   rendimientos, archivos, auditLog, configuracion,
 } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { requireAdmin, requireManageRole } from "@/lib/authz";
+
+// Los resets y seeds de prueba son herramientas de desarrollo: en producción solo
+// funcionan si se habilitan explícitamente con ALLOW_TESTING_TOOLS=1
+function assertTestingHabilitado() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_TESTING_TOOLS !== "1")
+    throw new Error("Herramienta de testing deshabilitada en producción");
+}
 
 // ─── Folio base configurable ──────────────────────────────────────────────────
 export async function getCuentalitrosBases() {
@@ -22,6 +30,7 @@ export async function getCuentalitrosBases() {
 }
 
 export async function setCuentalitros(tanqueNombre: "Taller" | "NISSAN", valor: number) {
+  await requireAdmin();
   await db
     .update(tanques)
     .set({ cuentalitrosActual: valor })
@@ -51,6 +60,7 @@ export async function getFolioBase(): Promise<number> {
 }
 
 export async function setFolioBase(folio: number) {
+  await requireAdmin();
   await db
     .insert(configuracion)
     .values({ clave: "folio_base", valor: String(folio) })
@@ -60,6 +70,7 @@ export async function setFolioBase(folio: number) {
 }
 
 export async function setFolioBaseCampo(folio: number) {
+  await requireAdmin();
   await db
     .insert(configuracion)
     .values({ clave: "folio_base_campo", valor: String(folio) })
@@ -87,6 +98,7 @@ export async function setFolioRango(
   min: number,
   max: number
 ) {
+  await requireManageRole();
   if (min > 0 && max > 0 && min >= max)
     throw new Error("El mínimo debe ser menor al máximo");
   const claveMin = `folio_min_${tipo}`;
@@ -113,6 +125,7 @@ export async function getTolerancia(): Promise<number> {
 }
 
 export async function setTolerancia(porcentaje: number) {
+  await requireManageRole();
   const val = Math.max(1, Math.min(100, Math.round(porcentaje)));
   const stored = (val / 100).toFixed(4);
   await db
@@ -137,6 +150,7 @@ export async function getAlertaDias(): Promise<number> {
 }
 
 export async function setAlertaDias(dias: number) {
+  await requireManageRole();
   const val = Math.max(1, Math.min(365, Math.round(dias)));
   await db
     .insert(configuracion)
@@ -153,6 +167,7 @@ export async function setAlertaDias(dias: number) {
 // Seed inicial — ejecutar una sola vez al configurar el sistema
 // Inserta tanques y fuentes de diesel base si no existen
 export async function seedInicial() {
+  await requireManageRole();
   const tanquesExistentes = await db.select().from(tanques);
 
   if (tanquesExistentes.length === 0) {
@@ -190,6 +205,7 @@ export async function seedInicial() {
 
 // Importar catálogo de unidades desde el Excel analizado
 export async function seedUnidadesWB() {
+  await requireManageRole();
   const existentes = await db.select().from(unidades);
   if (existentes.length > 0) return { ok: true, msg: "Ya hay unidades registradas", insertadas: 0 };
 
@@ -251,6 +267,22 @@ export async function seedUnidadesWB() {
 // Conserva: unidades, operadores, obras — tanques quedan en 0 L
 // ─────────────────────────────────────────────────────────────────────────────
 export async function resetOperacional() {
+  const { userId } = await requireAdmin();
+  assertTestingHabilitado();
+
+  // El audit_log NUNCA se borra: es la única evidencia ante incidentes
+  const tanquesAntes = await db.select().from(tanques);
+  await db.insert(auditLog).values({
+    usuarioId: userId,
+    accion: "reset_operacional",
+    entidad: "sistema",
+    datosJson: JSON.stringify({
+      tanquesAntes: tanquesAntes.map((t) => ({
+        nombre: t.nombre, litros: t.litrosActuales, cuentalitros: t.cuentalitrosActual,
+      })),
+    }),
+  });
+
   // SQL directo para evitar restricciones del ORM en deletes sin WHERE
   await db.execute(sql`DELETE FROM archivos`);
   await db.execute(sql`DELETE FROM rendimientos`);
@@ -258,7 +290,6 @@ export async function resetOperacional() {
   await db.execute(sql`DELETE FROM periodos`);
   await db.execute(sql`DELETE FROM transferencias_tanque`);
   await db.execute(sql`DELETE FROM recargas_tanque`);
-  await db.execute(sql`DELETE FROM audit_log`);
   await db.execute(sql`UPDATE tanques SET litros_actuales = 0, cuentalitros_actual = 0`);
   revalidatePath("/overview");
   revalidatePath("/cargas/nueva");
@@ -270,13 +301,28 @@ export async function resetOperacional() {
 // RESET TOTAL — borra absolutamente todo y vuelve a sembrar base
 // ─────────────────────────────────────────────────────────────────────────────
 export async function resetTotal() {
+  const { userId } = await requireAdmin();
+  assertTestingHabilitado();
+
+  // El audit_log NUNCA se borra: es la única evidencia ante incidentes
+  const tanquesAntes = await db.select().from(tanques);
+  await db.insert(auditLog).values({
+    usuarioId: userId,
+    accion: "reset_total",
+    entidad: "sistema",
+    datosJson: JSON.stringify({
+      tanquesAntes: tanquesAntes.map((t) => ({
+        nombre: t.nombre, litros: t.litrosActuales, cuentalitros: t.cuentalitrosActual,
+      })),
+    }),
+  });
+
   await db.execute(sql`DELETE FROM archivos`);
   await db.execute(sql`DELETE FROM rendimientos`);
   await db.execute(sql`DELETE FROM cargas`);
   await db.execute(sql`DELETE FROM periodos`);
   await db.execute(sql`DELETE FROM transferencias_tanque`);
   await db.execute(sql`DELETE FROM recargas_tanque`);
-  await db.execute(sql`DELETE FROM audit_log`);
   await db.execute(sql`DELETE FROM operadores`);
   await db.execute(sql`DELETE FROM obras`);
   await db.execute(sql`DELETE FROM unidades`);
@@ -294,14 +340,65 @@ export async function resetTotal() {
 // ─────────────────────────────────────────────────────────────────────────────
 // AJUSTAR STOCK TANQUES — set niveles específicos para probar alertas
 // ─────────────────────────────────────────────────────────────────────────────
-export async function ajustarStockTanques(litrosTaller: number, litrosNissan: number) {
+function validarAjuste(litros: number, motivo: string) {
+  if (!Number.isFinite(litros) || litros < 0)
+    throw new Error("Los litros deben ser un número válido mayor o igual a 0");
+  if (!motivo?.trim())
+    throw new Error("El motivo del ajuste es obligatorio");
+  return motivo.trim();
+}
+
+export async function ajustarStockTanques(litrosTaller: number, litrosNissan: number, motivo: string) {
+  const { userId } = await requireAdmin();
+  const motivoLimpio = validarAjuste(litrosTaller, motivo);
+  validarAjuste(litrosNissan, motivo);
+
+  const [tallerRow] = await db
+    .select({ id: tanques.id, litrosActuales: tanques.litrosActuales })
+    .from(tanques).where(eq(tanques.nombre, "Taller"));
+  const [nissanRow] = await db
+    .select({ id: tanques.id, litrosActuales: tanques.litrosActuales })
+    .from(tanques).where(eq(tanques.nombre, "NISSAN"));
+
+  await db.insert(auditLog).values([
+    {
+      usuarioId: userId,
+      accion: "ajuste_stock",
+      entidad: "tanques",
+      entidadId: String(tallerRow?.id ?? ""),
+      datosJson: JSON.stringify({ tanque: "Taller", antes: tallerRow?.litrosActuales, despues: litrosTaller, motivo: motivoLimpio }),
+    },
+    {
+      usuarioId: userId,
+      accion: "ajuste_stock",
+      entidad: "tanques",
+      entidadId: String(nissanRow?.id ?? ""),
+      datosJson: JSON.stringify({ tanque: "NISSAN", antes: nissanRow?.litrosActuales, despues: litrosNissan, motivo: motivoLimpio }),
+    },
+  ]);
+
   await db.execute(sql`UPDATE tanques SET litros_actuales = ${litrosTaller} WHERE nombre = 'Taller'`);
   await db.execute(sql`UPDATE tanques SET litros_actuales = ${litrosNissan} WHERE nombre = 'NISSAN'`);
   revalidatePath("/overview");
   return { ok: true, msg: `Taller: ${litrosTaller} L | NISSAN: ${litrosNissan} L` };
 }
 
-export async function ajustarStockTanque(nombre: "Taller" | "NISSAN", litros: number) {
+export async function ajustarStockTanque(nombre: "Taller" | "NISSAN", litros: number, motivo: string) {
+  const { userId } = await requireAdmin();
+  const motivoLimpio = validarAjuste(litros, motivo);
+
+  const [tanqueRow] = await db
+    .select({ id: tanques.id, litrosActuales: tanques.litrosActuales })
+    .from(tanques).where(eq(tanques.nombre, nombre));
+
+  await db.insert(auditLog).values({
+    usuarioId: userId,
+    accion: "ajuste_stock",
+    entidad: "tanques",
+    entidadId: String(tanqueRow?.id ?? ""),
+    datosJson: JSON.stringify({ tanque: nombre, antes: tanqueRow?.litrosActuales, despues: litros, motivo: motivoLimpio }),
+  });
+
   await db.execute(sql`UPDATE tanques SET litros_actuales = ${litros} WHERE nombre = ${nombre}`);
   revalidatePath("/overview");
   return { ok: true, msg: `${nombre}: ${litros} L` };
@@ -312,6 +409,8 @@ export async function ajustarStockTanque(nombre: "Taller" | "NISSAN", litros: nu
 // Requiere que existan unidades (corre seedUnidadesWB si no hay)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function seedDatosPrueba() {
+  await requireAdmin();
+  assertTestingHabilitado();
   // Garantizar que haya unidades
   const unidadesExistentes = await db.select().from(unidades);
   if (unidadesExistentes.length === 0) await seedUnidadesWB();
