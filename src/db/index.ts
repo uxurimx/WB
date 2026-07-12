@@ -26,6 +26,6 @@ export const db = drizzle(sql, { schema });
 // Cliente dedicado para poxelbit — siempre apunta a producción (POXELBIT_DATABASE_URL)
 // En dev: apunta a la DB de prod para que tickets y novedades sean compartidos con el cliente
 // En prod: misma URL que DATABASE_URL
-const poxelbitUrl = process.env.POXELBIT_DATABASE_URL ?? process.env.DATABASE_URL;
+const poxelbitUrl = (process.env.POXELBIT_DATABASE_URL ?? process.env.DATABASE_URL).replace(/\s/g, "");
 const sqlPB = neon(poxelbitUrl);
 export const dbPB = drizzle(sqlPB, { schema });
