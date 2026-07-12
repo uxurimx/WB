@@ -16,7 +16,7 @@ import { ROLE_NAV_PERMISSIONS, type NavPermission } from "@/lib/permissions";
 
 type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ className?: string }>; badge?: number };
 
-function getNavSections(permisos: NavPermission[], pbOpenTickets = 0) {
+function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedades = 0) {
   const has = (p: NavPermission) => permisos.includes(p);
 
   const cargasItems: NavItemDef[] = [];
@@ -72,7 +72,7 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0) {
       items: [
         { name: "Portal",    href: "/poxelbit",           icon: Blocks      },
         { name: "Tickets",   href: "/poxelbit/tickets",   icon: TicketCheck, badge: pbOpenTickets },
-        { name: "Novedades", href: "/poxelbit/novedades", icon: Megaphone   },
+        { name: "Novedades", href: "/poxelbit/novedades", icon: Megaphone,   badge: pbNovedades   },
       ],
     }] : []),
   ];
@@ -130,6 +130,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     role ? (ROLE_NAV_PERMISSIONS[role] ?? []) : []
   );
   const [pbOpenTickets, setPbOpenTickets] = useState(0);
+  const [pbNovedades, setPbNovedades]     = useState(0);
 
   useEffect(() => {
     fetch("/api/me/perms")
@@ -144,9 +145,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       .then((r) => r.json())
       .then((data) => { if (typeof data.count === "number") setPbOpenTickets(data.count); })
       .catch(() => {});
+    fetch("/api/poxelbit/novedades-count")
+      .then((r) => r.json())
+      .then((data) => { if (typeof data.count === "number") setPbNovedades(data.count); })
+      .catch(() => {});
   }, [permisos]);
 
-  const navSections = getNavSections(permisos, pbOpenTickets);
+  const navSections = getNavSections(permisos, pbOpenTickets, pbNovedades);
 
   // Sección abierta solo si la ruta activa está dentro de ella
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {

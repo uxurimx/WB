@@ -4,7 +4,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { pbModulos, pbTickets, pbMensajes, pbNovedades } from "@/db/schema";
-import { eq, desc, asc, and, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, inArray, gte } from "drizzle-orm";
 
 const PB_ROLES = ["admin", "gerente"];
 
@@ -108,6 +108,37 @@ export async function getPBOpenTicketsCount() {
     });
     return rows.length;
   } catch { return 0; }
+}
+
+export async function getPBNovedadesUnreadCount() {
+  const user = await currentUser();
+  if (!user) return 0;
+  const role = user.publicMetadata?.role as string;
+  if (!PB_ROLES.includes(role)) return 0;
+  try {
+    const rows = await db.query.pbNovedades.findMany({
+      where: eq(pbNovedades.leido, false),
+      columns: { id: true },
+    });
+    return rows.length;
+  } catch { return 0; }
+}
+
+export async function getResolvedTicketsRecent(dias = 7) {
+  const user = await currentUser();
+  if (!user) return [];
+  const role = user.publicMetadata?.role as string;
+  if (!PB_ROLES.includes(role)) return [];
+  try {
+    const desde = new Date();
+    desde.setDate(desde.getDate() - dias);
+    return db.query.pbTickets.findMany({
+      where: and(eq(pbTickets.estado, "resolved"), gte(pbTickets.resueltaAt, desde)),
+      columns: { id: true, titulo: true, resueltaAt: true },
+      orderBy: [desc(pbTickets.resueltaAt)],
+      limit: 5,
+    });
+  } catch { return []; }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

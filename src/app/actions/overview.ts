@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { tanques, cargas, rendimientos, periodos, configuracion } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { tanques, cargas, rendimientos, periodos, configuracion, pbTickets } from "@/db/schema";
+import { eq, desc, and, gte } from "drizzle-orm";
 import {
   type AlertaRendimiento,
   type AnomaliaActiva,
@@ -18,7 +18,10 @@ const UMBRAL_LITROS_CARGA = 400;
 export async function getOverviewStats() {
   const hoy = new Date().toISOString().split("T")[0];
 
-  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion] =
+  const hace7dias = new Date();
+  hace7dias.setDate(hace7dias.getDate() - 7);
+
+  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion, ticketsResueltos] =
     await Promise.all([
       db.select().from(tanques),
       db.select({ litros: cargas.litros }).from(cargas).where(eq(cargas.fecha, hoy)),
@@ -39,6 +42,12 @@ export async function getOverviewStats() {
         where: eq(configuracion.clave, "alerta_rendimiento_dias"),
       }),
       conciliarTanques(),
+      db.query.pbTickets.findMany({
+        where: and(eq(pbTickets.estado, "resolved"), gte(pbTickets.resueltaAt, hace7dias)),
+        columns: { id: true, titulo: true, resueltaAt: true },
+        orderBy: [desc(pbTickets.resueltaAt)],
+        limit: 5,
+      }).catch(() => [] as { id: number; titulo: string; resueltaAt: Date | null }[]),
     ]);
 
   const taller   = tanquesData.find((t) => t.nombre === "Taller");
@@ -191,5 +200,10 @@ export async function getOverviewStats() {
       ? { id: ultimoPeriodoCerrado.id, nombre: ultimoPeriodoCerrado.nombre }
       : null,
     periodoActivoId: periodoActivo?.id ?? null,
+    ticketsResueltos: ticketsResueltos.map((t) => ({
+      id: t.id,
+      titulo: t.titulo,
+      resueltaAt: t.resueltaAt?.toISOString() ?? null,
+    })),
   };
 }

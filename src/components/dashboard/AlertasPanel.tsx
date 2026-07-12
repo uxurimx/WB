@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  CheckCircle2, Fuel, Gauge, AlertTriangle, X, ChevronDown, ChevronUp,
+  CheckCircle2, Fuel, Gauge, AlertTriangle, X, ChevronDown, ChevronUp, TicketCheck,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/lib/alertas-config";
 
 type StockInfo = { id: number; litros: number; max: number };
+type TicketResuelto = { id: number; titulo: string; resueltaAt: string | null };
 
 interface AlertasPanelProps {
   taller: StockInfo;
@@ -20,6 +21,7 @@ interface AlertasPanelProps {
   conciliacion: ConciliacionTanque[];
   ultimoPeriodoCerrado: { id: number; nombre: string } | null;
   periodoActivoId: number | null;
+  ticketsResueltos?: TicketResuelto[];
 }
 
 const LS_KEY = "alertas_rend_dismissed";
@@ -32,6 +34,7 @@ export default function AlertasPanel({
   conciliacion,
   ultimoPeriodoCerrado,
   periodoActivoId,
+  ticketsResueltos = [],
 }: AlertasPanelProps) {
   const [dismissedId, setDismissedId]         = useState<number | null>(null);
   const [rendExpanded, setRendExpanded]       = useState(false);
@@ -39,6 +42,7 @@ export default function AlertasPanel({
   const [dismissedStock, setDismissedStock]   = useState<Set<string>>(new Set());
   const [dismissedAnomalias, setDismissedAnomalias] = useState<Set<number>>(new Set());
   const [dismissedConciliacion, setDismissedConciliacion] = useState<Set<number>>(new Set());
+  const [dismissedTickets, setDismissedTickets] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     setMounted(true);
@@ -65,6 +69,7 @@ export default function AlertasPanel({
   const visibleStockAlertas  = stockAlertas.filter((a) => !dismissedStock.has(a.label));
   const visibleAnomalias     = anomaliasActivas.filter((_, i) => !dismissedAnomalias.has(i));
   const visibleDivergencias  = conciliacion.filter((c) => !c.ok && !dismissedConciliacion.has(c.tanqueId));
+  const visibleTickets       = ticketsResueltos.filter((t) => !dismissedTickets.has(t.id));
   const totalVisible = visibleStockAlertas.length + visibleAnomalias.length + visibleDivergencias.length + (showRend ? 1 : 0);
 
   return (
@@ -226,6 +231,44 @@ export default function AlertasPanel({
               </div>
             );
           })}
+
+          {/* ── Tickets resueltos ───────────────────────────── */}
+          {visibleTickets.map((t) => (
+            <div
+              key={`ticket-${t.id}`}
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl border"
+              style={{
+                backgroundColor: "rgb(16 185 129 / 0.06)",
+                borderColor:     "rgb(16 185 129 / 0.25)",
+              }}
+            >
+              <div className="p-1.5 rounded-lg shrink-0 bg-emerald-500/10 border border-emerald-500/20">
+                <TicketCheck className="w-3.5 h-3.5 text-emerald-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-emerald-600">
+                  Ticket resuelto
+                </p>
+                <p className="text-xs mt-0.5 truncate" style={{ color: "var(--fg-muted)" }}>
+                  #{t.id} · {t.titulo}
+                </p>
+              </div>
+              <Link
+                href={`/poxelbit/tickets/${t.id}`}
+                className="text-xs font-semibold shrink-0 text-emerald-500 underline underline-offset-2"
+              >
+                Ver
+              </Link>
+              <button
+                onClick={() => setDismissedTickets((prev) => new Set([...prev, t.id]))}
+                className="p-1 rounded-lg hover:bg-emerald-500/10 transition-colors shrink-0"
+                style={{ color: "var(--fg-muted)" }}
+                aria-label="Cerrar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
 
           {/* ── Rendimiento — tarjeta resumen colapsable ────── */}
           {showRend && ultimoPeriodoCerrado && (

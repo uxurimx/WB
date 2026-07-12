@@ -107,6 +107,7 @@ export default async function OverviewPage() {
         conciliacion={stats.conciliacion}
         ultimoPeriodoCerrado={stats.ultimoPeriodoCerrado}
         periodoActivoId={stats.periodoActivoId}
+        ticketsResueltos={stats.ticketsResueltos}
       />
 
       {/* KPI del día — real-time via Pusher */}
