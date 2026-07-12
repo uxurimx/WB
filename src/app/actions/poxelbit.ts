@@ -2,7 +2,7 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { dbPB as db } from "@/db";
 import { pbModulos, pbTickets, pbMensajes, pbNovedades } from "@/db/schema";
 import { eq, desc, asc, and, inArray, gte } from "drizzle-orm";
 
