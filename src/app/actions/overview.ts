@@ -9,6 +9,7 @@ import {
   ALERTA_RENDIMIENTO_DIAS_DEFAULT,
 } from "@/lib/alertas-config";
 import { conciliarTanques } from "@/lib/conciliacion";
+import { getLocalDateString, subtractDaysLocal } from "@/lib/date-utils";
 
 // Umbral: más de este número de cargas en el mismo día para la misma unidad = anomalía
 const UMBRAL_CARGAS_DIA = 2;
@@ -16,10 +17,9 @@ const UMBRAL_CARGAS_DIA = 2;
 const UMBRAL_LITROS_CARGA = 400;
 
 export async function getOverviewStats() {
-  const hoy = new Date().toISOString().split("T")[0];
+  const hoy = getLocalDateString();
 
-  const hace7dias = new Date();
-  hace7dias.setDate(hace7dias.getDate() - 7);
+  const hace7dias = subtractDaysLocal(new Date(), 7);
 
   const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion, ticketsResueltos] =
     await Promise.all([

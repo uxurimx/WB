@@ -3,14 +3,15 @@
 import { db } from "@/db";
 import { periodos } from "@/db/schema";
 import { eq, and, lte, gte } from "drizzle-orm";
+import { getLocalDateString, getLocalDayOfWeek, subtractDaysLocal, addDaysLocal } from "@/lib/date-utils";
 
 // Obtiene el período activo para una fecha dada (o hoy)
 // Períodos van de sábado a viernes
 export async function getOrCreatePeriodoActual(fecha?: Date) {
   const hoy = fecha ?? new Date();
 
-  // Buscar período existente que contenga esta fecha
-  const fechaStr = hoy.toISOString().split("T")[0];
+  // Buscar período existente que contenga esta fecha (usando hora LOCAL)
+  const fechaStr = getLocalDateString(hoy);
 
   const existente = await db.query.periodos.findFirst({
     where: and(
@@ -22,17 +23,14 @@ export async function getOrCreatePeriodoActual(fecha?: Date) {
 
   if (existente) return existente;
 
-  // Calcular inicio (sábado anterior) y fin (viernes siguiente)
-  const diaSemana = hoy.getDay(); // 0=dom, 1=lun, ..., 6=sab
+  // Calcular inicio (sábado anterior) y fin (viernes siguiente) usando hora LOCAL
+  const diaSemana = getLocalDayOfWeek(hoy); // 0=dom, 1=lun, ..., 6=sab
   const diasHastaSabado = diaSemana === 6 ? 0 : diaSemana + 1;
-  const sabado = new Date(hoy);
-  sabado.setDate(hoy.getDate() - diasHastaSabado);
+  const sabado = subtractDaysLocal(hoy, diasHastaSabado);
+  const viernes = addDaysLocal(sabado, 6);
 
-  const viernes = new Date(sabado);
-  viernes.setDate(sabado.getDate() + 6);
-
-  const inicio = sabado.toISOString().split("T")[0];
-  const fin = viernes.toISOString().split("T")[0];
+  const inicio = getLocalDateString(sabado);
+  const fin = getLocalDateString(viernes);
 
   // Formatear nombre del período
   const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "long", year: "numeric" };
@@ -51,7 +49,7 @@ export async function getOrCreatePeriodoActual(fecha?: Date) {
 // Rango de fechas por defecto para el historial (solo lectura, NO crea períodos).
 // Devuelve el período que contiene hoy; si no, el más reciente; fallback: últimos 30 días.
 export async function getPeriodoActualRange(): Promise<{ desde: string; hasta: string }> {
-  const hoyStr = new Date().toISOString().split("T")[0];
+  const hoyStr = getLocalDateString();
 
   const actual = await db.query.periodos.findFirst({
     where: and(lte(periodos.fechaInicio, hoyStr), gte(periodos.fechaFin, hoyStr)),
@@ -64,9 +62,8 @@ export async function getPeriodoActualRange(): Promise<{ desde: string; hasta: s
   });
   if (reciente) return { desde: reciente.fechaInicio, hasta: reciente.fechaFin };
 
-  const hace30 = new Date();
-  hace30.setDate(hace30.getDate() - 30);
-  return { desde: hace30.toISOString().split("T")[0], hasta: hoyStr };
+  const hace30 = subtractDaysLocal(new Date(), 30);
+  return { desde: getLocalDateString(hace30), hasta: hoyStr };
 }
 
 export async function getPeriodosRecientes(limit = 10) {

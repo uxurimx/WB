@@ -12,17 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { createCargaPatio, getUltimoOdometro } from "@/app/actions/cargas";
 import { saveArchivoFoto } from "@/app/actions/archivos";
 import { useUploadThing } from "@/lib/uploadthing";
+import { getNowLocal } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 
 const KM_MAX_DIFERENCIA = 1100;
 
 type Unidad = { id: number; codigo: string; nombre: string | null; tipo: string };
 type Operador = { id: number; nombre: string; tipo: string };
-
-function getNow() {
-  const now = new Date();
-  return { fecha: now.toISOString().split("T")[0], hora: now.toTimeString().slice(0, 5) };
-}
 
 export default function FormCargaPatio({
   unidades,
@@ -65,7 +61,7 @@ export default function FormCargaPatio({
     onUploadError: (err) => setFotoWarning(`Error al subir foto: ${err.message}`),
   });
 
-  const { fecha: fechaInit, hora: horaInit } = getNow();
+  const { fecha: fechaInit, hora: horaInit } = getNowLocal();
 
   const [form, setForm] = useState({
     fecha: fechaInit,
@@ -204,7 +200,7 @@ export default function FormCargaPatio({
       setSuccess({ folio: result.folio, litros });
       clearFoto();
       const nextCuentaLt = form.cuentaLtFin;
-      const { fecha, hora } = getNow();
+      const { fecha, hora } = getNowLocal();
       setForm((prev) => ({
         ...prev, fecha, hora, unidadId: "", litros: "", odometroHrs: "",
         cuentaLtInicio: nextCuentaLt, cuentaLtFin: "", notas: "",
