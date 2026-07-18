@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { ArrowRight, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,11 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { transferirEntreTanques } from "@/app/actions/tanques";
-import { getSiguienteFolioPublic } from "@/app/actions/cargas";
+import { getSiguienteFolioPatioPublic } from "@/app/actions/cargas";
 
 function todayStr() {
-  return new Date().toISOString().split("T")[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function TransferirNissanModal({
@@ -38,10 +39,9 @@ export default function TransferirNissanModal({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [folioPreview, setFolioPreview] = useState<number | null>(null);
 
   const [form, setForm] = useState({
-    fecha: todayStr(), litros: "", notas: "",
+    fecha: todayStr(), litros: "", notas: "", folio: "",
     cuentaLtInicio: cuentalitrosTaller != null ? String(cuentalitrosTaller) : "",
     cuentaLtFin: "",
   });
@@ -50,36 +50,41 @@ export default function TransferirNissanModal({
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  // Auto-calcular cuentaLtFin = inicio + litros
-  useEffect(() => {
+  const cuentaLtFin = (() => {
     const inicio = parseFloat(form.cuentaLtInicio);
     const litros = parseFloat(form.litros);
     if (!isNaN(inicio) && !isNaN(litros) && litros > 0) {
-      setForm((prev) => ({ ...prev, cuentaLtFin: String(inicio + litros) }));
-    } else {
-      setForm((prev) => ({ ...prev, cuentaLtFin: "" }));
+      return String(inicio + litros);
     }
-  }, [form.cuentaLtInicio, form.litros]);
+    return "";
+  })();
 
   function handleOpen() {
     setForm({
-      fecha: todayStr(), litros: "", notas: "",
+      fecha: todayStr(), litros: "", notas: "", folio: "",
       cuentaLtInicio: cuentalitrosTaller != null ? String(cuentalitrosTaller) : "",
       cuentaLtFin: "",
     });
     setError("");
     setSuccess("");
-    setFolioPreview(null);
     setOpen(true);
-    // Obtener el folio que se asignará a esta transferencia
     startTransition(async () => {
-      const folio = await getSiguienteFolioPublic();
-      setFolioPreview(folio);
+      const siguiente = await getSiguienteFolioPatioPublic();
+      setForm((prev) => ({ ...prev, folio: String(siguiente) }));
     });
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const folioNum = parseInt(form.folio);
+    if (!form.folio || isNaN(folioNum) || folioNum <= 0) {
+      setError("El folio del ticket es requerido");
+      return;
+    }
+    if (folioNum > 99999) {
+      setError("El folio no puede tener más de 5 dígitos");
+      return;
+    }
     const litros = parseFloat(form.litros);
     if (!litros || litros <= 0) {
       setError("Ingresa los litros a transferir");
@@ -98,6 +103,7 @@ export default function TransferirNissanModal({
           tanqueOrigenId,
           tanqueDestinoId,
           litros,
+          folio: folioNum,
           fecha: form.fecha,
           notas: form.notas || undefined,
           cuentalitrosOrigen: inicioVal !== undefined && !isNaN(inicioVal) ? inicioVal : undefined,
@@ -108,7 +114,7 @@ export default function TransferirNissanModal({
           `Taller: ${res.origen.litrosActuales.toFixed(0)} L | ` +
           `NISSAN: ${res.destino.litrosActuales.toFixed(0)} L`
         );
-        setForm({ fecha: todayStr(), litros: "", notas: "", cuentaLtInicio: "", cuentaLtFin: "" });
+        setForm({ fecha: todayStr(), litros: "", notas: "", folio: "", cuentaLtInicio: "", cuentaLtFin: "" });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al transferir");
       }
@@ -130,16 +136,7 @@ export default function TransferirNissanModal({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              Cargar NISSAN desde Taller
-              {folioPreview !== null && (
-                <span className="flex items-center gap-1 text-sm font-normal px-2 py-0.5 rounded-lg"
-                  style={{ backgroundColor: "var(--surface-2)", color: "var(--fg-muted)" }}>
-                  <Hash className="w-3.5 h-3.5" />
-                  Folio {folioPreview}
-                </span>
-              )}
-            </DialogTitle>
+            <DialogTitle>Cargar NISSAN desde Taller</DialogTitle>
             <DialogDescription>
               Resta del tanque Taller y suma al NISSAN.{" "}
               <span className="font-semibold">
@@ -159,6 +156,32 @@ export default function TransferirNissanModal({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Folio del ticket físico */}
+              <div className="space-y-1.5">
+                <Label htmlFor="t-folio">Folio del ticket *</Label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                    style={{ color: "var(--fg-muted)" }} />
+                  <Input
+                    id="t-folio"
+                    name="folio"
+                    type="number"
+                    step="1"
+                    min="1"
+                    max={99999}
+                    value={form.folio}
+                    onChange={handleChange}
+                    placeholder="00000"
+                    className="font-mono font-bold text-xl h-12 pl-9"
+                    autoFocus
+                    required
+                  />
+                </div>
+                <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>
+                  Número del ticket físico (máx. 5 dígitos)
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="t-fecha">Fecha</Label>
@@ -183,7 +206,6 @@ export default function TransferirNissanModal({
                     onChange={handleChange}
                     placeholder="500"
                     className="font-mono font-bold text-lg"
-                    autoFocus
                   />
                 </div>
               </div>
@@ -223,7 +245,7 @@ export default function TransferirNissanModal({
                       name="cuentaLtFin"
                       type="number"
                       step="1"
-                      value={form.cuentaLtFin}
+                      value={cuentaLtFin}
                       readOnly
                       placeholder="Auto-calculado"
                       className="font-mono"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,8 @@ import {
 import { addRecargaTanque } from "@/app/actions/tanques";
 
 function todayStr() {
-  return new Date().toISOString().split("T")[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function RecargaTanqueModal({
@@ -27,6 +29,7 @@ export default function RecargaTanqueModal({
   tanqueId: number;
   cuentalitrosActual?: number;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -81,6 +84,7 @@ export default function RecargaTanqueModal({
           precioLitro:        form.precioLitro  ? parseFloat(form.precioLitro) : undefined,
           notas:              form.notas        || undefined,
         });
+        router.refresh();
         setOpen(false);
         setForm({
           fecha:              todayStr(),

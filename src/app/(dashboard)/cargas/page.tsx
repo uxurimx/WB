@@ -9,7 +9,6 @@ import { getOperadores, getObras } from "@/app/actions/catalogo";
 import { getTransferencias, getRecargasTanque } from "@/app/actions/tanques";
 import { getPeriodoActualRange } from "@/app/actions/periodos";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import CargasTable, {
   type TransferenciaItem, type RecargaItem,
 } from "@/components/cargas/CargasTable";
@@ -20,13 +19,14 @@ const PAGE_SIZE = 50;
 export default async function HistorialCargasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ origen?: string; unidadId?: string; desde?: string; hasta?: string; todo?: string }>;
+  searchParams: Promise<{ origen?: string; unidadId?: string; desde?: string; hasta?: string; todo?: string; tab?: string }>;
 }) {
   await requirePermission("cargas.historial");
 
   const params = await searchParams;
   const origen = params.origen === "patio" ? "patio" : params.origen === "campo" ? "campo" : undefined;
   const unidadId = params.unidadId ? parseInt(params.unidadId) : undefined;
+  const initialTab = params.tab === "actividad" ? "actividad" : undefined;
 
   // Ventana de fechas: explícita (desde/hasta) > todo el historial (?todo=1) > período actual (default)
   const todo = params.todo === "1";
@@ -76,6 +76,7 @@ export default async function HistorialCargasPage({
     cuentalitrosNissanInicio: t.cuentalitrosNissanInicio ?? null,
     cuentalitrosDestino: t.cuentalitrosDestino ?? null,
     notas: t.notas,
+    createdAt: t.createdAt?.toISOString() ?? null,
   }));
 
   const recargaItems: RecargaItem[] = recargas.map((r) => ({
@@ -89,6 +90,7 @@ export default async function HistorialCargasPage({
     precioLitro: r.precioLitro,
     cuentalitrosInicio: r.cuentalitrosInicio,
     notas: r.notas,
+    createdAt: r.createdAt?.toISOString() ?? null,
   }));
 
   return (
@@ -104,7 +106,7 @@ export default async function HistorialCargasPage({
               Cargas
             </p>
           </div>
-          <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>Historial</h1>
+          <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>Movimientos de diesel</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--fg-muted)" }}>
             {isDefaultWindow
               ? `Período actual · ${cargasPage.total.toLocaleString()} cargas`
@@ -122,28 +124,6 @@ export default async function HistorialCargasPage({
             <Link href="/cargas/nueva"><PlusCircle className="w-4 h-4" /> Patio</Link>
           </Button>
         </div>
-      </div>
-
-      {/* Filtros de origen */}
-      <div className="flex gap-2 mb-5 flex-wrap">
-        {(() => {
-          const windowQs = todo ? "todo=1" : hasExplicit ? `desde=${desde}&hasta=${hasta}` : "";
-          const withOrigen = (o?: string) => {
-            const parts = [o ? `origen=${o}` : "", windowQs].filter(Boolean);
-            return `/cargas${parts.length ? `?${parts.join("&")}` : ""}`;
-          };
-          return [
-            { label: "Todas", href: withOrigen(), active: !origen },
-            { label: "Patio", href: withOrigen("patio"), active: origen === "patio" },
-            { label: "Campo", href: withOrigen("campo"), active: origen === "campo" },
-          ];
-        })().map(({ label, href, active }) => (
-          <Link key={label} href={href}>
-            <Badge variant={active ? "default" : "secondary"} className="cursor-pointer text-sm px-3 py-1">
-              {label}
-            </Badge>
-          </Link>
-        ))}
       </div>
 
       <CargasTable
@@ -165,6 +145,7 @@ export default async function HistorialCargasPage({
         todo={todo}
         desde={desde}
         hasta={hasta}
+        initialTab={initialTab}
       />
     </div>
   );

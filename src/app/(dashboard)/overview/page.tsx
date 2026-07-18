@@ -114,6 +114,7 @@ export default async function OverviewPage() {
       <DashboardKpis
         initialCargasHoy={stats.cargasHoy}
         initialLitrosHoy={stats.litrosHoy}
+        fechaHoy={stats.hoy}
         initialUnidadesActivas={
           stats.recientes.length > 0
             ? new Set(stats.recientes.map((c) => c.unidadId ?? 0)).size
@@ -121,8 +122,12 @@ export default async function OverviewPage() {
         }
       />
 
-      {/* Feed de cargas recientes — real-time via Pusher */}
-      <CargasRecientes initialCargas={stats.recientes} />
+      {/* Feed de actividad reciente — real-time via Pusher */}
+      <CargasRecientes
+        initialCargas={stats.recientes}
+        recargasRecientes={stats.recientesRecargas}
+        transferenciasRecientes={stats.recientesTransferencias}
+      />
     </div>
   );
 }

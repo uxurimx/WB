@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import type PusherClient from "pusher-js";
 import Link from "next/link";
 import {
   Fuel, Truck, ArrowUpCircle, ArrowDownCircle, ArrowLeftRight,
@@ -11,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import RecargaTanqueModal from "@/components/dashboard/RecargaTanqueModal";
 import TransferirNissanModal from "@/components/dashboard/TransferirNissanModal";
+import EditarTanqueModal from "@/components/dashboard/EditarTanqueModal";
 import AjustarStockModal from "@/components/tanques/AjustarStockModal";
 import type { TanqueDetalle, EventoTimeline } from "@/app/actions/tanques";
 
@@ -236,6 +238,10 @@ function TimelineRow({ ev }: { ev: EventoTimeline }) {
   );
 }
 
+function sortTanques(items: TanqueDetalle[]) {
+  return [...items].sort((a, b) => (a.nombre === "Taller" ? -1 : b.nombre === "Taller" ? 1 : 0));
+}
+
 // ─── Tarjeta principal de un tanque ──────────────────────────────────────────
 function TanqueCard({
   tanque,
@@ -317,6 +323,17 @@ function TanqueCard({
             capacidadMax={tanque.capacidadMax}
             onSuccess={(l) => onAjuste(tanque.id, l)}
           />
+          <EditarTanqueModal
+            tanque={{
+              id: tanque.id,
+              nombre: tanque.nombre,
+              litros: tanque.litrosActuales,
+              max: tanque.capacidadMax,
+              cuentalitros: tanque.cuentalitrosActual,
+              ajustePorcentaje: tanque.ajustePorcentaje,
+              ultimaActualizacion: tanque.ultimaActualizacion,
+            }}
+          />
         </div>
       </div>
 
@@ -391,8 +408,10 @@ function TanqueCard({
         )}
       </div>
 
-      {/* Conciliación */}
-      <ConciliacionCard tanque={tanque} />
+      {/* Conciliación — mt-auto la ancla al fondo del card para alineación entre ambos tanques */}
+      <div className="mt-auto">
+        <ConciliacionCard tanque={tanque} />
+      </div>
 
       {/* Última actualización */}
       {tanque.ultimaActualizacion && (
@@ -411,8 +430,58 @@ function TanqueCard({
 // ─── Componente principal exportado ──────────────────────────────────────────
 export default function TanquesClient({ tanques }: { tanques: TanqueDetalle[] }) {
   const router = useRouter();
-  const [tanqueActivo, setTanqueActivo] = useState<number>(tanques[0]?.id ?? 0);
-  const [localTanques, setLocalTanques] = useState(tanques);
+  const pusherRef = useRef<PusherClient | null>(null);
+
+  // Taller siempre primero en el orden de render
+  const [tanqueActivo, setTanqueActivo] = useState<number>(
+    tanques.find((t) => t.nombre === "Taller")?.id ?? tanques[0]?.id ?? 0
+  );
+  const [localTanques, setLocalTanques] = useState(() => sortTanques(tanques));
+
+  useEffect(() => {
+    setLocalTanques(sortTanques(tanques));
+  }, [tanques]);
+
+  useEffect(() => {
+    const key     = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
+    if (!key || !cluster) return;
+
+    let cancelled = false;
+    import("pusher-js").then(({ default: Pusher }) => {
+      if (cancelled || pusherRef.current) return;
+      const client = new Pusher(key, { cluster, authEndpoint: "/api/pusher/auth" });
+      pusherRef.current = client;
+      const ch = client.subscribe("private-stock");
+      ch.bind(
+        "stock-actualizado",
+        (data: { tanque: string; litrosActuales: number; cuentalitros?: number }) => {
+          setLocalTanques((prev) =>
+            prev.map((t) =>
+              t.nombre === data.tanque
+                ? {
+                    ...t,
+                    litrosActuales: data.litrosActuales,
+                    ...(data.cuentalitros !== undefined ? { cuentalitrosActual: data.cuentalitros } : {}),
+                    ultimaActualizacion: new Date().toISOString(),
+                  }
+                : t
+            )
+          );
+          router.refresh();
+        }
+      );
+    });
+
+    return () => {
+      cancelled = true;
+      if (pusherRef.current) {
+        pusherRef.current.unsubscribe("private-stock");
+        pusherRef.current.disconnect();
+        pusherRef.current = null;
+      }
+    };
+  }, [router]);
 
   const taller = localTanques.find((t) => t.nombre === "Taller");
   const nissan  = localTanques.find((t) => t.nombre === "NISSAN");

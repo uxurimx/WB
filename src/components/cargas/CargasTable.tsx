@@ -6,7 +6,7 @@ import {
   Pencil, Trash2, AlertCircle, ArrowRight, Fuel,
   ChevronDown, ChevronUp, Gauge, Hash, MapPin, User,
   Search, X as XIcon, ArrowUpDown, Camera, CalendarRange,
-  AlertTriangle,
+  AlertTriangle, ClipboardList, ArrowUpCircle, ArrowLeftRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   updateRecargaTanque, deleteRecargaTanque,
   updateTransferencia, deleteTransferencia,
 } from "@/app/actions/tanques";
+import type PusherClient from "pusher-js";
 
 // ─── Types ───────────────────────────────────────────────────
 export type CargaItem = {
@@ -43,6 +44,7 @@ export type CargaItem = {
   kmEstimado: boolean;
   periodoId: number | null;
   periodoCerrado: boolean;
+  createdAt: string | null;
   unidad: { codigo: string } | null;
   operador: { nombre: string } | null;
   obra: { nombre: string } | null;
@@ -60,6 +62,7 @@ export type TransferenciaItem = {
   cuentalitrosNissanInicio: number | null;
   cuentalitrosDestino: number | null;
   notas: string | null;
+  createdAt: string | null;
 };
 
 export type RecargaItem = {
@@ -73,6 +76,7 @@ export type RecargaItem = {
   precioLitro: number | null;
   cuentalitrosInicio: number | null;
   notas: string | null;
+  createdAt: string | null;
 };
 
 export type HistorialItem = CargaItem | TransferenciaItem | RecargaItem;
@@ -84,6 +88,27 @@ function formatFecha(fecha: string) {
   return new Date(fecha + "T12:00:00").toLocaleDateString("es-MX", {
     weekday: "short", day: "numeric", month: "short",
   });
+}
+
+function formatFechaHora(fecha: string, createdAt?: string | null, hora?: string | null) {
+  if (createdAt) {
+    return new Date(createdAt).toLocaleString("es-MX", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+  return `${formatFecha(fecha)}${hora ? ` · ${hora.slice(0, 5)}` : ""}`;
+}
+
+function formatFolioCarga(item: Pick<CargaItem, "folio" | "origen">) {
+  if (item.folio == null) return "—";
+  return `${item.origen === "campo" ? "C" : "P"}-${item.folio}`;
+}
+
+function formatFolioTransferencia(item: Pick<TransferenciaItem, "folio">) {
+  return item.folio != null ? `T-${item.folio}` : "—";
 }
 
 function DetailPill({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
@@ -149,8 +174,6 @@ function ActionButtons({
 function CargaRow({
   item,
   canEdit,
-  operadores,
-  obras,
   onEdit,
   onDelete,
   onFoto,
@@ -159,8 +182,6 @@ function CargaRow({
 }: {
   item: CargaItem;
   canEdit: boolean;
-  operadores: Operador[];
-  obras: Obra[];
   onEdit: (c: CargaItem) => void;
   onDelete: (id: number) => void;
   onFoto: (url: string, folio: number | null) => void;
@@ -185,7 +206,7 @@ function CargaRow({
       >
         <td className="px-4 py-3 whitespace-nowrap">
           <span className="font-mono text-sm font-semibold" style={{ color: "var(--fg)" }}>
-            {item.folio ?? "—"}
+            {formatFolioCarga(item)}
           </span>
         </td>
         <td className="px-4 py-3 whitespace-nowrap">
@@ -314,7 +335,7 @@ function CargaRow({
 }
 
 type SortCol = "fecha" | "litros" | "folio" | "unidad" | "operador" | "odometro";
-type TipoFiltro = "todos" | "patio" | "campo" | "recarga" | "transf";
+type TipoFiltro = "cargas" | "patio" | "campo" | "recarga" | "transf" | "actividad";
 
 // ─── Componente principal ─────────────────────────────────────
 export default function CargasTable({
@@ -335,6 +356,7 @@ export default function CargasTable({
   todo = false,
   desde: desdeProp = "",
   hasta: hastaProp = "",
+  initialTab,
 }: {
   initialCargas: CargaItem[];
   cargasTotal: number;
@@ -353,6 +375,7 @@ export default function CargasTable({
   todo?: boolean;
   desde?: string;
   hasta?: string;
+  initialTab?: Extract<TipoFiltro, "actividad">;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -368,7 +391,7 @@ export default function CargasTable({
 
   // ── Búsqueda / filtro / orden ──────────────────────────────
   const [busqueda,    setBusqueda]    = useState("");
-  const [tipoFiltro,  setTipoFiltro]  = useState<TipoFiltro>(origen ?? "todos");
+  const [tipoFiltro,  setTipoFiltro]  = useState<TipoFiltro>(initialTab ?? origen ?? "cargas");
   const [sortCol,     setSortCol]     = useState<SortCol>("fecha");
   const [sortDir,     setSortDir]     = useState<"asc" | "desc">("desc");
 
@@ -378,7 +401,7 @@ export default function CargasTable({
 
   const origenFromTipo = (t: TipoFiltro): "patio" | "campo" | undefined =>
     t === "patio" ? "patio" : t === "campo" ? "campo" : undefined;
-  const tipoNecesitaCargas = (t: TipoFiltro) => t !== "recarga" && t !== "transf";
+  const tipoNecesitaCargas = (t: TipoFiltro) => t === "cargas" || t === "patio" || t === "campo" || t === "actividad";
 
   const fetchPage = useCallback(
     (t: TipoFiltro, search: string, offset: number) =>
@@ -439,6 +462,38 @@ export default function CargasTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busqueda]);
 
+  // Mantener ref estable a reloadCargas para el listener Pusher
+  const reloadCargasRef = useRef(reloadCargas);
+  useEffect(() => { reloadCargasRef.current = reloadCargas; }, [reloadCargas]);
+
+  const pusherRef = useRef<PusherClient | null>(null);
+  useEffect(() => {
+    const key     = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
+    if (!key || !cluster) return;
+
+    let cancelled = false;
+    import("pusher-js").then(({ default: Pusher }) => {
+      if (cancelled || pusherRef.current) return;
+      const client = new Pusher(key, { cluster, authEndpoint: "/api/pusher/auth" });
+      pusherRef.current = client;
+      const ch = client.subscribe("private-cargas");
+      ch.bind("nueva-carga", () => { reloadCargasRef.current(); });
+      const chStock = client.subscribe("private-stock");
+      chStock.bind("stock-actualizado", () => { router.refresh(); });
+    });
+
+    return () => {
+      cancelled = true;
+      if (pusherRef.current) {
+        pusherRef.current.unsubscribe("private-cargas");
+        pusherRef.current.unsubscribe("private-stock");
+        pusherRef.current.disconnect();
+        pusherRef.current = null;
+      }
+    };
+  }, [router]); // mount only
+
   function changeTipo(key: TipoFiltro) {
     setTipoFiltro(key);
     loadCargas(key, busqueda);
@@ -470,12 +525,14 @@ export default function CargasTable({
     return item.origenNombre.toLowerCase().includes(q) || item.destinoNombre.toLowerCase().includes(q);
   };
 
-  const recargasView = (tipoFiltro === "todos" || tipoFiltro === "recarga")
+  const recargasView = (tipoFiltro === "actividad" || tipoFiltro === "recarga")
     ? recargas.filter(matchSearch) as RecargaItem[]
     : [];
-  const transfView = (tipoFiltro === "todos" || tipoFiltro === "transf")
+  const transfView = (tipoFiltro === "actividad" || tipoFiltro === "transf")
     ? transferencias.filter(matchSearch) as TransferenciaItem[]
     : [];
+  const recargasStatsView = recargas.filter(matchSearch) as RecargaItem[];
+  const transfStatsView = transferencias.filter(matchSearch) as TransferenciaItem[];
   const cargasView = tipoNecesitaCargas(tipoFiltro) ? cargas : [];
 
   const itemsFiltrados = ([...cargasView, ...recargasView, ...transfView] as HistorialItem[])
@@ -485,7 +542,11 @@ export default function CargasTable({
       const getUnidad   = (x: HistorialItem) => (x._tipo === "carga" ? (x.unidad?.codigo ?? "") : "");
       const getOperador = (x: HistorialItem) => (x._tipo === "carga" ? (x.operador?.nombre ?? "") : "");
       const getOdometro = (x: HistorialItem) => (x._tipo === "carga" ? (x.odometroHrs ?? 0) : 0);
-      if (sortCol === "fecha")    return mul * a.fecha.localeCompare(b.fecha);
+      if (sortCol === "fecha") {
+        const dateA = a.createdAt ?? (a._tipo === "carga" && a.hora ? `${a.fecha}T${a.hora}` : `${a.fecha}T00:00:00`);
+        const dateB = b.createdAt ?? (b._tipo === "carga" && b.hora ? `${b.fecha}T${b.hora}` : `${b.fecha}T00:00:00`);
+        return mul * dateA.localeCompare(dateB);
+      }
       if (sortCol === "litros")   return mul * (a.litros - b.litros);
       if (sortCol === "folio")    return mul * (getFolio(a) - getFolio(b));
       if (sortCol === "unidad")   return mul * getUnidad(a).localeCompare(getUnidad(b));
@@ -520,7 +581,7 @@ export default function CargasTable({
 
   // ── Estado: edición/eliminación de transferencias ──────────
   const [editTransf,    setEditTransf]    = useState<TransferenciaItem | null>(null);
-  const [editTransfForm, setEditTransfForm] = useState({ fecha: "", litros: "", cuentalitrosNissanInicio: "", cuentalitrosDestino: "", notas: "" });
+  const [editTransfForm, setEditTransfForm] = useState({ fecha: "", litros: "", folio: "", cuentalitrosNissanInicio: "", cuentalitrosDestino: "", notas: "" });
   const [editTransfError,   setEditTransfError]   = useState("");
   const [deletingTransfId,  setDeletingTransfId]  = useState<number | null>(null);
   const [deleteTransfError, setDeleteTransfError] = useState("");
@@ -649,6 +710,7 @@ export default function CargasTable({
           notas:              editRecargaForm.notas || null,
         });
         setEditRecarga(null);
+        router.refresh();
       } catch (err) {
         setEditRecargaError(err instanceof Error ? err.message : "Error al guardar");
       }
@@ -661,6 +723,7 @@ export default function CargasTable({
         try {
           await deleteRecargaTanque(id);
           setDeletingRecargaId(null);
+          router.refresh();
         } catch (err) {
           setDeleteRecargaError(err instanceof Error ? err.message : "Error al eliminar");
           setDeletingRecargaId(null);
@@ -679,6 +742,7 @@ export default function CargasTable({
     setEditTransfForm({
       fecha:                    t.fecha,
       litros:                   String(t.litros),
+      folio:                    t.folio != null ? String(t.folio) : "",
       cuentalitrosNissanInicio: t.cuentalitrosNissanInicio != null ? String(t.cuentalitrosNissanInicio) : "",
       cuentalitrosDestino:      t.cuentalitrosDestino != null ? String(t.cuentalitrosDestino) : "",
       notas:                    t.notas ?? "",
@@ -694,16 +758,24 @@ export default function CargasTable({
     if (!editTransfForm.litros || parseFloat(editTransfForm.litros) <= 0) {
       setEditTransfError("Los litros deben ser mayores a 0"); return;
     }
+    if (editTransfForm.folio) {
+      const f = parseInt(editTransfForm.folio);
+      if (isNaN(f) || f <= 0 || f > 99999) {
+        setEditTransfError("Folio inválido. Debe ser entre 1 y 99999"); return;
+      }
+    }
     startTransition(async () => {
       try {
         await updateTransferencia(editTransf.id, {
           fecha:                    editTransfForm.fecha,
           litros:                   parseFloat(editTransfForm.litros),
+          folio:                    editTransfForm.folio !== "" ? parseInt(editTransfForm.folio) : null,
           notas:                    editTransfForm.notas || null,
           cuentalitrosNissanInicio: editTransfForm.cuentalitrosNissanInicio !== "" ? parseFloat(editTransfForm.cuentalitrosNissanInicio) : null,
           cuentalitrosDestino:      editTransfForm.cuentalitrosDestino !== "" ? parseFloat(editTransfForm.cuentalitrosDestino) : null,
         });
         setEditTransf(null);
+        router.refresh();
       } catch (err) {
         setEditTransfError(err instanceof Error ? err.message : "Error al guardar");
       }
@@ -716,6 +788,7 @@ export default function CargasTable({
         try {
           await deleteTransferencia(id);
           setDeletingTransfId(null);
+          router.refresh();
         } catch (err) {
           setDeleteTransfError(err instanceof Error ? err.message : "Error al eliminar");
           setDeletingTransfId(null);
@@ -728,11 +801,12 @@ export default function CargasTable({
   }
 
   const TIPO_OPTS: { key: TipoFiltro; label: string }[] = [
-    { key: "todos",   label: "Todos" },
-    { key: "patio",   label: "Patio" },
-    { key: "campo",   label: "Campo" },
-    { key: "recarga", label: "Recargas" },
-    { key: "transf",  label: "Transferencias" },
+    { key: "cargas",    label: "Cargas" },
+    { key: "patio",     label: "Patio" },
+    { key: "campo",     label: "Campo" },
+    { key: "recarga",   label: "Recargas" },
+    { key: "transf",    label: "Transferencias" },
+    { key: "actividad", label: "Actividad" },
   ];
 
   function SortBtn({ col, label }: { col: SortCol; label: string }) {
@@ -749,11 +823,11 @@ export default function CargasTable({
 
   // Cargas: totales del servidor (cubren toda la ventana/filtro, no solo lo cargado).
   // Recargas/transferencias: pocas y completas en memoria → se cuentan en cliente.
-  const anyFilter = !!(busqueda || tipoFiltro !== "todos" || !isDefaultWindow);
+  const anyFilter = !!(busqueda || tipoFiltro !== "cargas" || !isDefaultWindow);
   const displayStats = {
     cargas:         { total,                       litros: litrosTotal },
-    recargas:       { total: recargasView.length,  litros: recargasView.reduce((s, r) => s + r.litros, 0) },
-    transferencias: { total: transfView.length,    litros: transfView.reduce((s, t) => s + t.litros, 0) },
+    recargas:       { total: recargasStatsView.length, litros: recargasStatsView.reduce((s, r) => s + r.litros, 0) },
+    transferencias: { total: transfStatsView.length,   litros: transfStatsView.reduce((s, t) => s + t.litros, 0) },
   };
   const statsUnidades = unidadesTotal;
 
@@ -934,186 +1008,162 @@ export default function CargasTable({
         )}
       </div>
 
-      {/* Tabla */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
-        <TableScroll maxHeight="calc(100vh - 19rem)">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-[var(--surface)]">
-              <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                {[
-                  { col: "folio"    as SortCol, label: "Folio",      cls: "" },
-                  { col: "fecha"    as SortCol, label: "Fecha",      cls: "" },
-                  { col: "unidad"   as SortCol, label: "Unidad",     cls: "" },
-                  { col: "operador" as SortCol, label: "Operador",   cls: "hidden sm:table-cell" },
-                  { col: "litros"   as SortCol, label: "Litros",     cls: "text-right" },
-                  { col: "odometro" as SortCol, label: "Odóm./HRS",  cls: "hidden md:table-cell" },
-                ].map(({ col, label, cls }) => (
-                  <th key={col} className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${cls}`}
-                    style={{ color: "var(--fg-muted)" }}>
-                    <SortBtn col={col} label={label} />
-                  </th>
-                ))}
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell"
-                  style={{ color: "var(--fg-muted)" }}>CuentaLT</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "var(--fg-muted)" }}>Tipo</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {itemsFiltrados.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="text-center py-16 text-sm" style={{ color: "var(--fg-muted)" }}>
-                    {busqueda || tipoFiltro !== "todos" ? "Sin resultados para esa búsqueda." : "Sin registros."}
-                  </td>
-                </tr>
-              )}
-
+      {tipoFiltro === "actividad" ? (
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+          {itemsFiltrados.length === 0 ? (
+            <div className="text-center py-16 text-sm" style={{ color: "var(--fg-muted)" }}>
+              {busqueda ? "Sin resultados para esa búsqueda." : "Sin movimientos."}
+            </div>
+          ) : (
+            <div className="space-y-1 p-2">
               {itemsFiltrados.map((item) => {
-                const key = `${item._tipo}-${item.id}`;
-
-                // ─── Recarga ──────────────────────────────────
-                if (item._tipo === "recarga") {
-                  return (
-                    <tr key={key} className="border-b" style={{ borderColor: "var(--border)", backgroundColor: "rgba(16,185,129,0.04)" }}>
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-xs" style={{ color: "var(--fg-muted)" }}>
-                          {item.folioFactura ?? "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm">{formatFecha(item.fecha)}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                          <Fuel className="w-3 h-3 shrink-0" />{item.tanqueNombre}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className="text-sm" style={{ color: "var(--fg-muted)" }}>{item.proveedor ?? "—"}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="font-mono font-semibold text-sm text-emerald-600">+{item.litros.toLocaleString()}</span>
-                        <span className="text-xs ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        {item.cuentalitrosInicio != null ? (
-                          <span className="font-mono text-xs" style={{ color: "var(--fg-muted)" }}>
-                            CL: {item.cuentalitrosInicio.toLocaleString()}
-                          </span>
-                        ) : <span style={{ color: "var(--fg-muted)" }}>—</span>}
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        {item.precioLitro != null ? (
-                          <span className="text-xs font-mono" style={{ color: "var(--fg-muted)" }}>
-                            ${item.precioLitro.toFixed(2)}/L
-                          </span>
-                        ) : <span style={{ color: "var(--fg-muted)" }}>—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
-                          style={{ backgroundColor: "rgba(16,185,129,0.15)", color: "rgb(16,185,129)" }}>
-                          <Fuel className="w-2.5 h-2.5" /> Recarga
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {canEdit && (
-                          <div className="flex justify-end">
-                            <ActionButtons
-                              id={item.id}
-                              deletingId={deletingRecargaId}
-                              isPending={isPending}
-                              onEdit={() => openEditRecarga(item)}
-                              onDelete={handleDeleteRecarga}
-                            />
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                }
-
-                // ─── Transferencia ────────────────────────────
-                if (item._tipo === "transferencia") {
-                  return (
-                    <tr key={key} className="border-b" style={{ borderColor: "var(--border)", backgroundColor: "rgba(139,92,246,0.04)" }}>
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-sm font-semibold" style={{ color: "var(--fg-muted)" }}>
-                          {item.folio != null ? `#${item.folio}` : "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm">{formatFecha(item.fecha)}</span>
-                      </td>
-                      <td className="px-4 py-3" colSpan={2}>
-                        <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--fg-muted)" }}>
-                          {item.origenNombre}
-                          <ArrowRight className="w-3 h-3 shrink-0" />
-                          {item.destinoNombre}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="font-mono font-semibold text-sm">{item.litros.toLocaleString()}</span>
-                        <span className="text-xs ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell" />
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        {item.cuentalitrosNissanInicio != null || item.cuentalitrosDestino != null ? (
-                          <span className="font-mono text-xs" style={{ color: "var(--fg)" }}>
-                            {item.cuentalitrosNissanInicio?.toLocaleString() ?? "—"}
-                            {" → "}
-                            {item.cuentalitrosDestino?.toLocaleString() ?? "—"}
-                          </span>
-                        ) : (
-                          <span style={{ color: "var(--fg-muted)" }}>—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
-                          style={{ backgroundColor: "rgba(139,92,246,0.15)", color: "rgb(139,92,246)" }}>
-                          <ArrowRight className="w-2.5 h-2.5" /> Transf.
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {canEdit && (
-                          <div className="flex justify-end">
-                            <ActionButtons
-                              id={item.id}
-                              deletingId={deletingTransfId}
-                              isPending={isPending}
-                              onEdit={() => openEditTransf(item)}
-                              onDelete={handleDeleteTransf}
-                            />
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                }
-
-                // ─── Carga ────────────────────────────────────
+                const isCarga = item._tipo === "carga";
+                const isRecarga = item._tipo === "recarga";
+                const Icon = isCarga ? ClipboardList : isRecarga ? ArrowUpCircle : ArrowLeftRight;
+                const color = isCarga ? "text-indigo-400" : isRecarga ? "text-emerald-500" : "text-violet-400";
+                const folio = isCarga ? formatFolioCarga(item) : isRecarga ? (item.folioFactura ?? "—") : formatFolioTransferencia(item);
+                const detalle = isCarga
+                  ? `${item.unidad?.codigo ?? "—"} · ${item.operador?.nombre ?? "Sin operador"}`
+                  : isRecarga
+                  ? `${item.tanqueNombre}${item.proveedor ? ` · ${item.proveedor}` : ""}`
+                  : `${item.origenNombre} → ${item.destinoNombre}`;
                 return (
-                  <CargaRow
-                    key={key}
-                    item={item}
-                    canEdit={canEdit}
-                    operadores={operadores}
-                    obras={obras}
-                    onEdit={openEditCarga}
-                    onDelete={handleDeleteCarga}
-                    onFoto={(url, folio) => setFotoViewer({ url, folio })}
-                    isDeleting={deletingCargaId === item.id}
-                    isPending={isPending}
-                  />
+                  <div
+                    key={`${item._tipo}-${item.id}`}
+                    className="px-4 py-3 flex items-center gap-3 rounded-xl transition-colors hover:bg-[var(--surface-2)]"
+                  >
+                    <div className="p-1.5 rounded-lg shrink-0" style={{ backgroundColor: "var(--surface-2)" }}>
+                      <Icon className={`w-4 h-4 ${color}`} />
+                    </div>
+                    <div className="w-28 shrink-0">
+                      <p className="font-mono text-sm font-bold" style={{ color: "var(--fg)" }}>{folio}</p>
+                      <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>
+                        {formatFechaHora(item.fecha, item.createdAt, isCarga ? item.hora : null)}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate" style={{ color: "var(--fg)" }}>{detalle}</p>
+                      {item.notas && <p className="text-xs truncate" style={{ color: "var(--fg-muted)" }}>{item.notas}</p>}
+                    </div>
+                    <Badge variant={isCarga ? (item.origen === "campo" ? "warning" : "default") : "secondary"}>
+                      {isCarga ? (item.origen === "campo" ? "Campo" : "Patio") : isRecarga ? "Recarga" : "Transfer."}
+                    </Badge>
+                    <p className={`font-mono font-semibold text-sm w-24 text-right shrink-0 ${isRecarga ? "text-emerald-500" : ""}`}>
+                      {isRecarga ? "+" : ""}{item.litros.toLocaleString()} L
+                    </p>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </TableScroll>
-      </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
+          <TableScroll maxHeight="calc(100vh - 19rem)">
+            {tipoFiltro === "recarga" ? (
+              <table className="w-full min-w-[760px] text-sm">
+                <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-[var(--surface)]">
+                  <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                    {["Fecha", "Tanque", "Proveedor", "Folio factura", "Litros", "Precio/L", "CuentaLT inicio", ""].map((label) => (
+                      <th key={label} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>{label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {recargasView.length === 0 && (
+                    <tr><td colSpan={8} className="text-center py-16 text-sm" style={{ color: "var(--fg-muted)" }}>Sin recargas.</td></tr>
+                  )}
+                  {recargasView.map((item) => (
+                    <tr key={`recarga-${item.id}`} className="border-b" style={{ borderColor: "var(--border)" }}>
+                      <td className="px-4 py-3">{formatFecha(item.fecha)}</td>
+                      <td className="px-4 py-3 font-semibold text-emerald-500">{item.tanqueNombre}</td>
+                      <td className="px-4 py-3" style={{ color: "var(--fg-muted)" }}>{item.proveedor ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono">{item.folioFactura ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono font-semibold text-emerald-500">+{item.litros.toLocaleString()} L</td>
+                      <td className="px-4 py-3 font-mono">{item.precioLitro != null ? `$${item.precioLitro.toFixed(2)}` : "—"}</td>
+                      <td className="px-4 py-3 font-mono">{item.cuentalitrosInicio?.toLocaleString() ?? "—"}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {canEdit && <div className="flex justify-end"><ActionButtons id={item.id} deletingId={deletingRecargaId} isPending={isPending} onEdit={() => openEditRecarga(item)} onDelete={handleDeleteRecarga} /></div>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : tipoFiltro === "transf" ? (
+              <table className="w-full min-w-[760px] text-sm">
+                <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-[var(--surface)]">
+                  <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                    {["Folio", "Fecha", "Origen", "Destino", "Litros", "CuentaLT inicio", "CuentaLT fin", ""].map((label) => (
+                      <th key={label} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>{label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {transfView.length === 0 && (
+                    <tr><td colSpan={8} className="text-center py-16 text-sm" style={{ color: "var(--fg-muted)" }}>Sin transferencias.</td></tr>
+                  )}
+                  {transfView.map((item) => (
+                    <tr key={`transferencia-${item.id}`} className="border-b" style={{ borderColor: "var(--border)" }}>
+                      <td className="px-4 py-3 font-mono font-semibold">{formatFolioTransferencia(item)}</td>
+                      <td className="px-4 py-3">{formatFecha(item.fecha)}</td>
+                      <td className="px-4 py-3">{item.origenNombre}</td>
+                      <td className="px-4 py-3">{item.destinoNombre}</td>
+                      <td className="px-4 py-3 font-mono font-semibold">{item.litros.toLocaleString()} L</td>
+                      <td className="px-4 py-3 font-mono">{item.cuentalitrosNissanInicio?.toLocaleString() ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono">{item.cuentalitrosDestino?.toLocaleString() ?? "—"}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {canEdit && <div className="flex justify-end"><ActionButtons id={item.id} deletingId={deletingTransfId} isPending={isPending} onEdit={() => openEditTransf(item)} onDelete={handleDeleteTransf} /></div>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full min-w-[640px] text-sm">
+                <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-[var(--surface)]">
+                  <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                    {[
+                      { col: "folio"    as SortCol, label: "Folio",      cls: "" },
+                      { col: "fecha"    as SortCol, label: "Fecha",      cls: "" },
+                      { col: "unidad"   as SortCol, label: "Unidad",     cls: "" },
+                      { col: "operador" as SortCol, label: "Operador",   cls: "hidden sm:table-cell" },
+                      { col: "litros"   as SortCol, label: "Litros",     cls: "text-right" },
+                      { col: "odometro" as SortCol, label: "Odóm./HRS",  cls: "hidden md:table-cell" },
+                    ].map(({ col, label, cls }) => (
+                      <th key={col} className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${cls}`} style={{ color: "var(--fg-muted)" }}>
+                        <SortBtn col={col} label={label} />
+                      </th>
+                    ))}
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell" style={{ color: "var(--fg-muted)" }}>CuentaLT</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>Origen</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {cargasView.length === 0 && (
+                    <tr><td colSpan={9} className="text-center py-16 text-sm" style={{ color: "var(--fg-muted)" }}>{busqueda ? "Sin resultados para esa búsqueda." : "Sin cargas."}</td></tr>
+                  )}
+                  {cargasView.map((item) => (
+                    <CargaRow
+                      key={`carga-${item.id}`}
+                      item={item}
+                      canEdit={canEdit}
+                      onEdit={openEditCarga}
+                      onDelete={handleDeleteCarga}
+                      onFoto={(url, folio) => setFotoViewer({ url, folio })}
+                      isDeleting={deletingCargaId === item.id}
+                      isPending={isPending}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </TableScroll>
+        </div>
+      )}
 
       {/* Paginación / cargar más */}
-      {tipoNecesitaCargas(tipoFiltro) && (
+      {tipoFiltro === "cargas" || tipoFiltro === "patio" || tipoFiltro === "campo" ? (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-3">
           <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
             Mostrando {cargasView.length.toLocaleString()} de {total.toLocaleString()} cargas
@@ -1130,13 +1180,25 @@ export default function CargasTable({
             </button>
           )}
         </div>
+      ) : tipoFiltro === "recarga" ? (
+        <p className="text-xs mt-3" style={{ color: "var(--fg-muted)" }}>
+          Mostrando {recargasView.length.toLocaleString()} recargas
+        </p>
+      ) : tipoFiltro === "transf" ? (
+        <p className="text-xs mt-3" style={{ color: "var(--fg-muted)" }}>
+          Mostrando {transfView.length.toLocaleString()} transferencias
+        </p>
+      ) : (
+        <p className="text-xs mt-3" style={{ color: "var(--fg-muted)" }}>
+          Mostrando {itemsFiltrados.length.toLocaleString()} movimientos
+        </p>
       )}
 
       {/* ─── Modal: editar carga ────────────────────────────────── */}
       <Dialog open={!!editCarga} onOpenChange={(open) => { if (!open) setEditCarga(null); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar carga #{editCarga?.folio ?? editCarga?.id}</DialogTitle>
+            <DialogTitle>Editar carga {editCarga ? formatFolioCarga(editCarga) : ""}</DialogTitle>
           </DialogHeader>
 
           {editCarga && (
@@ -1326,7 +1388,7 @@ export default function CargasTable({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Camera className="w-4 h-4 text-violet-400" />
-              Foto odómetro{fotoViewer?.folio != null ? ` — Folio #${fotoViewer.folio}` : ""}
+              Foto odómetro{fotoViewer?.folio != null ? ` — Folio ${fotoViewer.folio}` : ""}
             </DialogTitle>
           </DialogHeader>
           {fotoViewer && (
@@ -1409,7 +1471,7 @@ export default function CargasTable({
       <Dialog open={!!editTransf} onOpenChange={(open) => { if (!open) setEditTransf(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Editar transferencia #{editTransf?.folio ?? editTransf?.id}</DialogTitle>
+            <DialogTitle>Editar transferencia {editTransf ? formatFolioTransferencia(editTransf) : ""}</DialogTitle>
           </DialogHeader>
 
           {editTransf && (
@@ -1425,6 +1487,20 @@ export default function CargasTable({
           )}
 
           <div className="space-y-4 py-1">
+            <div className="space-y-1.5">
+              <Label>Folio del ticket</Label>
+              <div className="relative">
+                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  style={{ color: "var(--fg-muted)" }} />
+                <Input name="folio" type="number" step="1" min="1" max={99999}
+                  value={editTransfForm.folio} onChange={handleTransfFormChange}
+                  placeholder="00000" className="font-mono font-bold pl-9" />
+              </div>
+              <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>
+                Edita para corregir el folio — máx. 5 dígitos
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Fecha</Label>

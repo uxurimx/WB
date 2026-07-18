@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Fuel, Truck, AlertTriangle, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import EditarTanqueModal, { type TanqueInfo } from "./EditarTanqueModal";
 
 type StockData = {
   id: number;
@@ -55,7 +54,7 @@ export default function StockCards({
         ? prev
         : initialTaller
     );
-  }, [initialTaller.litros, initialTaller.cuentalitros, initialTaller.id]);
+  }, [initialTaller]);
 
   useEffect(() => {
     setNissan((prev) =>
@@ -63,7 +62,7 @@ export default function StockCards({
         ? prev
         : initialNissan
     );
-  }, [initialNissan.litros, initialNissan.cuentalitros, initialNissan.id]);
+  }, [initialNissan]);
 
   // Pusher real-time — cliente almacenado en ref para cleanup correcto
   const pusherRef = useRef<InstanceType<typeof import("pusher-js").default> | null>(null);
@@ -122,8 +121,9 @@ export default function StockCards({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Tanque Taller */}
-      <div
-        className="p-5 rounded-2xl border"
+      <Link
+        href="/tanques"
+        className="p-5 rounded-2xl border block transition-colors hover:bg-[var(--surface-2)]"
         style={{
           backgroundColor: "var(--surface)",
           borderColor: alertaTaller ? "rgb(239 68 68 / 0.4)" : "var(--border)",
@@ -140,13 +140,9 @@ export default function StockCards({
           </div>
           <div className="flex items-center gap-2">
             {alertaTaller && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
-            <EditarTanqueModal tanque={taller as TanqueInfo} />
-            <Link
-              href="/tanques"
-              className="flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:text-indigo-400 transition-colors"
-            >
-              Gestionar <ArrowRight className="w-3 h-3" />
-            </Link>
+            <span className="flex items-center gap-1 text-xs font-semibold text-indigo-500">
+              Ver tanque <ArrowRight className="w-3 h-3" />
+            </span>
           </div>
         </div>
 
@@ -167,11 +163,15 @@ export default function StockCards({
             {taller.cuentalitros > 0 ? taller.cuentalitros.toLocaleString() : "—"}
           </span>
         </p>
-      </div>
+        <p className="text-[10px] mt-3 text-indigo-400">
+          Ajustes, capacidad, merma e historial viven en Tanques →
+        </p>
+      </Link>
 
       {/* Tanque NISSAN */}
-      <div
-        className="p-5 rounded-2xl border"
+      <Link
+        href="/tanques"
+        className="p-5 rounded-2xl border block transition-colors hover:bg-[var(--surface-2)]"
         style={{
           backgroundColor: "var(--surface)",
           borderColor: alertaNissan ? "rgb(239 68 68 / 0.4)" : "var(--border)",
@@ -188,13 +188,9 @@ export default function StockCards({
           </div>
           <div className="flex items-center gap-2">
             {alertaNissan && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
-            <EditarTanqueModal tanque={nissan as TanqueInfo} />
-            <Link
-              href="/tanques"
-              className="flex items-center gap-1 text-xs font-semibold text-violet-500 hover:text-violet-400 transition-colors"
-            >
-              Gestionar <ArrowRight className="w-3 h-3" />
-            </Link>
+            <span className="flex items-center gap-1 text-xs font-semibold text-violet-500">
+              Ver tanque <ArrowRight className="w-3 h-3" />
+            </span>
           </div>
         </div>
 
@@ -217,7 +213,10 @@ export default function StockCards({
             {nissan.cuentalitros > 0 ? nissan.cuentalitros.toLocaleString() : "—"}
           </span>
         </p>
-      </div>
+        <p className="text-[10px] mt-3 text-violet-400">
+          Ajustes, capacidad, merma e historial viven en Tanques →
+        </p>
+      </Link>
     </div>
   );
 }

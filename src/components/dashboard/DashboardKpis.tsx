@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Fuel, Wrench, BarChart3 } from "lucide-react";
 
 export default function DashboardKpis({
   initialCargasHoy,
   initialLitrosHoy,
   initialUnidadesActivas,
+  fechaHoy,
 }: {
   initialCargasHoy: number;
   initialLitrosHoy: number;
   initialUnidadesActivas: number;
+  fechaHoy: string;
 }) {
   const [cargasHoy, setCargasHoy] = useState(initialCargasHoy);
   const [litrosHoy, setLitrosHoy] = useState(initialLitrosHoy);
@@ -55,15 +58,36 @@ export default function DashboardKpis({
   }, []);
 
   const items = [
-    { label: "Cargas Hoy",    value: cargasHoy,                    unit: "eventos",          icon: Wrench },
-    { label: "Litros Hoy",    value: litrosHoy.toLocaleString(),    unit: "despachados",      icon: Fuel },
-    { label: "Período actual", value: unidadesActivas,              unit: "unidades activas", icon: BarChart3 },
+    {
+      label: "Cargas Hoy",
+      value: cargasHoy,
+      unit: "eventos",
+      hint: "Ver registros de hoy",
+      href: `/cargas?desde=${fechaHoy}&hasta=${fechaHoy}`,
+      icon: Wrench,
+    },
+    {
+      label: "Litros Hoy",
+      value: litrosHoy.toLocaleString(),
+      unit: "despachados",
+      hint: "Auditar litros del día",
+      href: `/cargas?desde=${fechaHoy}&hasta=${fechaHoy}`,
+      icon: Fuel,
+    },
+    {
+      label: "Período actual",
+      value: unidadesActivas,
+      unit: "unidades activas",
+      hint: "Abrir período actual",
+      href: "/periodos",
+      icon: BarChart3,
+    },
   ];
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-      {items.map(({ label, value, unit, icon: Icon }) => (
-        <div key={label} className="p-4 rounded-2xl border"
+      {items.map(({ label, value, unit, hint, href, icon: Icon }) => (
+        <Link key={label} href={href} className="p-4 rounded-2xl border block transition-colors hover:bg-[var(--surface-2)]"
           style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
@@ -75,7 +99,8 @@ export default function DashboardKpis({
           </div>
           <p className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>{value}</p>
           <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>{unit}</p>
-        </div>
+          <p className="text-[10px] mt-2 text-indigo-400">{hint} →</p>
+        </Link>
       ))}
     </div>
   );

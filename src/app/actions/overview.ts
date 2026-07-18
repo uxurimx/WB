@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { tanques, cargas, rendimientos, periodos, configuracion, pbTickets } from "@/db/schema";
+import { tanques, cargas, periodos, configuracion, pbTickets, recargasTanque, transferenciasTanque } from "@/db/schema";
 import { eq, desc, and, gte } from "drizzle-orm";
 import {
   type AlertaRendimiento,
@@ -21,7 +21,7 @@ export async function getOverviewStats() {
 
   const hace7dias = subtractDaysLocal(new Date(), 7);
 
-  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion, ticketsResueltos] =
+  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion, ticketsResueltos, recientesRecargasData, recientesTransfData] =
     await Promise.all([
       db.select().from(tanques),
       db.select({ litros: cargas.litros }).from(cargas).where(eq(cargas.fecha, hoy)),
@@ -48,10 +48,29 @@ export async function getOverviewStats() {
         orderBy: [desc(pbTickets.resueltaAt)],
         limit: 5,
       }).catch(() => [] as { id: number; titulo: string; resueltaAt: Date | null }[]),
+      db.select({
+        id: recargasTanque.id,
+        tanqueId: recargasTanque.tanqueId,
+        fecha: recargasTanque.fecha,
+        litros: recargasTanque.litros,
+        proveedor: recargasTanque.proveedor,
+        folioFactura: recargasTanque.folioFactura,
+        createdAt: recargasTanque.createdAt,
+      }).from(recargasTanque).orderBy(desc(recargasTanque.createdAt)).limit(6),
+      db.select({
+        id: transferenciasTanque.id,
+        folio: transferenciasTanque.folio,
+        fecha: transferenciasTanque.fecha,
+        litros: transferenciasTanque.litros,
+        tanqueOrigenId: transferenciasTanque.tanqueOrigenId,
+        tanqueDestinoId: transferenciasTanque.tanqueDestinoId,
+        createdAt: transferenciasTanque.createdAt,
+      }).from(transferenciasTanque).orderBy(desc(transferenciasTanque.createdAt)).limit(6),
     ]);
 
   const taller   = tanquesData.find((t) => t.nombre === "Taller");
   const nissan   = tanquesData.find((t) => t.nombre === "NISSAN");
+  const tanqueNombres = Object.fromEntries(tanquesData.map((t) => [t.id, t.nombre]));
   const litrosHoy = cargasHoyData.reduce((s, c) => s + (c.litros ?? 0), 0);
   const alertaDias = alertaDiasRow
     ? parseInt(alertaDiasRow.valor, 10)
@@ -171,6 +190,7 @@ export async function getOverviewStats() {
   }
 
   return {
+    hoy,
     taller: {
       id:                  taller?.id ?? 0,
       nombre:              taller?.nombre ?? "Taller",
@@ -191,7 +211,19 @@ export async function getOverviewStats() {
     },
     cargasHoy:            cargasHoyData.length,
     litrosHoy,
-    recientes,
+    recientes: recientes.map((c) => ({
+      id: c.id,
+      fecha: c.fecha,
+      hora: c.hora,
+      folio: c.folio,
+      litros: c.litros,
+      origen: c.origen,
+      tipoDiesel: c.tipoDiesel,
+      unidadId: c.unidadId,
+      createdAt: c.createdAt?.toISOString() ?? null,
+      unidad: c.unidad ? { codigo: c.unidad.codigo } : null,
+      operador: c.operador ? { nombre: c.operador.nombre } : null,
+    })),
     alertasRendimiento,
     anomaliasActivas,
     conciliacion,
@@ -204,6 +236,24 @@ export async function getOverviewStats() {
       id: t.id,
       titulo: t.titulo,
       resueltaAt: t.resueltaAt?.toISOString() ?? null,
+    })),
+    recientesRecargas: recientesRecargasData.map((r) => ({
+      id: r.id,
+      fecha: r.fecha,
+      litros: r.litros,
+      tanqueNombre: tanqueNombres[r.tanqueId] ?? "Tanque",
+      proveedor: r.proveedor,
+      folioFactura: r.folioFactura,
+      createdAt: r.createdAt?.toISOString() ?? null,
+    })),
+    recientesTransferencias: recientesTransfData.map((t) => ({
+      id: t.id,
+      fecha: t.fecha,
+      litros: t.litros,
+      folio: t.folio,
+      origenNombre: tanqueNombres[t.tanqueOrigenId] ?? "Origen",
+      destinoNombre: tanqueNombres[t.tanqueDestinoId] ?? "Destino",
+      createdAt: t.createdAt?.toISOString() ?? null,
     })),
   };
 }

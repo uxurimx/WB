@@ -4,9 +4,11 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { tanques, recargasTanque, transferenciasTanque, auditLog, cargas } from "@/db/schema";
-import { eq, inArray, gte, lte, and, or, desc } from "drizzle-orm";
+import { eq, inArray, gte, and, or, desc } from "drizzle-orm";
 import { requireManageRole } from "@/lib/authz";
-import { getSiguienteFolioPublic } from "./cargas";
+import {
+  assertFolioPatioCompartidoDisponible,
+} from "@/lib/folios";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 import { conciliarTanques } from "@/lib/conciliacion";
 import { UMBRAL_TALLER, UMBRAL_NISSAN } from "@/lib/alertas-config";
@@ -64,10 +66,12 @@ export async function addRecargaTanque(input: RecargaTanqueInput) {
     .trigger(CHANNELS.stock, EVENTS.stockActualizado, {
       tanque: tanque.nombre,
       litrosActuales: nuevosLitros,
+      cuentalitros: input.cuentalitrosNuevo ?? tanque.cuentalitrosActual,
     })
     .catch(() => {});
 
   revalidatePath("/overview");
+  revalidatePath("/tanques");
   return { ok: true, litrosActuales: nuevosLitros };
 }
 
@@ -77,6 +81,7 @@ export type TransferenciaInput = {
   tanqueDestinoId: number;
   litros: number;
   fecha: string; // "YYYY-MM-DD"
+  folio: number;
   notas?: string;
   cuentalitrosOrigen?: number; // Lectura inicial del cuentalitros de taller (bomba) antes de la transferencia
 };
@@ -99,6 +104,8 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
 
   if (!origen) throw new Error("Tanque origen no encontrado");
   if (!destino) throw new Error("Tanque destino no encontrado");
+  if (!input.folio || input.folio <= 0 || input.folio > 99999)
+    throw new Error("Folio inválido. Debe ser un número entre 1 y 99999");
   if ((origen.litrosActuales ?? 0) < input.litros)
     throw new Error(
       `Stock insuficiente en ${origen.nombre}. Disponible: ${origen.litrosActuales?.toFixed(0)} L`
@@ -119,8 +126,8 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   const cuentaInicio = tallerInicio;
   const cuentaFin    = tallerInicio !== null ? tallerInicio + input.litros : null;
 
-  // El folio de transferencia es parte de la misma secuencia que cargas patio
-  const folio = await getSiguienteFolioPublic();
+  const folio = input.folio;
+  await assertFolioPatioCompartidoDisponible(folio);
 
   // Actualizar ambos tanques + insertar registro
   await Promise.all([
@@ -270,6 +277,7 @@ export async function updateRecargaTanque(
 
   revalidatePath("/overview");
   revalidatePath("/cargas");
+  revalidatePath("/tanques");
   return { ok: true };
 }
 
@@ -319,6 +327,7 @@ export async function deleteRecargaTanque(id: number) {
 
   revalidatePath("/overview");
   revalidatePath("/cargas");
+  revalidatePath("/tanques");
 }
 
 // ─── Editar transferencia ─────────────────────────────────────────────────────
@@ -327,6 +336,7 @@ export async function updateTransferencia(
   data: {
     fecha?: string;
     litros?: number;
+    folio?: number | null;
     notas?: string | null;
     cuentalitrosNissanInicio?: number | null;
     cuentalitrosDestino?: number | null;
@@ -338,6 +348,12 @@ export async function updateTransferencia(
     where: eq(transferenciasTanque.id, id),
   });
   if (!transferencia) throw new Error("Transferencia no encontrada");
+
+  if (data.folio !== undefined && data.folio !== null) {
+    if (data.folio <= 0 || data.folio > 99999)
+      throw new Error("Folio inválido. Debe ser un número entre 1 y 99999");
+    await assertFolioPatioCompartidoDisponible(data.folio, db, { transferenciaId: id });
+  }
 
   const litrosNuevos = data.litros ?? transferencia.litros;
   if (litrosNuevos <= 0) throw new Error("Los litros deben ser mayores a 0");
@@ -386,6 +402,7 @@ export async function updateTransferencia(
       db.update(transferenciasTanque).set({
         fecha:                    data.fecha !== undefined ? data.fecha : transferencia.fecha,
         litros:                   litrosNuevos,
+        folio:                    data.folio !== undefined ? data.folio : transferencia.folio,
         notas:                    data.notas !== undefined ? data.notas : transferencia.notas,
         cuentalitrosNissanInicio: data.cuentalitrosNissanInicio !== undefined ? data.cuentalitrosNissanInicio : transferencia.cuentalitrosNissanInicio,
         cuentalitrosDestino:      data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,
@@ -401,9 +418,10 @@ export async function updateTransferencia(
       }),
     ]);
   } else {
-    // Solo fecha/notas/cuentalitros cambian, sin tocar litros de tanques
+    // Solo fecha/notas/cuentalitros/folio cambian, sin tocar litros de tanques
     await db.update(transferenciasTanque).set({
       fecha:                    data.fecha !== undefined ? data.fecha : transferencia.fecha,
+      folio:                    data.folio !== undefined ? data.folio : transferencia.folio,
       notas:                    data.notas !== undefined ? data.notas : transferencia.notas,
       cuentalitrosNissanInicio: data.cuentalitrosNissanInicio !== undefined ? data.cuentalitrosNissanInicio : transferencia.cuentalitrosNissanInicio,
       cuentalitrosDestino:      data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,

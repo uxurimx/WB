@@ -9,24 +9,16 @@ import { obras, operadores } from "@/db/schema";
 import { getTolerancia } from "@/app/actions/setup";
 
 import { requireManageRole } from "@/lib/authz";
+import {
+  assertFolioPatioCompartidoDisponible,
+  getSiguienteFolioPatioCompartido,
+} from "@/lib/folios";
 import { getOrCreatePeriodoActual } from "./periodos";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 
 // ─── Helpers ─────────────────────────────────────────────────
 async function getSiguienteFolio(): Promise<number> {
-  // El folio es compartido entre cargas patio y transferencias de tanque
-  const [maxCargaResult, maxTransfResult, baseRow] = await Promise.all([
-    db.select({ maxFolio: max(cargas.folio) }).from(cargas).where(eq(cargas.origen, "patio")),
-    db.select({ maxFolio: max(transferenciasTanque.folio) }).from(transferenciasTanque),
-    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_base") }),
-  ]);
-  const base = baseRow ? parseInt(baseRow.valor, 10) : 1;
-  const maxCarga = maxCargaResult[0]?.maxFolio ?? null;
-  const maxTransf = maxTransfResult[0]?.maxFolio ?? null;
-  const maxGlobal =
-    maxCarga !== null && maxTransf !== null ? Math.max(maxCarga, maxTransf)
-    : maxCarga ?? maxTransf;
-  return maxGlobal !== null ? maxGlobal + 1 : base;
+  return getSiguienteFolioPatioCompartido();
 }
 
 async function getTanquePorNombre(nombre: string) {
@@ -62,7 +54,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
   if (!userId) throw new Error("No autenticado");
 
   const periodo = await getOrCreatePeriodoActual(new Date(input.fecha));
-  const folio = input.folioManual ?? await getSiguienteFolio();
+  let folio = input.folioManual ?? await getSiguienteFolio();
 
   // Validar rango configurable de folio patio
   const [minRow, maxRow] = await Promise.all([
@@ -71,16 +63,13 @@ export async function createCargaPatio(input: CargaPatioInput) {
   ]);
   const folioMin = minRow ? parseInt(minRow.valor, 10) : 0;
   const folioMax = maxRow ? parseInt(maxRow.valor, 10) : 0;
-  if (folioMin > 0 && folio < folioMin)
-    throw new Error(`Folio ${folio} es menor al mínimo configurado para patio (${folioMin})`);
-  if (folioMax > 0 && folio > folioMax)
-    throw new Error(`Folio ${folio} supera el máximo configurado para patio (${folioMax})`);
-
-  // Evitar folio duplicado — la constraint de DB también lo captura, pero aquí damos mensaje claro
-  const existe = await db.select({ id: cargas.id }).from(cargas)
-    .where(and(eq(cargas.folio, folio), eq(cargas.origen, "patio"))).limit(1);
-  if (existe.length > 0)
-    throw new Error(`El folio ${folio} ya existe en el sistema para cargas de patio`);
+  const assertFolioEnRango = (folioPatio: number) => {
+    if (folioMin > 0 && folioPatio < folioMin)
+      throw new Error(`Folio ${folioPatio} es menor al mínimo configurado para patio (${folioMin})`);
+    if (folioMax > 0 && folioPatio > folioMax)
+      throw new Error(`Folio ${folioPatio} supera el máximo configurado para patio (${folioMax})`);
+  };
+  assertFolioEnRango(folio);
 
   const tanqueTaller = await getTanquePorNombre("Taller");
   if (!tanqueTaller) throw new Error("Tanque Taller no encontrado");
@@ -90,6 +79,10 @@ export async function createCargaPatio(input: CargaPatioInput) {
     );
   }
   const fuenteTaller = await getFuentePorTipo("taller");
+
+  folio = input.folioManual ?? await getSiguienteFolioPatioCompartido();
+  assertFolioEnRango(folio);
+  await assertFolioPatioCompartidoDisponible(folio);
 
   const [nueva] = await db
     .insert(cargas)
@@ -365,6 +358,7 @@ export async function getCargasPage(opts: {
     kmEstimado: c.kmEstimado ?? false,
     periodoId: c.periodoId ?? null,
     periodoCerrado: c.periodo?.cerrado ?? false,
+    createdAt: c.createdAt?.toISOString() ?? null,
     unidad: c.unidad ? { codigo: c.unidad.codigo } : null,
     operador: c.operador ? { nombre: c.operador.nombre } : null,
     obra: c.obra ? { nombre: c.obra.nombre } : null,
@@ -388,6 +382,14 @@ export async function getHistorialGlobalStats() {
 
 export async function getSiguienteFolioPublic() {
   return getSiguienteFolio();
+}
+
+async function getSiguienteFolioPatio(): Promise<number> {
+  return getSiguienteFolioPatioCompartido();
+}
+
+export async function getSiguienteFolioPatioPublic() {
+  return getSiguienteFolioPatio();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -605,6 +607,21 @@ export async function updateCarga(id: number, data: UpdateCargaInput) {
 
   const carga = await db.query.cargas.findFirst({ where: eq(cargas.id, id) });
   if (!carga) throw new Error("Carga no encontrada");
+
+  if (data.folio !== undefined && data.folio !== carga.folio) {
+    if (data.folio <= 0 || data.folio > 99999)
+      throw new Error("Folio inválido. Debe ser un número entre 1 y 99999");
+
+    if (carga.origen === "patio") {
+      await assertFolioPatioCompartidoDisponible(data.folio, db, { cargaId: id });
+    } else {
+      const dup = await db.select({ id: cargas.id }).from(cargas)
+        .where(and(eq(cargas.folio, data.folio), eq(cargas.origen, carga.origen), sql`${cargas.id} <> ${id}`))
+        .limit(1);
+      if (dup.length > 0)
+        throw new Error(`El folio ${data.folio} ya existe en cargas de ${carga.origen}`);
+    }
+  }
 
   // Si cambia litros, ajustar stock y cuentalitros del tanque
   if (data.litros !== undefined && data.litros !== carga.litros && carga.tanqueId) {
