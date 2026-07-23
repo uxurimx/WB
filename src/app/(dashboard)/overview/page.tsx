@@ -43,6 +43,7 @@ export default async function OverviewPage() {
     (stats.taller.litros < UMBRAL_TALLER ? 1 : 0) +
     (stats.nissan.litros < UMBRAL_NISSAN ? 1 : 0) +
     (stats.alertasRendimiento.length > 0 ? 1 : 0) +
+    stats.alertasMantenimiento.length +
     stats.anomaliasActivas.length +
     stats.conciliacion.filter((c) => !c.ok).length;
 
@@ -103,6 +104,7 @@ export default async function OverviewPage() {
         taller={stats.taller}
         nissan={stats.nissan}
         alertasRendimiento={stats.alertasRendimiento}
+        alertasMantenimiento={stats.alertasMantenimiento}
         anomaliasActivas={stats.anomaliasActivas}
         conciliacion={stats.conciliacion}
         ultimoPeriodoCerrado={stats.ultimoPeriodoCerrado}

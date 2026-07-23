@@ -22,13 +22,20 @@ import type { getCatalogoCargas } from "@/app/actions/catalogo";
 import type { getRendimientosUnidad } from "@/app/actions/rendimientos";
 import type { getArchivosUnidad } from "@/app/actions/archivos";
 import type { getAuditLogCargasUnidad } from "@/app/actions/cargas";
+import type {
+  getEventosMantenimientoUnidad,
+  getResumenMantenimientoUnidad,
+} from "@/app/actions/mantenimiento";
+import UnidadMantenimientoTab from "@/components/catalogo/UnidadMantenimientoTab";
 
 type Carga     = Awaited<ReturnType<typeof getCatalogoCargas>>[number];
 type RendItem  = Awaited<ReturnType<typeof getRendimientosUnidad>>[number];
 type FotoItem  = Awaited<ReturnType<typeof getArchivosUnidad>>[number];
 type AuditItem = Awaited<ReturnType<typeof getAuditLogCargasUnidad>>[number];
+type MantenimientoResumen = Awaited<ReturnType<typeof getResumenMantenimientoUnidad>>;
+type MantenimientoEvento = Awaited<ReturnType<typeof getEventosMantenimientoUnidad>>[number];
 
-type Tab          = "cargas" | "rendimiento" | "fotos" | "cambios";
+type Tab          = "cargas" | "rendimiento" | "mantenimiento" | "fotos" | "cambios";
 type SortCol      = "fecha" | "folio" | "litros" | "odometro";
 type FiltroOrigen = "todos" | "patio" | "campo" | "externo";
 
@@ -52,9 +59,12 @@ export default function CatalogoDetalleClient({
   rends,
   fotos,
   audits,
+  mantenimientoResumen,
+  mantenimientoEventos,
   operadores,
   obras,
   canEdit,
+  canManageMaintenance,
 }: {
   tipo: "unidad" | "operador" | "obra";
   unidadId?: number;
@@ -63,9 +73,12 @@ export default function CatalogoDetalleClient({
   rends: RendItem[] | null;
   fotos: FotoItem[] | null;
   audits: AuditItem[] | null;
+  mantenimientoResumen: MantenimientoResumen | null;
+  mantenimientoEventos: MantenimientoEvento[];
   operadores: { id: number; nombre: string }[];
   obras: { id: number; nombre: string }[];
   canEdit: boolean;
+  canManageMaintenance: boolean;
 }) {
   const router = useRouter();
 
@@ -284,6 +297,7 @@ export default function CatalogoDetalleClient({
     ? [
         { key: "cargas" as Tab,      label: "Cargas" },
         { key: "rendimiento" as Tab, label: "Rendimiento" },
+        { key: "mantenimiento" as Tab, label: "Mantenimiento" },
         { key: "fotos" as Tab,       label: `Fotos${fotos && fotos.length > 0 ? ` (${fotos.length})` : ""}` },
         { key: "cambios" as Tab,     label: `Cambios${audits && audits.length > 0 ? ` (${audits.length})` : ""}` },
       ]
@@ -675,6 +689,16 @@ export default function CatalogoDetalleClient({
             </>
           )}
         </div>
+      )}
+
+      {/* ── Tab Mantenimiento ─────────────────────────────── */}
+      {activeTab === "mantenimiento" && tipo === "unidad" && unidadId && (
+        <UnidadMantenimientoTab
+          unidadId={unidadId}
+          resumen={mantenimientoResumen}
+          eventos={mantenimientoEventos}
+          canManageMaintenance={canManageMaintenance}
+        />
       )}
 
       {/* ── Tab Fotos ────────────────────────────────────────── */}

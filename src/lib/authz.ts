@@ -17,3 +17,7 @@ export async function requireManageRole() {
 export async function requireAdmin() {
   return requireRole(["admin"]);
 }
+
+export async function requireMaintenanceManager() {
+  return requireRole(["admin", "gerente"]);
+}

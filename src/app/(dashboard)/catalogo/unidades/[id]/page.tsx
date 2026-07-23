@@ -12,10 +12,15 @@ import { getCatalogoCargas, getOperadores, getObras } from "@/app/actions/catalo
 import { getRendimientosUnidad } from "@/app/actions/rendimientos";
 import { getArchivosUnidad } from "@/app/actions/archivos";
 import { getAuditLogCargasUnidad } from "@/app/actions/cargas";
+import {
+  getEventosMantenimientoUnidad,
+  getResumenMantenimientoUnidad,
+} from "@/app/actions/mantenimiento";
 import { Badge } from "@/components/ui/badge";
 import CatalogoDetalleClient from "@/components/catalogo/CatalogoDetalleClient";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
+const MAINTENANCE_ROLES = ["admin", "gerente"];
 const TIPO_LABELS: Record<string, string> = {
   camion: "Camión", maquina: "Maquinaria", nissan: "NISSAN", otro: "Otro",
 };
@@ -40,14 +45,17 @@ export default async function UnidadDetallePage({
   if (!unidad) notFound();
 
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
+  const canManageMaintenance = MAINTENANCE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
-  const [cargas, rends, fotos, audits, operadores, obras] = await Promise.all([
+  const [cargas, rends, fotos, audits, operadores, obras, mantenimientoResumen, mantenimientoEventos] = await Promise.all([
     getCatalogoCargas("unidad", unidadId),
     getRendimientosUnidad(unidadId),
     getArchivosUnidad(unidadId),
     getAuditLogCargasUnidad(unidadId),
     getOperadores(false),
     getObras(false),
+    getResumenMantenimientoUnidad(unidadId),
+    getEventosMantenimientoUnidad(unidadId),
   ]);
 
   return (
@@ -115,9 +123,12 @@ export default async function UnidadDetallePage({
         rends={rends}
         fotos={fotos}
         audits={audits}
+        mantenimientoResumen={mantenimientoResumen}
+        mantenimientoEventos={mantenimientoEventos}
         operadores={operadores.map((o) => ({ id: o.id, nombre: o.nombre }))}
         obras={obras.map((o) => ({ id: o.id, nombre: o.nombre }))}
         canEdit={canEdit}
+        canManageMaintenance={canManageMaintenance}
       />
     </div>
   );

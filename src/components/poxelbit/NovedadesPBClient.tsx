@@ -14,6 +14,130 @@ import type { getNovedadesPBAction, getPBModulosAction } from "@/app/actions/pox
 type Novedad = Awaited<ReturnType<typeof getNovedadesPBAction>>[number];
 type Modulo  = { id: number; titulo: string };
 
+const GUIA_F6_CONTENIDO = JSON.stringify({
+  lead: "Nueva guía operativa para usar el sistema de mantenimiento preventivo por unidad. Esta novedad explica qué significa cada estado, cómo configurar planes por KM/HRS, cómo registrar un servicio y cómo interpretar las alertas del dashboard.",
+  blocks: [
+    {
+      type: "features",
+      items: [
+        {
+          icon: "Wrench",
+          title: "Dónde se configura",
+          desc: "Entra a Catálogos > Unidades, abre una unidad y entra a la pestaña Mantenimiento. Ahí puedes configurar un plan por KM y otro por HRS para la misma unidad.",
+          color: "indigo",
+        },
+        {
+          icon: "Gauge",
+          title: "Qué es un plan",
+          desc: "Cada plan define un intervalo y un umbral. Ejemplo: intervalo 10,000 km, umbral 500 km. Cuando la unidad entra dentro de esos 500 km, el sistema la marca como próxima.",
+          color: "blue",
+        },
+        {
+          icon: "Clock",
+          title: "Qué es la base del cálculo",
+          desc: "El sistema usa la última lectura registrada al hacer mantenimiento como punto de partida. Si no registras un servicio, el estado quedará como Sin config aunque ya exista un plan.",
+          color: "amber",
+        },
+        {
+          icon: "CheckCircle2",
+          title: "Qué se actualiza solo",
+          desc: "La lectura actual se toma del odómetro/horómetro operativo de la unidad. Con cada nueva carga registrada, el sistema puede recalcular cuánto falta para el siguiente servicio.",
+          color: "emerald",
+        },
+      ],
+    },
+    {
+      type: "security-steps",
+      items: [
+        {
+          num: 1,
+          title: "Configura el plan",
+          desc: "Define el intervalo y el umbral de alerta para KM o HRS. Si la unidad necesita ambos controles, guarda ambos planes por separado.",
+        },
+        {
+          num: 2,
+          title: "Registra un mantenimiento real",
+          desc: "Captura fecha y lectura del servicio. Ese registro se convierte en la base para calcular el siguiente mantenimiento.",
+        },
+        {
+          num: 3,
+          title: "Revisa el badge en catálogo",
+          desc: "Cada unidad muestra si está OK, Próxima, Vencida o Sin config. Esto sirve para identificar el estado general sin abrir el detalle.",
+        },
+        {
+          num: 4,
+          title: "Monitorea el dashboard",
+          desc: "En Overview solo aparecen las alertas accionables: Próximo y Vencido. Ahí puedes entrar directo a la unidad para corregirlo.",
+        },
+      ],
+    },
+    {
+      type: "compare",
+      title: "Cómo interpretar estados",
+      before: "Sin un historial de servicio, el mantenimiento se seguía de memoria o en papel. Era fácil olvidar la última lectura real y no había alerta centralizada.",
+      after: "Ahora cada servicio queda guardado con fecha y lectura. El sistema calcula cuánto falta para el siguiente y lo muestra en catálogo, detalle de unidad y dashboard.",
+    },
+    {
+      type: "features",
+      items: [
+        {
+          icon: "AlertCircle",
+          title: "Sin config",
+          desc: "Falta plan, falta registrar el último servicio o la lectura actual es inconsistente. No significa que la unidad esté bien: significa que el sistema aún no tiene base suficiente.",
+          color: "slate",
+        },
+        {
+          icon: "Sparkles",
+          title: "OK",
+          desc: "La unidad todavía está lejos del umbral. El sistema ya conoce su base y el mantenimiento sigue dentro del rango normal.",
+          color: "emerald",
+        },
+        {
+          icon: "Eye",
+          title: "Próximo",
+          desc: "La unidad ya entró al umbral configurado. Es aviso preventivo: todavía no está vencida, pero ya necesita seguimiento.",
+          color: "amber",
+        },
+        {
+          icon: "ShieldCheck",
+          title: "Vencido",
+          desc: "La lectura actual ya superó el punto del próximo servicio. La unidad debe revisarse y registrarse mantenimiento cuanto antes.",
+          color: "red",
+        },
+      ],
+    },
+    {
+      type: "callout",
+      variant: "info",
+      text: "Solo admin y gerente pueden editar planes o registrar mantenimientos. Todos los demás usuarios pueden ver el estado, pero no modificarlo.",
+    },
+    {
+      type: "callout",
+      variant: "warning",
+      text: "Si cambian el odómetro/horómetro o capturan una lectura menor que la del último servicio, el sistema marcará inconsistencia. En ese caso, registra un nuevo mantenimiento/base correcta antes de confiar en la alerta.",
+    },
+    {
+      type: "stats",
+      items: [
+        { value: "2", label: "planes por unidad", sub: "KM + HRS" },
+        { value: "4", label: "estados visibles", sub: "OK / Próximo / Vencido / Sin config" },
+        { value: "3", label: "superficies", sub: "Catálogo / Detalle / Dashboard" },
+      ],
+    },
+  ],
+});
+
+const GUIA_F6_NOVEDAD: Novedad = {
+  id: -1000,
+  titulo: "Guía de uso — Mantenimiento preventivo por unidad",
+  contenido: GUIA_F6_CONTENIDO,
+  tipo: "maintenance",
+  moduloId: null,
+  leido: false,
+  createdAt: new Date("2026-07-23T12:00:00"),
+  modulo: null,
+};
+
 // ─── Tipo config ──────────────────────────────────────────────────────────────
 const TIPO_CFG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; accent: string }> = {
   update:      { label: "Actualización", icon: TrendingUp,   color: "text-blue-400",    bg: "bg-blue-500/10",    accent: "#60a5fa" },
@@ -336,6 +460,7 @@ export default function NovedadesPBClient({
   const [form, setForm] = useState({ titulo: "", contenido: "", tipo: "update", moduloId: "" });
   const [error, setError] = useState("");
   const [isPending, startTx] = useTransition();
+  const novedadesConGuia = [GUIA_F6_NOVEDAD, ...novedades];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -468,7 +593,7 @@ export default function NovedadesPBClient({
       )}
 
       {/* Lista */}
-      {novedades.length === 0 ? (
+      {novedadesConGuia.length === 0 ? (
         <div
           className="rounded-2xl border py-16 text-center"
           style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
@@ -478,7 +603,7 @@ export default function NovedadesPBClient({
         </div>
       ) : (
         <div className="space-y-4">
-          {novedades.map((n) => <NovedadCard key={n.id} n={n} />)}
+          {novedadesConGuia.map((n) => <NovedadCard key={n.id} n={n} />)}
         </div>
       )}
     </div>

@@ -23,6 +23,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import { createUnidad, updateUnidad, toggleUnidadActivo, deleteUnidad } from "@/app/actions/catalogo";
+import type { ResumenMantenimientoUnidad } from "@/app/actions/mantenimiento";
 
 type UltimoPeriodo = {
   nombre: string;
@@ -45,6 +46,8 @@ type Unidad = {
   totalCargas: number;
   ultimaFecha: string | null;
   ultimoPeriodo: UltimoPeriodo | null;
+  mantenimientoResumen: ResumenMantenimientoUnidad | null;
+  mantenimientoEstadoGlobal: "sin_config" | "ok" | "proximo" | "vencido";
 };
 
 const TIPO_LABELS: Record<string, string> = {
@@ -59,6 +62,25 @@ type SortCol = "codigo" | "tipo" | "totalLitros" | "totalCargas" | "ultimoRendim
 function fmtNum(n: number | null | undefined, d = 0) {
   if (n === null || n === undefined) return "—";
   return n.toLocaleString("es-MX", { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+function mantenimientoVariant(estado: Unidad["mantenimientoEstadoGlobal"]) {
+  if (estado === "ok") return "success" as const;
+  if (estado === "proximo") return "warning" as const;
+  if (estado === "vencido") return "danger" as const;
+  return "secondary" as const;
+}
+
+function mantenimientoLabel(summary: ResumenMantenimientoUnidad | null) {
+  if (!summary) return "Sin config";
+  const activos = summary.planes.filter((p) => p.activo && p.estado !== "sin_config");
+  if (activos.length === 0) return "Sin config";
+  const vencidos = activos.filter((p) => p.estado === "vencido").map((p) => p.tipoControl.toUpperCase());
+  if (vencidos.length > 0) return `Vencido ${vencidos.join("+")}`;
+  const proximos = activos.filter((p) => p.estado === "proximo").map((p) => p.tipoControl.toUpperCase());
+  if (proximos.length > 0) return `Próximo ${proximos.join("+")}`;
+  const ok = activos.filter((p) => p.estado === "ok").map((p) => p.tipoControl.toUpperCase());
+  return ok.length > 0 ? `OK ${ok.join("+")}` : "Sin config";
 }
 
 // ── Mini-dashboard ─────────────────────────────────────────────
@@ -493,6 +515,7 @@ export default function UnidadesTable({
               <TableHead className="hidden lg:table-cell text-right">
                 <SortBtn col="ultimaDiferencia" label="Δ Ref" align="right" />
               </TableHead>
+              <TableHead className="hidden md:table-cell text-center">Mantenimiento</TableHead>
               <TableHead className="text-center">Estado</TableHead>
               <TableHead />
             </TableRow>
@@ -500,7 +523,7 @@ export default function UnidadesTable({
           <TableBody>
             {unidadesFiltradas.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-10" style={{ color: "var(--fg-muted)" }}>
+                <TableCell colSpan={10} className="text-center py-10" style={{ color: "var(--fg-muted)" }}>
                   {busqueda || hasActiveFilters
                     ? "Sin resultados para esa búsqueda."
                     : "Sin unidades. Agrega la primera o usa \"Seed WB\" en Configuración."}
@@ -586,6 +609,13 @@ export default function UnidadesTable({
                     })() : (
                       <span className="text-sm" style={{ color: "var(--fg-muted)" }}>—</span>
                     )}
+                  </TableCell>
+
+                  {/* Mantenimiento */}
+                  <TableCell className="hidden md:table-cell text-center">
+                    <Badge variant={mantenimientoVariant(u.mantenimientoEstadoGlobal)}>
+                      {mantenimientoLabel(u.mantenimientoResumen)}
+                    </Badge>
                   </TableCell>
 
                   {/* Estado */}

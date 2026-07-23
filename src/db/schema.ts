@@ -61,6 +61,41 @@ export const unidades = pgTable("unidades", {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// MANTENIMIENTOS — planes preventivos por unidad (km / hrs)
+// ─────────────────────────────────────────────────────────────────────────────
+export const mantenimientosPlanes = pgTable("mantenimientos_planes", {
+  id: serial("id").primaryKey(),
+  unidadId: integer("unidad_id").notNull(),
+  tipoControl: varchar("tipo_control", { length: 10 }).notNull(),
+  // km | hrs
+  intervalo: real("intervalo").notNull(),
+  umbralAlerta: real("umbral_alerta").notNull(),
+  activo: boolean("activo").notNull().default(true),
+  notas: text("notas"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("mantenimientos_planes_unidad_tipo_unique").on(table.unidadId, table.tipoControl),
+]);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MANTENIMIENTOS EVENTOS — historial de servicios realizados
+// ─────────────────────────────────────────────────────────────────────────────
+export const mantenimientosEventos = pgTable("mantenimientos_eventos", {
+  id: serial("id").primaryKey(),
+  unidadId: integer("unidad_id").notNull(),
+  planId: integer("plan_id"),
+  tipoControl: varchar("tipo_control", { length: 10 }).notNull(),
+  // km | hrs
+  fechaServicio: date("fecha_servicio").notNull(),
+  lecturaServicio: real("lectura_servicio").notNull(),
+  descripcion: text("descripcion"),
+  notas: text("notas"),
+  registradoPorId: text("registrado_por_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // OBRAS — proyectos activos
 // ─────────────────────────────────────────────────────────────────────────────
 export const obras = pgTable("obras", {
@@ -386,6 +421,27 @@ export const unidadesRelations = relations(unidades, ({ one, many }) => ({
   }),
   cargas: many(cargas),
   rendimientos: many(rendimientos),
+  mantenimientosPlanes: many(mantenimientosPlanes),
+  mantenimientosEventos: many(mantenimientosEventos),
+}));
+
+export const mantenimientosPlanesRelations = relations(mantenimientosPlanes, ({ one, many }) => ({
+  unidad: one(unidades, {
+    fields: [mantenimientosPlanes.unidadId],
+    references: [unidades.id],
+  }),
+  eventos: many(mantenimientosEventos),
+}));
+
+export const mantenimientosEventosRelations = relations(mantenimientosEventos, ({ one }) => ({
+  unidad: one(unidades, {
+    fields: [mantenimientosEventos.unidadId],
+    references: [unidades.id],
+  }),
+  plan: one(mantenimientosPlanes, {
+    fields: [mantenimientosEventos.planId],
+    references: [mantenimientosPlanes.id],
+  }),
 }));
 
 export const operadoresRelations = relations(operadores, ({ many }) => ({

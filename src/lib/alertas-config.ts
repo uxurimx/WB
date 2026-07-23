@@ -39,3 +39,14 @@ export type AnomaliaActiva = {
   totalLitros:   number;
   numCargas:     number;
 };
+
+export type AlertaMantenimiento = {
+  unidadId: number;
+  unidadCodigo: string;
+  tipoControl: "km" | "hrs";
+  estado: "proximo" | "vencido";
+  lecturaActual: number;
+  lecturaServicio: number;
+  proximoServicioEn: number;
+  faltante: number;
+};

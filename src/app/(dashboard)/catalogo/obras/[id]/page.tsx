@@ -83,9 +83,12 @@ export default async function ObraDetallePage({
         rends={null}
         fotos={null}
         audits={null}
+        mantenimientoResumen={null}
+        mantenimientoEventos={[]}
         operadores={operadoresList.map((o) => ({ id: o.id, nombre: o.nombre }))}
         obras={obrasList.map((o) => ({ id: o.id, nombre: o.nombre }))}
         canEdit={canEdit}
+        canManageMaintenance={false}
       />
     </div>
   );

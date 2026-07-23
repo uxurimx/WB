@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { unidades, operadores, obras, cargas, rendimientos, periodos } from "@/db/schema";
 import { eq, count, inArray, and, sql } from "drizzle-orm";
 import { requireManageRole } from "@/lib/authz";
+import { getResumenMantenimientoUnidades } from "@/app/actions/mantenimiento";
 
 // ─────────────────────────────────────────────────────────────
 // UNIDADES
@@ -24,7 +25,7 @@ export async function getUnidadesConStats() {
   if (all.length === 0) return [];
   const ids = all.map((u) => u.id);
 
-  const [cargasStats, rendStats] = await Promise.all([
+  const [cargasStats, rendStats, mantenimientoStats] = await Promise.all([
     db
       .select({
         unidadId:   cargas.unidadId,
@@ -49,6 +50,7 @@ export async function getUnidadesConStats() {
       .from(rendimientos)
       .innerJoin(periodos, eq(rendimientos.periodoId, periodos.id))
       .where(and(inArray(rendimientos.unidadId, ids), eq(periodos.cerrado, true))),
+    getResumenMantenimientoUnidades(ids),
   ]);
 
   // Último período por unidad (mayor fechaFin)
@@ -61,10 +63,12 @@ export async function getUnidadesConStats() {
   }
 
   const cargasMap = new Map(cargasStats.map((s) => [s.unidadId, s]));
+  const mantenimientoMap = new Map(mantenimientoStats.map((s) => [s.unidadId, s]));
 
   return all.map((u) => {
     const cs   = cargasMap.get(u.id);
     const rend = rendMap.get(u.id);
+    const mantenimiento = mantenimientoMap.get(u.id) ?? null;
     return {
       ...u,
       totalLitros: cs?.totalLitros ?? 0,
@@ -79,6 +83,8 @@ export async function getUnidadesConStats() {
             dentroDeTolerancia:   rend.dentroDeTolerancia,
           }
         : null,
+      mantenimientoResumen: mantenimiento,
+      mantenimientoEstadoGlobal: mantenimiento?.estadoGlobal ?? "sin_config",
     };
   });
 }

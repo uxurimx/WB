@@ -5,11 +5,13 @@ import { tanques, cargas, periodos, configuracion, pbTickets, recargasTanque, tr
 import { eq, desc, and, gte } from "drizzle-orm";
 import {
   type AlertaRendimiento,
+  type AlertaMantenimiento,
   type AnomaliaActiva,
   ALERTA_RENDIMIENTO_DIAS_DEFAULT,
 } from "@/lib/alertas-config";
 import { conciliarTanques } from "@/lib/conciliacion";
 import { getLocalDateString, subtractDaysLocal } from "@/lib/date-utils";
+import { getAlertasMantenimientoOverview } from "@/app/actions/mantenimiento";
 
 // Umbral: más de este número de cargas en el mismo día para la misma unidad = anomalía
 const UMBRAL_CARGAS_DIA = 2;
@@ -21,7 +23,7 @@ export async function getOverviewStats() {
 
   const hace7dias = subtractDaysLocal(new Date(), 7);
 
-  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion, ticketsResueltos, recientesRecargasData, recientesTransfData] =
+  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion, ticketsResueltos, recientesRecargasData, recientesTransfData, alertasMantenimiento] =
     await Promise.all([
       db.select().from(tanques),
       db.select({ litros: cargas.litros }).from(cargas).where(eq(cargas.fecha, hoy)),
@@ -66,6 +68,7 @@ export async function getOverviewStats() {
         tanqueDestinoId: transferenciasTanque.tanqueDestinoId,
         createdAt: transferenciasTanque.createdAt,
       }).from(transferenciasTanque).orderBy(desc(transferenciasTanque.createdAt)).limit(6),
+      getAlertasMantenimientoOverview(),
     ]);
 
   const taller   = tanquesData.find((t) => t.nombre === "Taller");
@@ -78,6 +81,7 @@ export async function getOverviewStats() {
 
   // ── Alertas de rendimiento del último período cerrado ─────────────────────
   let alertasRendimiento: AlertaRendimiento[] = [];
+  const alertasMantenimientoData: AlertaMantenimiento[] = alertasMantenimiento;
   let rendimientoExpirado = false;
 
   if (ultimoPeriodoCerrado) {
@@ -225,6 +229,7 @@ export async function getOverviewStats() {
       operador: c.operador ? { nombre: c.operador.nombre } : null,
     })),
     alertasRendimiento,
+    alertasMantenimiento: alertasMantenimientoData,
     anomaliasActivas,
     conciliacion,
     alertaDias,

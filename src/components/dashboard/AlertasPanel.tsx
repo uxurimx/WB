@@ -7,7 +7,7 @@ import {
 import Link from "next/link";
 import {
   UMBRAL_TALLER, UMBRAL_NISSAN,
-  type AlertaRendimiento, type AnomaliaActiva, type ConciliacionTanque,
+  type AlertaMantenimiento, type AlertaRendimiento, type AnomaliaActiva, type ConciliacionTanque,
 } from "@/lib/alertas-config";
 
 type StockInfo = { id: number; litros: number; max: number };
@@ -17,6 +17,7 @@ interface AlertasPanelProps {
   taller: StockInfo;
   nissan: StockInfo;
   alertasRendimiento: AlertaRendimiento[];
+  alertasMantenimiento: AlertaMantenimiento[];
   anomaliasActivas: AnomaliaActiva[];
   conciliacion: ConciliacionTanque[];
   ultimoPeriodoCerrado: { id: number; nombre: string } | null;
@@ -30,6 +31,7 @@ export default function AlertasPanel({
   taller,
   nissan,
   alertasRendimiento,
+  alertasMantenimiento,
   anomaliasActivas,
   conciliacion,
   ultimoPeriodoCerrado,
@@ -42,6 +44,7 @@ export default function AlertasPanel({
   const [dismissedStock, setDismissedStock]   = useState<Set<string>>(new Set());
   const [dismissedAnomalias, setDismissedAnomalias] = useState<Set<number>>(new Set());
   const [dismissedConciliacion, setDismissedConciliacion] = useState<Set<number>>(new Set());
+  const [dismissedMantenimiento, setDismissedMantenimiento] = useState<Set<string>>(new Set());
   const [dismissedTickets, setDismissedTickets] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -69,8 +72,9 @@ export default function AlertasPanel({
   const visibleStockAlertas  = stockAlertas.filter((a) => !dismissedStock.has(a.label));
   const visibleAnomalias     = anomaliasActivas.filter((_, i) => !dismissedAnomalias.has(i));
   const visibleDivergencias  = conciliacion.filter((c) => !c.ok && !dismissedConciliacion.has(c.tanqueId));
+  const visibleMantenimientos = alertasMantenimiento.filter((a) => !dismissedMantenimiento.has(`${a.unidadId}:${a.tipoControl}:${a.estado}`));
   const visibleTickets       = ticketsResueltos.filter((t) => !dismissedTickets.has(t.id));
-  const totalVisible = visibleStockAlertas.length + visibleAnomalias.length + visibleDivergencias.length + (showRend ? 1 : 0);
+  const totalVisible = visibleStockAlertas.length + visibleAnomalias.length + visibleDivergencias.length + visibleMantenimientos.length + visibleTickets.length + (showRend ? 1 : 0);
 
   return (
     <section className="mb-6">
@@ -188,6 +192,51 @@ export default function AlertasPanel({
               </button>
             </div>
           ))}
+
+          {/* ── Mantenimiento preventivo ───────────────────── */}
+          {visibleMantenimientos.map((a) => {
+            const key = `${a.unidadId}:${a.tipoControl}:${a.estado}`;
+            const vencido = a.estado === "vencido";
+            const mensaje = vencido
+              ? `excedido por ${Math.abs(a.faltante).toLocaleString()} ${a.tipoControl}`
+              : `faltan ${a.faltante.toLocaleString()} ${a.tipoControl}`;
+            return (
+              <div
+                key={key}
+                className="flex items-center gap-3 px-4 py-3 rounded-2xl border"
+                style={{
+                  backgroundColor: vencido ? "rgb(239 68 68 / 0.06)" : "rgb(245 158 11 / 0.06)",
+                  borderColor: vencido ? "rgb(239 68 68 / 0.25)" : "rgb(245 158 11 / 0.25)",
+                }}
+              >
+                <div className={`p-1.5 rounded-lg shrink-0 ${vencido ? "bg-red-500/10 border border-red-500/20" : "bg-amber-500/10 border border-amber-500/20"}`}>
+                  <Gauge className={`w-3.5 h-3.5 ${vencido ? "text-red-500" : "text-amber-500"}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold ${vencido ? "text-red-600" : "text-amber-600"}`}>
+                    {a.unidadCodigo} — mantenimiento {a.tipoControl.toUpperCase()} {vencido ? "vencido" : "próximo"}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
+                    {mensaje} · actual {a.lecturaActual.toLocaleString()} · objetivo {a.proximoServicioEn.toLocaleString()}
+                  </p>
+                </div>
+                <Link
+                  href={`/catalogo/unidades/${a.unidadId}`}
+                  className={`text-xs font-semibold shrink-0 underline underline-offset-2 ${vencido ? "text-red-500" : "text-amber-500"}`}
+                >
+                  Ver unidad
+                </Link>
+                <button
+                  onClick={() => setDismissedMantenimiento((prev) => new Set([...prev, key]))}
+                  className="p-1 rounded-lg hover:bg-black/10 transition-colors shrink-0"
+                  style={{ color: "var(--fg-muted)" }}
+                  aria-label="Cerrar alerta"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
 
           {/* ── Anomalías del período activo ────────────────── */}
           {visibleAnomalias.map((a, visIdx) => {
