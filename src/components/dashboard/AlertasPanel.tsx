@@ -40,7 +40,6 @@ export default function AlertasPanel({
 }: AlertasPanelProps) {
   const [dismissedId, setDismissedId]         = useState<number | null>(null);
   const [rendExpanded, setRendExpanded]       = useState(false);
-  const [mounted, setMounted]                 = useState(false);
   const [dismissedStock, setDismissedStock]   = useState<Set<string>>(new Set());
   const [dismissedAnomalias, setDismissedAnomalias] = useState<Set<number>>(new Set());
   const [dismissedConciliacion, setDismissedConciliacion] = useState<Set<number>>(new Set());
@@ -48,9 +47,8 @@ export default function AlertasPanel({
   const [dismissedTickets, setDismissedTickets] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    setMounted(true);
     const raw = localStorage.getItem(LS_KEY);
-    if (raw) setDismissedId(parseInt(raw, 10));
+    if (raw) queueMicrotask(() => setDismissedId(parseInt(raw, 10)));
   }, []);
 
   function dismissRend() {
@@ -66,7 +64,7 @@ export default function AlertasPanel({
   if (nissan.litros < UMBRAL_NISSAN)
     stockAlertas.push({ label: "Tanque NISSAN", litros: nissan.litros, umbral: UMBRAL_NISSAN, max: nissan.max });
 
-  const rendDismissed = mounted && dismissedId === ultimoPeriodoCerrado?.id;
+  const rendDismissed = dismissedId === ultimoPeriodoCerrado?.id;
   const showRend      = alertasRendimiento.length > 0 && !rendDismissed;
 
   const visibleStockAlertas  = stockAlertas.filter((a) => !dismissedStock.has(a.label));
@@ -197,6 +195,12 @@ export default function AlertasPanel({
           {visibleMantenimientos.map((a) => {
             const key = `${a.unidadId}:${a.tipoControl}:${a.estado}`;
             const vencido = a.estado === "vencido";
+            const nivelTexto =
+              a.nivelAlerta === "inminente"
+                ? "inminente"
+                : a.nivelAlerta === "cercano"
+                  ? "cercano"
+                  : "próximo";
             const mensaje = vencido
               ? `excedido por ${Math.abs(a.faltante).toLocaleString()} ${a.tipoControl}`
               : `faltan ${a.faltante.toLocaleString()} ${a.tipoControl}`;
@@ -214,7 +218,7 @@ export default function AlertasPanel({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-semibold ${vencido ? "text-red-600" : "text-amber-600"}`}>
-                    {a.unidadCodigo} — mantenimiento {a.tipoControl.toUpperCase()} {vencido ? "vencido" : "próximo"}
+                    {a.unidadCodigo} — mantenimiento {a.tipoControl.toUpperCase()} {vencido ? "vencido" : nivelTexto}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
                     {mensaje} · actual {a.lecturaActual.toLocaleString()} · objetivo {a.proximoServicioEn.toLocaleString()}
@@ -239,7 +243,7 @@ export default function AlertasPanel({
           })}
 
           {/* ── Anomalías del período activo ────────────────── */}
-          {visibleAnomalias.map((a, visIdx) => {
+          {visibleAnomalias.map((a) => {
             const origIdx = anomaliasActivas.indexOf(a);
             return (
               <div

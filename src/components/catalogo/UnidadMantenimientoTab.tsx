@@ -238,6 +238,16 @@ export default function UnidadMantenimientoTab({
                   <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
                     Configuración y estado del mantenimiento por {tipo.toUpperCase()}.
                   </p>
+                  {plan?.origen === "global" && (
+                    <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
+                      Usando la regla general de Configuración.
+                    </p>
+                  )}
+                  {plan?.origen === "manual" && (
+                    <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
+                      Esta unidad tiene un ajuste manual propio.
+                    </p>
+                  )}
                 </div>
                 <Badge variant={statusVariant(plan?.estado ?? "sin_config")}>
                   {statusLabel(plan?.estado ?? "sin_config")}

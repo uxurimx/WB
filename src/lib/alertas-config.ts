@@ -45,6 +45,7 @@ export type AlertaMantenimiento = {
   unidadCodigo: string;
   tipoControl: "km" | "hrs";
   estado: "proximo" | "vencido";
+  nivelAlerta: "proximo" | "cercano" | "inminente" | "vencido";
   lecturaActual: number;
   lecturaServicio: number;
   proximoServicioEn: number;

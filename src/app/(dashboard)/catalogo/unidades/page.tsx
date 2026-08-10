@@ -7,12 +7,14 @@ import UnidadesTable from "@/components/catalogo/UnidadesTable";
 import { Truck } from "lucide-react";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
+const MAINTENANCE_ROLES = ["admin", "gerente"];
 
 export default async function UnidadesPage() {
   await requirePermission("catalogo");
 
   const [unidades, clerkUser] = await Promise.all([getUnidadesConStats(), currentUser()]);
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
+  const canManageMaintenance = MAINTENANCE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
   return (
     <div className="p-6 md:p-8 max-w-[1536px]">
@@ -32,7 +34,7 @@ export default async function UnidadesPage() {
           Camiones, maquinaria y vehículos del sistema. {unidades.filter(u => u.activo).length} activos de {unidades.length} totales.
         </p>
       </div>
-      <UnidadesTable unidades={unidades} canEdit={canEdit} />
+      <UnidadesTable unidades={unidades} canEdit={canEdit} canManageMaintenance={canManageMaintenance} />
     </div>
   );
 }

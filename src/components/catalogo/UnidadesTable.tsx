@@ -4,7 +4,7 @@ import { useState, useTransition, useMemo } from "react";
 import {
   Plus, Power, PowerOff, Pencil, Trash2, X, Search, SlidersHorizontal,
   TrendingUp, TrendingDown, Minus, Fuel, Gauge, AlertTriangle, ArrowUpDown,
-  ChevronUp, ChevronDown,
+  ChevronUp, ChevronDown, Wrench,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import { createUnidad, updateUnidad, toggleUnidadActivo, deleteUnidad } from "@/app/actions/catalogo";
-import type { ResumenMantenimientoUnidad } from "@/app/actions/mantenimiento";
+import { registrarMantenimientoUnidad, type ResumenMantenimientoUnidad, type TipoControlMantenimiento } from "@/app/actions/mantenimiento";
 
 type UltimoPeriodo = {
   nombre: string;
@@ -59,6 +59,36 @@ const TIPO_VARIANT: Record<string, "default" | "success" | "warning" | "secondar
 
 type SortCol = "codigo" | "tipo" | "totalLitros" | "totalCargas" | "ultimoRendimiento" | "ultimaDiferencia";
 
+function SortBtn({
+  col,
+  label,
+  align = "left",
+  active,
+  direction,
+  onToggle,
+}: {
+  col: SortCol;
+  label: string;
+  align?: "left" | "right";
+  active: boolean;
+  direction: "asc" | "desc";
+  onToggle: (col: SortCol) => void;
+}) {
+  const Icon = active ? (direction === "asc" ? ChevronUp : ChevronDown) : ArrowUpDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(col)}
+      className={`flex items-center gap-1 group font-semibold text-xs uppercase tracking-wider w-full ${align === "right" ? "justify-end" : ""}`}
+      style={{ color: active ? "var(--fg)" : "var(--fg-muted)" }}
+    >
+      {align === "right" && <Icon className={`w-3 h-3 ${active ? "text-indigo-400" : "opacity-30 group-hover:opacity-60"}`} />}
+      {label}
+      {align !== "right" && <Icon className={`w-3 h-3 ${active ? "text-indigo-400" : "opacity-30 group-hover:opacity-60"}`} />}
+    </button>
+  );
+}
+
 function fmtNum(n: number | null | undefined, d = 0) {
   if (n === null || n === undefined) return "—";
   return n.toLocaleString("es-MX", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -84,7 +114,15 @@ function mantenimientoLabel(summary: ResumenMantenimientoUnidad | null) {
 }
 
 // ── Mini-dashboard ─────────────────────────────────────────────
-function UnidadesDashboard({ unidades }: { unidades: Unidad[] }) {
+function UnidadesDashboard({
+  unidades,
+  maintenanceFilterActive,
+  onToggleMaintenanceFilter,
+}: {
+  unidades: Unidad[];
+  maintenanceFilterActive: boolean;
+  onToggleMaintenanceFilter: () => void;
+}) {
   const activas    = unidades.filter((u) => u.activo);
   const totalLitros = unidades.reduce((s, u) => s + u.totalLitros, 0);
 
@@ -115,7 +153,11 @@ function UnidadesDashboard({ unidades }: { unidades: Unidad[] }) {
     if (score < peorPct)  { peorPct  = score; peor  = u; }
   }
 
-  const masCombustible = [...unidades].sort((a, b) => b.totalLitros - a.totalLitros)[0];
+  const requierenServicio = unidades.filter((u) =>
+    u.mantenimientoResumen?.planes.some(
+      (p) => p.activo && (p.nivelAlerta === "inminente" || p.estado === "vencido"),
+    ) ?? false,
+  );
 
   const cards = [
     {
@@ -166,22 +208,53 @@ function UnidadesDashboard({ unidades }: { unidades: Unidad[] }) {
   };
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-      {cards.map(({ label, value, sub, color, icon: Icon }) => (
-        <div
-          key={label}
-          className={`p-4 rounded-2xl border ${bgMap[color]}`}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <Icon className={`w-3.5 h-3.5 ${colorMap[color]}`} />
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
-              {label}
+    <div className="space-y-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {cards.map(({ label, value, sub, color, icon: Icon }) => (
+          <div
+            key={label}
+            className={`p-4 rounded-2xl border ${bgMap[color]}`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Icon className={`w-3.5 h-3.5 ${colorMap[color]}`} />
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
+                {label}
+              </p>
+            </div>
+            <p className={`font-outfit font-bold text-2xl ${colorMap[color]}`}>{value}</p>
+            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: "var(--fg-muted)" }}>{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={onToggleMaintenanceFilter}
+        className="w-full text-left rounded-2xl border px-4 py-4 transition-colors"
+        style={{
+          backgroundColor: "rgb(239 68 68 / 0.06)",
+          borderColor: maintenanceFilterActive ? "rgb(239 68 68 / 0.55)" : "rgb(239 68 68 / 0.25)",
+          boxShadow: maintenanceFilterActive ? "inset 4px 0 0 rgb(239 68 68)" : "inset 4px 0 0 rgb(239 68 68 / 0.85)",
+        }}
+      >
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 p-1.5 rounded-lg border border-red-500/20 bg-red-500/10 shrink-0">
+            <AlertTriangle className="w-4 h-4 text-red-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-outfit font-bold text-xl text-red-500">
+              {requierenServicio.length} unidades requieren servicio
+            </p>
+            <p className="text-xs mt-1 leading-snug" style={{ color: "var(--fg-muted)" }}>
+              Incluye unidades en estado inminente y vencido
+              {maintenanceFilterActive ? " · toca para quitar filtro" : " · toca para filtrar"}
             </p>
           </div>
-          <p className={`font-outfit font-bold text-2xl ${colorMap[color]}`}>{value}</p>
-          <p className="text-[11px] mt-0.5 leading-snug" style={{ color: "var(--fg-muted)" }}>{sub}</p>
+          <div className="font-outfit font-bold text-3xl leading-none text-red-500 shrink-0">
+            {requierenServicio.length}
+          </div>
         </div>
-      ))}
+      </button>
     </div>
   );
 }
@@ -190,9 +263,11 @@ function UnidadesDashboard({ unidades }: { unidades: Unidad[] }) {
 export default function UnidadesTable({
   unidades,
   canEdit = false,
+  canManageMaintenance = false,
 }: {
   unidades: Unidad[];
   canEdit?: boolean;
+  canManageMaintenance?: boolean;
 }) {
   const router = useRouter();
   const [showForm, setShowForm]       = useState(false);
@@ -209,16 +284,36 @@ export default function UnidadesTable({
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState("");
+  const [showServicioForm, setShowServicioForm] = useState(false);
+  const [servicioError, setServicioError] = useState("");
+  const [servicioForm, setServicioForm] = useState({
+    unidadId: "",
+    fechaServicio: new Date().toISOString().slice(0, 10),
+    lecturaServicio: "",
+    descripcion: "",
+    notas: "",
+  });
 
   const [busqueda,     setBusqueda]     = useState("");
   const [tipoFiltro,   setTipoFiltro]   = useState<string>("todos");
   const [estadoFiltro, setEstadoFiltro] = useState<"todos" | "activo" | "inactivo">("todos");
   const [rendFiltro,   setRendFiltro]   = useState<"todos" | "ok" | "fuera" | "sin">("todos");
+  const [servicioFiltro, setServicioFiltro] = useState<"todos" | "requieren_servicio">("todos");
   const [sortCol,      setSortCol]      = useState<SortCol>("codigo");
   const [sortDir,      setSortDir]      = useState<"asc" | "desc">("asc");
   const [showFilters,  setShowFilters]  = useState(false);
 
-  const hasActiveFilters = tipoFiltro !== "todos" || estadoFiltro !== "todos" || rendFiltro !== "todos";
+  const hasActiveFilters =
+    tipoFiltro !== "todos" ||
+    estadoFiltro !== "todos" ||
+    rendFiltro !== "todos" ||
+    servicioFiltro !== "todos";
+
+  const servicioUnidad = useMemo(
+    () => unidades.find((u) => String(u.id) === servicioForm.unidadId) ?? null,
+    [unidades, servicioForm.unidadId],
+  );
+  const servicioTipoControl: TipoControlMantenimiento = servicioUnidad?.tipo === "maquina" ? "hrs" : "km";
 
   function toggleSort(col: SortCol) {
     if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -234,6 +329,13 @@ export default function UnidadesTable({
         if (rendFiltro === "ok")    { if (u.ultimoPeriodo?.dentroDeTolerancia !== true)  return false; }
         if (rendFiltro === "fuera") { if (u.ultimoPeriodo?.dentroDeTolerancia !== false) return false; }
         if (rendFiltro === "sin")   { if (u.ultimoPeriodo !== null) return false; }
+        if (servicioFiltro === "requieren_servicio") {
+          const requiereServicio =
+            u.mantenimientoResumen?.planes.some(
+              (p) => p.activo && (p.nivelAlerta === "inminente" || p.estado === "vencido"),
+            ) ?? false;
+          if (!requiereServicio) return false;
+        }
         if (busqueda) {
           const q = busqueda.toLowerCase();
           return u.codigo.toLowerCase().includes(q) ||
@@ -254,7 +356,7 @@ export default function UnidadesTable({
           default: return 0;
         }
       });
-  }, [unidades, busqueda, tipoFiltro, estadoFiltro, rendFiltro, sortCol, sortDir]);
+  }, [unidades, busqueda, tipoFiltro, estadoFiltro, rendFiltro, servicioFiltro, sortCol, sortDir]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -326,24 +428,58 @@ export default function UnidadesTable({
     });
   }
 
-  function SortBtn({ col, label, align = "left" }: { col: SortCol; label: string; align?: "left" | "right" }) {
-    const active = sortCol === col;
-    const Icon = active ? (sortDir === "asc" ? ChevronUp : ChevronDown) : ArrowUpDown;
-    return (
-      <button type="button" onClick={() => toggleSort(col)}
-        className={`flex items-center gap-1 group font-semibold text-xs uppercase tracking-wider w-full ${align === "right" ? "justify-end" : ""}`}
-        style={{ color: active ? "var(--fg)" : "var(--fg-muted)" }}>
-        {align === "right" && <Icon className={`w-3 h-3 ${active ? "text-indigo-400" : "opacity-30 group-hover:opacity-60"}`} />}
-        {label}
-        {align !== "right" && <Icon className={`w-3 h-3 ${active ? "text-indigo-400" : "opacity-30 group-hover:opacity-60"}`} />}
-      </button>
-    );
+  function resetServicioForm() {
+    setServicioForm({
+      unidadId: "",
+      fechaServicio: new Date().toISOString().slice(0, 10),
+      lecturaServicio: "",
+      descripcion: "",
+      notas: "",
+    });
+    setServicioError("");
+  }
+
+  function submitServicio() {
+    setServicioError("");
+    if (!servicioForm.unidadId) {
+      setServicioError("Selecciona una unidad.");
+      return;
+    }
+    const lecturaServicio = parseFloat(servicioForm.lecturaServicio);
+    if (Number.isNaN(lecturaServicio) || lecturaServicio < 0) {
+      setServicioError("La lectura KM/HRS debe ser válida.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await registrarMantenimientoUnidad({
+          unidadId: parseInt(servicioForm.unidadId, 10),
+          tipoControl: servicioTipoControl,
+          fechaServicio: servicioForm.fechaServicio,
+          lecturaServicio,
+          descripcion: servicioForm.descripcion || null,
+          notas: servicioForm.notas || null,
+        });
+        resetServicioForm();
+        setShowServicioForm(false);
+        router.refresh();
+      } catch (err) {
+        setServicioError(err instanceof Error ? err.message : "Error al registrar servicio.");
+      }
+    });
   }
 
   return (
     <div className="space-y-3">
       {/* Mini-dashboard */}
-      <UnidadesDashboard unidades={unidades} />
+      <UnidadesDashboard
+        unidades={unidades}
+        maintenanceFilterActive={servicioFiltro === "requieren_servicio"}
+        onToggleMaintenanceFilter={() =>
+          setServicioFiltro((prev) => (prev === "requieren_servicio" ? "todos" : "requieren_servicio"))
+        }
+      />
 
       {/* Toolbar */}
       <div className="flex items-center gap-2">
@@ -374,14 +510,42 @@ export default function UnidadesTable({
         </button>
 
         {canEdit && (
-          <button type="button" onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold shrink-0 transition-colors"
-            style={showForm
-              ? { backgroundColor: "var(--surface-2)", color: "var(--fg)" }
-              : { backgroundColor: "rgb(79 70 229)", color: "white" }}>
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">{showForm ? "Cancelar" : "Nueva"}</span>
-          </button>
+          <>
+            {canManageMaintenance && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowServicioForm((v) => {
+                    const next = !v;
+                    if (next) setShowForm(false);
+                    else resetServicioForm();
+                    return next;
+                  });
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold shrink-0 transition-colors"
+                style={showServicioForm
+                  ? { backgroundColor: "var(--surface-2)", color: "var(--fg)" }
+                  : { backgroundColor: "rgb(220 38 38)", color: "white" }}
+              >
+                <Wrench className="w-4 h-4" />
+                <span className="hidden sm:inline">{showServicioForm ? "Cancelar" : "+ Servicio"}</span>
+              </button>
+            )}
+            <button type="button" onClick={() => {
+              setShowForm((v) => {
+                const next = !v;
+                if (next) setShowServicioForm(false);
+                return next;
+              });
+            }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold shrink-0 transition-colors"
+              style={showForm
+                ? { backgroundColor: "var(--surface-2)", color: "var(--fg)" }
+                : { backgroundColor: "rgb(79 70 229)", color: "white" }}>
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">{showForm ? "Cancelar" : "Nueva"}</span>
+            </button>
+          </>
         )}
       </div>
 
@@ -429,6 +593,138 @@ export default function UnidadesTable({
                 {label}
               </button>
             ))}
+          </div>
+          {/* Servicio */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-semibold shrink-0" style={{ color: "var(--fg-muted)" }}>Servicio</span>
+            {([
+              ["todos", "Todos"],
+              ["requieren_servicio", "Inminente / Vencido"],
+            ] as const).map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setServicioFiltro(val)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
+                  servicioFiltro === val ? "bg-red-600 text-white border-red-600" : "hover:bg-[var(--surface-2)]"
+                }`}
+                style={servicioFiltro !== val ? { borderColor: "var(--border)", color: "var(--fg-muted)" } : undefined}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showServicioForm && canManageMaintenance && (
+        <div
+          className="p-5 rounded-2xl border space-y-4"
+          style={{ backgroundColor: "var(--surface)", borderColor: "rgb(239 68 68 / 0.18)" }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl border border-red-500/20 bg-red-500/10">
+              <Wrench className="w-4 h-4 text-red-500" />
+            </div>
+            <div>
+              <p className="font-outfit font-bold text-sm" style={{ color: "var(--fg)" }}>Registrar servicio</p>
+              <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+                Guarda el último servicio directamente en el historial de la unidad seleccionada.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5 sm:col-span-1">
+              <Label htmlFor="serv-unidad">Unidad *</Label>
+              <Select
+                id="serv-unidad"
+                value={servicioForm.unidadId}
+                onChange={(e) => setServicioForm((prev) => ({ ...prev, unidadId: e.target.value }))}
+              >
+                <option value="">Selecciona una unidad</option>
+                {unidades
+                  .filter((u) => u.activo)
+                  .map((u) => (
+                    <option key={u.id} value={String(u.id)}>
+                      {u.codigo} {u.nombre ? `· ${u.nombre}` : ""}
+                    </option>
+                  ))}
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="serv-fecha">Fecha servicio</Label>
+              <Input
+                id="serv-fecha"
+                type="date"
+                value={servicioForm.fechaServicio}
+                onChange={(e) => setServicioForm((prev) => ({ ...prev, fechaServicio: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="serv-lectura">
+                {servicioTipoControl === "hrs" ? "HRS" : "KM"} *
+              </Label>
+              <Input
+                id="serv-lectura"
+                type="number"
+                step="1"
+                value={servicioForm.lecturaServicio}
+                onChange={(e) => setServicioForm((prev) => ({ ...prev, lecturaServicio: e.target.value }))}
+                placeholder={servicioTipoControl === "hrs" ? "Horas del servicio" : "Kilometraje del servicio"}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="serv-desc">Descripción</Label>
+              <Input
+                id="serv-desc"
+                value={servicioForm.descripcion}
+                onChange={(e) => setServicioForm((prev) => ({ ...prev, descripcion: e.target.value }))}
+                placeholder="Ej. servicio preventivo"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="serv-notas">Notas</Label>
+              <Input
+                id="serv-notas"
+                value={servicioForm.notas}
+                onChange={(e) => setServicioForm((prev) => ({ ...prev, notas: e.target.value }))}
+                placeholder="Detalles opcionales"
+              />
+            </div>
+          </div>
+
+          {servicioUnidad && (
+            <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+              Se guardará en el historial de <span style={{ color: "var(--fg)" }} className="font-semibold">{servicioUnidad.codigo}</span> como control de {servicioTipoControl.toUpperCase()}.
+            </p>
+          )}
+
+          {servicioError && <p className="text-sm text-red-500">{servicioError}</p>}
+
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={submitServicio}
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-60"
+            >
+              {isPending ? "Guardando..." : "+ Agregar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowServicioForm(false);
+                resetServicioForm();
+              }}
+              className="px-4 py-2 rounded-xl text-sm hover:bg-[var(--surface-2)] transition-colors"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              Cancelar
+            </button>
           </div>
         </div>
       )}
@@ -500,20 +796,20 @@ export default function UnidadesTable({
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: "var(--surface)" }}>
-              <TableHead><SortBtn col="codigo" label="Código" /></TableHead>
+              <TableHead><SortBtn col="codigo" label="Código" active={sortCol === "codigo"} direction={sortDir} onToggle={toggleSort} /></TableHead>
               <TableHead className="hidden md:table-cell">Nombre / Modelo</TableHead>
-              <TableHead><SortBtn col="tipo" label="Tipo" /></TableHead>
+              <TableHead><SortBtn col="tipo" label="Tipo" active={sortCol === "tipo"} direction={sortDir} onToggle={toggleSort} /></TableHead>
               <TableHead className="hidden sm:table-cell text-right">
-                <SortBtn col="totalLitros" label="Litros" align="right" />
+                <SortBtn col="totalLitros" label="Litros" align="right" active={sortCol === "totalLitros"} direction={sortDir} onToggle={toggleSort} />
               </TableHead>
               <TableHead className="hidden sm:table-cell text-right">
-                <SortBtn col="totalCargas" label="Cargas" align="right" />
+                <SortBtn col="totalCargas" label="Cargas" align="right" active={sortCol === "totalCargas"} direction={sortDir} onToggle={toggleSort} />
               </TableHead>
               <TableHead className="hidden lg:table-cell text-right">
-                <SortBtn col="ultimoRendimiento" label="Últ. Rend." align="right" />
+                <SortBtn col="ultimoRendimiento" label="Últ. Rend." align="right" active={sortCol === "ultimoRendimiento"} direction={sortDir} onToggle={toggleSort} />
               </TableHead>
               <TableHead className="hidden lg:table-cell text-right">
-                <SortBtn col="ultimaDiferencia" label="Δ Ref" align="right" />
+                <SortBtn col="ultimaDiferencia" label="Δ Ref" align="right" active={sortCol === "ultimaDiferencia"} direction={sortDir} onToggle={toggleSort} />
               </TableHead>
               <TableHead className="hidden md:table-cell text-center">Mantenimiento</TableHead>
               <TableHead className="text-center">Estado</TableHead>

@@ -3,14 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
+  configuracion,
   mantenimientosEventos,
   mantenimientosPlanes,
   unidades,
 } from "@/db/schema";
 import { requireMaintenanceManager } from "@/lib/authz";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
+import {
+  normalizeMantenimientoConfig,
+  type TipoControlMantenimiento,
+  type TipoUnidadMantenimiento,
+} from "@/lib/mantenimiento-config";
+export type { TipoControlMantenimiento } from "@/lib/mantenimiento-config";
 
-export type TipoControlMantenimiento = "km" | "hrs";
 export type EstadoMantenimiento = "sin_config" | "ok" | "proximo" | "vencido";
 
 export type ResumenPlanMantenimiento = {
@@ -18,6 +24,7 @@ export type ResumenPlanMantenimiento = {
   unidadId: number;
   tipoControl: TipoControlMantenimiento;
   activo: boolean;
+  origen: "manual" | "global" | "sin_config";
   intervalo: number | null;
   umbralAlerta: number | null;
   lecturaActual: number | null;
@@ -27,6 +34,7 @@ export type ResumenPlanMantenimiento = {
   faltante: number | null;
   excedente: number | null;
   estado: EstadoMantenimiento;
+  nivelAlerta: "proximo" | "cercano" | "inminente" | "vencido" | null;
   inconsistencia: string | null;
 };
 
@@ -42,6 +50,7 @@ export type AlertaMantenimiento = {
   unidadCodigo: string;
   tipoControl: TipoControlMantenimiento;
   estado: "proximo" | "vencido";
+  nivelAlerta: "proximo" | "cercano" | "inminente" | "vencido";
   lecturaActual: number;
   lecturaServicio: number;
   proximoServicioEn: number;
@@ -59,9 +68,11 @@ function computePlanSummary(args: {
   tipoControl: TipoControlMantenimiento;
   lecturaActual: number | null;
   plan?: {
-    id: number;
+    id: number | null;
     intervalo: number;
     umbralAlerta: number;
+    umbralCercano: number | null;
+    umbralInminente: number | null;
     activo: boolean;
   } | null;
   evento?: {
@@ -77,6 +88,7 @@ function computePlanSummary(args: {
       unidadId,
       tipoControl,
       activo: false,
+      origen: plan ? "manual" : "sin_config",
       intervalo: plan?.intervalo ?? null,
       umbralAlerta: plan?.umbralAlerta ?? null,
       lecturaActual,
@@ -86,6 +98,7 @@ function computePlanSummary(args: {
       faltante: null,
       excedente: null,
       estado: "sin_config",
+      nivelAlerta: null,
       inconsistencia: null,
     };
   }
@@ -96,6 +109,7 @@ function computePlanSummary(args: {
       unidadId,
       tipoControl,
       activo: true,
+      origen: plan.id ? "manual" : "global",
       intervalo: plan.intervalo,
       umbralAlerta: plan.umbralAlerta,
       lecturaActual,
@@ -105,6 +119,7 @@ function computePlanSummary(args: {
       faltante: null,
       excedente: null,
       estado: "sin_config",
+      nivelAlerta: null,
       inconsistencia: "Sin lectura actual para calcular mantenimiento.",
     };
   }
@@ -115,6 +130,7 @@ function computePlanSummary(args: {
       unidadId,
       tipoControl,
       activo: true,
+      origen: plan.id ? "manual" : "global",
       intervalo: plan.intervalo,
       umbralAlerta: plan.umbralAlerta,
       lecturaActual,
@@ -124,6 +140,7 @@ function computePlanSummary(args: {
       faltante: null,
       excedente: null,
       estado: "sin_config",
+      nivelAlerta: null,
       inconsistencia: "Falta registrar el último mantenimiento como base.",
     };
   }
@@ -134,6 +151,7 @@ function computePlanSummary(args: {
       unidadId,
       tipoControl,
       activo: true,
+      origen: plan.id ? "manual" : "global",
       intervalo: plan.intervalo,
       umbralAlerta: plan.umbralAlerta,
       lecturaActual,
@@ -143,6 +161,7 @@ function computePlanSummary(args: {
       faltante: null,
       excedente: null,
       estado: "sin_config",
+      nivelAlerta: null,
       inconsistencia: "La lectura actual es menor que la lectura del último servicio.",
     };
   }
@@ -152,14 +171,23 @@ function computePlanSummary(args: {
   const excedente = faltante < 0 ? Math.abs(faltante) : 0;
 
   let estado: EstadoMantenimiento = "ok";
-  if (faltante < 0) estado = "vencido";
-  else if (faltante <= plan.umbralAlerta) estado = "proximo";
+  let nivelAlerta: "proximo" | "cercano" | "inminente" | "vencido" | null = null;
+  if (faltante < 0) {
+    estado = "vencido";
+    nivelAlerta = "vencido";
+  } else if (faltante <= plan.umbralAlerta) {
+    estado = "proximo";
+    nivelAlerta = "proximo";
+    if (plan.umbralInminente !== null && faltante <= plan.umbralInminente) nivelAlerta = "inminente";
+    else if (plan.umbralCercano !== null && faltante <= plan.umbralCercano) nivelAlerta = "cercano";
+  }
 
   return {
     planId: plan.id,
     unidadId,
     tipoControl,
     activo: true,
+    origen: plan.id ? "manual" : "global",
     intervalo: plan.intervalo,
     umbralAlerta: plan.umbralAlerta,
     lecturaActual,
@@ -169,6 +197,7 @@ function computePlanSummary(args: {
     faltante,
     excedente,
     estado,
+    nivelAlerta,
     inconsistencia: null,
   };
 }
@@ -180,11 +209,20 @@ function computeGlobalState(planes: ResumenPlanMantenimiento[]): EstadoMantenimi
   return "sin_config";
 }
 
+type EffectivePlan = {
+  id: number | null;
+  intervalo: number;
+  umbralAlerta: number;
+  umbralCercano: number | null;
+  umbralInminente: number | null;
+  activo: boolean;
+};
+
 async function getRawMantenimientoData(unidadIds: number[]) {
-  const [units, planes, eventos] = await Promise.all([
+  const [units, planes, eventos, configRows] = await Promise.all([
     db.query.unidades.findMany({
       where: inArray(unidades.id, unidadIds),
-      columns: { id: true, codigo: true, odometroActual: true },
+      columns: { id: true, codigo: true, odometroActual: true, tipo: true },
     }),
     db.query.mantenimientosPlanes.findMany({
       where: inArray(mantenimientosPlanes.unidadId, unidadIds),
@@ -194,12 +232,23 @@ async function getRawMantenimientoData(unidadIds: number[]) {
       where: inArray(mantenimientosEventos.unidadId, unidadIds),
       orderBy: (e, { desc: d }) => [d(e.fechaServicio), d(e.createdAt)],
     }),
+    db.query.configuracion.findMany({
+      where: inArray(configuracion.clave, [
+        "mantenimiento_defaults_tipo",
+        "mantenimiento_alertas_umbral",
+      ]),
+    }),
   ]);
 
-  return { units, planes, eventos };
+  return { units, planes, eventos, configRows };
 }
 
 function buildSummaries(data: Awaited<ReturnType<typeof getRawMantenimientoData>>): ResumenMantenimientoUnidad[] {
+  const configMap = Object.fromEntries(data.configRows.map((row) => [row.clave, row.valor]));
+  const globalConfig = normalizeMantenimientoConfig(
+    configMap["mantenimiento_defaults_tipo"],
+    configMap["mantenimiento_alertas_umbral"],
+  );
   const planesByKey = new Map<string, (typeof data.planes)[number]>();
   for (const plan of data.planes) {
     planesByKey.set(`${plan.unidadId}:${plan.tipoControl}`, plan);
@@ -216,16 +265,41 @@ function buildSummaries(data: Awaited<ReturnType<typeof getRawMantenimientoData>
       const key = `${unidad.id}:${tipoControl}`;
       const plan = planesByKey.get(key) ?? null;
       const evento = eventosByKey.get(key) ?? null;
+      const tipoUnidad = (unidad.tipo as TipoUnidadMantenimiento) ?? "otro";
+      const defaultTipo = globalConfig.defaults[tipoUnidad] ?? globalConfig.defaults.otro;
+      const defaultUmbrales = globalConfig.alertas[tipoControl];
+      const effectivePlan: EffectivePlan | null = plan
+        ? {
+            id: plan.id,
+            intervalo: plan.intervalo,
+            umbralAlerta: plan.umbralAlerta,
+            umbralCercano: null,
+            umbralInminente: null,
+            activo: plan.activo,
+          }
+        : defaultTipo.activo && defaultTipo.tipoControl === tipoControl
+          ? {
+              id: null,
+              intervalo: defaultTipo.intervalo,
+              umbralAlerta: defaultUmbrales.proximo,
+              umbralCercano: defaultUmbrales.cercano,
+              umbralInminente: defaultUmbrales.inminente,
+              activo: true,
+            }
+          : null;
+
       return computePlanSummary({
         unidadId: unidad.id,
         tipoControl,
         lecturaActual: unidad.odometroActual ?? null,
-        plan: plan
+        plan: effectivePlan
           ? {
-              id: plan.id,
-              intervalo: plan.intervalo,
-              umbralAlerta: plan.umbralAlerta,
-              activo: plan.activo,
+              id: effectivePlan.id,
+              intervalo: effectivePlan.intervalo,
+              umbralAlerta: effectivePlan.umbralAlerta,
+              umbralCercano: effectivePlan.umbralCercano ?? null,
+              umbralInminente: effectivePlan.umbralInminente ?? null,
+              activo: effectivePlan.activo,
             }
           : null,
         evento: evento
@@ -299,6 +373,7 @@ export async function getAlertasMantenimientoOverview(): Promise<AlertaMantenimi
           unidadCodigo: summary.unidadCodigo,
           tipoControl: plan.tipoControl,
           estado: plan.estado,
+          nivelAlerta: plan.nivelAlerta ?? (plan.estado === "vencido" ? "vencido" : "proximo"),
           lecturaActual: plan.lecturaActual,
           lecturaServicio: plan.lecturaServicio,
           proximoServicioEn: plan.proximoServicioEn,

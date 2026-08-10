@@ -5,24 +5,31 @@ import ThemeToggle from "@/components/ThemeToggle";
 import SeedButton from "@/components/SeedButton";
 import TestingPanel from "@/components/settings/TestingPanel";
 import AlertasConfig from "@/components/settings/AlertasConfig";
-import { getAlertaDias, getTolerancia, getFolioRangos } from "@/app/actions/setup";
+import {
+  getAlertaDias,
+  getMantenimientoConfigGlobal,
+  getTolerancia,
+  getFolioRangos,
+} from "@/app/actions/setup";
 import { TOLERANCIA_DEFAULT } from "@/lib/alertas-config";
 import ToleranciaConfig from "@/components/settings/ToleranciaConfig";
 import FolioRangoConfig from "@/components/settings/FolioRangoConfig";
+import MantenimientoConfig from "@/components/settings/MantenimientoConfig";
 
 export default async function SettingsPage() {
   await requirePermission("settings");
 
-  const [user, alertaDias, tolerancia, folioRangos] = await Promise.all([
+  const [user, alertaDias, tolerancia, folioRangos, mantenimientoConfig] = await Promise.all([
     currentUser(),
     getAlertaDias(),
     getTolerancia(),
     getFolioRangos(),
+    getMantenimientoConfigGlobal(),
   ]);
   const isAdmin = user?.publicMetadata?.role === "admin";
 
   return (
-    <div className="p-6 md:p-8 max-w-2xl">
+    <div className="p-6 md:p-8 max-w-5xl">
       <div className="mb-8">
         <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--fg-muted)" }}>
           Sistema
@@ -83,6 +90,14 @@ export default async function SettingsPage() {
             <AlertasConfig initialDias={alertaDias} />
           </div>
         </div>
+      </section>
+
+      {/* Mantenimiento */}
+      <section className="mb-6">
+        <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--fg-muted)" }}>
+          Mantenimiento
+        </h2>
+        <MantenimientoConfig initialConfig={mantenimientoConfig} />
       </section>
 
       {/* Rendimiento */}

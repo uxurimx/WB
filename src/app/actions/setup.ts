@@ -3,12 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
-  tanques, fuentesDiesel, unidades, operadores, obras,
-  periodos, cargas, recargasTanque, transferenciasTanque,
-  rendimientos, archivos, auditLog, configuracion,
+  tanques, fuentesDiesel, unidades, operadores,
+  periodos, cargas, recargasTanque, auditLog, configuracion,
 } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { requireAdmin, requireManageRole } from "@/lib/authz";
+import {
+  DEFAULTS_ALERTA_MANTENIMIENTO,
+  DEFAULTS_MANTENIMIENTO_TIPO,
+  normalizeMantenimientoConfig,
+  type ConfigMantenimientoGlobal,
+  type TipoUnidadMantenimiento,
+} from "@/lib/mantenimiento-config";
 
 // Los resets y seeds de prueba son herramientas de desarrollo: en producción solo
 // funcionan si se habilitan explícitamente con ALLOW_TESTING_TOOLS=1
@@ -81,7 +87,6 @@ export async function setFolioBaseCampo(folio: number) {
 
 // ─── Rangos mín/máx de folio por secuencia ───────────────────────────────────
 export async function getFolioRangos() {
-  const claves = ["folio_min_patio", "folio_max_patio", "folio_min_campo", "folio_max_campo"] as const;
   const rows = await db.select().from(configuracion).then((r) =>
     Object.fromEntries(r.map((x) => [x.clave, x.valor]))
   );
@@ -162,6 +167,101 @@ export async function setAlertaDias(dias: number) {
   revalidatePath("/overview");
   revalidatePath("/settings");
   return { ok: true, msg: `Alertas expirarán después de ${val} días` };
+}
+
+// ─── Configuración global de mantenimiento ───────────────────────────────────
+const CONFIG_MANTENIMIENTO_DEFAULTS_KEY = "mantenimiento_defaults_tipo";
+const CONFIG_MANTENIMIENTO_ALERTAS_KEY = "mantenimiento_alertas_umbral";
+
+export async function getMantenimientoConfigGlobal(): Promise<ConfigMantenimientoGlobal> {
+  const [defaultsRow, alertasRow] = await Promise.all([
+    db.query.configuracion.findFirst({
+      where: eq(configuracion.clave, CONFIG_MANTENIMIENTO_DEFAULTS_KEY),
+    }),
+    db.query.configuracion.findFirst({
+      where: eq(configuracion.clave, CONFIG_MANTENIMIENTO_ALERTAS_KEY),
+    }),
+  ]);
+
+  return normalizeMantenimientoConfig(defaultsRow?.valor, alertasRow?.valor);
+}
+
+export async function setMantenimientoConfigGlobal(input: ConfigMantenimientoGlobal) {
+  await requireManageRole();
+
+  const defaults = { ...DEFAULTS_MANTENIMIENTO_TIPO };
+  for (const tipo of Object.keys(defaults) as TipoUnidadMantenimiento[]) {
+    const row = input.defaults[tipo];
+    if (!row) throw new Error(`Falta configuración para ${tipo}`);
+    const intervalo = Math.round(row.intervalo);
+    if (!Number.isFinite(intervalo) || intervalo <= 0) {
+      throw new Error(`El intervalo de ${tipo} debe ser mayor a 0`);
+    }
+    defaults[tipo] = {
+      tipoUnidad: tipo,
+      tipoControl: row.tipoControl === "hrs" ? "hrs" : "km",
+      intervalo,
+      activo: row.activo !== false,
+    };
+  }
+
+  const alertas = {
+    km: { ...DEFAULTS_ALERTA_MANTENIMIENTO.km },
+    hrs: { ...DEFAULTS_ALERTA_MANTENIMIENTO.hrs },
+  };
+
+  for (const tipo of ["km", "hrs"] as const) {
+    const row = input.alertas[tipo];
+    if (!row) throw new Error(`Faltan umbrales para ${tipo.toUpperCase()}`);
+    const proximo = Math.round(row.proximo);
+    const cercano = Math.round(row.cercano);
+    const inminente = Math.round(row.inminente);
+    if (
+      !Number.isFinite(proximo) ||
+      !Number.isFinite(cercano) ||
+      !Number.isFinite(inminente) ||
+      proximo < 0 ||
+      cercano < 0 ||
+      inminente < 0
+    ) {
+      throw new Error(`Los umbrales de ${tipo.toUpperCase()} no pueden ser negativos`);
+    }
+    if (!(proximo > cercano && cercano > inminente)) {
+      throw new Error(
+        `Los umbrales de ${tipo.toUpperCase()} deben ir en orden: próximo > cercano > inminente`,
+      );
+    }
+    alertas[tipo] = { proximo, cercano, inminente };
+  }
+
+  await Promise.all([
+    db
+      .insert(configuracion)
+      .values({
+        clave: CONFIG_MANTENIMIENTO_DEFAULTS_KEY,
+        valor: JSON.stringify(defaults),
+      })
+      .onConflictDoUpdate({
+        target: configuracion.clave,
+        set: { valor: JSON.stringify(defaults), updatedAt: new Date() },
+      }),
+    db
+      .insert(configuracion)
+      .values({
+        clave: CONFIG_MANTENIMIENTO_ALERTAS_KEY,
+        valor: JSON.stringify(alertas),
+      })
+      .onConflictDoUpdate({
+        target: configuracion.clave,
+        set: { valor: JSON.stringify(alertas), updatedAt: new Date() },
+      }),
+  ]);
+
+  revalidatePath("/settings");
+  revalidatePath("/overview");
+  revalidatePath("/catalogo/unidades");
+
+  return { ok: true, msg: "Configuración global de mantenimiento guardada" };
 }
 
 // Seed inicial — ejecutar una sola vez al configurar el sistema
