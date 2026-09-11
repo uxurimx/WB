@@ -397,6 +397,15 @@ export const pbNovedadesRelations = relations(pbNovedades, ({ one }) => ({
 // ─────────────────────────────────────────────────────────────────────────────
 // ANALYTICS — tracking de visitantes en la landing page (/)
 // ─────────────────────────────────────────────────────────────────────────────
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  usuarioId: text("usuario_id").notNull(),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const analyticsSessions = pgTable("analytics_sessions", {
   id: serial("id").primaryKey(),
   sessionId: text("session_id").notNull().unique(),

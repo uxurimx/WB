@@ -10,6 +10,7 @@ import StockCards from "@/components/dashboard/StockCards";
 import CargasRecientes from "@/components/dashboard/CargasRecientes";
 import AlertasPanel from "@/components/dashboard/AlertasPanel";
 import DashboardKpis from "@/components/dashboard/DashboardKpis";
+import OperacionPanel from "@/components/dashboard/OperacionPanel";
 import { UMBRAL_TALLER, UMBRAL_NISSAN } from "@/lib/alertas-config";
 
 function formatPeriodo(fechaInicio: string, fechaFin: string) {
@@ -98,6 +99,12 @@ export default async function OverviewPage() {
           initialNissan={stats.nissan}
         />
       </div>
+
+      <OperacionPanel
+        operacion={stats.operacion}
+        peorRendimiento={stats.alertasRendimiento}
+        periodoCerradoId={stats.ultimoPeriodoCerrado?.id ?? null}
+      />
 
       {/* Alertas proactivas */}
       <AlertasPanel

@@ -12,6 +12,7 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
 import ThemeToggle from "@/components/ThemeToggle";
 import InstallPwa from "@/components/InstallPwa";
+import AlertNotifications from "@/components/AlertNotifications";
 import { cn } from "@/lib/utils";
 import { ROLE_NAV_PERMISSIONS, type NavPermission } from "@/lib/permissions";
 
@@ -255,6 +256,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Footer */}
       <div className="mt-auto pt-4 space-y-3 border-t" style={{ borderColor: "var(--border)" }}>
+        <AlertNotifications />
         <InstallPwa />
         <div className="flex items-center justify-between px-2">
           <span className="text-xs" style={{ color: "var(--fg-muted)" }}>Tema</span>

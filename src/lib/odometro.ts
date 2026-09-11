@@ -13,7 +13,10 @@ export type LecturaOdometro = {
   createdAt: Date | null;
 };
 
-function resetAntesDe(reset: OdometroReset, at: { fecha: string; createdAt: Date | null }): boolean {
+function resetOcurrioAntes(reset: OdometroReset, at: { fecha: string; createdAt: Date | null }): boolean {
+  if (reset.createdAt && at.createdAt) {
+    return reset.createdAt.getTime() <= at.createdAt.getTime();
+  }
   if (reset.fecha < at.fecha) return true;
   if (reset.fecha > at.fecha) return false;
   const resetTs = reset.createdAt?.getTime() ?? 0;
@@ -21,11 +24,19 @@ function resetAntesDe(reset: OdometroReset, at: { fecha: string; createdAt: Date
   return resetTs <= atTs;
 }
 
+/** La lectura ya viene en escala del hub viejo: no volver a sumar el salto. */
+function lecturaEsHubNuevo(raw: number, reset: OdometroReset): boolean {
+  const salto = reset.lecturaAnterior - reset.lecturaNueva;
+  if (salto <= 0) return true;
+  if (raw >= reset.lecturaAnterior - salto * 0.25) return false;
+  return raw <= reset.lecturaNueva + Math.max(8000, salto * 0.15);
+}
+
 /** Lectura de hub + offsets de resets anteriores = km/hrs reales acumulados. */
 export function trueOdometro(raw: number, at: { fecha: string; createdAt: Date | null }, resets: OdometroReset[]): number {
   let extra = 0;
   for (const reset of resets) {
-    if (resetAntesDe(reset, at)) {
+    if (resetOcurrioAntes(reset, at) && lecturaEsHubNuevo(raw, reset)) {
       extra += reset.lecturaAnterior - reset.lecturaNueva;
     }
   }

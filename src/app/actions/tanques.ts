@@ -12,6 +12,7 @@ import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 import { conciliarTanques } from "@/lib/conciliacion";
 import { UMBRAL_TALLER, UMBRAL_NISSAN } from "@/lib/alertas-config";
 import { recargaTanqueSchema, transferenciaSchema, parseOrThrow } from "@/lib/validators";
+import { maybeNotifyStockBajo } from "@/lib/alertas-notify";
 import { calcSobrecarga, type MotivoSobrecarga, type SobrecargaTanque } from "@/lib/tanque-sobrecarga";
 
 export type RecargaTanqueInput = {
@@ -170,6 +171,11 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
     pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
       tanque: destino.nombre,
       litrosActuales: nuevosLitrosDestino,
+    }),
+    maybeNotifyStockBajo({
+      nombre: origen.nombre,
+      litrosAntes: origen.litrosActuales ?? 0,
+      litrosAhora: nuevosLitrosOrigen,
     }),
   ]);
 

@@ -172,14 +172,6 @@ export default function AlertasPanel({
                   >
                     Registrar recarga
                   </Link>
-                  <button
-                    onClick={() => setDismissedStock((prev) => new Set([...prev, label]))}
-                    className="p-1 rounded-lg hover:bg-black/10 transition-colors shrink-0"
-                    style={{ color: "var(--fg-muted)" }}
-                    aria-label="Cerrar alerta"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
                 </div>
                 {/* progress bar */}
                 <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border)" }}>

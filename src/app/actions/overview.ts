@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { tanques, cargas, periodos, configuracion, pbTickets, recargasTanque, transferenciasTanque } from "@/db/schema";
-import { eq, desc, and, gte } from "drizzle-orm";
+import { tanques, cargas, periodos, configuracion, pbTickets, recargasTanque, transferenciasTanque, obras } from "@/db/schema";
+import { eq, desc, and, gte, lte, sql, isNotNull } from "drizzle-orm";
 import {
   type AlertaRendimiento,
   type AlertaMantenimiento,
@@ -193,6 +193,54 @@ export async function getOverviewStats() {
     anomaliasActivas.sort((a, b) => b.fecha.localeCompare(a.fecha));
   }
 
+  const ventanaDesde = periodoActivo?.fechaInicio ?? getLocalDateString(subtractDaysLocal(new Date(), 7));
+  const ventanaHasta = periodoActivo?.fechaFin ?? hoy;
+  const enVentana = periodoActivo
+    ? eq(cargas.periodoId, periodoActivo.id)
+    : and(gte(cargas.fecha, ventanaDesde), lte(cargas.fecha, ventanaHasta));
+
+  const [obrasCampo, patioVentana, ultimaPipa, campo7d] = await Promise.all([
+    db
+      .select({
+        obraId: obras.id,
+        nombre: obras.nombre,
+        litros: sql<number>`coalesce(sum(${cargas.litros}), 0)::real`,
+        cargas: sql<number>`count(*)::int`,
+      })
+      .from(cargas)
+      .innerJoin(obras, eq(obras.id, cargas.obraId))
+      .where(and(eq(cargas.origen, "campo"), enVentana))
+      .groupBy(obras.id, obras.nombre)
+      .orderBy(desc(sql`sum(${cargas.litros})`))
+      .limit(6),
+    db
+      .select({
+        litros: sql<number>`coalesce(sum(${cargas.litros}), 0)::real`,
+      })
+      .from(cargas)
+      .where(and(eq(cargas.origen, "patio"), enVentana)),
+    db.query.recargasTanque.findFirst({
+      where: isNotNull(recargasTanque.precioLitro),
+      orderBy: (r, { desc: d }) => [d(r.fecha), d(r.createdAt)],
+      columns: { precioLitro: true, fecha: true },
+    }),
+    db
+      .select({
+        litros: sql<number>`coalesce(sum(${cargas.litros}), 0)::real`,
+      })
+      .from(cargas)
+      .where(and(
+        eq(cargas.origen, "campo"),
+        gte(cargas.fecha, getLocalDateString(subtractDaysLocal(new Date(), 7))),
+      )),
+  ]);
+
+  const litrosCampo = obrasCampo.reduce((s, o) => s + Number(o.litros ?? 0), 0);
+  const precioLitro = ultimaPipa?.precioLitro ?? null;
+  const nissanLitros = nissan?.litrosActuales ?? 0;
+  const ritmoCampoDia = Number(campo7d[0]?.litros ?? 0) / 7;
+  const nissanDias = ritmoCampoDia > 1 ? nissanLitros / ritmoCampoDia : null;
+
   return {
     hoy,
     taller: {
@@ -260,5 +308,20 @@ export async function getOverviewStats() {
       destinoNombre: tanqueNombres[t.tanqueDestinoId] ?? "Destino",
       createdAt: t.createdAt?.toISOString() ?? null,
     })),
+    operacion: {
+      desde: ventanaDesde,
+      hasta: ventanaHasta,
+      precioLitro,
+      litrosCampo,
+      litrosPatio: Number(patioVentana[0]?.litros ?? 0),
+      costoCampo: precioLitro != null ? litrosCampo * precioLitro : null,
+      nissanDias,
+      obras: obrasCampo.map((o) => ({
+        id: o.obraId,
+        nombre: o.nombre,
+        litros: Number(o.litros ?? 0),
+        cargas: o.cargas,
+      })),
+    },
   };
 }

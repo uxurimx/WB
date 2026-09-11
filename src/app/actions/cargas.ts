@@ -17,6 +17,7 @@ import { cargaPatioSchema, cargaCampoSchema, odometroResetSchema, assertKmCaptur
 import { insertCargaAtomic, deleteCargaAtomic, applyTankLitrosDelta, type TankAfterMutation } from "@/lib/stock";
 import { calcSobrecarga, type SobrecargaTanque } from "@/lib/tanque-sobrecarga";
 import { recalcularRendimientosForUnit } from "@/app/actions/rendimientos";
+import { maybeNotifyStockBajo } from "@/lib/alertas-notify";
 
 // ─── Helpers ─────────────────────────────────────────────────
 async function getSiguienteFolio(): Promise<number> {
@@ -134,6 +135,11 @@ export async function createCargaPatio(input: CargaPatioInput) {
     cuentalitros: inserted.tank.cuentalitrosActual,
     ajuste: inserted.tank.ajustePorcentaje ?? 2,
   }).catch(() => {});
+  await maybeNotifyStockBajo({
+    nombre: inserted.tank.nombre,
+    litrosAntes: inserted.tank.litrosActuales + parsed.litros,
+    litrosAhora: inserted.tank.litrosActuales,
+  }).catch(() => {});
 
   await pusherServer.trigger(CHANNELS.cargas, EVENTS.nuevaCarga, {
     cargaId: inserted.cargaId,
@@ -230,6 +236,11 @@ export async function createCargaCampo(input: CargaCampoInput) {
     tanque: "NISSAN",
     litrosActuales: inserted.tank.litrosActuales,
     cuentalitros: inserted.tank.cuentalitrosActual,
+  }).catch(() => {});
+  await maybeNotifyStockBajo({
+    nombre: "NISSAN",
+    litrosAntes: inserted.tank.litrosActuales + parsed.litros,
+    litrosAhora: inserted.tank.litrosActuales,
   }).catch(() => {});
 
   await pusherServer.trigger(CHANNELS.cargas, EVENTS.nuevaCarga, {
