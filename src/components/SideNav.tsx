@@ -24,6 +24,7 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedade
   const cargasItems: NavItemDef[] = [
     ...(has("cargas.nueva_patio") ? [{ name: "Carga patio", href: "/cargas/nueva", icon: PlusCircle }] : []),
     ...(has("cargas.nueva_campo") ? [{ name: "Carga campo", href: "/cargas/campo", icon: Fuel }] : []),
+    ...(has("tanques") ? [{ name: "Tanques", href: "/tanques", icon: Gauge }] : []),
   ];
 
   const catalogoItems: NavItemDef[] = has("catalogo") ? [
@@ -56,11 +57,10 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedade
       collapsible: true,
       items: catalogoItems,
     }] : []),
-    ...((has("periodos") || has("analiticas") || has("tanques") || has("cargas.historial")) ? [{
+    ...((has("periodos") || has("analiticas") || has("cargas.historial")) ? [{
       label: "Análisis",
       collapsible: true,
       items: [
-        ...(has("tanques")          ? [{ name: "Tanques",    href: "/tanques",    icon: Gauge        }] : []),
         ...(has("periodos")         ? [{ name: "Períodos",   href: "/periodos",   icon: Calendar     }] : []),
         ...(has("cargas.historial") ? [{ name: "Historial",  href: "/cargas",     icon: ClipboardList }] : []),
         ...(has("analiticas")       ? [{ name: "Analíticas", href: "/analiticas", icon: BarChart2    }] : []),
@@ -163,7 +163,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     const inCatalogos = pathname.startsWith("/catalogo");
     const inPoxelbit  = pathname.startsWith("/poxelbit");
     const inCargasCaptura = pathname.startsWith("/cargas/nueva") || pathname.startsWith("/cargas/campo");
-    const inAnalisis  = pathname.startsWith("/tanques") || pathname.startsWith("/periodos") ||
+    const inAnalisis  = pathname.startsWith("/periodos") ||
                         (pathname.startsWith("/cargas") && !inCargasCaptura) || pathname.startsWith("/analiticas");
     const inSistema   = pathname.startsWith("/admin") || pathname.startsWith("/settings");
     const collapsed = new Set<string>();

@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { currentUser } from "@clerk/nextjs/server";
-import { getOperadores } from "@/app/actions/catalogo";
+import { getOperadoresConStats } from "@/app/actions/catalogo";
 import { requirePermission } from "@/lib/server-guard";
 import OperadoresTable from "@/components/catalogo/OperadoresTable";
 import { Users } from "lucide-react";
@@ -11,7 +11,7 @@ const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 export default async function OperadoresPage() {
   await requirePermission("catalogo");
 
-  const [operadores, clerkUser] = await Promise.all([getOperadores(false), currentUser()]);
+  const [operadores, clerkUser] = await Promise.all([getOperadoresConStats(), currentUser()]);
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
   return (

@@ -811,6 +811,7 @@ export default function UnidadesTable({
               <TableHead className="hidden lg:table-cell text-right">
                 <SortBtn col="ultimaDiferencia" label="Δ Ref" align="right" active={sortCol === "ultimaDiferencia"} direction={sortDir} onToggle={toggleSort} />
               </TableHead>
+              <TableHead className="hidden xl:table-cell">Última</TableHead>
               <TableHead className="hidden md:table-cell text-center">Mantenimiento</TableHead>
               <TableHead className="text-center">Estado</TableHead>
               <TableHead />
@@ -819,7 +820,7 @@ export default function UnidadesTable({
           <TableBody>
             {unidadesFiltradas.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-10" style={{ color: "var(--fg-muted)" }}>
+                <TableCell colSpan={11} className="text-center py-10" style={{ color: "var(--fg-muted)" }}>
                   {busqueda || hasActiveFilters
                     ? "Sin resultados para esa búsqueda."
                     : "Sin unidades. Agrega la primera o usa \"Seed WB\" en Configuración."}
@@ -905,6 +906,15 @@ export default function UnidadesTable({
                     })() : (
                       <span className="text-sm" style={{ color: "var(--fg-muted)" }}>—</span>
                     )}
+                  </TableCell>
+
+                  <TableCell className="hidden xl:table-cell text-sm font-mono" style={{ color: "var(--fg-muted)" }}>
+                    {u.ultimaFecha
+                      ? (() => {
+                          const [y, m, d] = u.ultimaFecha.slice(0, 10).split("-");
+                          return `${d}/${m}/${y.slice(2)}`;
+                        })()
+                      : "—"}
                   </TableCell>
 
                   {/* Mantenimiento */}

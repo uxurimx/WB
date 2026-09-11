@@ -24,3 +24,10 @@ export function hasNavPermission(role: string | undefined, perm: NavPermission):
   if (!role) return false;
   return (ROLE_NAV_PERMISSIONS[role] ?? []).includes(perm);
 }
+
+/** Unión del mapa TS + JSON en DB: un rol viejo no puede esconder ítems nuevos. */
+export function mergeRolePermisos(role: string | undefined, fromDb: NavPermission[] | null | undefined): NavPermission[] {
+  const fallback = (role && ROLE_NAV_PERMISSIONS[role]) ? ROLE_NAV_PERMISSIONS[role] : [];
+  if (!fromDb?.length) return fallback;
+  return [...new Set([...fallback, ...fromDb])];
+}

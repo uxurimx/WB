@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { obras } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requirePermission } from "@/lib/server-guard";
-import { getCatalogoCargas, getOperadores, getObras } from "@/app/actions/catalogo";
+import { getCatalogoCargas, getLastPrecioLitro, getOperadores, getObras } from "@/app/actions/catalogo";
 import { Badge } from "@/components/ui/badge";
 import CatalogoDetalleClient from "@/components/catalogo/CatalogoDetalleClient";
 
@@ -32,11 +32,17 @@ export default async function ObraDetallePage({
 
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
-  const [cargas, operadoresList, obrasList] = await Promise.all([
+  const [cargas, operadoresList, obrasList, precioLitro] = await Promise.all([
     getCatalogoCargas("obra", obraId),
     getOperadores(false),
     getObras(false),
+    getLastPrecioLitro(),
   ]);
+
+  const litros = cargas.reduce((s, c) => s + (c.litros ?? 0), 0);
+  const costo = precioLitro != null ? litros * precioLitro : null;
+  const unidadesN = new Set(cargas.map((c) => c.unidadCodigo).filter(Boolean)).size;
+  const ultima = cargas[0]?.fecha ?? null;
 
   return (
     <div className="p-6 md:p-8 max-w-[1536px]">
@@ -76,6 +82,27 @@ export default async function ObraDetallePage({
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: "Diesel (campo)", value: `${Math.round(litros).toLocaleString("es-MX")} L` },
+          { label: "Costo est.", value: costo != null ? costo.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }) : "—" },
+          { label: "Cargas", value: String(cargas.length) },
+          { label: "Unidades", value: String(unidadesN) },
+        ].map((k) => (
+          <div key={k.label} className="rounded-2xl border px-3 py-2.5" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>{k.label}</p>
+            <p className="font-outfit font-bold text-lg mt-0.5" style={{ color: "var(--fg)" }}>{k.value}</p>
+          </div>
+        ))}
+      </div>
+      {ultima && (
+        <p className="text-xs mb-4 -mt-3" style={{ color: "var(--fg-muted)" }}>
+          Última carga {ultima.slice(0, 10)}
+          {precioLitro != null && ` · precio pipa ${precioLitro.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}/L`}
+          . Solo incluye despachos de NISSAN con esta obra.
+        </p>
+      )}
 
       <CatalogoDetalleClient
         tipo="obra"

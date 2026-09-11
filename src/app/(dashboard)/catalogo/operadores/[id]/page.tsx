@@ -40,6 +40,8 @@ export default async function OperadorDetallePage({
     getOperadores(false),
     getObras(false),
   ]);
+  const litros = cargas.reduce((s, c) => s + (c.litros ?? 0), 0);
+  const unidadesN = new Set(cargas.map((c) => c.unidadCodigo).filter(Boolean)).size;
 
   return (
     <div className="p-6 md:p-8 max-w-[1536px]">
@@ -76,6 +78,19 @@ export default async function OperadorDetallePage({
             </Badge>
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: "Diesel", value: `${Math.round(litros).toLocaleString("es-MX")} L` },
+          { label: "Cargas", value: String(cargas.length) },
+          { label: "Unidades", value: String(unidadesN) },
+        ].map((k) => (
+          <div key={k.label} className="rounded-2xl border px-3 py-2.5" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>{k.label}</p>
+            <p className="font-outfit font-bold text-lg mt-0.5" style={{ color: "var(--fg)" }}>{k.value}</p>
+          </div>
+        ))}
       </div>
 
       <CatalogoDetalleClient

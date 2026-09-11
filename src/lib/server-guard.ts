@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { ROLE_NAV_PERMISSIONS, type NavPermission } from "./permissions";
+import { ROLE_NAV_PERMISSIONS, mergeRolePermisos, type NavPermission } from "./permissions";
 
 function getHomeUrl(permisos: NavPermission[]): string {
   if (permisos.includes("dashboard"))          return "/overview";
@@ -26,7 +26,9 @@ export async function getServerPermisos(): Promise<NavPermission[]> {
   try {
     // DB es la fuente de verdad
     const rolData = await db.query.roles.findFirst({ where: eq(roles.id, role) });
-    if (rolData) return JSON.parse(rolData.permisos) as NavPermission[];
+    if (rolData) {
+      return mergeRolePermisos(role, JSON.parse(rolData.permisos) as NavPermission[]);
+    }
   } catch {
     // Neon transient error — usar config estática para no bloquear el acceso
   }

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { ROLE_NAV_PERMISSIONS, type NavPermission } from "@/lib/permissions";
+import { ROLE_NAV_PERMISSIONS, mergeRolePermisos, type NavPermission } from "@/lib/permissions";
 
 export async function GET() {
   const { userId } = await auth();
@@ -17,7 +17,9 @@ export async function GET() {
     // DB es la fuente de verdad
     const rol = await db.query.roles.findFirst({ where: eq(roles.id, role) });
     if (rol) {
-      return NextResponse.json({ permisos: JSON.parse(rol.permisos) as NavPermission[] });
+      return NextResponse.json({
+        permisos: mergeRolePermisos(role, JSON.parse(rol.permisos) as NavPermission[]),
+      });
     }
   } catch {
     // Neon transient error — usar config estática

@@ -16,7 +16,20 @@ type Operador = {
   tipo: string;
   telefono: string | null;
   activo: boolean;
+  totalLitros: number;
+  totalCargas: number;
+  ultimaFecha: string | null;
+  unidades: number;
 };
+
+function fmtL(n: number) {
+  return `${Math.round(n).toLocaleString("es-MX")} L`;
+}
+function fmtDia(fecha: string | null) {
+  if (!fecha) return "—";
+  const [y, m, d] = fecha.slice(0, 10).split("-");
+  return `${d}/${m}/${y.slice(2)}`;
+}
 
 const TIPO_LABELS: Record<string, string> = {
   chofer: "Chofer",
@@ -48,7 +61,7 @@ export default function OperadoresTable({
   const [busqueda,     setBusqueda]     = useState("");
   const [tipoFiltro,   setTipoFiltro]   = useState<string>("todos");
   const [estadoFiltro, setEstadoFiltro] = useState<"todos" | "activo" | "inactivo">("todos");
-  const [sortDir,      setSortDir]      = useState<"asc" | "desc">("asc");
+  const [sortDir,      setSortDir]      = useState<"asc" | "desc">("desc");
   const [showFilters,  setShowFilters]  = useState(false);
 
   const hasActiveFilters = tipoFiltro !== "todos" || estadoFiltro !== "todos";
@@ -64,7 +77,14 @@ export default function OperadoresTable({
       }
       return true;
     })
-    .sort((a, b) => (sortDir === "asc" ? 1 : -1) * a.nombre.localeCompare(b.nombre));
+    .sort((a, b) =>
+      sortDir === "desc"
+        ? (b.totalLitros - a.totalLitros) || a.nombre.localeCompare(b.nombre)
+        : a.nombre.localeCompare(b.nombre)
+    );
+
+  const litrosTotales = operadores.reduce((s, o) => s + o.totalLitros, 0);
+  const conCargas = operadores.filter((o) => o.totalCargas > 0).length;
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -212,7 +232,7 @@ export default function OperadoresTable({
             <button type="button" onClick={() => setSortDir((d) => d === "asc" ? "desc" : "asc")}
               className="px-2.5 py-1 rounded-lg text-xs font-semibold border hover:bg-[var(--surface-2)] transition-colors"
               style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>
-              {sortDir === "asc" ? "A → Z" : "Z → A"}
+              {sortDir === "desc" ? "Más diesel" : "A → Z"}
             </button>
           </div>
         </div>
@@ -260,13 +280,29 @@ export default function OperadoresTable({
 
       {deleteError && <p className="text-sm text-red-500 px-1">{deleteError}</p>}
 
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {[
+          { label: "Diesel despachado", value: fmtL(litrosTotales) },
+          { label: "Con cargas", value: String(conCargas) },
+          { label: "En catálogo", value: String(operadores.length) },
+        ].map((k) => (
+          <div key={k.label} className="rounded-2xl border px-3 py-2.5" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>{k.label}</p>
+            <p className="font-outfit font-bold text-lg mt-0.5" style={{ color: "var(--fg)" }}>{k.value}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: "var(--surface)" }}>
               <TableHead>Nombre</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Teléfono</TableHead>
+              <TableHead className="hidden md:table-cell">Teléfono</TableHead>
+              <TableHead className="text-right">Litros</TableHead>
+              <TableHead className="hidden sm:table-cell text-right">Cargas</TableHead>
+              <TableHead className="hidden lg:table-cell">Última</TableHead>
               <TableHead className="text-center">Estado</TableHead>
               <TableHead />
             </TableRow>
@@ -274,7 +310,7 @@ export default function OperadoresTable({
           <TableBody>
             {operadoresFiltrados.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10" style={{ color: "var(--fg-muted)" }}>
+                <TableCell colSpan={8} className="text-center py-10" style={{ color: "var(--fg-muted)" }}>
                   {busqueda || tipoFiltro !== "todos" || estadoFiltro !== "todos"
                     ? "Sin resultados para esa búsqueda."
                     : "Sin operadores registrados."}
@@ -315,7 +351,7 @@ export default function OperadoresTable({
                         placeholder="Teléfono"
                       />
                     </TableCell>
-                    <TableCell colSpan={2}>
+                    <TableCell colSpan={5}>
                       <div className="flex items-center gap-1.5">
                         {editError && <span className="text-xs text-red-500">{editError}</span>}
                         <button
@@ -342,15 +378,23 @@ export default function OperadoresTable({
               return (
                 <TableRow
                   key={o.id}
-                  className="cursor-pointer"
+                  className="cursor-pointer hover:bg-[var(--surface-2)]"
                   onClick={() => router.push(`/catalogo/operadores/${o.id}`)}
                 >
                   <TableCell className="font-medium text-sm">{o.nombre}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{TIPO_LABELS[o.tipo] ?? o.tipo}</Badge>
                   </TableCell>
-                  <TableCell className="text-sm" style={{ color: "var(--fg-muted)" }}>
+                  <TableCell className="hidden md:table-cell text-sm" style={{ color: "var(--fg-muted)" }}>
                     {o.telefono ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm">{fmtL(o.totalLitros)}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-right text-sm" style={{ color: "var(--fg-muted)" }}>
+                    {o.totalCargas}
+                    {o.unidades > 0 && <span className="ml-1 text-[11px]">· {o.unidades} u.</span>}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-sm font-mono" style={{ color: "var(--fg-muted)" }}>
+                    {fmtDia(o.ultimaFecha)}
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge variant={o.activo ? "success" : "secondary"}>

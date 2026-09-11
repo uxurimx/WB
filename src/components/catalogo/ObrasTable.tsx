@@ -16,7 +16,25 @@ type Obra = {
   activo: boolean;
   fechaInicio: string | null;
   fechaFin: string | null;
+  totalLitros: number;
+  totalCargas: number;
+  ultimaFecha: string | null;
+  unidades: number;
+  precioLitro: number | null;
+  costoEstimado: number | null;
 };
+
+function fmtL(n: number) {
+  return `${Math.round(n).toLocaleString("es-MX")} L`;
+}
+function fmtMxn(n: number) {
+  return n.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
+}
+function fmtDia(fecha: string | null) {
+  if (!fecha) return "—";
+  const [y, m, d] = fecha.slice(0, 10).split("-");
+  return `${d}/${m}/${y.slice(2)}`;
+}
 
 export default function ObrasTable({
   obras,
@@ -43,7 +61,8 @@ export default function ObrasTable({
   // Búsqueda / filtro / orden
   const [busqueda,     setBusqueda]     = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState<"todos" | "activo" | "inactivo">("todos");
-  const [sortDir,      setSortDir]      = useState<"asc" | "desc">("asc");
+  const [sortDir,      setSortDir]      = useState<"asc" | "desc">("desc");
+  const [sortCol,      setSortCol]      = useState<"nombre" | "litros">("litros");
   const [showFilters,  setShowFilters]  = useState(false);
 
   const hasActiveFilters = estadoFiltro !== "todos";
@@ -58,7 +77,16 @@ export default function ObrasTable({
       }
       return true;
     })
-    .sort((a, b) => (sortDir === "asc" ? 1 : -1) * a.nombre.localeCompare(b.nombre));
+    .sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+      if (sortCol === "litros") return dir * (a.totalLitros - b.totalLitros);
+      return dir * a.nombre.localeCompare(b.nombre);
+    });
+
+  const litrosTotales = obras.reduce((s, o) => s + o.totalLitros, 0);
+  const costoTotal = obras.reduce((s, o) => s + (o.costoEstimado ?? 0), 0);
+  const conConsumo = obras.filter((o) => o.totalLitros > 0).length;
+  const precioLitro = obras.find((o) => o.precioLitro != null)?.precioLitro ?? null;
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -191,10 +219,19 @@ export default function ObrasTable({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold shrink-0" style={{ color: "var(--fg-muted)" }}>Orden</span>
-            <button type="button" onClick={() => setSortDir((d) => d === "asc" ? "desc" : "asc")}
+            <button type="button" onClick={() => {
+              if (sortCol === "litros") {
+                setSortDir((d) => d === "desc" ? "asc" : "desc");
+              } else {
+                setSortCol("litros");
+                setSortDir("desc");
+              }
+            }}
               className="px-2.5 py-1 rounded-lg text-xs font-semibold border hover:bg-[var(--surface-2)] transition-colors"
               style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>
-              {sortDir === "asc" ? "A → Z" : "Z → A"}
+              {sortCol === "litros"
+                ? (sortDir === "desc" ? "Más diesel" : "Menos diesel")
+                : (sortDir === "asc" ? "A → Z" : "Z → A")}
             </button>
           </div>
         </div>
@@ -239,13 +276,30 @@ export default function ObrasTable({
 
       {deleteError && <p className="text-sm text-red-500 px-1">{deleteError}</p>}
 
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Diesel campo", value: fmtL(litrosTotales) },
+          { label: "Costo est.", value: costoTotal > 0 ? fmtMxn(costoTotal) : "—" },
+          { label: "Con consumo", value: String(conConsumo) },
+          { label: precioLitro != null ? `a ${fmtMxn(precioLitro)}/L` : "Precio pipa", value: precioLitro != null ? "última recarga" : "sin precio" },
+        ].map((k) => (
+          <div key={k.label} className="rounded-2xl border px-3 py-2.5" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>{k.label}</p>
+            <p className="font-outfit font-bold text-lg mt-0.5" style={{ color: "var(--fg)" }}>{k.value}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: "var(--surface)" }}>
               <TableHead>Obra</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Inicio</TableHead>
+              <TableHead className="hidden sm:table-cell">Cliente</TableHead>
+              <TableHead className="text-right">Litros</TableHead>
+              <TableHead className="hidden md:table-cell text-right">Costo</TableHead>
+              <TableHead className="hidden sm:table-cell text-right">Cargas</TableHead>
+              <TableHead className="hidden lg:table-cell">Última</TableHead>
               <TableHead className="text-center">Estado</TableHead>
               <TableHead />
             </TableRow>
@@ -253,7 +307,7 @@ export default function ObrasTable({
           <TableBody>
             {obrasFiltradas.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10" style={{ color: "var(--fg-muted)" }}>
+                <TableCell colSpan={8} className="text-center py-10" style={{ color: "var(--fg-muted)" }}>
                   {busqueda || estadoFiltro !== "todos"
                     ? "Sin resultados para esa búsqueda."
                     : "Sin obras registradas."}
@@ -291,7 +345,7 @@ export default function ObrasTable({
                         className="h-8 text-sm font-mono"
                       />
                     </TableCell>
-                    <TableCell colSpan={2}>
+                    <TableCell colSpan={5}>
                       <div className="flex items-center gap-1.5">
                         {editError && <span className="text-xs text-red-500">{editError}</span>}
                         <button
@@ -318,13 +372,24 @@ export default function ObrasTable({
               return (
                 <TableRow
                   key={o.id}
-                  className="cursor-pointer"
+                  className="cursor-pointer hover:bg-[var(--surface-2)]"
                   onClick={() => router.push(`/catalogo/obras/${o.id}`)}
                 >
-                  <TableCell className="font-medium text-sm">{o.nombre}</TableCell>
-                  <TableCell className="text-sm" style={{ color: "var(--fg-muted)" }}>{o.cliente ?? "—"}</TableCell>
-                  <TableCell className="text-sm font-mono" style={{ color: "var(--fg-muted)" }}>
-                    {o.fechaInicio ?? "—"}
+                  <TableCell>
+                    <p className="font-medium text-sm">{o.nombre}</p>
+                    <p className="text-[11px] sm:hidden" style={{ color: "var(--fg-muted)" }}>{o.cliente ?? "sin cliente"}</p>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-sm" style={{ color: "var(--fg-muted)" }}>{o.cliente ?? "—"}</TableCell>
+                  <TableCell className="text-right font-mono text-sm">{fmtL(o.totalLitros)}</TableCell>
+                  <TableCell className="hidden md:table-cell text-right text-sm" style={{ color: "var(--fg-muted)" }}>
+                    {o.costoEstimado != null && o.totalLitros > 0 ? fmtMxn(o.costoEstimado) : "—"}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-right text-sm" style={{ color: "var(--fg-muted)" }}>
+                    {o.totalCargas}
+                    {o.unidades > 0 && <span className="ml-1 text-[11px]">· {o.unidades} u.</span>}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-sm font-mono" style={{ color: "var(--fg-muted)" }}>
+                    {fmtDia(o.ultimaFecha)}
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge variant={o.activo ? "success" : "secondary"}>

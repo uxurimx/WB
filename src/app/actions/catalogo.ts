@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { unidades, operadores, obras, cargas, rendimientos, periodos } from "@/db/schema";
-import { eq, count, inArray, and, sql } from "drizzle-orm";
+import { unidades, operadores, obras, cargas, rendimientos, periodos, recargasTanque } from "@/db/schema";
+import { eq, count, inArray, and, sql, isNotNull } from "drizzle-orm";
 import { requireManageRole, requireAnyActionPermission } from "@/lib/authz";
 import { getResumenMantenimientoUnidades } from "@/app/actions/mantenimiento";
 
@@ -234,6 +234,75 @@ export async function getObras(soloActivas = true) {
   return db.query.obras.findMany({
     where: soloActivas ? eq(obras.activo, true) : undefined,
     orderBy: (o, { asc }) => [asc(o.nombre)],
+  });
+}
+
+export async function getLastPrecioLitro(): Promise<number | null> {
+  const recarga = await db.query.recargasTanque.findFirst({
+    where: isNotNull(recargasTanque.precioLitro),
+    orderBy: (r, { desc: d }) => [d(r.fecha), d(r.createdAt)],
+    columns: { precioLitro: true },
+  });
+  return recarga?.precioLitro ?? null;
+}
+
+export async function getObrasConStats() {
+  const [all, precioLitro, stats] = await Promise.all([
+    db.query.obras.findMany({ orderBy: (o, { asc }) => [asc(o.nombre)] }),
+    getLastPrecioLitro(),
+    db
+      .select({
+        obraId: cargas.obraId,
+        totalLitros: sql<number>`coalesce(sum(${cargas.litros}), 0)::real`,
+        totalCargas: sql<number>`count(*)::int`,
+        ultimaFecha: sql<string>`max(${cargas.fecha})`,
+        unidades: sql<number>`count(distinct ${cargas.unidadId})::int`,
+      })
+      .from(cargas)
+      .where(isNotNull(cargas.obraId))
+      .groupBy(cargas.obraId),
+  ]);
+  const map = new Map(stats.map((s) => [s.obraId, s]));
+  return all.map((o) => {
+    const s = map.get(o.id);
+    const litros = s?.totalLitros ?? 0;
+    return {
+      ...o,
+      totalLitros: litros,
+      totalCargas: s?.totalCargas ?? 0,
+      ultimaFecha: s?.ultimaFecha ?? null,
+      unidades: s?.unidades ?? 0,
+      precioLitro,
+      costoEstimado: precioLitro != null ? litros * precioLitro : null,
+    };
+  });
+}
+
+export async function getOperadoresConStats() {
+  const [all, stats] = await Promise.all([
+    db.query.operadores.findMany({ orderBy: (o, { asc }) => [asc(o.nombre)] }),
+    db
+      .select({
+        operadorId: cargas.operadorId,
+        totalLitros: sql<number>`coalesce(sum(${cargas.litros}), 0)::real`,
+        totalCargas: sql<number>`count(*)::int`,
+        ultimaFecha: sql<string>`max(${cargas.fecha})`,
+        unidades: sql<number>`count(distinct ${cargas.unidadId})::int`,
+      })
+      .from(cargas)
+      .where(isNotNull(cargas.operadorId))
+      .groupBy(cargas.operadorId),
+  ]);
+  const map = new Map(stats.map((s) => [s.operadorId, s]));
+  return all.map((o) => {
+    const s = map.get(o.id);
+    return {
+      ...o,
+      totalLitros: s?.totalLitros ?? 0,
+      totalCargas: s?.totalCargas ?? 0,
+      ultimaFecha: s?.ultimaFecha ?? null,
+      unidades: s?.unidades ?? 0,
+    };
   });
 }
 
