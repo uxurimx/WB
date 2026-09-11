@@ -16,11 +16,11 @@ import {
   getEventosMantenimientoUnidad,
   getResumenMantenimientoUnidad,
 } from "@/app/actions/mantenimiento";
+import { getOdometroResetsUnidad } from "@/app/actions/cargas";
 import { Badge } from "@/components/ui/badge";
 import CatalogoDetalleClient from "@/components/catalogo/CatalogoDetalleClient";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
-const MAINTENANCE_ROLES = ["admin", "gerente"];
 const TIPO_LABELS: Record<string, string> = {
   camion: "Camión", maquina: "Maquinaria", nissan: "NISSAN", otro: "Otro",
 };
@@ -45,9 +45,9 @@ export default async function UnidadDetallePage({
   if (!unidad) notFound();
 
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
-  const canManageMaintenance = MAINTENANCE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
+  const canManageMaintenance = canEdit;
 
-  const [cargas, rends, fotos, audits, operadores, obras, mantenimientoResumen, mantenimientoEventos] = await Promise.all([
+  const [cargas, rends, fotos, audits, operadores, obras, mantenimientoResumen, mantenimientoEventos, odometroResets] = await Promise.all([
     getCatalogoCargas("unidad", unidadId),
     getRendimientosUnidad(unidadId),
     getArchivosUnidad(unidadId),
@@ -56,6 +56,7 @@ export default async function UnidadDetallePage({
     getObras(false),
     getResumenMantenimientoUnidad(unidadId),
     getEventosMantenimientoUnidad(unidadId),
+    getOdometroResetsUnidad(unidadId),
   ]);
 
   return (
@@ -129,6 +130,15 @@ export default async function UnidadDetallePage({
         obras={obras.map((o) => ({ id: o.id, nombre: o.nombre }))}
         canEdit={canEdit}
         canManageMaintenance={canManageMaintenance}
+        odometroActual={unidad.odometroActual}
+        odometroOffset={unidad.odometroOffset}
+        odometroResets={odometroResets.map((r) => ({
+          id: r.id,
+          fecha: r.fecha,
+          lecturaAnterior: r.lecturaAnterior,
+          lecturaNueva: r.lecturaNueva,
+          notas: r.notas,
+        }))}
       />
     </div>
   );

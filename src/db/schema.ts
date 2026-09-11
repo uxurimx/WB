@@ -53,7 +53,8 @@ export const unidades = pgTable("unidades", {
   modelo: text("modelo"),
   operadorDefaultId: integer("operador_default_id"),
   capacidadTanque: real("capacidad_tanque"),         // litros
-  odometroActual: real("odometro_actual").default(0), // km o horas según tipo
+  odometroActual: real("odometro_actual").default(0), // km o horas según tipo (lectura del hub actual)
+  odometroOffset: real("odometro_offset").default(0), // km/hrs de hubs anteriores (tras reset)
   rendimientoReferencia: real("rendimiento_referencia"), // km/L o L/Hr
   activo: boolean("activo").notNull().default(true),
   notas: text("notas"),
@@ -81,6 +82,17 @@ export const mantenimientosPlanes = pgTable("mantenimientos_planes", {
 // ─────────────────────────────────────────────────────────────────────────────
 // MANTENIMIENTOS EVENTOS — historial de servicios realizados
 // ─────────────────────────────────────────────────────────────────────────────
+export const odometroResets = pgTable("odometro_resets", {
+  id: serial("id").primaryKey(),
+  unidadId: integer("unidad_id").notNull(),
+  fecha: date("fecha").notNull(),
+  lecturaAnterior: real("lectura_anterior").notNull(),
+  lecturaNueva: real("lectura_nueva").notNull().default(0),
+  notas: text("notas"),
+  registradoPorId: text("registrado_por_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const mantenimientosEventos = pgTable("mantenimientos_eventos", {
   id: serial("id").primaryKey(),
   unidadId: integer("unidad_id").notNull(),
@@ -423,6 +435,14 @@ export const unidadesRelations = relations(unidades, ({ one, many }) => ({
   rendimientos: many(rendimientos),
   mantenimientosPlanes: many(mantenimientosPlanes),
   mantenimientosEventos: many(mantenimientosEventos),
+  odometroResets: many(odometroResets),
+}));
+
+export const odometroResetsRelations = relations(odometroResets, ({ one }) => ({
+  unidad: one(unidades, {
+    fields: [odometroResets.unidadId],
+    references: [unidades.id],
+  }),
 }));
 
 export const mantenimientosPlanesRelations = relations(mantenimientosPlanes, ({ one, many }) => ({

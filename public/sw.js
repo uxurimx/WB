@@ -1,6 +1,11 @@
-const CACHE_NAME = "wb-diesel-v1";
+const CACHE_NAME = "wb-diesel-v3";
 const OFFLINE_URL = "/offline";
-const STATIC_ASSETS = [OFFLINE_URL];
+const STATIC_ASSETS = [
+  OFFLINE_URL,
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/apple-touch-icon.png",
+];
 
 // ── Install: pre-cache offline page ──────────────────────────
 self.addEventListener("install", (event) => {

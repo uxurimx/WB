@@ -1,0 +1,7 @@
+-- Prod 2026-09-11. Conservar folio original en el id más viejo.
+-- Campo: 2756 11583→15910; 2931 11808→15911; 2962 11815→15912
+-- Patio: 3803 12467→15603; 2775 13188→15604; 2776 13188→15605;
+--        2787 13196→15606; 2972 13393→15607
+-- Nota de 3803 copiada a 3802 (12467).
+-- Índice: cargas_folio_origen_unique
+-- Los folios 13501-13504 compartidos carga patio + transferencia NO se tocaron.

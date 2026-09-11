@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { tanques, recargasTanque, transferenciasTanque, auditLog, cargas } from "@/db/schema";
@@ -12,6 +11,8 @@ import {
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 import { conciliarTanques } from "@/lib/conciliacion";
 import { UMBRAL_TALLER, UMBRAL_NISSAN } from "@/lib/alertas-config";
+import { recargaTanqueSchema, transferenciaSchema, parseOrThrow } from "@/lib/validators";
+import { calcSobrecarga, type MotivoSobrecarga, type SobrecargaTanque } from "@/lib/tanque-sobrecarga";
 
 export type RecargaTanqueInput = {
   tanqueId: number;
@@ -26,9 +27,9 @@ export type RecargaTanqueInput = {
 };
 
 export async function addRecargaTanque(input: RecargaTanqueInput) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
-  if (input.litros <= 0) throw new Error("Los litros deben ser mayores a 0");
+  const { userId } = await requireManageRole();
+  const parsed = parseOrThrow(recargaTanqueSchema, input);
+  input = parsed;
 
   const tanque = await db.query.tanques.findFirst({
     where: eq(tanques.id, input.tanqueId),
@@ -87,9 +88,9 @@ export type TransferenciaInput = {
 };
 
 export async function transferirEntreTanques(input: TransferenciaInput) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
-  if (input.litros <= 0) throw new Error("Los litros deben ser mayores a 0");
+  const { userId } = await requireManageRole();
+  const parsed = parseOrThrow(transferenciaSchema, input);
+  input = parsed;
   if (input.tanqueOrigenId === input.tanqueDestinoId)
     throw new Error("El origen y destino no pueden ser el mismo tanque");
 
@@ -605,6 +606,7 @@ export type TanqueDetalle = {
     anclaFecha: string | null;
     anclaLitros: number;
   };
+  sobrecarga: SobrecargaTanque | null;
 };
 
 // ─── Detalle completo de todos los tanques (para /tanques) ───────────────────
@@ -627,7 +629,7 @@ export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
         anclaFecha: null, anclaLitros: 0,
       };
 
-      const [recargas, transferencias, cargasData, ajustesAudit] = await Promise.all([
+      const [recargas, transferencias, cargasData, ajustesAudit, sobrecargaAudit] = await Promise.all([
         db.query.recargasTanque.findMany({
           where: (r, { eq: _eq }) => _eq(r.tanqueId, t.id),
           orderBy: (r, { desc: _desc }) => [_desc(r.fecha), _desc(r.createdAt)],
@@ -651,6 +653,14 @@ export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
           ))
           .orderBy(desc(auditLog.createdAt))
           .limit(20),
+        db.select().from(auditLog)
+          .where(and(
+            eq(auditLog.accion, "sobrecarga_tanque"),
+            eq(auditLog.entidad, "tanques"),
+            eq(auditLog.entidadId, String(t.id)),
+          ))
+          .orderBy(desc(auditLog.createdAt))
+          .limit(1),
       ]);
 
       // Nombres de tanques para transferencias
@@ -792,6 +802,29 @@ export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
           anclaFecha:  conc.anclaFecha,
           anclaLitros: conc.anclaLitros,
         },
+        sobrecarga: (() => {
+          const computed = calcSobrecarga({
+            tanqueId: t.id,
+            tanqueNombre: t.nombre,
+            litros: litrosActuales,
+            capacidadMax: t.capacidadMax,
+          });
+          if (!computed) return null;
+          const last = sobrecargaAudit[0];
+          if (last?.datosJson) {
+            try {
+              const parsed = JSON.parse(last.datosJson) as Partial<SobrecargaTanque>;
+              return {
+                ...computed,
+                motivo: (parsed.motivo as MotivoSobrecarga) ?? computed.motivo,
+                detalle: parsed.detalle ?? computed.detalle,
+              };
+            } catch {
+              return computed;
+            }
+          }
+          return computed;
+        })(),
       };
     }),
   );

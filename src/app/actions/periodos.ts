@@ -2,25 +2,32 @@
 
 import { db } from "@/db";
 import { periodos } from "@/db/schema";
-import { eq, and, lte, gte } from "drizzle-orm";
-import { getLocalDateString, getLocalDayOfWeek, subtractDaysLocal, addDaysLocal } from "@/lib/date-utils";
+import { and, lte, gte } from "drizzle-orm";
+import { getLocalDateString, getLocalDayOfWeek, subtractDaysLocal, addDaysLocal, parseLocalDate } from "@/lib/date-utils";
 
-// Obtiene el período activo para una fecha dada (o hoy)
-// Períodos van de sábado a viernes
-export async function getOrCreatePeriodoActual(fecha?: Date) {
-  const hoy = fecha ?? new Date();
+function toLocalDate(fecha?: Date | string): Date {
+  if (!fecha) return new Date();
+  if (typeof fecha === "string") return parseLocalDate(fecha);
+  return fecha;
+}
 
-  // Buscar período existente que contenga esta fecha (usando hora LOCAL)
-  const fechaStr = getLocalDateString(hoy);
-
-  const existente = await db.query.periodos.findFirst({
+export async function getPeriodoForFecha(fechaStr: string) {
+  return db.query.periodos.findFirst({
     where: and(
       lte(periodos.fechaInicio, fechaStr),
       gte(periodos.fechaFin, fechaStr),
-      eq(periodos.cerrado, false)
     ),
+    orderBy: (p, { desc }) => [desc(p.fechaInicio)],
   });
+}
 
+// Obtiene el período que contiene la fecha (cerrado o abierto). Si no existe, lo crea.
+// Períodos van de sábado a viernes.
+export async function getOrCreatePeriodoActual(fecha?: Date | string) {
+  const hoy = toLocalDate(fecha);
+  const fechaStr = getLocalDateString(hoy);
+
+  const existente = await getPeriodoForFecha(fechaStr);
   if (existente) return existente;
 
   // Calcular inicio (sábado anterior) y fin (viernes siguiente) usando hora LOCAL

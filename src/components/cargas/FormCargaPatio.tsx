@@ -15,7 +15,7 @@ import { useUploadThing } from "@/lib/uploadthing";
 import { getNowLocal } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 
-const KM_MAX_DIFERENCIA = 1100;
+import { KM_MAX_DIFERENCIA } from "@/lib/odometro";
 
 type Unidad = { id: number; codigo: string; nombre: string | null; tipo: string };
 type Operador = { id: number; nombre: string; tipo: string };

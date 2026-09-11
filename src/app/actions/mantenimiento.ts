@@ -6,10 +6,12 @@ import {
   configuracion,
   mantenimientosEventos,
   mantenimientosPlanes,
+  odometroResets,
   unidades,
 } from "@/db/schema";
 import { requireMaintenanceManager } from "@/lib/authz";
 import { and, eq, inArray } from "drizzle-orm";
+import { trueOdometro, type OdometroReset } from "@/lib/odometro";
 import {
   normalizeMantenimientoConfig,
   type TipoControlMantenimiento,
@@ -219,10 +221,10 @@ type EffectivePlan = {
 };
 
 async function getRawMantenimientoData(unidadIds: number[]) {
-  const [units, planes, eventos, configRows] = await Promise.all([
+  const [units, planes, eventos, configRows, resets] = await Promise.all([
     db.query.unidades.findMany({
       where: inArray(unidades.id, unidadIds),
-      columns: { id: true, codigo: true, odometroActual: true, tipo: true },
+      columns: { id: true, codigo: true, odometroActual: true, odometroOffset: true, tipo: true },
     }),
     db.query.mantenimientosPlanes.findMany({
       where: inArray(mantenimientosPlanes.unidadId, unidadIds),
@@ -238,9 +240,12 @@ async function getRawMantenimientoData(unidadIds: number[]) {
         "mantenimiento_alertas_umbral",
       ]),
     }),
+    db.query.odometroResets.findMany({
+      where: inArray(odometroResets.unidadId, unidadIds),
+    }),
   ]);
 
-  return { units, planes, eventos, configRows };
+  return { units, planes, eventos, configRows, resets };
 }
 
 function buildSummaries(data: Awaited<ReturnType<typeof getRawMantenimientoData>>): ResumenMantenimientoUnidad[] {
@@ -258,6 +263,18 @@ function buildSummaries(data: Awaited<ReturnType<typeof getRawMantenimientoData>
   for (const evento of data.eventos) {
     const key = `${evento.unidadId}:${evento.tipoControl}`;
     if (!eventosByKey.has(key)) eventosByKey.set(key, evento);
+  }
+
+  const resetsByUnidad = new Map<number, OdometroReset[]>();
+  for (const r of data.resets) {
+    const list = resetsByUnidad.get(r.unidadId) ?? [];
+    list.push({
+      fecha: r.fecha,
+      createdAt: r.createdAt ?? null,
+      lecturaAnterior: r.lecturaAnterior,
+      lecturaNueva: r.lecturaNueva,
+    });
+    resetsByUnidad.set(r.unidadId, list);
   }
 
   return data.units.map((unidad) => {
@@ -288,10 +305,27 @@ function buildSummaries(data: Awaited<ReturnType<typeof getRawMantenimientoData>
             }
           : null;
 
+      const resets = resetsByUnidad.get(unidad.id) ?? [];
+      const lecturaRaw = unidad.odometroActual ?? null;
+      const lecturaActual =
+        lecturaRaw == null
+          ? null
+          : lecturaRaw + (unidad.odometroOffset ?? 0);
+      const eventoTrue = evento
+        ? {
+            fechaServicio: evento.fechaServicio,
+            lecturaServicio: trueOdometro(
+              evento.lecturaServicio,
+              { fecha: evento.fechaServicio, createdAt: evento.createdAt ?? null },
+              resets,
+            ),
+          }
+        : null;
+
       return computePlanSummary({
         unidadId: unidad.id,
         tipoControl,
-        lecturaActual: unidad.odometroActual ?? null,
+        lecturaActual,
         plan: effectivePlan
           ? {
               id: effectivePlan.id,
@@ -302,12 +336,7 @@ function buildSummaries(data: Awaited<ReturnType<typeof getRawMantenimientoData>
               activo: effectivePlan.activo,
             }
           : null,
-        evento: evento
-          ? {
-              fechaServicio: evento.fechaServicio,
-              lecturaServicio: evento.lecturaServicio,
-            }
-          : null,
+        evento: eventoTrue,
       });
     });
 
@@ -492,5 +521,38 @@ export async function registrarMantenimientoUnidad(input: {
 
   revalidatePath("/catalogo/unidades");
   revalidatePath(`/catalogo/unidades/${input.unidadId}`);
+  revalidatePath("/overview");
+}
+
+export async function updateEventoMantenimiento(input: {
+  id: number;
+  fechaServicio?: string;
+  lecturaServicio?: number;
+  descripcion?: string | null;
+  notas?: string | null;
+}) {
+  await requireMaintenanceManager();
+
+  const existing = await db.query.mantenimientosEventos.findFirst({
+    where: eq(mantenimientosEventos.id, input.id),
+  });
+  if (!existing) throw new Error("Evento de mantenimiento no encontrado");
+
+  if (input.lecturaServicio != null && input.lecturaServicio < 0) {
+    throw new Error("La lectura no puede ser negativa");
+  }
+
+  await db
+    .update(mantenimientosEventos)
+    .set({
+      fechaServicio: input.fechaServicio ?? existing.fechaServicio,
+      lecturaServicio: input.lecturaServicio ?? existing.lecturaServicio,
+      descripcion: input.descripcion !== undefined ? input.descripcion : existing.descripcion,
+      notas: input.notas !== undefined ? input.notas : existing.notas,
+    })
+    .where(eq(mantenimientosEventos.id, input.id));
+
+  revalidatePath("/catalogo/unidades");
+  revalidatePath(`/catalogo/unidades/${existing.unidadId}`);
   revalidatePath("/overview");
 }

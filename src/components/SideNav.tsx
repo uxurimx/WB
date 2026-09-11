@@ -11,6 +11,7 @@ import {
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
 import ThemeToggle from "@/components/ThemeToggle";
+import InstallPwa from "@/components/InstallPwa";
 import { cn } from "@/lib/utils";
 import { ROLE_NAV_PERMISSIONS, type NavPermission } from "@/lib/permissions";
 
@@ -19,7 +20,10 @@ type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ clas
 function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedades = 0) {
   const has = (p: NavPermission) => permisos.includes(p);
 
-  const cargasItems: NavItemDef[] = [];
+  const cargasItems: NavItemDef[] = [
+    ...(has("cargas.nueva_patio") ? [{ name: "Carga patio", href: "/cargas/nueva", icon: PlusCircle }] : []),
+    ...(has("cargas.nueva_campo") ? [{ name: "Carga campo", href: "/cargas/campo", icon: Fuel }] : []),
+  ];
 
   const catalogoItems: NavItemDef[] = has("catalogo") ? [
     { name: "Unidades",   href: "/catalogo/unidades",   icon: Truck },
@@ -157,8 +161,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
     const inCatalogos = pathname.startsWith("/catalogo");
     const inPoxelbit  = pathname.startsWith("/poxelbit");
+    const inCargasCaptura = pathname.startsWith("/cargas/nueva") || pathname.startsWith("/cargas/campo");
     const inAnalisis  = pathname.startsWith("/tanques") || pathname.startsWith("/periodos") ||
-                        pathname.startsWith("/cargas")  || pathname.startsWith("/analiticas");
+                        (pathname.startsWith("/cargas") && !inCargasCaptura) || pathname.startsWith("/analiticas");
     const inSistema   = pathname.startsWith("/admin") || pathname.startsWith("/settings");
     const collapsed = new Set<string>();
     if (!inCatalogos) collapsed.add("Catálogos");
@@ -250,6 +255,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Footer */}
       <div className="mt-auto pt-4 space-y-3 border-t" style={{ borderColor: "var(--border)" }}>
+        <InstallPwa />
         <div className="flex items-center justify-between px-2">
           <span className="text-xs" style={{ color: "var(--fg-muted)" }}>Tema</span>
           <ThemeToggle />

@@ -55,11 +55,12 @@ Pusher (real-time) · uploadthing (fotos odómetro) · Tailwind v4 · Zod.
 
 ## Notas / pendientes
 
-- **Índices de cargas**: NO están en el schema a propósito. `db:push` intentaba recrear el
-  índice único `cargas_folio_origen_unique` y fallaba por **folio 13393 duplicado en patio**.
-  Si se quiere el extra de velocidad → `CREATE INDEX IF NOT EXISTS` manual en Neon
-  (ver tarea devmon #306). El duplicado de folio es tarea #307.
-- `db:push` puede tropezar con ese índice único + duplicado; cuidado al usarlo.
+- **Índice único de folios**: `cargas_folio_origen_unique` ya existe en Neon (folio + origen,
+  NULLs permitidos). Duplicados históricos se reasignaron el 2026-09-11 (ver
+  `scripts/fix-folios-duplicados.ts`). Patio y campo siguen siendo secuencias distintas;
+  patio comparte número con transferencias.
+- Índices de consulta (`fecha`, `unidad_id`) siguen siendo opcionales: `CREATE INDEX IF NOT EXISTS`
+  manual si hace falta velocidad (tarea #306).
 
 ## Reglas de trabajo en este repo
 

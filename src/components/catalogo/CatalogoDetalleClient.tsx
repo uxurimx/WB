@@ -65,6 +65,9 @@ export default function CatalogoDetalleClient({
   obras,
   canEdit,
   canManageMaintenance,
+  odometroActual = null,
+  odometroOffset = 0,
+  odometroResets = [],
 }: {
   tipo: "unidad" | "operador" | "obra";
   unidadId?: number;
@@ -79,6 +82,9 @@ export default function CatalogoDetalleClient({
   obras: { id: number; nombre: string }[];
   canEdit: boolean;
   canManageMaintenance: boolean;
+  odometroActual?: number | null;
+  odometroOffset?: number | null;
+  odometroResets?: { id: number; fecha: string; lecturaAnterior: number; lecturaNueva: number; notas: string | null }[];
 }) {
   const router = useRouter();
 
@@ -698,6 +704,9 @@ export default function CatalogoDetalleClient({
           resumen={mantenimientoResumen}
           eventos={mantenimientoEventos}
           canManageMaintenance={canManageMaintenance}
+          odometroActual={odometroActual}
+          odometroOffset={odometroOffset}
+          resets={odometroResets}
         />
       )}
 

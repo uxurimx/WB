@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Fuel, Truck, AlertTriangle, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import SobrecargaNotice from "@/components/tanques/SobrecargaNotice";
+import { calcSobrecarga } from "@/lib/tanque-sobrecarga";
 
 type StockData = {
   id: number;
@@ -26,10 +28,13 @@ function StockBar({
   alerta: boolean;
 }) {
   const pct = Math.min(100, max > 0 ? (litros / max) * 100 : 0);
+  const sobrecarga = litros > max && max > 0;
   return (
     <div className="h-2 rounded-full w-full mt-3" style={{ backgroundColor: "var(--surface-2)" }}>
       <div
-        className={`h-2 rounded-full transition-all duration-700 ${alerta ? "bg-red-500" : color}`}
+        className={`h-2 rounded-full transition-all duration-700 ${
+          sobrecarga ? "bg-amber-500" : alerta ? "bg-red-500" : color
+        }`}
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -115,6 +120,8 @@ export default function StockCards({
 
   const alertaTaller = taller.litros < 500;
   const alertaNissan = nissan.litros < 100;
+  const sobrecargaTaller = calcSobrecarga({ tanqueId: taller.id, tanqueNombre: "Taller", litros: taller.litros, capacidadMax: taller.max });
+  const sobrecargaNissan = calcSobrecarga({ tanqueId: nissan.id, tanqueNombre: "NISSAN", litros: nissan.litros, capacidadMax: nissan.max });
   const pctTaller = taller.max > 0 ? Math.round((taller.litros / taller.max) * 100) : 0;
   const pctNissan = nissan.max > 0 ? Math.round((nissan.litros / nissan.max) * 100) : 0;
 
@@ -126,7 +133,9 @@ export default function StockCards({
         className="p-5 rounded-2xl border block transition-colors hover:bg-[var(--surface-2)]"
         style={{
           backgroundColor: "var(--surface)",
-          borderColor: alertaTaller ? "rgb(239 68 68 / 0.4)" : "var(--border)",
+          borderColor: sobrecargaTaller
+            ? "rgb(245 158 11 / 0.5)"
+            : alertaTaller ? "rgb(239 68 68 / 0.4)" : "var(--border)",
         }}
       >
         <div className="flex items-start justify-between gap-2 mb-1">
@@ -139,14 +148,16 @@ export default function StockCards({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {alertaTaller && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
+            {sobrecargaTaller
+              ? <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+              : alertaTaller && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
             <span className="flex items-center gap-1 text-xs font-semibold text-indigo-500">
               Ver tanque <ArrowRight className="w-3 h-3" />
             </span>
           </div>
         </div>
 
-        <p className="font-outfit font-bold text-3xl mt-2" style={{ color: alertaTaller ? "rgb(239 68 68)" : "var(--fg)" }}>
+        <p className="font-outfit font-bold text-3xl mt-2" style={{ color: sobrecargaTaller ? "rgb(217 119 6)" : alertaTaller ? "rgb(239 68 68)" : "var(--fg)" }}>
           {taller.litros.toLocaleString()}
           <span className="text-base font-normal ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
         </p>
@@ -155,8 +166,17 @@ export default function StockCards({
 
         <p className="text-xs mt-2" style={{ color: "var(--fg-muted)" }}>
           {pctTaller}% de {taller.max.toLocaleString()} L
-          {alertaTaller && <span className="ml-2 text-red-500 font-semibold">Stock bajo</span>}
+          {sobrecargaTaller && <span className="ml-2 text-amber-600 font-semibold">Sobrecarga</span>}
+          {!sobrecargaTaller && alertaTaller && <span className="ml-2 text-red-500 font-semibold">Stock bajo</span>}
         </p>
+        {sobrecargaTaller && (
+          <SobrecargaNotice
+            litros={sobrecargaTaller.litros}
+            capacidadMax={sobrecargaTaller.capacidadMax}
+            exceso={sobrecargaTaller.exceso}
+            compact
+          />
+        )}
         <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
           Cuentalitros:{" "}
           <span className="font-mono font-semibold" style={{ color: "var(--fg)" }}>
@@ -174,7 +194,9 @@ export default function StockCards({
         className="p-5 rounded-2xl border block transition-colors hover:bg-[var(--surface-2)]"
         style={{
           backgroundColor: "var(--surface)",
-          borderColor: alertaNissan ? "rgb(239 68 68 / 0.4)" : "var(--border)",
+          borderColor: sobrecargaNissan
+            ? "rgb(245 158 11 / 0.5)"
+            : alertaNissan ? "rgb(239 68 68 / 0.4)" : "var(--border)",
         }}
       >
         <div className="flex items-start justify-between gap-2 mb-1">
@@ -187,14 +209,16 @@ export default function StockCards({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {alertaNissan && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
+            {sobrecargaNissan
+              ? <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+              : alertaNissan && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
             <span className="flex items-center gap-1 text-xs font-semibold text-violet-500">
               Ver tanque <ArrowRight className="w-3 h-3" />
             </span>
           </div>
         </div>
 
-        <p className="font-outfit font-bold text-3xl mt-2" style={{ color: alertaNissan ? "rgb(239 68 68)" : "var(--fg)" }}>
+        <p className="font-outfit font-bold text-3xl mt-2" style={{ color: sobrecargaNissan ? "rgb(217 119 6)" : alertaNissan ? "rgb(239 68 68)" : "var(--fg)" }}>
           {nissan.litros.toLocaleString()}
           <span className="text-base font-normal ml-1" style={{ color: "var(--fg-muted)" }}>
             / {nissan.max.toLocaleString()} L
@@ -205,8 +229,17 @@ export default function StockCards({
 
         <p className="text-xs mt-2" style={{ color: "var(--fg-muted)" }}>
           {pctNissan}% de capacidad
-          {alertaNissan && <span className="ml-2 text-red-500 font-semibold">Stock bajo</span>}
+          {sobrecargaNissan && <span className="ml-2 text-amber-600 font-semibold">Sobrecarga</span>}
+          {!sobrecargaNissan && alertaNissan && <span className="ml-2 text-red-500 font-semibold">Stock bajo</span>}
         </p>
+        {sobrecargaNissan && (
+          <SobrecargaNotice
+            litros={sobrecargaNissan.litros}
+            capacidadMax={sobrecargaNissan.capacidadMax}
+            exceso={sobrecargaNissan.exceso}
+            compact
+          />
+        )}
         <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
           Cuentalitros:{" "}
           <span className="font-mono font-semibold" style={{ color: "var(--fg)" }}>

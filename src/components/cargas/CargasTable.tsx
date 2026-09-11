@@ -24,6 +24,7 @@ import {
   updateTransferencia, deleteTransferencia,
 } from "@/app/actions/tanques";
 import type PusherClient from "pusher-js";
+import { formatFechaHoraMx, formatFechaMx } from "@/lib/date-utils";
 
 // ─── Types ───────────────────────────────────────────────────
 export type CargaItem = {
@@ -85,21 +86,11 @@ type Operador    = { id: number; nombre: string };
 type Obra        = { id: number; nombre: string };
 
 function formatFecha(fecha: string) {
-  return new Date(fecha + "T12:00:00").toLocaleDateString("es-MX", {
-    weekday: "short", day: "numeric", month: "short",
-  });
+  return formatFechaMx(fecha);
 }
 
 function formatFechaHora(fecha: string, createdAt?: string | null, hora?: string | null) {
-  if (createdAt) {
-    return new Date(createdAt).toLocaleString("es-MX", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-  return `${formatFecha(fecha)}${hora ? ` · ${hora.slice(0, 5)}` : ""}`;
+  return formatFechaHoraMx(fecha, createdAt, hora);
 }
 
 function formatFolioCarga(item: Pick<CargaItem, "folio" | "origen">) {
@@ -568,6 +559,7 @@ export default function CargasTable({
   const [deletingCargaId, setDeletingCargaId] = useState<number | null>(null);
   const [deleteCargaError, setDeleteCargaError] = useState("");
   const [deleteNoteState, setDeleteNoteState] = useState<{ cargaId: number; nota: string } | null>(null);
+  const [sobrecargaMsg, setSobrecargaMsg] = useState<string | null>(null);
 
   // ── Estado: edición/eliminación de recargas ────────────────
   const [editRecarga,    setEditRecarga]    = useState<RecargaItem | null>(null);
@@ -647,8 +639,13 @@ export default function CargasTable({
     if (deletingCargaId === id) {
       startTransition(async () => {
         try {
-          await deleteCarga(id);
+          const res = await deleteCarga(id);
           setDeletingCargaId(null);
+          if (res?.sobrecarga) {
+            setSobrecargaMsg(
+              `${res.sobrecarga.tanqueNombre}: +${Math.round(res.sobrecarga.exceso).toLocaleString("es-MX")} L sobre capacidad. ${res.sobrecarga.detalle}`
+            );
+          }
           await reloadCargas();
         } catch (err) {
           setDeleteCargaError(err instanceof Error ? err.message : "Error al eliminar");
@@ -665,8 +662,13 @@ export default function CargasTable({
     if (!deleteNoteState?.nota.trim()) return;
     startTransition(async () => {
       try {
-        await deleteCarga(deleteNoteState.cargaId, deleteNoteState.nota);
+        const res = await deleteCarga(deleteNoteState.cargaId, deleteNoteState.nota);
         setDeleteNoteState(null);
+        if (res?.sobrecarga) {
+          setSobrecargaMsg(
+            `${res.sobrecarga.tanqueNombre}: +${Math.round(res.sobrecarga.exceso).toLocaleString("es-MX")} L sobre capacidad. ${res.sobrecarga.detalle}`
+          );
+        }
         await reloadCargas();
       } catch (err) {
         setDeleteCargaError(err instanceof Error ? err.message : "Error al eliminar");
@@ -838,6 +840,12 @@ export default function CargasTable({
       {anyDeleteError && (
         <p className="text-sm text-red-500 flex items-center gap-1.5 mb-3">
           <AlertCircle className="w-4 h-4 shrink-0" /> {anyDeleteError}
+        </p>
+      )}
+      {sobrecargaMsg && (
+        <p className="text-sm text-amber-700 flex items-start gap-1.5 mb-3 rounded-xl border px-3 py-2"
+          style={{ backgroundColor: "rgb(245 158 11 / 0.08)", borderColor: "rgb(245 158 11 / 0.3)" }}>
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> {sobrecargaMsg}
         </p>
       )}
 

@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { formatFechaHoraMx, formatFechaMx } from "@/lib/date-utils";
 
 type Carga = {
   id: number;
@@ -56,23 +57,11 @@ const ORIGEN_VARIANT: Record<string, "default" | "warning"> = {
 type FeedFilter = "todas" | "cargas" | "tanques";
 
 function formatFecha(fecha: string) {
-  return new Date(fecha + "T12:00:00").toLocaleDateString("es-MX", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+  return formatFechaMx(fecha);
 }
 
 function formatFechaHora(fecha: string, createdAt: string | null, hora?: string | null) {
-  if (createdAt) {
-    return new Date(createdAt).toLocaleString("es-MX", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-  return `${formatFecha(fecha)}${hora ? ` · ${hora.slice(0, 5)}` : ""}`;
+  return formatFechaHoraMx(fecha, createdAt, hora);
 }
 
 export default function CargasRecientes({

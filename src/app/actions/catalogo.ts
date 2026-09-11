@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { unidades, operadores, obras, cargas, rendimientos, periodos } from "@/db/schema";
 import { eq, count, inArray, and, sql } from "drizzle-orm";
-import { requireManageRole } from "@/lib/authz";
+import { requireManageRole, requireAnyActionPermission } from "@/lib/authz";
 import { getResumenMantenimientoUnidades } from "@/app/actions/mantenimiento";
 
 // ─────────────────────────────────────────────────────────────
@@ -148,6 +148,7 @@ export async function createUnidad(data: {
   rendimientoReferencia?: number;
   notas?: string;
 }) {
+  await requireManageRole();
   const [nueva] = await db.insert(unidades).values(data).returning();
   revalidatePath("/catalogo/unidades");
   revalidatePath("/cargas/nueva");
@@ -159,6 +160,7 @@ export async function updateUnidad(
   id: number,
   data: Partial<typeof unidades.$inferInsert>
 ) {
+  await requireManageRole();
   const [updated] = await db
     .update(unidades)
     .set(data)
@@ -171,6 +173,7 @@ export async function updateUnidad(
 }
 
 export async function toggleUnidadActivo(id: number, activo: boolean) {
+  await requireManageRole();
   await db.update(unidades).set({ activo }).where(eq(unidades.id, id));
   revalidatePath("/catalogo/unidades");
   revalidatePath("/cargas/nueva");
@@ -192,6 +195,7 @@ export async function createOperador(data: {
   tipo: string;
   telefono?: string;
 }) {
+  await requireManageRole();
   const [nuevo] = await db.insert(operadores).values(data).returning();
   revalidatePath("/catalogo/operadores");
   revalidatePath("/cargas/nueva");
@@ -203,6 +207,7 @@ export async function updateOperador(
   id: number,
   data: Partial<typeof operadores.$inferInsert>
 ) {
+  await requireManageRole();
   const [updated] = await db
     .update(operadores)
     .set(data)
@@ -215,6 +220,7 @@ export async function updateOperador(
 }
 
 export async function toggleOperadorActivo(id: number, activo: boolean) {
+  await requireManageRole();
   await db.update(operadores).set({ activo }).where(eq(operadores.id, id));
   revalidatePath("/catalogo/operadores");
   revalidatePath("/cargas/nueva");
@@ -237,6 +243,7 @@ export async function createObra(data: {
   fechaInicio?: string;
   notas?: string;
 }) {
+  await requireManageRole();
   const [nueva] = await db.insert(obras).values(data).returning();
   revalidatePath("/catalogo/obras");
   revalidatePath("/cargas/campo");
@@ -246,8 +253,7 @@ export async function createObra(data: {
 // Creación rápida desde el form de campo — sin requerir rol especial
 // La obra queda activa y disponible de inmediato
 export async function createObraRapida(nombre: string) {
-  const { userId } = await (await import("@clerk/nextjs/server")).auth();
-  if (!userId) throw new Error("No autenticado");
+  await requireAnyActionPermission(["cargas.nueva_campo", "catalogo"]);
   const nombreTrimmed = nombre.trim();
   if (!nombreTrimmed) throw new Error("El nombre de la obra no puede estar vacío");
   const [nueva] = await db
@@ -263,6 +269,7 @@ export async function updateObra(
   id: number,
   data: Partial<typeof obras.$inferInsert>
 ) {
+  await requireManageRole();
   const [updated] = await db
     .update(obras)
     .set(data)
@@ -274,6 +281,7 @@ export async function updateObra(
 }
 
 export async function toggleObraActiva(id: number, activo: boolean) {
+  await requireManageRole();
   await db.update(obras).set({ activo }).where(eq(obras.id, id));
   revalidatePath("/catalogo/obras");
   revalidatePath("/cargas/campo");

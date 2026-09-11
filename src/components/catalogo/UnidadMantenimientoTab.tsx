@@ -9,10 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   registrarMantenimientoUnidad,
+  updateEventoMantenimiento,
   type ResumenMantenimientoUnidad,
   type TipoControlMantenimiento,
   upsertPlanMantenimiento,
 } from "@/app/actions/mantenimiento";
+import { registrarResetOdometro } from "@/app/actions/cargas";
+import { getNowLocal } from "@/lib/date-utils";
 import { useRouter } from "next/navigation";
 
 type EventoMantenimiento = {
@@ -54,16 +57,30 @@ function planTitle(tipo: TipoControlMantenimiento) {
   return tipo === "km" ? "Plan KM" : "Plan HRS";
 }
 
+type ResetItem = {
+  id: number;
+  fecha: string;
+  lecturaAnterior: number;
+  lecturaNueva: number;
+  notas: string | null;
+};
+
 export default function UnidadMantenimientoTab({
   unidadId,
   resumen,
   eventos,
   canManageMaintenance,
+  odometroActual = null,
+  odometroOffset = 0,
+  resets = [],
 }: {
   unidadId: number;
   resumen: ResumenMantenimientoUnidad | null;
   eventos: EventoMantenimiento[];
   canManageMaintenance: boolean;
+  odometroActual?: number | null;
+  odometroOffset?: number | null;
+  resets?: ResetItem[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -98,11 +115,19 @@ export default function UnidadMantenimientoTab({
   });
   const [registroForm, setRegistroForm] = useState({
     tipoControl: "km" as TipoControlMantenimiento,
-    fechaServicio: new Date().toISOString().slice(0, 10),
+    fechaServicio: getNowLocal().fecha,
     lecturaServicio: "",
     descripcion: "",
     notas: "",
   });
+  const [resetForm, setResetForm] = useState({
+    fecha: getNowLocal().fecha,
+    lecturaAnterior: odometroActual != null ? String(odometroActual) : "",
+    lecturaNueva: "0",
+    notas: "",
+  });
+  const [editingEventoId, setEditingEventoId] = useState<number | null>(null);
+  const [eventoEdit, setEventoEdit] = useState({ fechaServicio: "", lecturaServicio: "", descripcion: "", notas: "" });
 
   const eventosOrdenados = useMemo(
     () => [...eventos].sort((a, b) => {
@@ -149,6 +174,68 @@ export default function UnidadMantenimientoTab({
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al guardar el plan.");
+      }
+    });
+  }
+
+  function registrarReset() {
+    setError("");
+    setSuccess("");
+    const lecturaAnterior = parseFloat(resetForm.lecturaAnterior);
+    const lecturaNueva = parseFloat(resetForm.lecturaNueva);
+    if (Number.isNaN(lecturaAnterior) || lecturaAnterior < 0 || Number.isNaN(lecturaNueva) || lecturaNueva < 0) {
+      setError("Las lecturas del reset deben ser números válidos.");
+      return;
+    }
+    startTransition(async () => {
+      try {
+        await registrarResetOdometro({
+          unidadId,
+          fecha: resetForm.fecha,
+          lecturaAnterior,
+          lecturaNueva,
+          notas: resetForm.notas || undefined,
+        });
+        setSuccess("Reset de hubodómetro registrado. Las próximas cargas usan la lectura nueva.");
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error al registrar el reset.");
+      }
+    });
+  }
+
+  function startEditEvento(evento: EventoMantenimiento) {
+    setEditingEventoId(evento.id);
+    setEventoEdit({
+      fechaServicio: evento.fechaServicio,
+      lecturaServicio: String(evento.lecturaServicio),
+      descripcion: evento.descripcion ?? "",
+      notas: evento.notas ?? "",
+    });
+  }
+
+  function saveEvento() {
+    if (editingEventoId == null) return;
+    const lecturaServicio = parseFloat(eventoEdit.lecturaServicio);
+    if (Number.isNaN(lecturaServicio) || lecturaServicio < 0) {
+      setError("La lectura del servicio debe ser válida.");
+      return;
+    }
+    setError("");
+    startTransition(async () => {
+      try {
+        await updateEventoMantenimiento({
+          id: editingEventoId,
+          fechaServicio: eventoEdit.fechaServicio,
+          lecturaServicio,
+          descripcion: eventoEdit.descripcion || null,
+          notas: eventoEdit.notas || null,
+        });
+        setSuccess("Mantenimiento actualizado.");
+        setEditingEventoId(null);
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error al editar mantenimiento.");
       }
     });
   }
@@ -220,6 +307,58 @@ export default function UnidadMantenimientoTab({
         >
           {error || success}
         </div>
+      )}
+
+      {canManageMaintenance && (
+        <section
+          className="rounded-2xl border p-4 space-y-4"
+          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          <div>
+            <p className="font-semibold" style={{ color: "var(--fg)" }}>Reset de hubodómetro</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
+              Si se dañó el rin y el km volvió a 0, regístralo aquí. No edites la última carga.
+              Hub actual: {fmtNum(odometroActual)} · Acumulado: {fmtNum((odometroActual ?? 0) + (odometroOffset ?? 0))}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div>
+              <Label htmlFor="reset-fecha">Fecha</Label>
+              <Input id="reset-fecha" type="date" disabled={pending} value={resetForm.fecha}
+                onChange={(e) => setResetForm((p) => ({ ...p, fecha: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="reset-ant">Lectura anterior</Label>
+              <Input id="reset-ant" type="number" disabled={pending} value={resetForm.lecturaAnterior}
+                onChange={(e) => setResetForm((p) => ({ ...p, lecturaAnterior: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="reset-new">Lectura nueva</Label>
+              <Input id="reset-new" type="number" disabled={pending} value={resetForm.lecturaNueva}
+                onChange={(e) => setResetForm((p) => ({ ...p, lecturaNueva: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="reset-notas">Notas</Label>
+              <Input id="reset-notas" disabled={pending} value={resetForm.notas} placeholder="Cambio de rin / hub"
+                onChange={(e) => setResetForm((p) => ({ ...p, notas: e.target.value }))} />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button type="button" disabled={pending} onClick={registrarReset}>
+              Registrar reset
+            </Button>
+          </div>
+          {resets.length > 0 && (
+            <div className="text-xs space-y-1" style={{ color: "var(--fg-muted)" }}>
+              {resets.map((r) => (
+                <p key={r.id}>
+                  {r.fecha}: {fmtNum(r.lecturaAnterior)} → {fmtNum(r.lecturaNueva)}
+                  {r.notas ? ` · ${r.notas}` : ""}
+                </p>
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -487,6 +626,34 @@ export default function UnidadMantenimientoTab({
                 className="rounded-xl border p-3"
                 style={{ borderColor: "var(--border)" }}
               >
+                {editingEventoId === evento.id ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label>Fecha</Label>
+                        <Input type="date" value={eventoEdit.fechaServicio} disabled={pending}
+                          onChange={(e) => setEventoEdit((p) => ({ ...p, fechaServicio: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Lectura</Label>
+                        <Input type="number" value={eventoEdit.lecturaServicio} disabled={pending}
+                          onChange={(e) => setEventoEdit((p) => ({ ...p, lecturaServicio: e.target.value }))} />
+                      </div>
+                    </div>
+                    <Input placeholder="Descripción" value={eventoEdit.descripcion} disabled={pending}
+                      onChange={(e) => setEventoEdit((p) => ({ ...p, descripcion: e.target.value }))} />
+                    <Input placeholder="Notas" value={eventoEdit.notas} disabled={pending}
+                      onChange={(e) => setEventoEdit((p) => ({ ...p, notas: e.target.value }))} />
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="secondary" disabled={pending} onClick={() => setEditingEventoId(null)}>
+                        Cancelar
+                      </Button>
+                      <Button type="button" disabled={pending} onClick={saveEvento}>
+                        Guardar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
@@ -512,8 +679,15 @@ export default function UnidadMantenimientoTab({
                   <div className="text-xs text-right" style={{ color: "var(--fg-muted)" }}>
                     <p>Registrado</p>
                     <p>{evento.createdAt?.toISOString().slice(0, 10) ?? "—"}</p>
+                    {canManageMaintenance && (
+                      <Button type="button" variant="ghost" size="sm" className="mt-2" disabled={pending}
+                        onClick={() => startEditEvento(evento)}>
+                        Editar
+                      </Button>
+                    )}
                   </div>
                 </div>
+                )}
               </div>
             ))}
           </div>

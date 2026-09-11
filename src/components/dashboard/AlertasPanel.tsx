@@ -64,6 +64,12 @@ export default function AlertasPanel({
   if (nissan.litros < UMBRAL_NISSAN)
     stockAlertas.push({ label: "Tanque NISSAN", litros: nissan.litros, umbral: UMBRAL_NISSAN, max: nissan.max });
 
+  const sobrecargas: { label: string; litros: number; max: number; exceso: number }[] = [];
+  if (taller.litros > taller.max && taller.max > 0)
+    sobrecargas.push({ label: "Tanque Taller", litros: taller.litros, max: taller.max, exceso: taller.litros - taller.max });
+  if (nissan.litros > nissan.max && nissan.max > 0)
+    sobrecargas.push({ label: "Tanque NISSAN", litros: nissan.litros, max: nissan.max, exceso: nissan.litros - nissan.max });
+
   const rendDismissed = dismissedId === ultimoPeriodoCerrado?.id;
   const showRend      = alertasRendimiento.length > 0 && !rendDismissed;
 
@@ -72,7 +78,7 @@ export default function AlertasPanel({
   const visibleDivergencias  = conciliacion.filter((c) => !c.ok && !dismissedConciliacion.has(c.tanqueId));
   const visibleMantenimientos = alertasMantenimiento.filter((a) => !dismissedMantenimiento.has(`${a.unidadId}:${a.tipoControl}:${a.estado}`));
   const visibleTickets       = ticketsResueltos.filter((t) => !dismissedTickets.has(t.id));
-  const totalVisible = visibleStockAlertas.length + visibleAnomalias.length + visibleDivergencias.length + visibleMantenimientos.length + visibleTickets.length + (showRend ? 1 : 0);
+  const totalVisible = visibleStockAlertas.length + sobrecargas.length + visibleAnomalias.length + visibleDivergencias.length + visibleMantenimientos.length + visibleTickets.length + (showRend ? 1 : 0);
 
   return (
     <section className="mb-6">
@@ -102,6 +108,39 @@ export default function AlertasPanel({
         </div>
       ) : (
         <div className="space-y-2">
+          {/* ── Sobrecarga de tanque ───────────────────────── */}
+          {sobrecargas.map(({ label, litros, max, exceso }) => (
+            <div
+              key={`over-${label}`}
+              className="px-4 py-3 rounded-2xl border"
+              style={{
+                backgroundColor: "rgb(245 158 11 / 0.08)",
+                borderColor: "rgb(245 158 11 / 0.3)",
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 rounded-lg shrink-0 bg-amber-500/10 border border-amber-500/20">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-700">
+                    {label} — sobrecarga +{Math.round(exceso).toLocaleString("es-MX")} L
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
+                    {Math.round(litros).toLocaleString("es-MX")} L en un tanque de {Math.round(max).toLocaleString("es-MX")} L.
+                    Se devolvieron litros al borrar o corregir una carga con el tanque ya lleno. El sistema no recorta para no perder diesel.
+                  </p>
+                </div>
+                <Link
+                  href="/tanques"
+                  className="text-xs font-semibold shrink-0 underline underline-offset-2 text-amber-600"
+                >
+                  Ver tanque
+                </Link>
+              </div>
+            </div>
+          ))}
+
           {/* ── Stock ───────────────────────────────────────── */}
           {visibleStockAlertas.map(({ label, litros, umbral, max }) => {
             const critico = litros < umbral * 0.5;

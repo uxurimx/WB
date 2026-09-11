@@ -98,32 +98,44 @@ export async function GET(
   ];
   XLSX.utils.book_append_sheet(wb, wsCargas, "Cargas");
 
-  // ── Sheet 3: Rendimientos ────────────────────────────────
+  // ── Sheet 3: Rendimientos (fórmulas: puedes editar km/hrs sin romper el cálculo)
   if (rends.length > 0) {
     const rendHeaders = [
-      "Unidad", "Tipo", "Litros Consumidos", "Km Recorridos / Hrs Trabajadas",
-      "Rendimiento Actual", "Referencia", "Diferencia", "Dentro Tolerancia (±20%)",
+      "Unidad", "Tipo", "Litros Consumidos", "Km / Hrs (editable)",
+      "Rendimiento", "Unidad rend.", "Referencia", "Diferencia", "Dentro tolerancia",
     ];
-
-    const rendRows = rends.map((r) => {
+    const wsRend = XLSX.utils.aoa_to_sheet([rendHeaders]);
+    rends.forEach((r, i) => {
+      const row = i + 2;
       const tipo = r.unidad?.tipo ?? "otro";
-      const unidad_km = tipo === "camion" ? "km/L" : "L/Hr";
-      return [
-        r.unidad?.codigo ?? `#${r.unidadId}`,
-        tipo === "camion" ? "Camión" : "Maquinaria",
-        r.litrosConsumidos ?? 0,
-        r.kmHrsRecorridos ?? "",
-        r.rendimientoActual !== null ? `${r.rendimientoActual?.toFixed(2)} ${unidad_km}` : "",
-        r.rendimientoReferencia !== null ? `${r.rendimientoReferencia?.toFixed(2)} ${unidad_km}` : "",
-        r.diferencia !== null ? r.diferencia.toFixed(2) : "",
-        r.dentroDeTolerancia === true ? "Sí" : r.dentroDeTolerancia === false ? "No" : "Sin datos",
-      ];
+      const esCamion = tipo === "camion";
+      wsRend[`A${row}`] = { t: "s", v: r.unidad?.codigo ?? `#${r.unidadId}` };
+      wsRend[`B${row}`] = { t: "s", v: esCamion ? "Camión" : "Maquinaria" };
+      wsRend[`C${row}`] = { t: "n", v: r.litrosConsumidos ?? 0 };
+      wsRend[`D${row}`] = { t: "n", v: r.kmHrsRecorridos ?? 0 };
+      wsRend[`E${row}`] = {
+        t: "n",
+        f: esCamion
+          ? `IF(OR(C${row}=0,D${row}=0),"",D${row}/C${row})`
+          : `IF(OR(C${row}=0,D${row}=0),"",C${row}/D${row})`,
+      };
+      wsRend[`F${row}`] = { t: "s", v: esCamion ? "km/L" : "L/Hr" };
+      wsRend[`G${row}`] = { t: "n", v: r.rendimientoReferencia ?? 0 };
+      wsRend[`H${row}`] = { t: "n", f: `IF(E${row}="","",E${row}-G${row})` };
+      wsRend[`I${row}`] = {
+        t: "s",
+        f: `IF(OR(E${row}="",G${row}=0),"Sin datos",IF(ABS(H${row}/G${row})<=0.2,"Sí","No"))`,
+      };
     });
-
-    const wsRend = XLSX.utils.aoa_to_sheet([rendHeaders, ...rendRows]);
+    const last = rends.length + 1;
+    wsRend["!ref"] = `A1:I${last + 2}`;
+    wsRend[`A${last + 2}`] = {
+      t: "s",
+      v: "Nota: corrige la columna D (km/hrs) si hubo reset de hubodómetro. Rendimiento y diferencia se recalculan solos. No edites los litros (vienen del sistema).",
+    };
     wsRend["!cols"] = [
-      { wch: 10 }, { wch: 12 }, { wch: 18 }, { wch: 30 },
-      { wch: 20 }, { wch: 18 }, { wch: 12 }, { wch: 22 },
+      { wch: 10 }, { wch: 12 }, { wch: 18 }, { wch: 20 },
+      { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 18 },
     ];
     XLSX.utils.book_append_sheet(wb, wsRend, "Rendimientos");
   }

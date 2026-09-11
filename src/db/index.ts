@@ -20,8 +20,9 @@ neonConfig.fetchFunction = async (url: string, init: RequestInit) => {
   }
 };
 
-const sql = neon(process.env.DATABASE_URL);
-export const db = drizzle(sql, { schema });
+const neonClient = neon(process.env.DATABASE_URL);
+export const neonSql = neonClient;
+export const db = drizzle(neonClient, { schema });
 
 // Cliente dedicado para poxelbit — siempre apunta a producción (POXELBIT_DATABASE_URL)
 // En dev: apunta a la DB de prod para que tickets y novedades sean compartidos con el cliente

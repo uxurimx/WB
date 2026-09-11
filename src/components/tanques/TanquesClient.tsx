@@ -14,6 +14,8 @@ import RecargaTanqueModal from "@/components/dashboard/RecargaTanqueModal";
 import TransferirNissanModal from "@/components/dashboard/TransferirNissanModal";
 import EditarTanqueModal from "@/components/dashboard/EditarTanqueModal";
 import AjustarStockModal from "@/components/tanques/AjustarStockModal";
+import SobrecargaNotice from "@/components/tanques/SobrecargaNotice";
+import { calcSobrecarga } from "@/lib/tanque-sobrecarga";
 import type { TanqueDetalle, EventoTimeline } from "@/app/actions/tanques";
 
 // ─── Gauge circular SVG ───────────────────────────────────────────────────────
@@ -258,9 +260,19 @@ function TanqueCard({
     ? Math.round((tanque.litrosActuales / tanque.capacidadMax) * 100)
     : 0;
   const alerta = tanque.litrosActuales < tanque.umbral;
+  const sobrecarga = calcSobrecarga({
+    tanqueId: tanque.id,
+    tanqueNombre: tanque.nombre,
+    litros: tanque.litrosActuales,
+    capacidadMax: tanque.capacidadMax,
+    motivo: tanque.sobrecarga?.motivo,
+    detalle: tanque.sobrecarga?.detalle,
+  });
   const esTaller = tanque.nombre === "Taller";
 
-  const gaugeColor = alerta
+  const gaugeColor = sobrecarga
+    ? "rgb(245 158 11)"
+    : alerta
     ? "rgb(239 68 68)"
     : pct > 50
     ? esTaller ? "#6366f1" : "#8b5cf6"
@@ -273,7 +285,7 @@ function TanqueCard({
       className="p-5 rounded-2xl border flex flex-col gap-4"
       style={{
         backgroundColor: "var(--surface)",
-        borderColor: alerta ? "rgb(239 68 68 / 0.3)" : "var(--border)",
+        borderColor: sobrecarga ? "rgb(245 158 11 / 0.4)" : alerta ? "rgb(239 68 68 / 0.3)" : "var(--border)",
       }}
     >
       {/* Header */}
@@ -295,7 +307,12 @@ function TanqueCard({
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
               {tanque.nombre}
             </p>
-            {alerta && (
+            {sobrecarga && (
+              <p className="text-xs text-amber-600 font-semibold flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> Sobrecarga
+              </p>
+            )}
+            {!sobrecarga && alerta && (
               <p className="text-xs text-red-500 font-semibold flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" /> Stock bajo
               </p>
@@ -342,21 +359,30 @@ function TanqueCard({
         <div className="relative shrink-0 w-32 h-32 flex items-center justify-center">
           <CircularGauge pct={pct} color={gaugeColor} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="font-outfit font-bold text-2xl leading-none" style={{ color: alerta ? "rgb(239 68 68)" : "var(--fg)" }}>
-              {pct}%
+            <p className="font-outfit font-bold text-2xl leading-none" style={{ color: sobrecarga ? "rgb(217 119 6)" : alerta ? "rgb(239 68 68)" : "var(--fg)" }}>
+              {sobrecarga ? `${pct}%` : `${pct}%`}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>lleno</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>{sobrecarga ? "sobre" : "lleno"}</p>
           </div>
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-outfit font-bold text-3xl" style={{ color: alerta ? "rgb(239 68 68)" : "var(--fg)" }}>
+          <p className="font-outfit font-bold text-3xl" style={{ color: sobrecarga ? "rgb(217 119 6)" : alerta ? "rgb(239 68 68)" : "var(--fg)" }}>
             {tanque.litrosActuales.toLocaleString()}
             <span className="text-base font-normal ml-1" style={{ color: "var(--fg-muted)" }}>L</span>
           </p>
           <p className="text-xs mb-2" style={{ color: "var(--fg-muted)" }}>
             de {tanque.capacidadMax.toLocaleString()} L máx.
           </p>
+          {sobrecarga && (
+            <SobrecargaNotice
+              litros={sobrecarga.litros}
+              capacidadMax={sobrecarga.capacidadMax}
+              exceso={sobrecarga.exceso}
+              motivo={sobrecarga.motivo}
+              detalle={sobrecarga.detalle}
+            />
+          )}
           <ProyeccionBadge
             dias={s.diasHastaUmbral}
             fecha={s.fechaProyectadaUmbral}

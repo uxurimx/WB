@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
@@ -8,52 +7,71 @@ import {
   cargas,
   unidades,
   rendimientos,
+  odometroResets,
 } from "@/db/schema";
 import { eq, inArray, sql, desc, lt, isNotNull, and } from "drizzle-orm";
 import { getTolerancia } from "@/app/actions/setup";
+import { requireManageRole } from "@/lib/authz";
+import { kmHrsRecorridos, type OdometroReset } from "@/lib/odometro";
 
 // ─────────────────────────────────────────────────────────────
 // LÓGICA COMPARTIDA DE CÁLCULO
 // ─────────────────────────────────────────────────────────────
 async function calcularValsRendimiento(
   periodoId: number,
-  periodo: { fechaInicio: string }
+  periodo: { fechaInicio: string },
+  onlyUnidadIds?: number[],
 ): Promise<(typeof rendimientos.$inferInsert)[]> {
-  // 1 — Cargas del período
   const cargasDelPeriodo = await db
     .select({
       unidadId: cargas.unidadId,
       litros: cargas.litros,
       odometroHrs: cargas.odometroHrs,
+      fecha: cargas.fecha,
+      createdAt: cargas.createdAt,
     })
     .from(cargas)
-    .where(eq(cargas.periodoId, periodoId));
+    .where(
+      onlyUnidadIds && onlyUnidadIds.length > 0
+        ? and(eq(cargas.periodoId, periodoId), inArray(cargas.unidadId, onlyUnidadIds))
+        : eq(cargas.periodoId, periodoId),
+    );
 
   if (cargasDelPeriodo.length === 0) return [];
 
-  // 2 — Agrupar por unidad
-  const porUnidad = new Map<number, { litros: number[]; odometros: number[] }>();
+  const porUnidad = new Map<number, {
+    litros: number[];
+    lecturas: { raw: number; fecha: string; createdAt: Date | null }[];
+  }>();
   for (const c of cargasDelPeriodo) {
     if (!porUnidad.has(c.unidadId)) {
-      porUnidad.set(c.unidadId, { litros: [], odometros: [] });
+      porUnidad.set(c.unidadId, { litros: [], lecturas: [] });
     }
     const entry = porUnidad.get(c.unidadId)!;
     entry.litros.push(c.litros ?? 0);
     if (c.odometroHrs && c.odometroHrs > 0) {
-      entry.odometros.push(c.odometroHrs);
+      entry.lecturas.push({ raw: c.odometroHrs, fecha: c.fecha, createdAt: c.createdAt ?? null });
     }
   }
 
-  // 3 — Cargar datos de unidades
   const unidadIds = [...porUnidad.keys()];
-  const unidadesData = await db
-    .select()
-    .from(unidades)
-    .where(inArray(unidades.id, unidadIds));
+  const [unidadesData, resetsRows] = await Promise.all([
+    db.select().from(unidades).where(inArray(unidades.id, unidadIds)),
+    db.select().from(odometroResets).where(inArray(odometroResets.unidadId, unidadIds)),
+  ]);
   const unidadesMap = new Map(unidadesData.map((u) => [u.id, u]));
+  const resetsByUnidad = new Map<number, OdometroReset[]>();
+  for (const r of resetsRows) {
+    const list = resetsByUnidad.get(r.unidadId) ?? [];
+    list.push({
+      fecha: r.fecha,
+      createdAt: r.createdAt ?? null,
+      lecturaAnterior: r.lecturaAnterior,
+      lecturaNueva: r.lecturaNueva,
+    });
+    resetsByUnidad.set(r.unidadId, list);
+  }
 
-  // 4 — Odómetro de referencia: último odometroFinal del periodo anterior, por unidad.
-  //     Fórmula correcta: km = max(odómetros periodo actual) − odometroFinal(periodo anterior)
   const rendAnts = await db
     .select({
       unidadId: rendimientos.unidadId,
@@ -70,7 +88,6 @@ async function calcularValsRendimiento(
     )
     .orderBy(desc(periodos.fechaFin));
 
-  // Primer resultado por unidad = el más reciente
   const odometroRefMap = new Map<number, number>();
   for (const row of rendAnts) {
     if (!odometroRefMap.has(row.unidadId) && row.odometroFinal !== null) {
@@ -78,11 +95,15 @@ async function calcularValsRendimiento(
     }
   }
 
-  // Para unidades sin rendimiento previo, buscar la última carga anterior al período
   const sinRef = unidadIds.filter((id) => !odometroRefMap.has(id));
   if (sinRef.length > 0) {
     const cargasAnts = await db
-      .select({ unidadId: cargas.unidadId, odometroHrs: cargas.odometroHrs })
+      .select({
+        unidadId: cargas.unidadId,
+        odometroHrs: cargas.odometroHrs,
+        fecha: cargas.fecha,
+        createdAt: cargas.createdAt,
+      })
       .from(cargas)
       .where(
         and(
@@ -91,16 +112,22 @@ async function calcularValsRendimiento(
           isNotNull(cargas.odometroHrs),
         )
       )
-      .orderBy(desc(cargas.fecha));
+      .orderBy(desc(cargas.fecha), desc(cargas.createdAt));
 
+    const seen = new Set<number>();
     for (const row of cargasAnts) {
-      if (!odometroRefMap.has(row.unidadId) && row.odometroHrs !== null) {
-        odometroRefMap.set(row.unidadId, row.odometroHrs);
-      }
+      if (seen.has(row.unidadId) || row.odometroHrs === null) continue;
+      seen.add(row.unidadId);
+      const resets = resetsByUnidad.get(row.unidadId) ?? [];
+      const { final } = kmHrsRecorridos({
+        lecturas: [{ raw: row.odometroHrs, fecha: row.fecha, createdAt: row.createdAt ?? null }],
+        resets,
+        referenciaRaw: null,
+      });
+      if (final != null) odometroRefMap.set(row.unidadId, final);
     }
   }
 
-  // 5 — Calcular rendimientos
   const TOLERANCIA = await getTolerancia();
 
   const vals: (typeof rendimientos.$inferInsert)[] = [];
@@ -109,24 +136,21 @@ async function calcularValsRendimiento(
     if (!unidad || unidad.tipo === "nissan") continue;
 
     const litrosConsumidos = data.litros.reduce((s, l) => s + l, 0);
-    const odometroFinal   = data.odometros.length > 0 ? Math.max(...data.odometros) : null;
-
-    // Referencia cruzada al periodo anterior; fallback: mínimo del periodo actual
-    const odometroInicial =
-      odometroRefMap.get(unidadId) ??
-      (data.odometros.length > 0 ? Math.min(...data.odometros) : null);
-
-    const kmHrsRecorridos =
-      odometroInicial !== null && odometroFinal !== null && odometroFinal > odometroInicial
-        ? odometroFinal - odometroInicial
-        : null;
+    const resets = resetsByUnidad.get(unidadId) ?? [];
+    const refRaw = odometroRefMap.get(unidadId) ?? null;
+    const calc = kmHrsRecorridos({
+      lecturas: data.lecturas,
+      resets,
+      referenciaRaw: refRaw,
+      referenciaAt: refRaw != null ? { fecha: "0000-01-01", createdAt: null } : null,
+    });
 
     let rendimientoActual: number | null = null;
-    if (kmHrsRecorridos && kmHrsRecorridos > 0 && litrosConsumidos > 0) {
+    if (calc.recorrido && calc.recorrido > 0 && litrosConsumidos > 0) {
       rendimientoActual =
         unidad.tipo === "camion"
-          ? kmHrsRecorridos / litrosConsumidos   // km/L
-          : litrosConsumidos / kmHrsRecorridos;  // L/Hr
+          ? calc.recorrido / litrosConsumidos
+          : litrosConsumidos / calc.recorrido;
     }
 
     const rRef = unidad.rendimientoReferencia ?? null;
@@ -140,9 +164,9 @@ async function calcularValsRendimiento(
     vals.push({
       periodoId,
       unidadId,
-      odometroInicial,
-      odometroFinal,
-      kmHrsRecorridos,
+      odometroInicial: calc.inicial,
+      odometroFinal: calc.final,
+      kmHrsRecorridos: calc.recorrido,
       litrosConsumidos,
       rendimientoActual,
       rendimientoReferencia: rRef,
@@ -154,12 +178,22 @@ async function calcularValsRendimiento(
   return vals;
 }
 
+export async function recalcularRendimientosForUnit(periodoId: number, unidadId: number) {
+  const periodo = await db.query.periodos.findFirst({ where: eq(periodos.id, periodoId) });
+  if (!periodo) return;
+
+  await db.delete(rendimientos)
+    .where(and(eq(rendimientos.periodoId, periodoId), eq(rendimientos.unidadId, unidadId)));
+
+  const vals = await calcularValsRendimiento(periodoId, periodo, [unidadId]);
+  if (vals.length > 0) await db.insert(rendimientos).values(vals);
+}
+
 // ─────────────────────────────────────────────────────────────
 // CERRAR PERÍODO Y CALCULAR RENDIMIENTOS
 // ─────────────────────────────────────────────────────────────
 export async function cerrarPeriodo(periodoId: number) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
+  const { userId } = await requireManageRole();
 
   const periodo = await db.query.periodos.findFirst({
     where: eq(periodos.id, periodoId),
@@ -187,8 +221,7 @@ export async function cerrarPeriodo(periodoId: number) {
 // RECALCULAR RENDIMIENTOS DE UN PERÍODO YA CERRADO
 // ─────────────────────────────────────────────────────────────
 export async function recalcularRendimientos(periodoId: number) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
+  await requireManageRole();
 
   const periodo = await db.query.periodos.findFirst({
     where: eq(periodos.id, periodoId),
