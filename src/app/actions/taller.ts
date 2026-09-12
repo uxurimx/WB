@@ -8,8 +8,10 @@ import {
   ordenRefacciones,
   unidades,
   operadores,
+  users,
+  ordenTallerLog,
 } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { requireActionPermission, requireAnyActionPermission, requireManageRole } from "@/lib/authz";
 import { CHECKLIST_PUNTOS, type EstadoOrden } from "@/lib/taller-checklist";
 import { registrarMantenimientoUnidad } from "@/app/actions/mantenimiento";
@@ -29,7 +31,35 @@ export type ChecklistInput = {
   clave: string;
   ok: boolean | null;
   nota?: string | null;
+  fotos?: { url: string; key: string }[] | null;
 };
+
+export type OrdenTallerUpdateInput = {
+  operadorId?: number | null;
+  fecha?: string;
+  kmHrs?: number | null;
+  motivo?: string | null;
+  quienRecibio?: string | null;
+  quienAtendio?: string | null;
+  comentarios?: string | null;
+  proximoMto?: string | null;
+  esPreventivo?: boolean;
+  tipoControlPreventivo?: string | null;
+  checklist?: ChecklistInput[];
+  refacciones?: RefaccionInput[];
+  estado?: "abierta" | "en_proceso";
+};
+
+async function logOrden(ordenId: number, usuarioId: string, accion: string) {
+  await db.insert(ordenTallerLog).values({ ordenId, usuarioId, accion });
+}
+
+async function nombresDe(ids: (string | null | undefined)[]) {
+  const uniq = [...new Set(ids.filter((x): x is string => Boolean(x)))];
+  if (uniq.length === 0) return {} as Record<string, string>;
+  const rows = await db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, uniq));
+  return Object.fromEntries(rows.map((r) => [r.id, r.name || r.email]));
+}
 
 export async function getOrdenesTaller(opts?: { unidadId?: number; estado?: EstadoOrden }) {
   await requireActionPermission("taller");
@@ -37,7 +67,7 @@ export async function getOrdenesTaller(opts?: { unidadId?: number; estado?: Esta
   if (opts?.unidadId) where.push(eq(ordenesTaller.unidadId, opts.unidadId));
   if (opts?.estado) where.push(eq(ordenesTaller.estado, opts.estado));
 
-  return db.query.ordenesTaller.findMany({
+  const rows = await db.query.ordenesTaller.findMany({
     where: where.length ? and(...where) : undefined,
     orderBy: (t, { desc: d }) => [d(t.fecha), d(t.createdAt)],
     with: {
@@ -46,6 +76,13 @@ export async function getOrdenesTaller(opts?: { unidadId?: number; estado?: Esta
       refacciones: true,
     },
   });
+  const names = await nombresDe(rows.flatMap((r) => [r.abiertoPorId, r.actualizadoPorId, r.cerradoPorId]));
+  return rows.map((r) => ({
+    ...r,
+    abiertoPorNombre: r.abiertoPorId ? names[r.abiertoPorId] ?? null : null,
+    actualizadoPorNombre: r.actualizadoPorId ? names[r.actualizadoPorId] ?? null : null,
+    cerradoPorNombre: r.cerradoPorId ? names[r.cerradoPorId] ?? null : null,
+  }));
 }
 
 export async function getOrdenTaller(id: number) {
@@ -59,7 +96,29 @@ export async function getOrdenTaller(id: number) {
       refacciones: true,
     },
   });
-  return orden ?? null;
+  if (!orden) return null;
+  const logs = await db.query.ordenTallerLog.findMany({
+    where: eq(ordenTallerLog.ordenId, id),
+    orderBy: (l, { desc: d }) => [d(l.createdAt)],
+    limit: 20,
+  });
+  const names = await nombresDe([
+    orden.abiertoPorId,
+    orden.actualizadoPorId,
+    orden.cerradoPorId,
+    ...logs.map((l) => l.usuarioId),
+  ]);
+  return {
+    ...orden,
+    abiertoPorNombre: orden.abiertoPorId ? names[orden.abiertoPorId] ?? null : null,
+    actualizadoPorNombre: orden.actualizadoPorId ? names[orden.actualizadoPorId] ?? null : null,
+    cerradoPorNombre: orden.cerradoPorId ? names[orden.cerradoPorId] ?? null : null,
+    log: logs.map((l) => ({
+      accion: l.accion,
+      at: l.createdAt?.toISOString() ?? null,
+      nombre: names[l.usuarioId] ?? l.usuarioId,
+    })),
+  };
 }
 
 export async function getOrdenesUnidad(unidadId: number) {
@@ -67,8 +126,47 @@ export async function getOrdenesUnidad(unidadId: number) {
   return db.query.ordenesTaller.findMany({
     where: eq(ordenesTaller.unidadId, unidadId),
     orderBy: (t, { desc: d }) => [d(t.fecha), d(t.createdAt)],
-    with: { refacciones: true, operador: { columns: { nombre: true } } },
+    with: {
+      refacciones: true,
+      checklist: { columns: { clave: true, fotos: true } },
+      operador: { columns: { nombre: true } },
+    },
   });
+}
+
+export async function getRefaccionesSugeridas() {
+  await requireActionPermission("taller");
+  const rows = await db.query.ordenRefacciones.findMany({
+    columns: { descripcion: true, proveedor: true },
+    orderBy: (r, { desc: d }) => [d(r.id)],
+    limit: 80,
+  });
+  const desc = [...new Set(rows.map((r) => r.descripcion).filter(Boolean))];
+  const prov = [...new Set(rows.map((r) => r.proveedor).filter((p): p is string => Boolean(p)))];
+  return { descripciones: desc.slice(0, 30), proveedores: prov.slice(0, 20) };
+}
+
+export async function getServiciosProgramadosTaller() {
+  await requireActionPermission("taller");
+  const { getAlertasMantenimientoOverview } = await import("@/app/actions/mantenimiento");
+  const [alertas, abiertas] = await Promise.all([
+    getAlertasMantenimientoOverview(),
+    db.query.ordenesTaller.findMany({
+      columns: { unidadId: true, esPreventivo: true, tipoControlPreventivo: true, estado: true },
+      where: (t, { inArray }) => inArray(t.estado, ["abierta", "en_proceso"]),
+    }),
+  ]);
+  const ocupadas = new Set(
+    abiertas
+      .filter((o) => o.esPreventivo)
+      .map((o) => `${o.unidadId}:${o.tipoControlPreventivo ?? "km"}`),
+  );
+  return alertas
+    .filter((a) => !ocupadas.has(`${a.unidadId}:${a.tipoControl}`))
+    .sort((a, b) => {
+      if (a.estado !== b.estado) return a.estado === "vencido" ? -1 : 1;
+      return a.faltante - b.faltante;
+    });
 }
 
 export async function crearOrdenTaller(input: {
@@ -80,6 +178,8 @@ export async function crearOrdenTaller(input: {
   quienRecibio?: string | null;
   comentarios?: string | null;
   checklist?: ChecklistInput[];
+  esPreventivo?: boolean;
+  tipoControlPreventivo?: string | null;
 }) {
   const { userId } = await requireActionPermission("taller");
   const unidad = await db.query.unidades.findFirst({ where: eq(unidades.id, input.unidadId) });
@@ -101,9 +201,12 @@ export async function crearOrdenTaller(input: {
       kmHrs,
       motivo: input.motivo?.trim() || null,
       estado: "abierta",
+      esPreventivo: input.esPreventivo ?? false,
+      tipoControlPreventivo: input.tipoControlPreventivo ?? null,
       quienRecibio: input.quienRecibio?.trim() || null,
       comentarios: input.comentarios?.trim() || null,
       abiertoPorId: userId,
+      actualizadoPorId: userId,
     })
     .returning();
 
@@ -117,28 +220,15 @@ export async function crearOrdenTaller(input: {
     };
   });
   await db.insert(ordenChecklist).values(checks);
+  await logOrden(orden.id, userId, "crear");
 
   revalidatePath("/taller");
   revalidatePath(`/catalogo/unidades/${input.unidadId}`);
   return { ok: true, id: orden.id };
 }
 
-export async function guardarOrdenTaller(id: number, input: {
-  operadorId?: number | null;
-  fecha?: string;
-  kmHrs?: number | null;
-  motivo?: string | null;
-  quienRecibio?: string | null;
-  quienAtendio?: string | null;
-  comentarios?: string | null;
-  proximoMto?: string | null;
-  esPreventivo?: boolean;
-  tipoControlPreventivo?: string | null;
-  checklist?: ChecklistInput[];
-  refacciones?: RefaccionInput[];
-  estado?: "abierta" | "en_proceso";
-}) {
-  await requireActionPermission("taller");
+export async function guardarOrdenTaller(id: number, input: OrdenTallerUpdateInput) {
+  const { userId } = await requireActionPermission("taller");
   const orden = await db.query.ordenesTaller.findFirst({ where: eq(ordenesTaller.id, id) });
   if (!orden) throw new Error("Orden no encontrada");
   if (orden.estado === "cerrada" || orden.estado === "cancelada") {
@@ -162,6 +252,7 @@ export async function guardarOrdenTaller(id: number, input: {
           ? input.tipoControlPreventivo
           : orden.tipoControlPreventivo,
       estado: input.estado ?? orden.estado,
+      actualizadoPorId: userId,
       updatedAt: new Date(),
     })
     .where(eq(ordenesTaller.id, id));
@@ -174,7 +265,11 @@ export async function guardarOrdenTaller(id: number, input: {
       if (row) {
         await db
           .update(ordenChecklist)
-          .set({ ok: c.ok, nota: c.nota ?? null })
+          .set({
+            ok: c.ok,
+            nota: c.nota ?? null,
+            fotos: c.fotos?.length ? JSON.stringify(c.fotos) : null,
+          })
           .where(eq(ordenChecklist.id, row.id));
       }
     }
@@ -197,6 +292,8 @@ export async function guardarOrdenTaller(id: number, input: {
     if (rows.length) await db.insert(ordenRefacciones).values(rows);
   }
 
+  await logOrden(id, userId, input.estado === "en_proceso" ? "en_proceso" : "editar");
+
   revalidatePath("/taller");
   revalidatePath(`/taller/${id}`);
   revalidatePath(`/catalogo/unidades/${orden.unidadId}`);
@@ -207,8 +304,10 @@ export async function cerrarOrdenTaller(id: number, input?: {
   quienAtendio?: string | null;
   esPreventivo?: boolean;
   tipoControlPreventivo?: "km" | "hrs";
+  datos?: OrdenTallerUpdateInput;
 }) {
   const { userId } = await requireManageRole();
+  if (input?.datos) await guardarOrdenTaller(id, input.datos);
   const orden = await db.query.ordenesTaller.findFirst({
     where: eq(ordenesTaller.id, id),
   });
@@ -220,6 +319,20 @@ export async function cerrarOrdenTaller(id: number, input?: {
   const tipoControl = input?.tipoControlPreventivo ?? (orden.tipoControlPreventivo as "km" | "hrs" | null) ?? "km";
 
   let eventoId = orden.eventoMantenimientoId;
+  if (esPreventivo && orden.kmHrs != null && !eventoId) {
+    const { mantenimientosEventos } = await import("@/db/schema");
+    const ya = await db.query.mantenimientosEventos.findFirst({
+      where: and(
+        eq(mantenimientosEventos.unidadId, orden.unidadId),
+        eq(mantenimientosEventos.tipoControl, tipoControl),
+        eq(mantenimientosEventos.fechaServicio, orden.fecha),
+      ),
+      orderBy: (e, { desc: d }) => [d(e.createdAt)],
+    });
+    if (ya) {
+      eventoId = ya.id;
+    }
+  }
   if (esPreventivo && orden.kmHrs != null && !eventoId) {
     const ev = await registrarMantenimientoUnidad({
       unidadId: orden.unidadId,
@@ -241,10 +354,13 @@ export async function cerrarOrdenTaller(id: number, input?: {
       quienAtendio: input?.quienAtendio !== undefined ? input.quienAtendio : orden.quienAtendio,
       eventoMantenimientoId: eventoId,
       cerradoPorId: userId,
+      actualizadoPorId: userId,
       cerradoAt: new Date(),
       updatedAt: new Date(),
     })
     .where(eq(ordenesTaller.id, id));
+
+  await logOrden(id, userId, "cerrar");
 
   revalidatePath("/taller");
   revalidatePath(`/taller/${id}`);
@@ -254,15 +370,16 @@ export async function cerrarOrdenTaller(id: number, input?: {
 }
 
 export async function cancelarOrdenTaller(id: number) {
-  await requireManageRole();
+  const { userId } = await requireManageRole();
   const orden = await db.query.ordenesTaller.findFirst({ where: eq(ordenesTaller.id, id) });
   if (!orden) throw new Error("Orden no encontrada");
   if (orden.estado === "cerrada") throw new Error("No se puede cancelar una orden cerrada");
 
   await db
     .update(ordenesTaller)
-    .set({ estado: "cancelada", updatedAt: new Date() })
+    .set({ estado: "cancelada", actualizadoPorId: userId, updatedAt: new Date() })
     .where(eq(ordenesTaller.id, id));
+  await logOrden(id, userId, "cancelar");
 
   revalidatePath("/taller");
   revalidatePath(`/taller/${id}`);

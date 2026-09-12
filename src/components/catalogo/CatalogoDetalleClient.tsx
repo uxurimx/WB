@@ -98,12 +98,14 @@ export default function CatalogoDetalleClient({
   ordenesTaller?: {
     id: number;
     fecha: string;
+    createdAt: string | null;
     kmHrs: number | null;
     motivo: string | null;
     estado: string;
     quienAtendio: string | null;
     operador: { nombre: string } | null;
     refacciones: { precio: number | null; cantidad: number | null; iva: boolean }[];
+    checklist: { clave: string; fotos: string | null }[];
   }[];
 }) {
   const router = useRouter();

@@ -123,6 +123,7 @@ export default async function UnidadDetallePage({
         ordenesTaller={ordenesTaller.map((o) => ({
           id: o.id,
           fecha: o.fecha,
+          createdAt: o.createdAt?.toISOString() ?? null,
           kmHrs: o.kmHrs,
           motivo: o.motivo,
           estado: o.estado,
@@ -133,6 +134,7 @@ export default async function UnidadDetallePage({
             cantidad: r.cantidad,
             iva: r.iva,
           })),
+          checklist: o.checklist.map((c) => ({ clave: c.clave, fotos: c.fotos })),
         }))}
       />
     </div>

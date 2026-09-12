@@ -1,17 +1,33 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { ESTADO_LABEL, type EstadoOrden } from "@/lib/taller-checklist";
+import { formatFechaHoraMx } from "@/lib/date-utils";
+import FotoLightbox, { type TallerFoto } from "@/components/taller/FotoLightbox";
 
 type Orden = {
   id: number;
   fecha: string;
+  createdAt: string | Date | null;
   kmHrs: number | null;
   motivo: string | null;
   estado: string;
   quienAtendio: string | null;
   operador: { nombre: string } | null;
   refacciones: { precio: number | null; cantidad: number | null; iva: boolean }[];
+  checklist: { clave: string; fotos: string | null }[];
 };
+
+function fotosDeOrden(checklist: Orden["checklist"]): TallerFoto[] {
+  return checklist.flatMap((item) => {
+    if (!item.fotos) return [];
+    try {
+      const fotos = JSON.parse(item.fotos) as { url: string; key: string }[];
+      return fotos.map((foto) => ({ ...foto, alt: `Foto de ${item.clave}` }));
+    } catch {
+      return [];
+    }
+  });
+}
 
 function costo(refs: Orden["refacciones"]) {
   return refs.reduce((s, r) => {
@@ -21,7 +37,6 @@ function costo(refs: Orden["refacciones"]) {
 }
 
 export default function UnidadBitacoraTab({
-  unidadId,
   ordenes,
   canOpen,
 }: {
@@ -49,17 +64,17 @@ export default function UnidadBitacoraTab({
         <ul className="space-y-2">
           {ordenes.map((o) => {
             const c = costo(o.refacciones);
+            const fotos = fotosDeOrden(o.checklist);
             return (
-              <li key={o.id}>
+              <li key={o.id} className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
                 <Link
                   href={`/taller/${o.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2.5 hover:bg-[var(--surface-2)]"
-                  style={{ borderColor: "var(--border)" }}
+                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 hover:bg-[var(--surface-2)]"
                 >
                   <div>
                     <p className="text-sm font-medium">{o.motivo || "Sin motivo"}</p>
                     <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
-                      {o.fecha.slice(0, 10)}
+                      {formatFechaHoraMx(o.fecha, o.createdAt instanceof Date ? o.createdAt.toISOString() : o.createdAt)}
                       {o.kmHrs != null ? ` · ${Math.round(o.kmHrs).toLocaleString("es-MX")} km/hrs` : ""}
                       {o.operador?.nombre ? ` · ${o.operador.nombre}` : ""}
                     </p>
@@ -75,6 +90,13 @@ export default function UnidadBitacoraTab({
                     </Badge>
                   </div>
                 </Link>
+                {fotos.length > 0 && (
+                  <div className="flex gap-2 border-t px-3 py-2" style={{ borderColor: "var(--border)" }}>
+                    {fotos.map((foto) => (
+                      <FotoLightbox key={foto.key} foto={foto} />
+                    ))}
+                  </div>
+                )}
               </li>
             );
           })}

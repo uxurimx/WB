@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { currentUser } from "@clerk/nextjs/server";
 import { requirePermission } from "@/lib/server-guard";
-import { getOrdenTaller, getUnidadesYOperadoresTaller } from "@/app/actions/taller";
+import { getOrdenTaller, getUnidadesYOperadoresTaller, getRefaccionesSugeridas } from "@/app/actions/taller";
 import { MANAGE_ROLES } from "@/lib/authz";
 import OrdenDetalleForm from "@/components/taller/OrdenDetalleForm";
 
@@ -15,10 +15,11 @@ export default async function TallerOrdenPage({ params }: { params: Promise<{ id
   const ordenId = parseInt(id, 10);
   if (Number.isNaN(ordenId)) notFound();
 
-  const [orden, catalogos, clerkUser] = await Promise.all([
+  const [orden, catalogos, clerkUser, sugeridas] = await Promise.all([
     getOrdenTaller(ordenId),
     getUnidadesYOperadoresTaller(),
     currentUser(),
+    getRefaccionesSugeridas(),
   ]);
   if (!orden) notFound();
 
@@ -37,6 +38,7 @@ export default async function TallerOrdenPage({ params }: { params: Promise<{ id
         orden={JSON.parse(JSON.stringify(orden))}
         operadores={catalogos.operadores}
         canCerrar={canCerrar}
+        sugeridas={sugeridas}
       />
     </div>
   );

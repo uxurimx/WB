@@ -4,6 +4,16 @@ import { auth } from "@clerk/nextjs/server";
 const f = createUploadthing();
 
 export const ourFileRouter = {
+  tallerFoto: f({ image: { maxFileSize: "4MB", maxFileCount: 4 } })
+    .middleware(async () => {
+      const { userId } = await auth();
+      if (!userId) throw new Error("Unauthorized");
+      return { userId };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { url: file.ufsUrl, key: file.key, uploadedBy: metadata.userId };
+    }),
+
   // Foto de nota de papel al registrar una carga
   notaFoto: f({ image: { maxFileSize: "4MB", maxFileCount: 3 } })
     .middleware(async () => {

@@ -194,7 +194,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       
       <div className="flex items-center gap-3 px-2 mb-8 mt-2">
         <Link href="/overview">
-          <img src="logo.png" alt="" />
+          <img src="/logo.png" alt="WB Construcción" className="h-10 w-auto" />
         </Link>
         {/* <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
           <Fuel className="text-indigo-500 w-5 h-5" />

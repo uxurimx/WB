@@ -126,10 +126,19 @@ export const ordenesTaller = pgTable("ordenes_taller", {
   comentarios: text("comentarios"),
   proximoMto: text("proximo_mto"),
   abiertoPorId: text("abierto_por_id"),
+  actualizadoPorId: text("actualizado_por_id"),
   cerradoPorId: text("cerrado_por_id"),
   cerradoAt: timestamp("cerrado_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ordenTallerLog = pgTable("orden_taller_log", {
+  id: serial("id").primaryKey(),
+  ordenId: integer("orden_id").notNull(),
+  usuarioId: text("usuario_id").notNull(),
+  accion: varchar("accion", { length: 30 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const ordenChecklist = pgTable("orden_checklist", {
@@ -138,6 +147,7 @@ export const ordenChecklist = pgTable("orden_checklist", {
   clave: varchar("clave", { length: 40 }).notNull(),
   ok: boolean("ok"),
   nota: text("nota"),
+  fotos: text("fotos"),
 });
 
 export const ordenRefacciones = pgTable("orden_refacciones", {
