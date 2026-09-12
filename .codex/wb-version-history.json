@@ -1,0 +1,33 @@
+{
+  "project": "wb-construccion",
+  "recordedAt": "2026-08-10T12:29:06-06:00",
+  "current": {
+    "packageVersion": "1.0.0",
+    "branch": "main",
+    "commit": "17dd7eaf98996dd09a44bbf570c9bc7e5cb2a0cc",
+    "shortCommit": "17dd7ea",
+    "parent": "af4c505",
+    "title": "mantenimiento dekms/hrs",
+    "status": "implemented",
+    "workingTree": "clean"
+  },
+  "history": [
+    {
+      "ref": "feature:mantenimiento-global",
+      "version": 1,
+      "commit": "17dd7ea",
+      "status": "active",
+      "summary": "Configuración global por tipo de unidad, intervalos KM/HRS y umbrales próximo/cercano/inminente.",
+      "behavior": "La configuración global aplica como default; un plan manual por unidad conserva prioridad.",
+      "taskId": 760,
+      "validation": [
+        "npx tsc --noEmit --incremental false: passed",
+        "eslint de archivos modificados: passed"
+      ]
+    }
+  ],
+  "notes": [
+    "La funcionalidad quedó committeada en main.",
+    "wb_backup.sql fue incluido como archivo rastreado en el commit y requiere revisión de seguridad separada."
+  ]
+}

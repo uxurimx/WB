@@ -29,7 +29,8 @@ Pusher (real-time) · uploadthing (fotos odómetro) · Tailwind v4 · Zod.
 - `src/app/(dashboard)/cargas/` — Historial (tabla principal) + captura patio/campo.
 - `src/app/(dashboard)/catalogo/` — unidades, operadores, obras (+ detalle con su historial).
 - `src/app/(dashboard)/periodos/` — períodos y cierre con rendimientos.
-- `src/app/actions/` — server actions (`cargas.ts`, `catalogo.ts`, `tanques.ts`, `periodos.ts`, `rendimientos.ts`).
+- `src/app/(dashboard)/taller/` — bitácora de taller (rama `feat/bitacora-taller`, no en prod hasta merge).
+- `src/app/actions/` — server actions (`cargas.ts`, `catalogo.ts`, `tanques.ts`, `periodos.ts`, `rendimientos.ts`, `taller.ts`).
 - `src/db/schema.ts` — esquema Drizzle.
 - `src/components/cargas/CargasTable.tsx` — tabla del historial (la más compleja).
 - `src/components/ui/table-scroll.tsx` — wrapper de scroll reutilizable (ver abajo).
@@ -66,3 +67,4 @@ Pusher (real-time) · uploadthing (fotos odómetro) · Tailwind v4 · Zod.
 
 - Ediciones quirúrgicas, **cero scope creep**: hacer solo lo pedido; lo extra se propone y se espera OK.
 - Leer este archivo antes de tocar código.
+- Bitácora de taller: estado, flujo y archivos en `AGENTS.md` (sección *Current work — bitácora de taller*). No mezclar con inventario ni con cargas de diesel.
