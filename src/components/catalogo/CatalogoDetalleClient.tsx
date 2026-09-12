@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search, SlidersHorizontal, X, Pencil, Trash2, AlertCircle, AlertTriangle,
   Camera, ClipboardList, TrendingUp, TrendingDown, Minus, Fuel, BarChart3,
-  ChevronUp, ChevronDown, ArrowUpDown, Zap,
+  ChevronUp, ChevronDown, ArrowUpDown, Zap, ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MobileList, MobileRow, MobileStatStrip, MobileStickyToolbar, type MobileStatItem } from "@/components/ui/mobile-list";
 import { updateCarga, deleteCarga, createCargaExterna } from "@/app/actions/cargas";
+import { saveArchivoFoto } from "@/app/actions/archivos";
+import { useUploadThing } from "@/lib/uploadthing";
 import type { getCatalogoCargas } from "@/app/actions/catalogo";
 import type { getRendimientosUnidad } from "@/app/actions/rendimientos";
 import type { getArchivosUnidad } from "@/app/actions/archivos";
@@ -42,6 +45,11 @@ type FiltroOrigen = "todos" | "patio" | "campo" | "externo";
 function fmtNum(n: number | null | undefined, d = 1) {
   if (n == null) return "—";
   return n.toLocaleString("es-MX", { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+function fmtFechaCorta(fecha: string) {
+  const [y, m, d] = fecha.slice(0, 10).split("-");
+  return `${d}/${m}/${y.slice(2)}`;
 }
 
 function SortIcon({ col, current, dir }: { col: SortCol; current: SortCol; dir: "asc" | "desc" }) {
@@ -120,6 +128,17 @@ export default function CatalogoDetalleClient({
 
   // Foto lightbox
   const [fotoLightbox, setFotoLightbox] = useState<FotoItem | null>(null);
+
+  const [showFotoUpload, setShowFotoUpload] = useState(false);
+  const [fotoCargaId, setFotoCargaId] = useState("");
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [fotoError, setFotoError] = useState("");
+  const [fotoPending, startFotoTx] = useTransition();
+  const fotoInputRef = useRef<HTMLInputElement>(null);
+  const { startUpload, isUploading } = useUploadThing("notaFoto", {
+    onUploadError: (err) => setFotoError(`Error al subir: ${err.message}`),
+  });
 
   // Carga externa
   const [showExterna, setShowExterna]   = useState(false);
@@ -299,6 +318,34 @@ export default function CatalogoDetalleClient({
   const canEditRows   = tipo === "unidad" && canEdit;
   const canAddExterna = tipo === "unidad" && canEdit && unidadTipo !== "nissan";
 
+  function resetFotoUpload() {
+    setShowFotoUpload(false);
+    setFotoCargaId("");
+    setFotoFile(null);
+    if (fotoPreview) URL.revokeObjectURL(fotoPreview);
+    setFotoPreview(null);
+    setFotoError("");
+    if (fotoInputRef.current) fotoInputRef.current.value = "";
+  }
+
+  async function submitFoto() {
+    setFotoError("");
+    if (!fotoCargaId) { setFotoError("Selecciona la carga a la que pertenece la foto."); return; }
+    if (!fotoFile) { setFotoError("Toma o elige una foto."); return; }
+    startFotoTx(async () => {
+      try {
+        const uploaded = await startUpload([fotoFile]);
+        if (!uploaded?.[0]) { setFotoError("No se pudo subir la foto."); return; }
+        const fotoUrl = uploaded[0].ufsUrl || uploaded[0].url;
+        await saveArchivoFoto(parseInt(fotoCargaId, 10), fotoUrl, uploaded[0].key, "odometroFoto");
+        resetFotoUpload();
+        router.refresh();
+      } catch (err) {
+        setFotoError(err instanceof Error ? err.message : "Error al guardar la foto.");
+      }
+    });
+  }
+
   const tabs = tipo === "unidad"
     ? [
         { key: "cargas" as Tab,      label: "Cargas" },
@@ -318,32 +365,52 @@ export default function CatalogoDetalleClient({
     ...(cargasExternas > 0 ? [{ label: "Externas", value: cargasExternas, icon: Zap }] : []),
   ];
 
+  const toggleOrigen = (origen: FiltroOrigen) =>
+    setFiltroOrigen((prev) => (prev === origen ? "todos" : origen));
+
+  const mobileStatItems: MobileStatItem[] = [
+    ...(tipo === "unidad"
+      ? [
+          { key: "cargas", label: "Cargas", value: String(localCargas.length) },
+          { key: "litros", label: "Diesel", value: `${Math.round(totalLitros).toLocaleString("es-MX")} L` },
+        ]
+      : []),
+    { key: "patio", label: "Patio", value: String(cargasPatio), active: filtroOrigen === "patio", onClick: () => toggleOrigen("patio") },
+    { key: "campo", label: "Campo", value: String(cargasCampo), active: filtroOrigen === "campo", onClick: () => toggleOrigen("campo") },
+    ...(cargasExternas > 0
+      ? [{ key: "ext", label: "Ext", value: String(cargasExternas), active: filtroOrigen === "externo", onClick: () => toggleOrigen("externo") }]
+      : []),
+  ];
+
   return (
     <>
-      {/* Tabs — scroll horizontal en móvil */}
-      <div className="flex gap-1 border-b mb-6 overflow-x-auto" style={{ borderColor: "var(--border)", scrollbarWidth: "none" }}>
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
-            className={`shrink-0 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
-              activeTab === t.key
-                ? "border-indigo-500 text-indigo-500"
-                : "border-transparent"
-            }`}
-            style={activeTab !== t.key ? { color: "var(--fg-muted)" } : undefined}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {tabs.length > 1 && (
+        <div className="flex gap-1 border-b mb-3 md:mb-6 overflow-x-auto" style={{ borderColor: "var(--border)", scrollbarWidth: "none" }}>
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`shrink-0 px-3 md:px-4 py-2 md:py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                activeTab === t.key
+                  ? "border-indigo-500 text-indigo-500"
+                  : "border-transparent"
+              }`}
+              style={activeTab !== t.key ? { color: "var(--fg-muted)" } : undefined}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Tab Cargas ──────────────────────────────────────── */}
       {activeTab === "cargas" && (
-        <div className="space-y-5">
+        <div className="space-y-3 md:space-y-5">
+
+          <MobileStatStrip items={mobileStatItems} />
 
           {/* Stats cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="hidden md:grid grid-cols-2 sm:grid-cols-4 gap-3">
             {stats.map(({ label, value, icon: Icon }) => (
               <div key={label} className="p-4 rounded-2xl border"
                 style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
@@ -363,22 +430,9 @@ export default function CatalogoDetalleClient({
             </p>
           )}
 
-          {/* Botón carga externa */}
-          {canAddExterna && (
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowExterna(true)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-colors hover:border-amber-500/50 hover:bg-amber-500/5"
-                style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
-              >
-                <Zap className="w-4 h-4 text-amber-400" />
-                Carga externa
-              </button>
-            </div>
-          )}
-
           {/* Barra búsqueda + filtros */}
-          <div className="flex flex-col sm:flex-row gap-2">
+          <MobileStickyToolbar>
+          <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--fg-muted)" }} />
               <input
@@ -402,19 +456,33 @@ export default function CatalogoDetalleClient({
               style={!showFiltros && !hayFiltros ? { backgroundColor: "var(--surface)", borderColor: "var(--border)", color: "var(--fg-muted)" } : { backgroundColor: "var(--surface)" }}
             >
               <SlidersHorizontal className="w-4 h-4" />
-              Filtros
+              <span className="hidden sm:inline">Filtros</span>
               {hayFiltros && (
                 <span className="ml-1 w-4 h-4 rounded-full bg-indigo-500 text-white text-[10px] leading-none flex items-center justify-center">
                   {[filtroOrigen !== "todos", filtroPeriodo !== ""].filter(Boolean).length}
                 </span>
               )}
             </button>
+            {canAddExterna && (
+              <button
+                onClick={() => setShowExterna(true)}
+                className="flex items-center gap-1.5 px-3 h-9 rounded-lg border text-sm font-semibold shrink-0 hover:border-amber-500/50 hover:bg-amber-500/5"
+                style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+              >
+                <Zap className="w-4 h-4 text-amber-400" />
+                <span className="hidden sm:inline">Carga externa</span>
+              </button>
+            )}
           </div>
+          </MobileStickyToolbar>
 
-          {/* Panel filtros */}
-          {showFiltros && (
-            <div className="rounded-xl border p-4 space-y-3"
-              style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
+          <Dialog open={showFiltros} onOpenChange={setShowFiltros}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Filtros</DialogTitle>
+                <DialogDescription>Origen y período de las cargas.</DialogDescription>
+              </DialogHeader>
+            <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Origen */}
                 <div>
@@ -460,7 +528,8 @@ export default function CatalogoDetalleClient({
                 </div>
               )}
             </div>
-          )}
+            </DialogContent>
+          </Dialog>
 
           {hayFiltros && (
             <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
@@ -468,16 +537,66 @@ export default function CatalogoDetalleClient({
             </p>
           )}
 
+          {/* Lista móvil */}
+          <MobileList
+            empty={filtrados.length === 0 ? (
+              <p className="text-center py-10 text-sm" style={{ color: "var(--fg-muted)" }}>
+                {localCargas.length === 0 ? "Sin cargas registradas." : "Sin resultados para los filtros aplicados."}
+              </p>
+            ) : undefined}
+          >
+            {filtrados.map((c) => {
+              const meta = [
+                tipo !== "unidad" ? c.unidadCodigo : null,
+                tipo !== "operador" ? c.operadorNombre : null,
+                tipo !== "obra" ? c.obraNombre : null,
+              ].filter(Boolean).join(" · ");
+              return (
+                <MobileRow
+                  key={c.id}
+                  onClick={canEditRows ? () => openEdit(c) : undefined}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-mono text-sm" style={{ color: "var(--fg)" }}>
+                        {fmtFechaCorta(c.fecha)}
+                        <span className="ml-2" style={{ color: "var(--fg-muted)" }}>
+                          {c.folio != null ? `#${c.folio}` : "—"}
+                        </span>
+                      </p>
+                      <p className="text-[11px] truncate mt-0.5" style={{ color: "var(--fg-muted)" }}>
+                        {meta || "—"}
+                        {c.odometroHrs != null ? ` · ${c.odometroHrs.toLocaleString("es-MX")}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Badge
+                        variant={c.origen === "campo" ? "warning" : c.origen === "externo" ? "secondary" : "default"}
+                        className={`text-[10px] ${c.origen === "externo" ? "border border-amber-500/30 bg-amber-500/10 text-amber-400" : ""}`}
+                      >
+                        {c.origen === "campo" ? "Campo" : c.origen === "externo" ? "Externa" : "Patio"}
+                      </Badge>
+                      <span className="font-mono font-semibold text-sm tabular-nums" style={{ color: "var(--fg)" }}>
+                        {c.litros.toLocaleString("es-MX")} L
+                      </span>
+                      {canEditRows && <ChevronRight className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />}
+                    </div>
+                  </div>
+                </MobileRow>
+              );
+            })}
+          </MobileList>
+
           {/* Tabla */}
           {filtrados.length === 0 ? (
-            <div className="p-10 rounded-2xl border text-center"
+            <div className="hidden md:block p-10 rounded-2xl border text-center"
               style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
               <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
                 {localCargas.length === 0 ? "Sin cargas registradas." : "Sin resultados para los filtros aplicados."}
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
+            <div className="hidden md:block rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
               <div>
                 <Table style={{ minWidth: canEditRows ? "700px" : "600px" }}>
                   <TableHeader>
@@ -713,10 +832,20 @@ export default function CatalogoDetalleClient({
       {/* ── Tab Fotos ────────────────────────────────────────── */}
       {activeTab === "fotos" && fotos !== null && (
         <div className="space-y-4">
+          {canEdit && tipo === "unidad" && (
+            <div className="flex justify-end">
+              <Button type="button" size="sm" onClick={() => setShowFotoUpload(true)}>
+                <Camera className="w-4 h-4" /> Subir foto
+              </Button>
+            </div>
+          )}
           {fotos.length === 0 ? (
             <div className="p-10 rounded-2xl border text-center"
               style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
               <p className="text-sm" style={{ color: "var(--fg-muted)" }}>Sin fotos registradas.</p>
+              <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
+                Las fotos van ligadas a una carga (odómetro). Súbelas aquí o al registrar patio/campo.
+              </p>
             </div>
           ) : (
             <>
@@ -814,6 +943,82 @@ export default function CatalogoDetalleClient({
           )}
         </div>
       )}
+
+      <Dialog open={showFotoUpload} onOpenChange={(o) => { if (!o) resetFotoUpload(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Subir foto</DialogTitle>
+            <DialogDescription>
+              Las fotos se adjuntan a una carga de esta unidad (odómetro o nota).
+            </DialogDescription>
+          </DialogHeader>
+          {localCargas.length === 0 ? (
+            <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
+              Primero registra una carga. Después puedes adjuntarle la foto.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="foto-carga">Carga</Label>
+                <Select id="foto-carga" value={fotoCargaId} onChange={(e) => setFotoCargaId(e.target.value)}>
+                  <option value="">Selecciona folio / fecha</option>
+                  {localCargas.slice(0, 40).map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.fecha}{c.folio != null ? ` · #${c.folio}` : ""} · {c.origen} · {c.litros.toLocaleString("es-MX")} L
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label>Foto</Label>
+                <input
+                  ref={fotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setFotoFile(file);
+                    setFotoPreview(URL.createObjectURL(file));
+                  }}
+                />
+                {fotoPreview ? (
+                  <div className="relative mt-1">
+                    <img src={fotoPreview} alt="Vista previa" className="w-full h-40 object-cover rounded-xl border" style={{ borderColor: "var(--border)" }} />
+                    <button type="button" onClick={() => {
+                      setFotoFile(null);
+                      if (fotoPreview) URL.revokeObjectURL(fotoPreview);
+                      setFotoPreview(null);
+                      if (fotoInputRef.current) fotoInputRef.current.value = "";
+                    }} className="absolute top-2 right-2 p-1 rounded-lg bg-black/50 text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fotoInputRef.current?.click()}
+                    className="mt-1 w-full h-24 rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 text-sm"
+                    style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+                  >
+                    <Camera className="w-5 h-5" />
+                    Tomar o elegir foto
+                  </button>
+                )}
+              </div>
+              {fotoError && <p className="text-sm text-red-500">{fotoError}</p>}
+              <DialogFooter>
+                <Button type="button" variant="secondary" onClick={resetFotoUpload}>Cancelar</Button>
+                <Button type="button" disabled={fotoPending || isUploading} onClick={submitFoto}>
+                  {fotoPending || isUploading ? "Subiendo..." : "Subir"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Modal: Carga Externa ─────────────────────────── */}
       <Dialog open={showExterna} onOpenChange={(v) => { if (!v) { setShowExterna(false); setExternaError(""); } }}>

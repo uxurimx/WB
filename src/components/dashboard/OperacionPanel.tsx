@@ -47,8 +47,86 @@ export default function OperacionPanel({
   const showRend = peores.length > 0;
   if (!showObras && !showRend) return null;
 
+  const obrasList = (
+    <ul className="space-y-2.5">
+      {operacion.obras.map((o) => (
+        <li key={o.id}>
+          <Link href={`/catalogo/obras/${o.id}`} className="block group">
+            <div className="flex items-baseline justify-between gap-2 text-sm">
+              <span className="font-medium group-hover:underline" style={{ color: "var(--fg)" }}>
+                {o.nombre}
+              </span>
+              <span className="font-mono tabular-nums" style={{ color: "var(--fg-muted)" }}>
+                {Math.round(o.litros).toLocaleString("es-MX")} L
+              </span>
+            </div>
+            <div className="mt-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--surface-2)" }}>
+              <div
+                className="h-full rounded-full bg-amber-500/80"
+                style={{ width: `${Math.round((o.litros / maxObra) * 100)}%` }}
+              />
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+
+  const rendList = (
+    <ul className="space-y-2">
+      {peores.map((u) => (
+        <li key={u.unidadId}>
+          <Link
+            href={`/catalogo/unidades/${u.unidadId}`}
+            className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 -mx-2 hover:bg-[var(--surface-2)]"
+          >
+            <span className="font-medium text-sm" style={{ color: "var(--fg)" }}>
+              {u.unidadCodigo}
+            </span>
+            <span className="text-xs font-mono text-red-600">
+              {u.diferenciaPct.toFixed(0)}%
+              <span className="ml-1" style={{ color: "var(--fg-muted)" }}>
+                {u.tipo === "camion" ? "km/L" : "L/hr"}
+              </span>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
-    <section className={`mb-6 grid grid-cols-1 gap-4 ${showObras && showRend ? "lg:grid-cols-2" : ""}`}>
+    <>
+    <div className="lg:hidden mb-4 space-y-2">
+      {showObras && (
+        <details
+          className="rounded-2xl border"
+          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          <summary className="px-3 py-2.5 cursor-pointer list-none flex items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+            <span className="text-sm font-semibold" style={{ color: "var(--fg)" }}>Diesel por obra</span>
+            <span className="font-mono text-xs tabular-nums" style={{ color: "var(--fg-muted)" }}>
+              {Math.round(operacion.litrosCampo).toLocaleString("es-MX")} L
+              {operacion.costoCampo != null ? ` · ${mxn(operacion.costoCampo)}` : ""}
+            </span>
+          </summary>
+          <div className="px-3 pb-3">{obrasList}</div>
+        </details>
+      )}
+      {showRend && (
+        <details
+          className="rounded-2xl border"
+          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          <summary className="px-3 py-2.5 cursor-pointer list-none flex items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+            <span className="text-sm font-semibold" style={{ color: "var(--fg)" }}>A vigilar</span>
+            <span className="text-xs font-semibold text-red-500">{peores.length}</span>
+          </summary>
+          <div className="px-3 pb-3">{rendList}</div>
+        </details>
+      )}
+    </div>
+    <section className={`hidden lg:grid mb-6 grid-cols-1 gap-4 ${showObras && showRend ? "lg:grid-cols-2" : ""}`}>
       {showObras && <div
         className="rounded-2xl border p-5"
         style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
@@ -84,28 +162,7 @@ export default function OperacionPanel({
           )}
         </div>
 
-        <ul className="space-y-2.5">
-            {operacion.obras.map((o) => (
-              <li key={o.id}>
-                <Link href={`/catalogo/obras/${o.id}`} className="block group">
-                  <div className="flex items-baseline justify-between gap-2 text-sm">
-                    <span className="font-medium group-hover:underline" style={{ color: "var(--fg)" }}>
-                      {o.nombre}
-                    </span>
-                    <span className="font-mono tabular-nums" style={{ color: "var(--fg-muted)" }}>
-                      {Math.round(o.litros).toLocaleString("es-MX")} L
-                    </span>
-                  </div>
-                  <div className="mt-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--surface-2)" }}>
-                    <div
-                      className="h-full rounded-full bg-amber-500/80"
-                      style={{ width: `${Math.round((o.litros / maxObra) * 100)}%` }}
-                    />
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        {obrasList}
 
         <p className="text-[11px] mt-4 leading-snug" style={{ color: "var(--fg-muted)" }}>
           Solo NISSAN (campo) lleva obra. Patio esta ventana:{" "}
@@ -134,26 +191,7 @@ export default function OperacionPanel({
           </div>
         </div>
 
-        <ul className="space-y-2">
-            {peores.map((u) => (
-              <li key={u.unidadId}>
-                <Link
-                  href={`/catalogo/unidades/${u.unidadId}`}
-                  className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 -mx-2 hover:bg-[var(--surface-2)]"
-                >
-                  <span className="font-medium text-sm" style={{ color: "var(--fg)" }}>
-                    {u.unidadCodigo}
-                  </span>
-                  <span className="text-xs font-mono text-red-600">
-                    {u.diferenciaPct.toFixed(0)}%
-                    <span className="ml-1" style={{ color: "var(--fg-muted)" }}>
-                      {u.tipo === "camion" ? "km/L" : "L/hr"}
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        {rendList}
 
         {periodoCerradoId != null && (
           <Link
@@ -166,5 +204,6 @@ export default function OperacionPanel({
         )}
       </div>}
     </section>
+    </>
   );
 }

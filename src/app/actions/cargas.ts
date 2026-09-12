@@ -467,6 +467,60 @@ export async function getSiguienteFolioCampoPublic() {
   return getSiguienteFolioCampo();
 }
 
+export async function getCargaFormBootstrap(origen: "patio" | "campo") {
+  await requireActionPermission(origen === "patio" ? "cargas.nueva_patio" : "cargas.nueva_campo");
+
+  const [unidadesRows, operadoresRows, configRows] = await Promise.all([
+    db.query.unidades.findMany({
+      where: eq(unidades.activo, true),
+      columns: { id: true, codigo: true, nombre: true, tipo: true },
+      orderBy: (u, { asc }) => [asc(u.tipo), asc(u.codigo)],
+    }),
+    db.query.operadores.findMany({
+      where: eq(operadores.activo, true),
+      columns: { id: true, nombre: true, tipo: true },
+      orderBy: (o, { asc }) => [asc(o.nombre)],
+    }),
+    db.select().from(configuracion),
+  ]);
+  const cfg = Object.fromEntries(configRows.map((x) => [x.clave, x.valor]));
+
+  if (origen === "patio") {
+    const taller = await db.query.tanques.findFirst({ where: eq(tanques.nombre, "Taller") });
+    return {
+      tipo: "patio" as const,
+      unidades: unidadesRows,
+      operadores: operadoresRows,
+      siguienteFolio: await getSiguienteFolio(),
+      stockActual: taller?.litrosActuales ?? 0,
+      ultimaCuentaLt: taller?.cuentalitrosActual ?? null,
+      folioMin: cfg["folio_min_patio"] ? parseInt(cfg["folio_min_patio"], 10) : 0,
+      folioMax: cfg["folio_max_patio"] ? parseInt(cfg["folio_max_patio"], 10) : 0,
+    };
+  }
+
+  const [obrasRows, nissan, siguienteFolio] = await Promise.all([
+    db.query.obras.findMany({
+      where: eq(obras.activo, true),
+      columns: { id: true, nombre: true },
+      orderBy: (o, { asc }) => [asc(o.nombre)],
+    }),
+    db.query.tanques.findFirst({ where: eq(tanques.nombre, "NISSAN") }),
+    getSiguienteFolioCampo(),
+  ]);
+  return {
+    tipo: "campo" as const,
+    unidades: unidadesRows,
+    operadores: operadoresRows,
+    obras: obrasRows,
+    saldoNissan: nissan?.litrosActuales ?? 0,
+    cuentalitrosNissan: nissan?.cuentalitrosActual ?? 0,
+    siguienteFolio,
+    folioMin: cfg["folio_min_campo"] ? parseInt(cfg["folio_min_campo"], 10) : 0,
+    folioMax: cfg["folio_max_campo"] ? parseInt(cfg["folio_max_campo"], 10) : 0,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────
 // ÚLTIMA CARGA DE UNIDAD — para alertas anti-fraude en campo
 // ─────────────────────────────────────────────────────────────

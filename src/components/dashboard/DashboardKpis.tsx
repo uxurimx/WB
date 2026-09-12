@@ -85,7 +85,26 @@ export default function DashboardKpis({
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+    <>
+    <div className="md:hidden grid grid-cols-3 gap-2 mb-4">
+      {items.map(({ label, value, unit, href }) => (
+        <Link
+          key={label}
+          href={href}
+          className="p-2.5 rounded-xl border block"
+          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider truncate" style={{ color: "var(--fg-muted)" }}>
+            {label}
+          </p>
+          <p className="font-outfit font-bold text-lg leading-tight mt-0.5 tabular-nums" style={{ color: "var(--fg)" }}>
+            {value}
+          </p>
+          <p className="text-[10px] truncate" style={{ color: "var(--fg-muted)" }}>{unit}</p>
+        </Link>
+      ))}
+    </div>
+    <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
       {items.map(({ label, value, unit, hint, href, icon: Icon }) => (
         <Link key={label} href={href} className="p-4 rounded-2xl border block transition-colors hover:bg-[var(--surface-2)]"
           style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
@@ -103,5 +122,6 @@ export default function DashboardKpis({
         </Link>
       ))}
     </div>
+    </>
   );
 }

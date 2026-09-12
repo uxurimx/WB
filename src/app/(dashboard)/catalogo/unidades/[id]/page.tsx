@@ -1,8 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { unidades } from "@/db/schema";
@@ -19,6 +17,7 @@ import {
 import { getOdometroResetsUnidad } from "@/app/actions/cargas";
 import { Badge } from "@/components/ui/badge";
 import CatalogoDetalleClient from "@/components/catalogo/CatalogoDetalleClient";
+import { CatalogDetalleHeader } from "@/components/ui/mobile-list";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
 const TIPO_LABELS: Record<string, string> = {
@@ -59,62 +58,42 @@ export default async function UnidadDetallePage({
     getOdometroResetsUnidad(unidadId),
   ]);
 
-  return (
-    <div className="p-6 md:p-8 max-w-[1536px]">
-      {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/catalogo/unidades"
-          className="flex items-center gap-1.5 text-xs font-semibold mb-4 hover:text-indigo-500 transition-colors"
-          style={{ color: "var(--fg-muted)" }}
-        >
-          <ArrowLeft className="w-3.5 h-3.5" /> Unidades
-        </Link>
+  const nombreModelo = [unidad.nombre, unidad.modelo].filter(Boolean).join(" · ");
+  const miniStats = [
+    unidad.rendimientoReferencia != null
+      ? `${unidad.rendimientoReferencia} ${unidad.tipo === "maquina" ? "L/Hr ref." : "km/L ref."}`
+      : null,
+    unidad.capacidadTanque != null ? `Cap. ${unidad.capacidadTanque} L` : null,
+  ].filter(Boolean).join(" · ");
 
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--fg-muted)" }}>
-              Catálogo · Unidad
-            </p>
-            <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>
-              {unidad.codigo}
-            </h1>
-            {(unidad.nombre || unidad.modelo) && (
-              <p className="mt-1 text-sm" style={{ color: "var(--fg-muted)" }}>
-                {unidad.nombre ?? ""}{unidad.nombre && unidad.modelo ? " · " : ""}{unidad.modelo ?? ""}
-              </p>
+  return (
+    <div className="p-4 md:p-8 max-w-[1536px]">
+      <CatalogDetalleHeader
+        backHref="/catalogo/unidades"
+        backLabel="Unidades"
+        eyebrow="Catálogo · Unidad"
+        title={unidad.codigo}
+        subtitle={(nombreModelo || miniStats) ? (
+          <>
+            {nombreModelo && (
+              <p className="mt-0.5 text-sm truncate" style={{ color: "var(--fg-muted)" }}>{nombreModelo}</p>
             )}
-          </div>
-          <div className="flex gap-2 flex-wrap">
+            {miniStats && (
+              <p className="mt-0.5 text-xs" style={{ color: "var(--fg-muted)" }}>{miniStats}</p>
+            )}
+          </>
+        ) : undefined}
+        badges={
+          <>
             <Badge variant={TIPO_VARIANT[unidad.tipo] ?? "secondary"}>
               {TIPO_LABELS[unidad.tipo] ?? unidad.tipo}
             </Badge>
             <Badge variant={unidad.activo ? "success" : "secondary"}>
               {unidad.activo ? "Activa" : "Inactiva"}
             </Badge>
-          </div>
-        </div>
-
-        {/* Mini-stats */}
-        <div className="mt-4 flex gap-4 flex-wrap">
-          {unidad.rendimientoReferencia !== null && (
-            <div className="text-xs" style={{ color: "var(--fg-muted)" }}>
-              <span className="font-semibold" style={{ color: "var(--fg)" }}>
-                {unidad.rendimientoReferencia}
-              </span>{" "}
-              {unidad.tipo === "maquina" ? "L/Hr ref." : "km/L ref."}
-            </div>
-          )}
-          {unidad.capacidadTanque !== null && (
-            <div className="text-xs" style={{ color: "var(--fg-muted)" }}>
-              Cap. tanque:{" "}
-              <span className="font-semibold" style={{ color: "var(--fg)" }}>
-                {unidad.capacidadTanque} L
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <CatalogoDetalleClient
         tipo="unidad"

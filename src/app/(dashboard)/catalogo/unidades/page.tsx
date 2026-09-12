@@ -4,6 +4,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { getUnidadesConStats } from "@/app/actions/catalogo";
 import { requirePermission } from "@/lib/server-guard";
 import UnidadesTable from "@/components/catalogo/UnidadesTable";
+import { CatalogPageHeader } from "@/components/ui/mobile-list";
 import { Truck } from "lucide-react";
 
 const MANAGE_ROLES = ["admin", "gerente", "encargado_obra"];
@@ -16,24 +17,16 @@ export default async function UnidadesPage() {
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
   const canManageMaintenance = MAINTENANCE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
 
+  const activas = unidades.filter((u) => u.activo).length;
+
   return (
-    <div className="p-6 md:p-8 max-w-[1536px]">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-            <Truck className="w-4 h-4 text-indigo-500" />
-          </div>
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--fg-muted)" }}>
-            Catálogos
-          </p>
-        </div>
-        <h1 className="font-outfit font-bold text-3xl" style={{ color: "var(--fg)" }}>
-          Unidades
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: "var(--fg-muted)" }}>
-          Camiones, maquinaria y vehículos del sistema. {unidades.filter(u => u.activo).length} activos de {unidades.length} totales.
-        </p>
-      </div>
+    <div className="p-4 md:p-8 max-w-[1536px]">
+      <CatalogPageHeader
+        icon={Truck}
+        title="Unidades"
+        meta={`${activas} de ${unidades.length} activos`}
+        description={`Camiones, maquinaria y vehículos del sistema. ${activas} activos de ${unidades.length} totales.`}
+      />
       <UnidadesTable unidades={unidades} canEdit={canEdit} canManageMaintenance={canManageMaintenance} />
     </div>
   );

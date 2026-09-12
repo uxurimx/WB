@@ -21,22 +21,72 @@ function StockBar({
   max,
   color,
   alerta,
+  compact = false,
 }: {
   litros: number;
   max: number;
   color: string;
   alerta: boolean;
+  compact?: boolean;
 }) {
   const pct = Math.min(100, max > 0 ? (litros / max) * 100 : 0);
   const sobrecarga = litros > max && max > 0;
   return (
-    <div className="h-2 rounded-full w-full mt-3" style={{ backgroundColor: "var(--surface-2)" }}>
+    <div
+      className={`${compact ? "h-1.5 mt-1" : "h-2 mt-3"} rounded-full w-full`}
+      style={{ backgroundColor: "var(--surface-2)" }}
+    >
       <div
-        className={`h-2 rounded-full transition-all duration-700 ${
+        className={`${compact ? "h-1.5" : "h-2"} rounded-full transition-all duration-700 ${
           sobrecarga ? "bg-amber-500" : alerta ? "bg-red-500" : color
         }`}
         style={{ width: `${pct}%` }}
       />
+    </div>
+  );
+}
+
+function CompactTankRow({
+  label,
+  litros,
+  max,
+  alerta,
+  sobrecarga,
+  barColor,
+}: {
+  label: string;
+  litros: number;
+  max: number;
+  alerta: boolean;
+  sobrecarga: boolean;
+  barColor: string;
+}) {
+  const pct = max > 0 ? Math.round((litros / max) * 100) : 0;
+  const status = sobrecarga ? "sobrecarga" : alerta ? (litros < 50 || pct < 5 ? "crítico" : "bajo") : null;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
+          {label}
+        </span>
+        <span className="flex items-baseline gap-1.5">
+          <span
+            className="font-outfit font-bold text-base tabular-nums"
+            style={{ color: sobrecarga ? "rgb(217 119 6)" : alerta ? "rgb(239 68 68)" : "var(--fg)" }}
+          >
+            {litros.toLocaleString("es-MX")}
+            <span className="text-[11px] font-normal ml-1" style={{ color: "var(--fg-muted)" }}>
+              / {max.toLocaleString("es-MX")} L
+            </span>
+          </span>
+          {status && (
+            <span className={`text-[10px] font-semibold ${sobrecarga ? "text-amber-600" : "text-red-500"}`}>
+              {status}
+            </span>
+          )}
+        </span>
+      </div>
+      <StockBar litros={litros} max={max} color={barColor} alerta={alerta} compact />
     </div>
   );
 }
@@ -125,8 +175,38 @@ export default function StockCards({
   const pctTaller = taller.max > 0 ? Math.round((taller.litros / taller.max) * 100) : 0;
   const pctNissan = nissan.max > 0 ? Math.round((nissan.litros / nissan.max) * 100) : 0;
 
+  const worstBorder = sobrecargaTaller || sobrecargaNissan
+    ? "rgb(245 158 11 / 0.5)"
+    : alertaTaller || alertaNissan
+      ? "rgb(239 68 68 / 0.4)"
+      : "var(--border)";
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <>
+    <Link
+      href="/tanques"
+      className="md:hidden block rounded-2xl border px-3 py-2.5 space-y-2.5"
+      style={{ backgroundColor: "var(--surface)", borderColor: worstBorder }}
+    >
+      <CompactTankRow
+        label="Taller"
+        litros={taller.litros}
+        max={taller.max}
+        alerta={alertaTaller}
+        sobrecarga={!!sobrecargaTaller}
+        barColor="bg-indigo-500"
+      />
+      <CompactTankRow
+        label="NISSAN"
+        litros={nissan.litros}
+        max={nissan.max}
+        alerta={alertaNissan}
+        sobrecarga={!!sobrecargaNissan}
+        barColor="bg-violet-500"
+      />
+    </Link>
+
+    <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Tanque Taller */}
       <Link
         href="/tanques"
@@ -251,5 +331,6 @@ export default function StockCards({
         </p>
       </Link>
     </div>
+    </>
   );
 }

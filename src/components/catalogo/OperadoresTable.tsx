@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Power, PowerOff, Pencil, Trash2, Check, X, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Power, PowerOff, Pencil, Trash2, Check, X, Search, SlidersHorizontal, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { MobileList, MobileRow, MobileStatStrip, MobileStickyToolbar } from "@/components/ui/mobile-list";
 import { useRouter } from "next/navigation";
 import { createOperador, updateOperador, toggleOperadorActivo, deleteOperador } from "@/app/actions/catalogo";
 
@@ -155,6 +159,7 @@ export default function OperadoresTable({
   return (
     <div className="space-y-3">
       {/* Toolbar compacto */}
+      <MobileStickyToolbar>
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--fg-muted)" }} />
@@ -187,22 +192,24 @@ export default function OperadoresTable({
         {canEdit && (
           <button
             type="button"
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => setShowForm(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold shrink-0 transition-colors"
-            style={showForm
-              ? { backgroundColor: "var(--surface-2)", color: "var(--fg)" }
-              : { backgroundColor: "rgb(79 70 229)", color: "white" }}
+            style={{ backgroundColor: "rgb(79 70 229)", color: "white" }}
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">{showForm ? "Cancelar" : "Nuevo"}</span>
+            <span className="hidden sm:inline">Nuevo</span>
           </button>
         )}
       </div>
+      </MobileStickyToolbar>
 
-      {/* Panel de filtros colapsable */}
-      {showFilters && (
-        <div className="flex flex-wrap gap-x-5 gap-y-2 px-3 py-2 rounded-xl border"
-          style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+      <Dialog open={showFilters} onOpenChange={setShowFilters}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Filtros</DialogTitle>
+            <DialogDescription>Tipo, estado y orden.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs font-semibold shrink-0" style={{ color: "var(--fg-muted)" }}>Tipo</span>
             {(["todos", "chofer", "maquinista", "taller"] as const).map((t) => (
@@ -235,14 +242,17 @@ export default function OperadoresTable({
               {sortDir === "desc" ? "Más diesel" : "A → Z"}
             </button>
           </div>
-        </div>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
-
-      {showForm && (
-        <form onSubmit={handleSubmit} className="p-5 rounded-2xl border space-y-4"
-          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
-          <p className="font-outfit font-bold text-sm" style={{ color: "var(--fg)" }}>Nuevo Operador</p>
+      <Dialog open={showForm} onOpenChange={(o) => { if (!o) setShowForm(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuevo operador</DialogTitle>
+            <DialogDescription>Nombre, tipo y teléfono.</DialogDescription>
+          </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5 sm:col-span-1">
               <Label htmlFor="nombre">Nombre *</Label>
@@ -264,23 +274,32 @@ export default function OperadoresTable({
             </div>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <div className="flex gap-2">
-            <button type="submit" disabled={isPending}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60">
-              {isPending ? "Guardando..." : "Guardar"}
-            </button>
+          <DialogFooter>
             <button type="button" onClick={() => setShowForm(false)}
               className="px-4 py-2 rounded-xl text-sm hover:bg-[var(--surface-2)] transition-colors"
               style={{ color: "var(--fg-muted)" }}>
               Cancelar
             </button>
-          </div>
+            <button type="submit" disabled={isPending}
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60">
+              {isPending ? "Guardando..." : "Guardar"}
+            </button>
+          </DialogFooter>
         </form>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {deleteError && <p className="text-sm text-red-500 px-1">{deleteError}</p>}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <MobileStatStrip
+        items={[
+          { key: "diesel", label: "Diesel", value: fmtL(litrosTotales) },
+          { key: "cargas", label: "Con cargas", value: String(conCargas) },
+          { key: "catalogo", label: "Catálogo", value: String(operadores.length) },
+        ]}
+      />
+
+      <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
           { label: "Diesel despachado", value: fmtL(litrosTotales) },
           { label: "Con cargas", value: String(conCargas) },
@@ -293,7 +312,48 @@ export default function OperadoresTable({
         ))}
       </div>
 
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
+      <MobileList
+        empty={operadoresFiltrados.length === 0 ? (
+          <p className="text-center py-10 text-sm" style={{ color: "var(--fg-muted)" }}>
+            {busqueda || tipoFiltro !== "todos" || estadoFiltro !== "todos"
+              ? "Sin resultados para esa búsqueda."
+              : "Sin operadores registrados."}
+          </p>
+        ) : undefined}
+      >
+        {operadoresFiltrados.map((o) => (
+          <MobileRow key={o.id} onClick={() => router.push(`/catalogo/operadores/${o.id}`)}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-medium text-sm truncate" style={{ color: "var(--fg)" }}>{o.nombre}</p>
+                <p className="text-[11px] truncate" style={{ color: "var(--fg-muted)" }}>
+                  {TIPO_LABELS[o.tipo] ?? o.tipo}
+                  {o.telefono ? ` · ${o.telefono}` : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Badge variant={o.activo ? "success" : "secondary"}>
+                  {o.activo ? "Activo" : "Inactivo"}
+                </Badge>
+                <ChevronRight className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />
+              </div>
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-3 text-sm">
+              <span className="font-mono font-semibold tabular-nums" style={{ color: "var(--fg)" }}>
+                {fmtL(o.totalLitros)}
+              </span>
+              <span className="text-[11px] tabular-nums" style={{ color: "var(--fg-muted)" }}>
+                {o.totalCargas} c.{o.unidades > 0 ? ` · ${o.unidades} u.` : ""}
+              </span>
+              <span className="ml-auto font-mono text-[11px] tabular-nums" style={{ color: "var(--fg-muted)" }}>
+                {fmtDia(o.ultimaFecha)}
+              </span>
+            </div>
+          </MobileRow>
+        ))}
+      </MobileList>
+
+      <div className="hidden md:block rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: "var(--surface)" }}>

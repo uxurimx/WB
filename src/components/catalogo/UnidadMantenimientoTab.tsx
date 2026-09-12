@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, Save, Wrench } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, Gauge, RotateCcw, Save, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   registrarMantenimientoUnidad,
   updateEventoMantenimiento,
@@ -128,6 +131,9 @@ export default function UnidadMantenimientoTab({
   });
   const [editingEventoId, setEditingEventoId] = useState<number | null>(null);
   const [eventoEdit, setEventoEdit] = useState({ fechaServicio: "", lecturaServicio: "", descripcion: "", notas: "" });
+  const [planModal, setPlanModal] = useState<TipoControlMantenimiento | null>(null);
+  const [resetModal, setResetModal] = useState(false);
+  const [servicioModal, setServicioModal] = useState(false);
 
   const eventosOrdenados = useMemo(
     () => [...eventos].sort((a, b) => {
@@ -171,6 +177,7 @@ export default function UnidadMantenimientoTab({
           notas: form.notas || null,
         });
         setSuccess(`Plan ${tipo.toUpperCase()} guardado.`);
+        setPlanModal(null);
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al guardar el plan.");
@@ -197,6 +204,7 @@ export default function UnidadMantenimientoTab({
           notas: resetForm.notas || undefined,
         });
         setSuccess("Reset de hubodómetro registrado. Las próximas cargas usan la lectura nueva.");
+        setResetModal(false);
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al registrar el reset.");
@@ -266,6 +274,7 @@ export default function UnidadMantenimientoTab({
           descripcion: "",
           notas: "",
         }));
+        setServicioModal(false);
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al registrar mantenimiento.");
@@ -273,32 +282,23 @@ export default function UnidadMantenimientoTab({
     });
   }
 
+
+  const planFormActivo = planModal ? planForms[planModal] : null;
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--fg-muted)" }}>
-            Mantenimiento preventivo
-          </p>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant={statusVariant(resumen?.estadoGlobal ?? "sin_config")}>
-              {statusLabel(resumen?.estadoGlobal ?? "sin_config")}
-            </Badge>
-            <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
-              Estado global de la unidad
-            </p>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Badge variant={statusVariant(resumen?.estadoGlobal ?? "sin_config")}>
+            {statusLabel(resumen?.estadoGlobal ?? "sin_config")}
+          </Badge>
+          <p className="text-sm" style={{ color: "var(--fg-muted)" }}>Estado de mantenimiento</p>
         </div>
-        {!canManageMaintenance && (
-          <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
-            Solo admin y gerente pueden editar configuración o registrar servicios.
-          </p>
-        )}
       </div>
 
       {(error || success) && (
         <div
-          className="rounded-xl border px-4 py-3 text-sm"
+          className="rounded-xl border px-3 py-2 text-sm"
           style={{
             borderColor: error ? "rgb(239 68 68 / 0.25)" : "rgb(16 185 129 / 0.25)",
             backgroundColor: error ? "rgb(239 68 68 / 0.06)" : "rgb(16 185 129 / 0.06)",
@@ -309,390 +309,296 @@ export default function UnidadMantenimientoTab({
         </div>
       )}
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {(["km", "hrs"] as TipoControlMantenimiento[]).map((tipo) => {
+          const plan = resumen?.planes.find((p) => p.tipoControl === tipo) ?? null;
+          return (
+            <div
+              key={tipo}
+              className="rounded-2xl border px-3 py-3 space-y-2"
+              style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Gauge className="w-4 h-4 text-indigo-500" />
+                  <p className="font-semibold text-sm" style={{ color: "var(--fg)" }}>{planTitle(tipo)}</p>
+                </div>
+                <Badge variant={statusVariant(plan?.estado ?? "sin_config")}>
+                  {statusLabel(plan?.estado ?? "sin_config")}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>Actual</p>
+                  <p className="font-mono font-bold text-sm" style={{ color: "var(--fg)" }}>{fmtNum(plan?.lecturaActual)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>Próximo</p>
+                  <p className="font-mono font-bold text-sm" style={{ color: "var(--fg)" }}>{fmtNum(plan?.proximoServicioEn)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>Falta</p>
+                  <p className="font-mono font-bold text-sm" style={{ color: "var(--fg)" }}>
+                    {plan?.faltante == null ? "—" : plan.faltante >= 0 ? fmtNum(plan.faltante) : `-${fmtNum(plan.excedente)}`}
+                  </p>
+                </div>
+              </div>
+              {plan?.inconsistencia && (
+                <p className="text-[11px] text-amber-700 flex items-start gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  {plan.inconsistencia}
+                </p>
+              )}
+              {canManageMaintenance && (
+                <button
+                  type="button"
+                  onClick={() => setPlanModal(tipo)}
+                  className="w-full text-xs font-semibold py-1.5 rounded-lg border hover:bg-[var(--surface-2)]"
+                  style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+                >
+                  Configurar
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       {canManageMaintenance && (
-        <section
-          className="rounded-2xl border p-4 space-y-4"
-          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-        >
-          <div>
-            <p className="font-semibold" style={{ color: "var(--fg)" }}>Reset de hubodómetro</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-              Si se dañó el rin y el km volvió a 0, regístralo aquí. No edites la última carga.
-              Hub actual: {fmtNum(odometroActual)} · Acumulado: {fmtNum((odometroActual ?? 0) + (odometroOffset ?? 0))}
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div className="flex gap-2">
+          <Button type="button" size="sm" className="flex-1" onClick={() => setServicioModal(true)}>
+            <Wrench className="w-4 h-4" /> Registrar servicio
+          </Button>
+          <Button type="button" size="sm" variant="secondary" onClick={() => setResetModal(true)}>
+            <RotateCcw className="w-4 h-4" /> Reset hub
+          </Button>
+        </div>
+      )}
+
+      {!canManageMaintenance && (
+        <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+          Solo admin y gerente pueden editar configuración o registrar servicios.
+        </p>
+      )}
+
+      <section
+        className="rounded-2xl border overflow-hidden"
+        style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+      >
+        <div className="px-3 py-2.5 border-b flex items-center gap-2" style={{ borderColor: "var(--border)" }}>
+          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <p className="font-semibold text-sm" style={{ color: "var(--fg)" }}>Historial</p>
+          <span className="ml-auto text-xs" style={{ color: "var(--fg-muted)" }}>{eventosOrdenados.length}</span>
+        </div>
+        {eventosOrdenados.length === 0 ? (
+          <p className="px-3 py-6 text-sm text-center" style={{ color: "var(--fg-muted)" }}>
+            Sin mantenimientos registrados.
+          </p>
+        ) : (
+          <ul>
+            {eventosOrdenados.map((evento) => (
+              <li
+                key={evento.id}
+                className="px-3 py-2.5 border-b last:border-b-0 flex items-start justify-between gap-2"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{evento.tipoControl.toUpperCase()}</Badge>
+                    <span className="font-mono font-semibold text-sm" style={{ color: "var(--fg)" }}>
+                      {fmtNum(evento.lecturaServicio)}
+                    </span>
+                    <span className="text-xs" style={{ color: "var(--fg-muted)" }}>{evento.fechaServicio}</span>
+                  </div>
+                  {evento.descripcion && (
+                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--fg-muted)" }}>{evento.descripcion}</p>
+                  )}
+                </div>
+                {canManageMaintenance && (
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-indigo-500 shrink-0"
+                    onClick={() => startEditEvento(evento)}
+                  >
+                    Editar
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {resets.length > 0 && (
+        <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>
+          Último reset: {resets[0].fecha} · {fmtNum(resets[0].lecturaAnterior)} → {fmtNum(resets[0].lecturaNueva)}
+          {resets[0].notas ? ` · ${resets[0].notas}` : ""}
+        </p>
+      )}
+
+      <Dialog open={planModal !== null} onOpenChange={(o) => { if (!o) setPlanModal(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{planModal ? planTitle(planModal) : "Plan"}</DialogTitle>
+            <DialogDescription>Intervalo, umbral de alerta y estado del plan.</DialogDescription>
+          </DialogHeader>
+          {planModal && planFormActivo && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="plan-intervalo">Intervalo</Label>
+                  <Input id="plan-intervalo" type="number" step="1" disabled={pending}
+                    value={planFormActivo.intervalo}
+                    onChange={(e) => updatePlanForm(planModal, "intervalo", e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="plan-umbral">Umbral alerta</Label>
+                  <Input id="plan-umbral" type="number" step="1" disabled={pending}
+                    value={planFormActivo.umbralAlerta}
+                    onChange={(e) => updatePlanForm(planModal, "umbralAlerta", e.target.value)} />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input id="plan-activo" type="checkbox" className="rounded border" disabled={pending}
+                  checked={planFormActivo.activo}
+                  onChange={(e) => updatePlanForm(planModal, "activo", e.target.checked)} />
+                <Label htmlFor="plan-activo">Plan activo</Label>
+              </div>
+              <div>
+                <Label htmlFor="plan-notas">Notas</Label>
+                <Textarea id="plan-notas" rows={3} disabled={pending} value={planFormActivo.notas}
+                  onChange={(e) => updatePlanForm(planModal, "notas", e.target.value)}
+                  placeholder={`Ej. servicio preventivo cada ${planModal.toUpperCase()}`} />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="secondary" onClick={() => setPlanModal(null)}>Cancelar</Button>
+                <Button type="button" disabled={pending} onClick={() => savePlan(planModal)}>
+                  <Save className="w-4 h-4" /> Guardar
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetModal} onOpenChange={setResetModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset de hubodómetro</DialogTitle>
+            <DialogDescription>
+              Si el km volvió a 0 (cambio de rin/hub), regístralo aquí. Hub actual: {fmtNum(odometroActual)} · acumulado: {fmtNum((odometroActual ?? 0) + (odometroOffset ?? 0))}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
             <div>
               <Label htmlFor="reset-fecha">Fecha</Label>
               <Input id="reset-fecha" type="date" disabled={pending} value={resetForm.fecha}
                 onChange={(e) => setResetForm((p) => ({ ...p, fecha: e.target.value }))} />
             </div>
-            <div>
-              <Label htmlFor="reset-ant">Lectura anterior</Label>
-              <Input id="reset-ant" type="number" disabled={pending} value={resetForm.lecturaAnterior}
-                onChange={(e) => setResetForm((p) => ({ ...p, lecturaAnterior: e.target.value }))} />
-            </div>
-            <div>
-              <Label htmlFor="reset-new">Lectura nueva</Label>
-              <Input id="reset-new" type="number" disabled={pending} value={resetForm.lecturaNueva}
-                onChange={(e) => setResetForm((p) => ({ ...p, lecturaNueva: e.target.value }))} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="reset-ant">Lectura anterior</Label>
+                <Input id="reset-ant" type="number" disabled={pending} value={resetForm.lecturaAnterior}
+                  onChange={(e) => setResetForm((p) => ({ ...p, lecturaAnterior: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="reset-new">Lectura nueva</Label>
+                <Input id="reset-new" type="number" disabled={pending} value={resetForm.lecturaNueva}
+                  onChange={(e) => setResetForm((p) => ({ ...p, lecturaNueva: e.target.value }))} />
+              </div>
             </div>
             <div>
               <Label htmlFor="reset-notas">Notas</Label>
               <Input id="reset-notas" disabled={pending} value={resetForm.notas} placeholder="Cambio de rin / hub"
                 onChange={(e) => setResetForm((p) => ({ ...p, notas: e.target.value }))} />
             </div>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setResetModal(false)}>Cancelar</Button>
+              <Button type="button" disabled={pending} onClick={registrarReset}>Registrar reset</Button>
+            </DialogFooter>
           </div>
-          <div className="flex justify-end">
-            <Button type="button" disabled={pending} onClick={registrarReset}>
-              Registrar reset
-            </Button>
-          </div>
-          {resets.length > 0 && (
-            <div className="text-xs space-y-1" style={{ color: "var(--fg-muted)" }}>
-              {resets.map((r) => (
-                <p key={r.id}>
-                  {r.fecha}: {fmtNum(r.lecturaAnterior)} → {fmtNum(r.lecturaNueva)}
-                  {r.notas ? ` · ${r.notas}` : ""}
-                </p>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {(["km", "hrs"] as TipoControlMantenimiento[]).map((tipo) => {
-          const plan = resumen?.planes.find((p) => p.tipoControl === tipo) ?? null;
-          const form = planForms[tipo];
-          return (
-            <section
-              key={tipo}
-              className="rounded-2xl border p-4 space-y-4"
-              style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-semibold" style={{ color: "var(--fg)" }}>{planTitle(tipo)}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-                    Configuración y estado del mantenimiento por {tipo.toUpperCase()}.
-                  </p>
-                  {plan?.origen === "global" && (
-                    <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
-                      Usando la regla general de Configuración.
-                    </p>
-                  )}
-                  {plan?.origen === "manual" && (
-                    <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
-                      Esta unidad tiene un ajuste manual propio.
-                    </p>
-                  )}
-                </div>
-                <Badge variant={statusVariant(plan?.estado ?? "sin_config")}>
-                  {statusLabel(plan?.estado ?? "sin_config")}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-                  <p className="text-[11px] uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
-                    Lectura actual
-                  </p>
-                  <p className="font-mono font-bold text-lg" style={{ color: "var(--fg)" }}>
-                    {fmtNum(plan?.lecturaActual)}
-                  </p>
-                </div>
-                <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-                  <p className="text-[11px] uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
-                    Último servicio
-                  </p>
-                  <p className="font-mono font-bold text-lg" style={{ color: "var(--fg)" }}>
-                    {fmtNum(plan?.lecturaServicio)}
-                  </p>
-                  <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>
-                    {plan?.fechaServicio ?? "Sin registro"}
-                  </p>
-                </div>
-                <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-                  <p className="text-[11px] uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
-                    Próximo servicio
-                  </p>
-                  <p className="font-mono font-bold text-lg" style={{ color: "var(--fg)" }}>
-                    {fmtNum(plan?.proximoServicioEn)}
-                  </p>
-                </div>
-                <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-                  <p className="text-[11px] uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
-                    Faltante / excedente
-                  </p>
-                  <p className="font-mono font-bold text-lg" style={{ color: "var(--fg)" }}>
-                    {plan?.faltante == null
-                      ? "—"
-                      : plan.faltante >= 0
-                        ? `${fmtNum(plan.faltante)}`
-                        : `-${fmtNum(plan.excedente)}`}
-                  </p>
-                </div>
-              </div>
-
-              {plan?.inconsistencia && (
-                <div
-                  className="rounded-xl border px-3 py-2 text-sm flex items-start gap-2"
-                  style={{
-                    borderColor: "rgb(245 158 11 / 0.25)",
-                    backgroundColor: "rgb(245 158 11 / 0.06)",
-                    color: "rgb(180 83 9)",
-                  }}
-                >
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{plan.inconsistencia}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor={`${tipo}-intervalo`}>Intervalo</Label>
-                  <Input
-                    id={`${tipo}-intervalo`}
-                    type="number"
-                    step="1"
-                    disabled={!canManageMaintenance || pending}
-                    value={form.intervalo}
-                    onChange={(e) => updatePlanForm(tipo, "intervalo", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={`${tipo}-umbral`}>Umbral alerta</Label>
-                  <Input
-                    id={`${tipo}-umbral`}
-                    type="number"
-                    step="1"
-                    disabled={!canManageMaintenance || pending}
-                    value={form.umbralAlerta}
-                    onChange={(e) => updatePlanForm(tipo, "umbralAlerta", e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  id={`${tipo}-activo`}
-                  type="checkbox"
-                  className="rounded border"
-                  disabled={!canManageMaintenance || pending}
-                  checked={form.activo}
-                  onChange={(e) => updatePlanForm(tipo, "activo", e.target.checked)}
-                />
-                <Label htmlFor={`${tipo}-activo`}>Plan activo</Label>
-              </div>
-
+      <Dialog open={servicioModal} onOpenChange={setServicioModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar servicio</DialogTitle>
+            <DialogDescription>Queda como nueva base del cálculo de mantenimiento.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <Label htmlFor={`${tipo}-notas`}>Notas del plan</Label>
-                <Textarea
-                  id={`${tipo}-notas`}
-                  rows={3}
-                  disabled={!canManageMaintenance || pending}
-                  value={form.notas}
-                  onChange={(e) => updatePlanForm(tipo, "notas", e.target.value)}
-                  placeholder={`Ej. servicio preventivo cada ${tipo.toUpperCase()}`}
-                />
+                <Label htmlFor="reg-tipo">Tipo</Label>
+                <select id="reg-tipo" className="w-full h-10 rounded-md border px-3 text-sm"
+                  style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", color: "var(--fg)" }}
+                  disabled={pending} value={registroForm.tipoControl}
+                  onChange={(e) => setRegistroForm((prev) => ({ ...prev, tipoControl: e.target.value as TipoControlMantenimiento }))}>
+                  <option value="km">KM</option>
+                  <option value="hrs">HRS</option>
+                </select>
               </div>
-
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  disabled={!canManageMaintenance || pending}
-                  onClick={() => savePlan(tipo)}
-                >
-                  <Save className="w-4 h-4" />
-                  Guardar plan {tipo.toUpperCase()}
-                </Button>
+              <div>
+                <Label htmlFor="reg-fecha">Fecha</Label>
+                <Input id="reg-fecha" type="date" disabled={pending} value={registroForm.fechaServicio}
+                  onChange={(e) => setRegistroForm((prev) => ({ ...prev, fechaServicio: e.target.value }))} />
               </div>
-            </section>
-          );
-        })}
-      </div>
-
-      <section
-        className="rounded-2xl border p-4 space-y-4"
-        style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-      >
-        <div className="flex items-center gap-2">
-          <Wrench className="w-4 h-4 text-indigo-500" />
-          <div>
-            <p className="font-semibold" style={{ color: "var(--fg)" }}>Registrar mantenimiento</p>
-            <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
-              Crea un evento de servicio que servirá como nueva base del cálculo.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <Label htmlFor="reg-tipo">Tipo control</Label>
-            <select
-              id="reg-tipo"
-              className="w-full h-10 rounded-md border px-3 text-sm"
-              style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", color: "var(--fg)" }}
-              disabled={!canManageMaintenance || pending}
-              value={registroForm.tipoControl}
-              onChange={(e) => setRegistroForm((prev) => ({ ...prev, tipoControl: e.target.value as TipoControlMantenimiento }))}
-            >
-              <option value="km">KM</option>
-              <option value="hrs">HRS</option>
-            </select>
-          </div>
-          <div>
-            <Label htmlFor="reg-fecha">Fecha servicio</Label>
-            <Input
-              id="reg-fecha"
-              type="date"
-              disabled={!canManageMaintenance || pending}
-              value={registroForm.fechaServicio}
-              onChange={(e) => setRegistroForm((prev) => ({ ...prev, fechaServicio: e.target.value }))}
-            />
-          </div>
-          <div>
-            <Label htmlFor="reg-lectura">Lectura servicio</Label>
-            <Input
-              id="reg-lectura"
-              type="number"
-              step="1"
-              disabled={!canManageMaintenance || pending}
-              value={registroForm.lecturaServicio}
-              onChange={(e) => setRegistroForm((prev) => ({ ...prev, lecturaServicio: e.target.value }))}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="reg-desc">Descripción</Label>
-            <Input
-              id="reg-desc"
-              disabled={!canManageMaintenance || pending}
-              value={registroForm.descripcion}
-              onChange={(e) => setRegistroForm((prev) => ({ ...prev, descripcion: e.target.value }))}
-              placeholder="Ej. servicio preventivo 10,000 km"
-            />
-          </div>
-          <div>
-            <Label htmlFor="reg-notas">Notas</Label>
-            <Input
-              id="reg-notas"
-              disabled={!canManageMaintenance || pending}
-              value={registroForm.notas}
-              onChange={(e) => setRegistroForm((prev) => ({ ...prev, notas: e.target.value }))}
-              placeholder="Detalles opcionales"
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            disabled={!canManageMaintenance || pending}
-            onClick={registrarMantenimiento}
-          >
-            <Clock3 className="w-4 h-4" />
-            Registrar mantenimiento
-          </Button>
-        </div>
-      </section>
-
-      <section
-        className="rounded-2xl border p-4"
-        style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          <div>
-            <p className="font-semibold" style={{ color: "var(--fg)" }}>Historial de mantenimientos</p>
-            <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
-              Eventos registrados para esta unidad.
-            </p>
-          </div>
-        </div>
-
-        {eventosOrdenados.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
-            Sin mantenimientos registrados aún.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {eventosOrdenados.map((evento) => (
-              <div
-                key={evento.id}
-                className="rounded-xl border p-3"
-                style={{ borderColor: "var(--border)" }}
-              >
-                {editingEventoId === evento.id ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <Label>Fecha</Label>
-                        <Input type="date" value={eventoEdit.fechaServicio} disabled={pending}
-                          onChange={(e) => setEventoEdit((p) => ({ ...p, fechaServicio: e.target.value }))} />
-                      </div>
-                      <div>
-                        <Label>Lectura</Label>
-                        <Input type="number" value={eventoEdit.lecturaServicio} disabled={pending}
-                          onChange={(e) => setEventoEdit((p) => ({ ...p, lecturaServicio: e.target.value }))} />
-                      </div>
-                    </div>
-                    <Input placeholder="Descripción" value={eventoEdit.descripcion} disabled={pending}
-                      onChange={(e) => setEventoEdit((p) => ({ ...p, descripcion: e.target.value }))} />
-                    <Input placeholder="Notas" value={eventoEdit.notas} disabled={pending}
-                      onChange={(e) => setEventoEdit((p) => ({ ...p, notas: e.target.value }))} />
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="secondary" disabled={pending} onClick={() => setEditingEventoId(null)}>
-                        Cancelar
-                      </Button>
-                      <Button type="button" disabled={pending} onClick={saveEvento}>
-                        Guardar
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{evento.tipoControl.toUpperCase()}</Badge>
-                      <span className="font-mono font-semibold" style={{ color: "var(--fg)" }}>
-                        {fmtNum(evento.lecturaServicio)}
-                      </span>
-                      <span className="text-sm" style={{ color: "var(--fg-muted)" }}>
-                        {evento.fechaServicio}
-                      </span>
-                    </div>
-                    {evento.descripcion && (
-                      <p className="text-sm mt-1" style={{ color: "var(--fg)" }}>
-                        {evento.descripcion}
-                      </p>
-                    )}
-                    {evento.notas && (
-                      <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
-                        {evento.notas}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-xs text-right" style={{ color: "var(--fg-muted)" }}>
-                    <p>Registrado</p>
-                    <p>{evento.createdAt?.toISOString().slice(0, 10) ?? "—"}</p>
-                    {canManageMaintenance && (
-                      <Button type="button" variant="ghost" size="sm" className="mt-2" disabled={pending}
-                        onClick={() => startEditEvento(evento)}>
-                        Editar
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                )}
+              <div>
+                <Label htmlFor="reg-lectura">Lectura</Label>
+                <Input id="reg-lectura" type="number" step="1" disabled={pending} value={registroForm.lecturaServicio}
+                  onChange={(e) => setRegistroForm((prev) => ({ ...prev, lecturaServicio: e.target.value }))} />
               </div>
-            ))}
+            </div>
+            <div>
+              <Label htmlFor="reg-desc">Descripción</Label>
+              <Input id="reg-desc" disabled={pending} value={registroForm.descripcion}
+                onChange={(e) => setRegistroForm((prev) => ({ ...prev, descripcion: e.target.value }))}
+                placeholder="Ej. servicio preventivo 10,000 km" />
+            </div>
+            <div>
+              <Label htmlFor="reg-notas">Notas</Label>
+              <Input id="reg-notas" disabled={pending} value={registroForm.notas}
+                onChange={(e) => setRegistroForm((prev) => ({ ...prev, notas: e.target.value }))} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setServicioModal(false)}>Cancelar</Button>
+              <Button type="button" disabled={pending} onClick={registrarMantenimiento}>
+                <Clock3 className="w-4 h-4" /> Registrar
+              </Button>
+            </DialogFooter>
           </div>
-        )}
-      </section>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editingEventoId !== null} onOpenChange={(o) => { if (!o) setEditingEventoId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar mantenimiento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Fecha</Label>
+                <Input type="date" value={eventoEdit.fechaServicio} disabled={pending}
+                  onChange={(e) => setEventoEdit((p) => ({ ...p, fechaServicio: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Lectura</Label>
+                <Input type="number" value={eventoEdit.lecturaServicio} disabled={pending}
+                  onChange={(e) => setEventoEdit((p) => ({ ...p, lecturaServicio: e.target.value }))} />
+              </div>
+            </div>
+            <Input placeholder="Descripción" value={eventoEdit.descripcion} disabled={pending}
+              onChange={(e) => setEventoEdit((p) => ({ ...p, descripcion: e.target.value }))} />
+            <Input placeholder="Notas" value={eventoEdit.notas} disabled={pending}
+              onChange={(e) => setEventoEdit((p) => ({ ...p, notas: e.target.value }))} />
+            <DialogFooter>
+              <Button type="button" variant="secondary" disabled={pending} onClick={() => setEditingEventoId(null)}>Cancelar</Button>
+              <Button type="button" disabled={pending} onClick={saveEvento}>Guardar</Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

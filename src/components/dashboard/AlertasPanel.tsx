@@ -45,6 +45,7 @@ export default function AlertasPanel({
   const [dismissedConciliacion, setDismissedConciliacion] = useState<Set<number>>(new Set());
   const [dismissedMantenimiento, setDismissedMantenimiento] = useState<Set<string>>(new Set());
   const [dismissedTickets, setDismissedTickets] = useState<Set<number>>(new Set());
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(LS_KEY);
@@ -80,20 +81,14 @@ export default function AlertasPanel({
   const visibleTickets       = ticketsResueltos.filter((t) => !dismissedTickets.has(t.id));
   const totalVisible = visibleStockAlertas.length + sobrecargas.length + visibleAnomalias.length + visibleDivergencias.length + visibleMantenimientos.length + visibleTickets.length + (showRend ? 1 : 0);
 
-  return (
-    <section className="mb-6">
-      <div className="flex items-center gap-2 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--fg-muted)" }}>
-          Alertas proactivas
-        </p>
-        {totalVisible > 0 && (
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none">
-            {totalVisible}
-          </span>
-        )}
-      </div>
-
-      {totalVisible === 0 ? (
+  if (totalVisible === 0) {
+    return (
+      <section id="alertas" className="hidden lg:block mb-6 scroll-mt-16">
+        <div className="flex items-center gap-2 mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--fg-muted)" }}>
+            Alertas proactivas
+          </p>
+        </div>
         <div
           className="flex items-center gap-3 px-4 py-3 rounded-2xl border"
           style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
@@ -106,7 +101,44 @@ export default function AlertasPanel({
             )}
           </p>
         </div>
-      ) : (
+      </section>
+    );
+  }
+
+  return (
+    <section id="alertas" className="mb-6 scroll-mt-16">
+      <button
+        type="button"
+        onClick={() => setMobileOpen((v) => !v)}
+        className="lg:hidden w-full flex items-center justify-between gap-2 rounded-2xl border px-3 py-2.5"
+        aria-expanded={mobileOpen}
+        style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+      >
+        <span className="flex items-center gap-2">
+          <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
+            Alertas proactivas
+          </p>
+          <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none">
+            {totalVisible}
+          </span>
+        </span>
+        {mobileOpen ? (
+          <ChevronUp className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />
+        ) : (
+          <ChevronDown className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />
+        )}
+      </button>
+
+      <div className="hidden lg:flex items-center gap-2 mb-3">
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--fg-muted)" }}>
+          Alertas proactivas
+        </p>
+        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none">
+          {totalVisible}
+        </span>
+      </div>
+
+      <div className={`${mobileOpen ? "block mt-2" : "hidden"} lg:block`}>
         <div className="space-y-2">
           {/* ── Sobrecarga de tanque ───────────────────────── */}
           {sobrecargas.map(({ label, litros, max, exceso }) => (
@@ -427,7 +459,7 @@ export default function AlertasPanel({
             </div>
           )}
         </div>
-      )}
+      </div>
     </section>
   );
 }

@@ -155,7 +155,7 @@ export default function CargasRecientes({
       style={{ borderColor: "var(--border)" }}
     >
       <div
-        className="px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        className="px-3 py-2.5 md:px-5 md:py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3"
         style={{
           backgroundColor: "var(--surface)",
           borderColor: "var(--border)",
@@ -214,7 +214,7 @@ export default function CargasRecientes({
               key={item.key}
               type="button"
               onClick={() => setSelected(item)}
-              className="w-full text-left px-5 py-3 flex items-center gap-4 hover:bg-[var(--surface-2)] transition-colors"
+              className="w-full text-left px-3 py-2.5 md:px-5 md:py-3 flex items-center gap-2 md:gap-4 hover:bg-[var(--surface-2)] transition-colors"
               style={{
                 borderTop: i > 0 ? `1px solid var(--border)` : undefined,
               }}

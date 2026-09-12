@@ -4,7 +4,7 @@ import { useState, useTransition, useMemo } from "react";
 import {
   Plus, Power, PowerOff, Pencil, Trash2, X, Search, SlidersHorizontal,
   TrendingUp, TrendingDown, Minus, Fuel, Gauge, AlertTriangle, ArrowUpDown,
-  ChevronUp, ChevronDown, Wrench,
+  ChevronUp, ChevronDown, Wrench, ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MobileList, MobileRow, MobileStatStrip, MobileStickyToolbar, type MobileStatItem } from "@/components/ui/mobile-list";
 import { useRouter } from "next/navigation";
 import { createUnidad, updateUnidad, toggleUnidadActivo, deleteUnidad } from "@/app/actions/catalogo";
 import { registrarMantenimientoUnidad, type ResumenMantenimientoUnidad, type TipoControlMantenimiento } from "@/app/actions/mantenimiento";
@@ -118,10 +119,16 @@ function UnidadesDashboard({
   unidades,
   maintenanceFilterActive,
   onToggleMaintenanceFilter,
+  rendimientoFilterActive,
+  onToggleRendimientoFilter,
+  compact = false,
 }: {
   unidades: Unidad[];
   maintenanceFilterActive: boolean;
   onToggleMaintenanceFilter: () => void;
+  rendimientoFilterActive: boolean;
+  onToggleRendimientoFilter: () => void;
+  compact?: boolean;
 }) {
   const activas    = unidades.filter((u) => u.activo);
   const totalLitros = unidades.reduce((s, u) => s + u.totalLitros, 0);
@@ -158,6 +165,33 @@ function UnidadesDashboard({
       (p) => p.activo && (p.nivelAlerta === "inminente" || p.estado === "vencido"),
     ) ?? false,
   );
+
+  if (compact) {
+    const items: MobileStatItem[] = [
+      { key: "flota", label: "Flota", value: `${activas.length}/${unidades.length}` },
+    ];
+    if (fueraTolerancia > 0) {
+      items.push({
+        key: "atencion",
+        label: "Atención",
+        value: String(fueraTolerancia),
+        tone: "danger" as const,
+        active: rendimientoFilterActive,
+        onClick: onToggleRendimientoFilter,
+      });
+    }
+    if (requierenServicio.length > 0) {
+      items.push({
+        key: "servicio",
+        label: "Servicio",
+        value: String(requierenServicio.length),
+        tone: "danger" as const,
+        active: maintenanceFilterActive,
+        onClick: onToggleMaintenanceFilter,
+      });
+    }
+    return <MobileStatStrip items={items} />;
+  }
 
   const cards = [
     {
@@ -472,16 +506,23 @@ export default function UnidadesTable({
 
   return (
     <div className="space-y-3">
-      {/* Mini-dashboard */}
-      <UnidadesDashboard
-        unidades={unidades}
-        maintenanceFilterActive={servicioFiltro === "requieren_servicio"}
-        onToggleMaintenanceFilter={() =>
-          setServicioFiltro((prev) => (prev === "requieren_servicio" ? "todos" : "requieren_servicio"))
-        }
-      />
+      {/* Mini-dashboard (desktop) */}
+      <div className="hidden md:block">
+        <UnidadesDashboard
+          unidades={unidades}
+          maintenanceFilterActive={servicioFiltro === "requieren_servicio"}
+          onToggleMaintenanceFilter={() =>
+            setServicioFiltro((prev) => (prev === "requieren_servicio" ? "todos" : "requieren_servicio"))
+          }
+          rendimientoFilterActive={rendFiltro === "fuera"}
+          onToggleRendimientoFilter={() =>
+            setRendFiltro((prev) => (prev === "fuera" ? "todos" : "fuera"))
+          }
+        />
+      </div>
 
       {/* Toolbar */}
+      <MobileStickyToolbar>
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--fg-muted)" }} />
@@ -515,44 +556,50 @@ export default function UnidadesTable({
               <button
                 type="button"
                 onClick={() => {
-                  setShowServicioForm((v) => {
-                    const next = !v;
-                    if (next) setShowForm(false);
-                    else resetServicioForm();
-                    return next;
-                  });
+                  setShowForm(false);
+                  setShowServicioForm(true);
                 }}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold shrink-0 transition-colors"
-                style={showServicioForm
-                  ? { backgroundColor: "var(--surface-2)", color: "var(--fg)" }
-                  : { backgroundColor: "rgb(220 38 38)", color: "white" }}
+                style={{ backgroundColor: "rgb(220 38 38)", color: "white" }}
               >
                 <Wrench className="w-4 h-4" />
-                <span className="hidden sm:inline">{showServicioForm ? "Cancelar" : "+ Servicio"}</span>
+                <span className="hidden sm:inline">Servicio</span>
               </button>
             )}
             <button type="button" onClick={() => {
-              setShowForm((v) => {
-                const next = !v;
-                if (next) setShowServicioForm(false);
-                return next;
-              });
+              setShowServicioForm(false);
+              setShowForm(true);
             }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold shrink-0 transition-colors"
-              style={showForm
-                ? { backgroundColor: "var(--surface-2)", color: "var(--fg)" }
-                : { backgroundColor: "rgb(79 70 229)", color: "white" }}>
+              style={{ backgroundColor: "rgb(79 70 229)", color: "white" }}>
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">{showForm ? "Cancelar" : "Nueva"}</span>
+              <span className="hidden sm:inline">Nueva</span>
             </button>
           </>
         )}
       </div>
+      </MobileStickyToolbar>
 
-      {/* Panel de filtros */}
-      {showFilters && (
-        <div className="flex flex-wrap gap-x-5 gap-y-3 px-4 py-3 rounded-xl border"
-          style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+      <UnidadesDashboard
+        compact
+        unidades={unidades}
+        maintenanceFilterActive={servicioFiltro === "requieren_servicio"}
+        onToggleMaintenanceFilter={() =>
+          setServicioFiltro((prev) => (prev === "requieren_servicio" ? "todos" : "requieren_servicio"))
+        }
+        rendimientoFilterActive={rendFiltro === "fuera"}
+        onToggleRendimientoFilter={() =>
+          setRendFiltro((prev) => (prev === "fuera" ? "todos" : "fuera"))
+        }
+      />
+
+      <Dialog open={showFilters} onOpenChange={setShowFilters}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Filtros</DialogTitle>
+            <DialogDescription>Tipo, estado, rendimiento y servicio.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
           {/* Tipo */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs font-semibold shrink-0" style={{ color: "var(--fg-muted)" }}>Tipo</span>
@@ -614,25 +661,24 @@ export default function UnidadesTable({
               </button>
             ))}
           </div>
-        </div>
-      )}
-
-      {showServicioForm && canManageMaintenance && (
-        <div
-          className="p-5 rounded-2xl border space-y-4"
-          style={{ backgroundColor: "var(--surface)", borderColor: "rgb(239 68 68 / 0.18)" }}
-        >
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl border border-red-500/20 bg-red-500/10">
-              <Wrench className="w-4 h-4 text-red-500" />
-            </div>
-            <div>
-              <p className="font-outfit font-bold text-sm" style={{ color: "var(--fg)" }}>Registrar servicio</p>
-              <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
-                Guarda el último servicio directamente en el historial de la unidad seleccionada.
-              </p>
-            </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showServicioForm && canManageMaintenance} onOpenChange={(o) => {
+        if (!o) { setShowServicioForm(false); resetServicioForm(); }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-red-500" />
+              Registrar servicio
+            </DialogTitle>
+            <DialogDescription>
+              Guarda el último servicio en el historial de la unidad.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5 sm:col-span-1">
@@ -705,15 +751,7 @@ export default function UnidadesTable({
 
           {servicioError && <p className="text-sm text-red-500">{servicioError}</p>}
 
-          <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={submitServicio}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-60"
-            >
-              {isPending ? "Guardando..." : "+ Agregar"}
-            </button>
+          <DialogFooter>
             <button
               type="button"
               onClick={() => {
@@ -725,15 +763,26 @@ export default function UnidadesTable({
             >
               Cancelar
             </button>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={submitServicio}
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-60"
+            >
+              {isPending ? "Guardando..." : "Agregar"}
+            </button>
+          </DialogFooter>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Create form */}
-      {showForm && (
-        <form onSubmit={handleSubmit} className="p-5 rounded-2xl border space-y-4"
-          style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
-          <p className="font-outfit font-bold text-sm" style={{ color: "var(--fg)" }}>Nueva Unidad</p>
+      <Dialog open={showForm} onOpenChange={(o) => { if (!o) setShowForm(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nueva unidad</DialogTitle>
+            <DialogDescription>Código único, tipo y datos de referencia.</DialogDescription>
+          </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="codigo">Código *</Label>
@@ -769,19 +818,20 @@ export default function UnidadesTable({
             </div>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <div className="flex gap-2 pt-1">
-            <button type="submit" disabled={isPending}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60">
-              {isPending ? "Guardando..." : "Guardar Unidad"}
-            </button>
+          <DialogFooter>
             <button type="button" onClick={() => setShowForm(false)}
               className="px-4 py-2 rounded-xl text-sm hover:bg-[var(--surface-2)] transition-colors"
               style={{ color: "var(--fg-muted)" }}>
               Cancelar
             </button>
-          </div>
+            <button type="submit" disabled={isPending}
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60">
+              {isPending ? "Guardando..." : "Guardar unidad"}
+            </button>
+          </DialogFooter>
         </form>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {deleteError && <p className="text-sm text-red-500 px-1">{deleteError}</p>}
 
@@ -791,8 +841,84 @@ export default function UnidadesTable({
         </p>
       )}
 
+      <MobileList
+        empty={unidadesFiltradas.length === 0 ? (
+          <p className="text-center py-10 text-sm" style={{ color: "var(--fg-muted)" }}>
+            {busqueda || hasActiveFilters
+              ? "Sin resultados para esa búsqueda."
+              : "Sin unidades. Agrega la primera o usa \"Seed WB\" en Configuración."}
+          </p>
+        ) : undefined}
+      >
+        {unidadesFiltradas.map((u) => {
+          const esCamion = u.tipo === "camion";
+          const unidadKm = esCamion ? "km/L" : "L/Hr";
+          const rend = u.ultimoPeriodo;
+          const maint = u.mantenimientoEstadoGlobal;
+          const showMaint = maint === "proximo" || maint === "vencido";
+          return (
+            <MobileRow key={u.id} onClick={() => router.push(`/catalogo/unidades/${u.id}`)}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-mono font-bold text-sm truncate" style={{ color: "var(--fg)" }}>{u.codigo}</p>
+                  <p className="text-[11px] truncate" style={{ color: "var(--fg-muted)" }}>
+                    {TIPO_LABELS[u.tipo] ?? u.tipo}
+                    {u.nombre ? ` · ${u.nombre}` : u.modelo ? ` · ${u.modelo}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Badge variant={u.activo ? "success" : "secondary"}>
+                    {u.activo ? "Activo" : "Inactivo"}
+                  </Badge>
+                  <ChevronRight className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />
+                </div>
+              </div>
+              <div className="mt-1.5 flex items-baseline gap-2.5 text-sm flex-wrap">
+                <span className="font-mono font-semibold tabular-nums" style={{ color: "var(--fg)" }}>
+                  {u.totalLitros > 0 ? `${u.totalLitros.toLocaleString("es-MX")} L` : "—"}
+                </span>
+                <span className="text-[11px] tabular-nums" style={{ color: "var(--fg-muted)" }}>
+                  {u.totalCargas > 0 ? `${u.totalCargas} c.` : "sin cargas"}
+                </span>
+                <span className="ml-auto flex items-center gap-1 font-mono text-[13px] tabular-nums">
+                  {rend?.rendimientoActual != null ? (
+                    <>
+                      <span style={{ color: "var(--fg)" }}>
+                        {fmtNum(rend.rendimientoActual, 2)}{" "}
+                        <span className="text-[10px] font-normal" style={{ color: "var(--fg-muted)" }}>{unidadKm}</span>
+                      </span>
+                      {rend.diferencia != null && (() => {
+                        const d = rend.diferencia!;
+                        const ok = rend.dentroDeTolerancia;
+                        const pos = d > 0;
+                        const esMejora = esCamion ? pos : !pos;
+                        const color = ok ? "text-emerald-500" : ok === false ? "text-red-500" : "text-amber-500";
+                        const Icon = d === 0 ? Minus : esMejora ? TrendingUp : TrendingDown;
+                        return (
+                          <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold ${color}`}>
+                            <Icon className="w-3 h-3" />
+                            {pos ? "+" : ""}{fmtNum(d, 2)}
+                          </span>
+                        );
+                      })()}
+                    </>
+                  ) : (
+                    <span style={{ color: "var(--fg-muted)" }}>—</span>
+                  )}
+                </span>
+              </div>
+              {showMaint && (
+                <p className={`text-[11px] mt-1 font-semibold ${maint === "vencido" ? "text-red-500" : "text-amber-600"}`}>
+                  {mantenimientoLabel(u.mantenimientoResumen)}
+                </p>
+              )}
+            </MobileRow>
+          );
+        })}
+      </MobileList>
+
       {/* Table */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
+      <div className="hidden md:block rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: "var(--surface)" }}>
