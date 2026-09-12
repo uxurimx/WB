@@ -52,6 +52,11 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedade
       collapsible: false,
       items: cargasItems,
     }] : []),
+    ...(has("taller") ? [{
+      label: "Taller",
+      collapsible: false,
+      items: [{ name: "Órdenes", href: "/taller", icon: Wrench }],
+    }] : []),
     ...(catalogoItems.length ? [{
       label: "Catálogos",
       collapsible: true,

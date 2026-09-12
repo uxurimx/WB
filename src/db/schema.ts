@@ -108,6 +108,51 @@ export const mantenimientosEventos = pgTable("mantenimientos_eventos", {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TALLER — órdenes de servicio (bitácora)
+// ─────────────────────────────────────────────────────────────────────────────
+export const ordenesTaller = pgTable("ordenes_taller", {
+  id: serial("id").primaryKey(),
+  unidadId: integer("unidad_id").notNull(),
+  operadorId: integer("operador_id"),
+  fecha: date("fecha").notNull(),
+  kmHrs: real("km_hrs"),
+  motivo: text("motivo"),
+  estado: varchar("estado", { length: 20 }).notNull().default("abierta"),
+  esPreventivo: boolean("es_preventivo").notNull().default(false),
+  tipoControlPreventivo: varchar("tipo_control_preventivo", { length: 10 }),
+  eventoMantenimientoId: integer("evento_mantenimiento_id"),
+  quienRecibio: text("quien_recibio"),
+  quienAtendio: text("quien_atendio"),
+  comentarios: text("comentarios"),
+  proximoMto: text("proximo_mto"),
+  abiertoPorId: text("abierto_por_id"),
+  cerradoPorId: text("cerrado_por_id"),
+  cerradoAt: timestamp("cerrado_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ordenChecklist = pgTable("orden_checklist", {
+  id: serial("id").primaryKey(),
+  ordenId: integer("orden_id").notNull(),
+  clave: varchar("clave", { length: 40 }).notNull(),
+  ok: boolean("ok"),
+  nota: text("nota"),
+});
+
+export const ordenRefacciones = pgTable("orden_refacciones", {
+  id: serial("id").primaryKey(),
+  ordenId: integer("orden_id").notNull(),
+  descripcion: text("descripcion").notNull(),
+  cantidad: real("cantidad").default(1),
+  cajas: real("cajas"),
+  precio: real("precio"),
+  iva: boolean("iva").notNull().default(true),
+  proveedor: text("proveedor"),
+  folioFactura: text("folio_factura"),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // OBRAS — proyectos activos
 // ─────────────────────────────────────────────────────────────────────────────
 export const obras = pgTable("obras", {
@@ -445,6 +490,34 @@ export const unidadesRelations = relations(unidades, ({ one, many }) => ({
   mantenimientosPlanes: many(mantenimientosPlanes),
   mantenimientosEventos: many(mantenimientosEventos),
   odometroResets: many(odometroResets),
+  ordenesTaller: many(ordenesTaller),
+}));
+
+export const ordenesTallerRelations = relations(ordenesTaller, ({ one, many }) => ({
+  unidad: one(unidades, {
+    fields: [ordenesTaller.unidadId],
+    references: [unidades.id],
+  }),
+  operador: one(operadores, {
+    fields: [ordenesTaller.operadorId],
+    references: [operadores.id],
+  }),
+  checklist: many(ordenChecklist),
+  refacciones: many(ordenRefacciones),
+}));
+
+export const ordenChecklistRelations = relations(ordenChecklist, ({ one }) => ({
+  orden: one(ordenesTaller, {
+    fields: [ordenChecklist.ordenId],
+    references: [ordenesTaller.id],
+  }),
+}));
+
+export const ordenRefaccionesRelations = relations(ordenRefacciones, ({ one }) => ({
+  orden: one(ordenesTaller, {
+    fields: [ordenRefacciones.ordenId],
+    references: [ordenesTaller.id],
+  }),
 }));
 
 export const odometroResetsRelations = relations(odometroResets, ({ one }) => ({

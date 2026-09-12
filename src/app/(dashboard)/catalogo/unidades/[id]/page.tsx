@@ -15,6 +15,7 @@ import {
   getResumenMantenimientoUnidad,
 } from "@/app/actions/mantenimiento";
 import { getOdometroResetsUnidad } from "@/app/actions/cargas";
+import { getOrdenesUnidad } from "@/app/actions/taller";
 import { Badge } from "@/components/ui/badge";
 import CatalogoDetalleClient from "@/components/catalogo/CatalogoDetalleClient";
 import { CatalogDetalleHeader } from "@/components/ui/mobile-list";
@@ -46,7 +47,7 @@ export default async function UnidadDetallePage({
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
   const canManageMaintenance = canEdit;
 
-  const [cargas, rends, fotos, audits, operadores, obras, mantenimientoResumen, mantenimientoEventos, odometroResets] = await Promise.all([
+  const [cargas, rends, fotos, audits, operadores, obras, mantenimientoResumen, mantenimientoEventos, odometroResets, ordenesTaller] = await Promise.all([
     getCatalogoCargas("unidad", unidadId),
     getRendimientosUnidad(unidadId),
     getArchivosUnidad(unidadId),
@@ -56,6 +57,7 @@ export default async function UnidadDetallePage({
     getResumenMantenimientoUnidad(unidadId),
     getEventosMantenimientoUnidad(unidadId),
     getOdometroResetsUnidad(unidadId),
+    getOrdenesUnidad(unidadId),
   ]);
 
   const nombreModelo = [unidad.nombre, unidad.modelo].filter(Boolean).join(" · ");
@@ -117,6 +119,20 @@ export default async function UnidadDetallePage({
           lecturaAnterior: r.lecturaAnterior,
           lecturaNueva: r.lecturaNueva,
           notas: r.notas,
+        }))}
+        ordenesTaller={ordenesTaller.map((o) => ({
+          id: o.id,
+          fecha: o.fecha,
+          kmHrs: o.kmHrs,
+          motivo: o.motivo,
+          estado: o.estado,
+          quienAtendio: o.quienAtendio,
+          operador: o.operador,
+          refacciones: o.refacciones.map((r) => ({
+            precio: r.precio,
+            cantidad: r.cantidad,
+            iva: r.iva,
+          })),
         }))}
       />
     </div>
