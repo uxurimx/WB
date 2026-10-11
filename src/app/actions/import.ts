@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { cargas, unidades, operadores, obras } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { getOrCreatePeriodoActual } from "./periodos";
+import { getDefaultFolioSerieId, getFolioSerieActiva } from "@/lib/folios";
 
 export type ImportRow = {
   fecha: string;          // "YYYY-MM-DD"
@@ -15,6 +16,7 @@ export type ImportRow = {
   obraNombre?: string;
   litros: number;
   origen: "patio" | "campo";
+  folioSerieId?: number;
   tipoDiesel?: string;
   odometroHrs?: number;
 };
@@ -55,10 +57,12 @@ export async function importarCargas(rows: ImportRow[]): Promise<ImportResult> {
   if (rows.length === 0) return result;
 
   // ── 1. Pre-load lookups ───────────────────────────────────
-  const [existingUnidades, existingOperadores, existingObras] = await Promise.all([
+  const [existingUnidades, existingOperadores, existingObras, patioSerieId, campoSerieId] = await Promise.all([
     db.select({ id: unidades.id, codigo: unidades.codigo }).from(unidades),
     db.select({ id: operadores.id, nombre: operadores.nombre }).from(operadores),
     db.select({ id: obras.id, nombre: obras.nombre }).from(obras),
+    getDefaultFolioSerieId("patio"),
+    getDefaultFolioSerieId("campo"),
   ]);
 
   const unidadMap = new Map<string, number>(
@@ -139,12 +143,14 @@ export async function importarCargas(rows: ImportRow[]): Promise<ImportResult> {
   }
 
   // ── 5. Load existing cargas for dedup ─────────────────────
-  // Key: "folio_fecha_origen" or "nofol_fecha_unidadId_litros"
+  // Key: physical folio + origin + series, matching the database uniqueness rule.
   const existingCargas = await db
-    .select({ folio: cargas.folio, fecha: cargas.fecha, origen: cargas.origen })
+    .select({ folio: cargas.folio, origen: cargas.origen, folioSerieId: cargas.folioSerieId })
     .from(cargas);
   const existingSet = new Set(
-    existingCargas.map((c) => `${c.folio ?? "x"}_${c.fecha}_${c.origen}`)
+    existingCargas
+      .filter((c) => c.folio != null)
+      .map((c) => `${c.folio}_${c.origen}_${c.folioSerieId}`)
   );
 
   // ── 6. Period cache ───────────────────────────────────────
@@ -163,6 +169,8 @@ export async function importarCargas(rows: ImportRow[]): Promise<ImportResult> {
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     try {
+      const folioSerieId = row.folioSerieId ?? (row.origen === "patio" ? patioSerieId : campoSerieId);
+      await getFolioSerieActiva(row.origen, folioSerieId);
       const unidadId = unidadMap.get(row.unidadCodigo.toUpperCase());
       if (!unidadId) {
         result.errores.push({ fila: i + 2, error: `Unidad "${row.unidadCodigo}" no encontrada` });
@@ -175,12 +183,14 @@ export async function importarCargas(rows: ImportRow[]): Promise<ImportResult> {
       }
 
       // Dedup check
-      const dupKey = `${row.folio ?? "x"}_${row.fecha}_${row.origen}`;
-      if (existingSet.has(dupKey)) {
-        result.omitidas++;
-        continue;
+      if (row.folio != null) {
+        const dupKey = `${row.folio}_${row.origen}_${folioSerieId}`;
+        if (existingSet.has(dupKey)) {
+          result.omitidas++;
+          continue;
+        }
+        existingSet.add(dupKey); // Prevent double-insertion within batch
       }
-      existingSet.add(dupKey); // Prevent double-insertion within batch
 
       const periodoId = await getPeriodoId(row.fecha);
       const operadorId = row.operadorNombre
@@ -194,6 +204,7 @@ export async function importarCargas(rows: ImportRow[]): Promise<ImportResult> {
         fecha: row.fecha,
         hora: row.hora ?? null,
         folio: row.folio ?? null,
+        folioSerieId,
         periodoId,
         unidadId,
         operadorId,

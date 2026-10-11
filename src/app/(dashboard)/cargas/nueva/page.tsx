@@ -3,8 +3,8 @@ export const dynamic = 'force-dynamic';
 import { PlusCircle } from "lucide-react";
 import { requirePermission } from "@/lib/server-guard";
 import { getUnidades, getOperadores } from "@/app/actions/catalogo";
-import { getSiguienteFolioPublic, getUltimaCuentaLtPatio } from "@/app/actions/cargas";
-import { getFolioRangos } from "@/app/actions/setup";
+import { getUltimaCuentaLtPatio } from "@/app/actions/cargas";
+import { getFolioSeriesForCapture } from "@/app/actions/folios";
 import { db } from "@/db";
 import { tanques } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -20,13 +20,12 @@ async function getStockTaller() {
 export default async function NuevaCargaPatioPage() {
   await requirePermission("cargas.nueva_patio");
 
-  const [unidades, operadores, siguienteFolio, stockActual, ultimaCuentaLt, folioRangos] = await Promise.all([
+  const [unidades, operadores, folioSeries, stockActual, ultimaCuentaLt] = await Promise.all([
     getUnidades(true),
     getOperadores(true),
-    getSiguienteFolioPublic(),
+    getFolioSeriesForCapture("patio"),
     getStockTaller(),
     getUltimaCuentaLtPatio(),
-    getFolioRangos(),
   ]);
 
   return (
@@ -63,11 +62,9 @@ export default async function NuevaCargaPatioPage() {
         <FormCargaPatio
           unidades={unidades}
           operadores={operadores}
-          siguienteFolio={siguienteFolio}
+          folioSeries={folioSeries}
           stockActual={stockActual}
           ultimaCuentaLt={ultimaCuentaLt}
-          folioMin={folioRangos.patioMin}
-          folioMax={folioRangos.patioMax}
         />
       )}
     </div>

@@ -52,6 +52,12 @@ function fmtFechaCorta(fecha: string) {
   return `${d}/${m}/${y.slice(2)}`;
 }
 
+function formatFolioCarga(c: Pick<Carga, "folio" | "folioSerieCodigo" | "origen">) {
+  if (c.folio == null) return "—";
+  const origen = c.origen === "campo" ? "C" : c.origen === "externo" ? "E" : "P";
+  return `${origen}-${c.folioSerieCodigo ? `${c.folioSerieCodigo}-` : ""}${c.folio}`;
+}
+
 function SortIcon({ col, current, dir }: { col: SortCol; current: SortCol; dir: "asc" | "desc" }) {
   if (col !== current) return <ArrowUpDown className="w-3 h-3 opacity-30 inline ml-1" />;
   return dir === "asc"
@@ -173,6 +179,7 @@ export default function CatalogoDetalleClient({
       const q = busqueda.toLowerCase();
       r = r.filter((c) =>
         (c.folio != null ? String(c.folio) : "").includes(q) ||
+        (c.folioSerieCodigo ?? "").toLowerCase().includes(q) ||
         (c.operadorNombre ?? "").toLowerCase().includes(q) ||
         (c.obraNombre ?? "").toLowerCase().includes(q) ||
         (c.unidadCodigo ?? "").toLowerCase().includes(q) ||
@@ -561,7 +568,7 @@ export default function CatalogoDetalleClient({
                       <p className="font-mono text-sm" style={{ color: "var(--fg)" }}>
                         {fmtFechaCorta(c.fecha)}
                         <span className="ml-2" style={{ color: "var(--fg-muted)" }}>
-                          {c.folio != null ? `#${c.folio}` : "—"}
+                          {formatFolioCarga(c)}
                         </span>
                       </p>
                       <p className="text-[11px] truncate mt-0.5" style={{ color: "var(--fg-muted)" }}>
@@ -659,7 +666,7 @@ export default function CatalogoDetalleClient({
                           )}
                         </TableCell>
                         <TableCell className="font-mono whitespace-nowrap" style={{ color: "var(--fg-muted)" }}>
-                          {c.folio != null ? `#${c.folio}` : "—"}
+                          {formatFolioCarga(c)}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -964,7 +971,7 @@ export default function CatalogoDetalleClient({
                   <option value="">Selecciona folio / fecha</option>
                   {localCargas.slice(0, 40).map((c) => (
                     <option key={c.id} value={String(c.id)}>
-                      {c.fecha}{c.folio != null ? ` · #${c.folio}` : ""} · {c.origen} · {c.litros.toLocaleString("es-MX")} L
+                      {c.fecha}{c.folio != null ? ` · ${formatFolioCarga(c)}` : ""} · {c.origen} · {c.litros.toLocaleString("es-MX")} L
                     </option>
                   ))}
                 </Select>
@@ -1100,7 +1107,7 @@ export default function CatalogoDetalleClient({
       <Dialog open={!!editCarga} onOpenChange={(v) => { if (!v) setEditCarga(null); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar carga #{editCarga?.folio ?? editCarga?.id}</DialogTitle>
+            <DialogTitle>Editar carga {editCarga ? formatFolioCarga(editCarga) : `#${editCarga?.id}`}</DialogTitle>
           </DialogHeader>
           {editCarga && (
             <div className="rounded-xl border p-3 grid grid-cols-2 gap-3 text-xs"

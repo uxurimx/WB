@@ -21,6 +21,7 @@ export const idSchema = z.number().int().positive();
 export const cargaPatioSchema = z.object({
   fecha: fechaSchema,
   hora: horaSchema,
+  folioSerieId: idSchema,
   folioManual: folioSchema.optional(),
   unidadId: idSchema,
   litros: litrosSchema,
@@ -36,6 +37,7 @@ export const cargaPatioSchema = z.object({
 export const cargaCampoSchema = z.object({
   fecha: fechaSchema,
   hora: horaSchema,
+  folioSerieId: idSchema,
   folioNissan: folioSchema,
   unidadId: idSchema,
   litros: litrosSchema,
@@ -68,6 +70,7 @@ export const transferenciaSchema = z.object({
   litros: litrosSchema,
   fecha: fechaSchema,
   folio: folioSchema,
+  folioSerieId: idSchema,
   notas: z.string().max(2000).optional(),
   cuentalitrosOrigen: z.number().nonnegative().optional(),
 });

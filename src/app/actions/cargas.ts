@@ -2,16 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { cargas, tanques, unidades, fuentesDiesel, configuracion, transferenciasTanque, recargasTanque, periodos, auditLog, users, odometroResets } from "@/db/schema";
+import { cargas, tanques, unidades, fuentesDiesel, configuracion, folioSeries, transferenciasTanque, recargasTanque, periodos, auditLog, users, odometroResets } from "@/db/schema";
 import { eq, max, desc, and, or, count, countDistinct, sum, gte, lte, like, ilike, inArray, sql } from "drizzle-orm";
 import { obras, operadores } from "@/db/schema";
 
 import { requireActionPermission, requireManageRole } from "@/lib/authz";
 import {
-  assertFolioPatioCompartidoDisponible,
+  assertFolioDisponible,
+  assertFolioEnSerie,
+  getDefaultFolioSerieId,
+  getFolioSerieActiva,
+  getSiguienteFolioEnSerie,
   getSiguienteFolioPatioCompartido,
 } from "@/lib/folios";
 import { getOrCreatePeriodoActual } from "./periodos";
+import { getFolioSeriesForCapture } from "./folios";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 import { cargaPatioSchema, cargaCampoSchema, odometroResetSchema, assertKmCaptura, folioSchema, litrosSchema, fechaSchema, parseOrThrow } from "@/lib/validators";
 import { insertCargaAtomic, deleteCargaAtomic, applyTankLitrosDelta, type TankAfterMutation } from "@/lib/stock";
@@ -20,10 +25,6 @@ import { recalcularRendimientosForUnit } from "@/app/actions/rendimientos";
 import { maybeNotifyStockBajo } from "@/lib/alertas-notify";
 
 // ─── Helpers ─────────────────────────────────────────────────
-async function getSiguienteFolio(): Promise<number> {
-  return getSiguienteFolioPatioCompartido();
-}
-
 async function getTanquePorNombre(nombre: string) {
   return db.query.tanques.findFirst({ where: eq(tanques.nombre, nombre) });
 }
@@ -40,6 +41,7 @@ async function getFuentePorTipo(tipo: string) {
 export type CargaPatioInput = {
   fecha: string;          // "YYYY-MM-DD"
   hora: string;           // "HH:MM"
+  folioSerieId: number;
   folioManual?: number;   // Si se proporciona, se usa en lugar del auto-generado
   unidadId: number;
   litros: number;
@@ -52,32 +54,15 @@ export type CargaPatioInput = {
   notas?: string;
 };
 
-async function getFolioRango(origen: "patio" | "campo") {
-  const [minRow, maxRow] = await Promise.all([
-    db.query.configuracion.findFirst({ where: eq(configuracion.clave, `folio_min_${origen}`) }),
-    db.query.configuracion.findFirst({ where: eq(configuracion.clave, `folio_max_${origen}`) }),
-  ]);
-  return {
-    min: minRow ? parseInt(minRow.valor, 10) : 0,
-    max: maxRow ? parseInt(maxRow.valor, 10) : 0,
-  };
-}
-
-function assertFolioEnRango(folio: number, rango: { min: number; max: number }, origen: string) {
-  if (rango.min > 0 && folio < rango.min)
-    throw new Error(`Folio ${folio} es menor al mínimo configurado para ${origen} (${rango.min})`);
-  if (rango.max > 0 && folio > rango.max)
-    throw new Error(`Folio ${folio} supera el máximo configurado para ${origen} (${rango.max})`);
-}
-
 export async function createCargaPatio(input: CargaPatioInput) {
   const { userId } = await requireActionPermission("cargas.nueva_patio");
   const parsed = parseOrThrow(cargaPatioSchema, input);
 
   const periodo = await getOrCreatePeriodoActual(parsed.fecha);
-  const rango = await getFolioRango("patio");
-  let folio = parsed.folioManual ?? await getSiguienteFolio();
-  assertFolioEnRango(folio, rango, "patio");
+  const serie = await getFolioSerieActiva("patio", parsed.folioSerieId);
+  let folio = parsed.folioManual ?? await getSiguienteFolioPatioCompartido(db, serie.id);
+  if (folio === null) throw new Error(`La serie ${serie.codigo} llegó a su folio máximo`);
+  assertFolioEnSerie(folio, serie);
 
   const tanqueTaller = await getTanquePorNombre("Taller");
   if (!tanqueTaller) throw new Error("Tanque Taller no encontrado");
@@ -95,9 +80,10 @@ export async function createCargaPatio(input: CargaPatioInput) {
     kmEstimado: parsed.kmEstimado,
   });
 
-  folio = parsed.folioManual ?? await getSiguienteFolioPatioCompartido();
-  assertFolioEnRango(folio, rango, "patio");
-  await assertFolioPatioCompartidoDisponible(folio);
+  folio = parsed.folioManual ?? await getSiguienteFolioPatioCompartido(db, serie.id);
+  if (folio === null) throw new Error(`La serie ${serie.codigo} llegó a su folio máximo`);
+  assertFolioEnSerie(folio, serie);
+  await assertFolioDisponible(folio, "patio", serie.id);
 
   const currentCuentalitros = tanqueTaller.cuentalitrosActual ?? 0;
   const nuevoCuentalitros =
@@ -112,6 +98,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
     fecha: parsed.fecha,
     hora: parsed.hora,
     folio,
+    folioSerieId: serie.id,
     periodoId: periodo.id,
     unidadId: parsed.unidadId,
     operadorId: parsed.operadorId ?? null,
@@ -152,7 +139,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
   revalidatePath("/cargas");
   revalidatePath("/overview");
 
-  const nextFolio = await getSiguienteFolio();
+  const nextFolio = await getSiguienteFolioPatioCompartido(db, serie.id);
   return { ok: true, folio: inserted.folio ?? folio, cargaId: inserted.cargaId, nextFolio };
 }
 
@@ -162,6 +149,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
 export type CargaCampoInput = {
   fecha: string;
   hora: string;
+  folioSerieId: number;
   folioNissan: number;
   unidadId: number;
   litros: number;
@@ -181,13 +169,9 @@ export async function createCargaCampo(input: CargaCampoInput) {
   const parsed = parseOrThrow(cargaCampoSchema, input);
 
   const periodo = await getOrCreatePeriodoActual(parsed.fecha);
-  const rango = await getFolioRango("campo");
-  assertFolioEnRango(parsed.folioNissan, rango, "campo");
-
-  const existe = await db.select({ id: cargas.id }).from(cargas)
-    .where(and(eq(cargas.folio, parsed.folioNissan), eq(cargas.origen, "campo"))).limit(1);
-  if (existe.length > 0)
-    throw new Error(`El folio ${parsed.folioNissan} ya existe en el sistema para cargas de campo`);
+  const serie = await getFolioSerieActiva("campo", parsed.folioSerieId);
+  assertFolioEnSerie(parsed.folioNissan, serie);
+  await assertFolioDisponible(parsed.folioNissan, "campo", serie.id);
 
   const tanqueNissan = await getTanquePorNombre("NISSAN");
   if (!tanqueNissan) throw new Error("Tanque NISSAN no encontrado");
@@ -215,6 +199,7 @@ export async function createCargaCampo(input: CargaCampoInput) {
     fecha: parsed.fecha,
     hora: parsed.hora,
     folio: parsed.folioNissan,
+    folioSerieId: serie.id,
     periodoId: periodo.id,
     unidadId: parsed.unidadId,
     operadorId: parsed.operadorId ?? null,
@@ -254,7 +239,7 @@ export async function createCargaCampo(input: CargaCampoInput) {
   revalidatePath("/cargas");
   revalidatePath("/overview");
 
-  const nextFolio = await getSiguienteFolioCampo();
+  const nextFolio = await getSiguienteFolioEnSerie("campo", serie.id);
   return {
     ok: true,
     cargaId: inserted.cargaId,
@@ -288,6 +273,8 @@ export async function getCargas(opts?: {
     conds.push(
       or(
         sql`${cargas.folio}::text ilike ${like}`,
+        inArray(cargas.folioSerieId, db.select({ id: folioSeries.id }).from(folioSeries).where(ilike(folioSeries.codigo, like))),
+        inArray(cargas.folioSerieId, db.select({ id: folioSeries.id }).from(folioSeries).where(ilike(folioSeries.nombre, like))),
         inArray(cargas.unidadId, db.select({ id: unidades.id }).from(unidades).where(ilike(unidades.codigo, like))),
         inArray(cargas.operadorId, db.select({ id: operadores.id }).from(operadores).where(ilike(operadores.nombre, like))),
         inArray(cargas.obraId, db.select({ id: obras.id }).from(obras).where(ilike(obras.nombre, like))),
@@ -302,7 +289,7 @@ export async function getCargas(opts?: {
   const [rows, aggRows] = await Promise.all([
     db.query.cargas.findMany({
       where: whereCond,
-      with: { unidad: true, operador: true, obra: true, archivos: { columns: { url: true }, limit: 1 }, periodo: { columns: { cerrado: true } } },
+      with: { unidad: true, operador: true, obra: true, folioSerie: { columns: { codigo: true } }, archivos: { columns: { url: true }, limit: 1 }, periodo: { columns: { cerrado: true } } },
       orderBy: (c, { desc: _desc }) => [_desc(c.fecha), _desc(c.createdAt)],
       limit: lim,
       offset: off,
@@ -335,6 +322,7 @@ export async function getCargasPage(opts: {
     fecha: c.fecha,
     hora: c.hora,
     folio: c.folio,
+    folioSerieCodigo: c.folioSerie?.codigo ?? null,
     litros: c.litros,
     origen: c.origen,
     tipoDiesel: c.tipoDiesel,
@@ -369,16 +357,12 @@ export async function getHistorialGlobalStats() {
   };
 }
 
-export async function getSiguienteFolioPublic() {
-  return getSiguienteFolio();
+export async function getSiguienteFolioPublic(serieId?: number) {
+  return getSiguienteFolioPatioCompartido(db, serieId);
 }
 
-async function getSiguienteFolioPatio(): Promise<number> {
-  return getSiguienteFolioPatioCompartido();
-}
-
-export async function getSiguienteFolioPatioPublic() {
-  return getSiguienteFolioPatio();
+export async function getSiguienteFolioPatioPublic(serieId?: number) {
+  return getSiguienteFolioPatioCompartido(db, serieId);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -401,6 +385,7 @@ export async function getCatalogoResumen(
       unidad:   { columns: { codigo: true } },
       operador: { columns: { nombre: true } },
       obra:     { columns: { nombre: true } },
+      folioSerie: { columns: { codigo: true } },
       periodo:  { columns: { cerrado: true } },
     },
     columns: {
@@ -425,6 +410,7 @@ export async function getCatalogoResumen(
       fecha:          c.fecha,
       hora:           c.hora ?? null,
       folio:          c.folio,
+      folioSerieCodigo: c.folioSerie?.codigo ?? null,
       litros:         c.litros,
       origen:         c.origen,
       tipoDiesel:     c.tipoDiesel ?? null,
@@ -453,24 +439,15 @@ export async function getUltimaCuentaLtPatio(): Promise<number | null> {
   return tanque?.cuentalitrosActual ?? null;
 }
 
-async function getSiguienteFolioCampo(): Promise<number> {
-  const [maxResult, baseRow] = await Promise.all([
-    db.select({ maxFolio: max(cargas.folio) }).from(cargas).where(eq(cargas.origen, "campo")),
-    db.query.configuracion.findFirst({ where: eq(configuracion.clave, "folio_base_campo") }),
-  ]);
-  const base = baseRow ? parseInt(baseRow.valor, 10) : 1;
-  const maxFolio = maxResult[0]?.maxFolio ?? null;
-  return maxFolio !== null ? maxFolio + 1 : base;
-}
-
-export async function getSiguienteFolioCampoPublic() {
-  return getSiguienteFolioCampo();
+export async function getSiguienteFolioCampoPublic(serieId?: number) {
+  const id = serieId ?? await getDefaultFolioSerieId("campo");
+  return getSiguienteFolioEnSerie("campo", id);
 }
 
 export async function getCargaFormBootstrap(origen: "patio" | "campo") {
   await requireActionPermission(origen === "patio" ? "cargas.nueva_patio" : "cargas.nueva_campo");
 
-  const [unidadesRows, operadoresRows, configRows] = await Promise.all([
+  const [unidadesRows, operadoresRows, folioSeries] = await Promise.all([
     db.query.unidades.findMany({
       where: eq(unidades.activo, true),
       columns: { id: true, codigo: true, nombre: true, tipo: true },
@@ -481,9 +458,8 @@ export async function getCargaFormBootstrap(origen: "patio" | "campo") {
       columns: { id: true, nombre: true, tipo: true },
       orderBy: (o, { asc }) => [asc(o.nombre)],
     }),
-    db.select().from(configuracion),
+    getFolioSeriesForCapture(origen),
   ]);
-  const cfg = Object.fromEntries(configRows.map((x) => [x.clave, x.valor]));
 
   if (origen === "patio") {
     const taller = await db.query.tanques.findFirst({ where: eq(tanques.nombre, "Taller") });
@@ -491,11 +467,10 @@ export async function getCargaFormBootstrap(origen: "patio" | "campo") {
       tipo: "patio" as const,
       unidades: unidadesRows,
       operadores: operadoresRows,
-      siguienteFolio: await getSiguienteFolio(),
+      folioSeries,
+      siguienteFolio: folioSeries.find((serie) => serie.predeterminada)?.siguienteFolio ?? null,
       stockActual: taller?.litrosActuales ?? 0,
       ultimaCuentaLt: taller?.cuentalitrosActual ?? null,
-      folioMin: cfg["folio_min_patio"] ? parseInt(cfg["folio_min_patio"], 10) : 0,
-      folioMax: cfg["folio_max_patio"] ? parseInt(cfg["folio_max_patio"], 10) : 0,
     };
   }
 
@@ -506,18 +481,17 @@ export async function getCargaFormBootstrap(origen: "patio" | "campo") {
       orderBy: (o, { asc }) => [asc(o.nombre)],
     }),
     db.query.tanques.findFirst({ where: eq(tanques.nombre, "NISSAN") }),
-    getSiguienteFolioCampo(),
+    getSiguienteFolioCampoPublic(),
   ]);
   return {
     tipo: "campo" as const,
     unidades: unidadesRows,
     operadores: operadoresRows,
     obras: obrasRows,
+    folioSeries,
     saldoNissan: nissan?.litrosActuales ?? 0,
     cuentalitrosNissan: nissan?.cuentalitrosActual ?? 0,
     siguienteFolio,
-    folioMin: cfg["folio_min_campo"] ? parseInt(cfg["folio_min_campo"], 10) : 0,
-    folioMax: cfg["folio_max_campo"] ? parseInt(cfg["folio_max_campo"], 10) : 0,
   };
 }
 
@@ -536,6 +510,7 @@ export async function getUltimaCargaUnidad(unidadId: number) {
     with: {
       obra:     { columns: { nombre: true } },
       operador: { columns: { nombre: true } },
+      folioSerie: { columns: { codigo: true } },
     },
   });
   if (!ultima) return null;
@@ -546,6 +521,7 @@ export async function getUltimaCargaUnidad(unidadId: number) {
     litros:         ultima.litros,
     odometroHrs:    ultima.odometroHrs,
     folio:          ultima.folio,
+    folioSerieCodigo: ultima.folioSerie?.codigo ?? null,
     origen:         ultima.origen,
     notas:          ultima.notas,
     createdAt:      ultima.createdAt?.toISOString() ?? null,
@@ -685,6 +661,7 @@ export type UpdateCargaInput = {
   fecha?: string;
   hora?: string;
   folio?: number;
+  folioSerieId?: number;
   litros?: number;
   odometroHrs?: number | null;
   cuentaLtInicio?: number | null;
@@ -704,16 +681,29 @@ export async function updateCarga(id: number, data: UpdateCargaInput) {
   if (data.fecha !== undefined) fechaSchema.parse(data.fecha);
   if (data.litros !== undefined) litrosSchema.parse(data.litros);
 
-  if (data.folio !== undefined && data.folio !== carga.folio) {
-    folioSchema.parse(data.folio);
-    if (carga.origen === "patio") {
-      await assertFolioPatioCompartidoDisponible(data.folio, db, { cargaId: id });
+  const targetSerieId = data.folioSerieId ?? carga.folioSerieId;
+  const targetFolio = data.folio ?? carga.folio;
+  if (targetSerieId !== carga.folioSerieId || targetFolio !== carga.folio) {
+    if (carga.origen === "externo") {
+      if (data.folioSerieId !== undefined) throw new Error("Los folios externos no pertenecen a una serie Patio/Campo");
+      if (targetFolio !== null) {
+        folioSchema.parse(targetFolio);
+        const duplicate = await db.select({ id: cargas.id }).from(cargas).where(and(
+          eq(cargas.folio, targetFolio),
+          eq(cargas.origen, "externo"),
+          sql`${cargas.folioSerieId} IS NULL`,
+          sql`${cargas.id} <> ${id}`,
+        )).limit(1);
+        if (duplicate.length) throw new Error(`El folio externo ${targetFolio} ya está registrado`);
+      }
     } else {
-      const dup = await db.select({ id: cargas.id }).from(cargas)
-        .where(and(eq(cargas.folio, data.folio), eq(cargas.origen, carga.origen), sql`${cargas.id} <> ${id}`))
-        .limit(1);
-      if (dup.length > 0)
-        throw new Error(`El folio ${data.folio} ya existe en cargas de ${carga.origen}`);
+      if (targetSerieId == null) throw new Error("La carga no tiene una serie de folios asignada");
+      const serie = await getFolioSerieActiva(carga.origen as "patio" | "campo", targetSerieId);
+      if (targetFolio !== null) {
+        folioSchema.parse(targetFolio);
+        assertFolioEnSerie(targetFolio, serie);
+        await assertFolioDisponible(targetFolio, carga.origen as "patio" | "campo", serie.id, db, { cargaId: id });
+      }
     }
   }
 

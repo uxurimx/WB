@@ -15,7 +15,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { transferirEntreTanques } from "@/app/actions/tanques";
-import { getSiguienteFolioPatioPublic } from "@/app/actions/cargas";
+import { getFolioSeriesForTransfer } from "@/app/actions/folios";
+import type { FolioSerieCaptura } from "@/lib/folios";
 
 function todayStr() {
   const d = new Date();
@@ -39,6 +40,8 @@ export default function TransferirNissanModal({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [folioSeries, setFolioSeries] = useState<FolioSerieCaptura[]>([]);
+  const [folioSerieId, setFolioSerieId] = useState(0);
 
   const [form, setForm] = useState({
     fecha: todayStr(), litros: "", notas: "", folio: "",
@@ -69,8 +72,11 @@ export default function TransferirNissanModal({
     setSuccess("");
     setOpen(true);
     startTransition(async () => {
-      const siguiente = await getSiguienteFolioPatioPublic();
-      setForm((prev) => ({ ...prev, folio: String(siguiente) }));
+      const series = await getFolioSeriesForTransfer();
+      setFolioSeries(series);
+      const selected = series.find((serie) => serie.predeterminada) ?? series[0];
+      setFolioSerieId(selected?.id ?? 0);
+      setForm((prev) => ({ ...prev, folio: selected?.siguienteFolio == null ? "" : String(selected.siguienteFolio) }));
     });
   }
 
@@ -85,6 +91,7 @@ export default function TransferirNissanModal({
       setError("El folio no puede tener más de 5 dígitos");
       return;
     }
+    if (!folioSerieId) { setError("No hay una serie de folios activa"); return; }
     const litros = parseFloat(form.litros);
     if (!litros || litros <= 0) {
       setError("Ingresa los litros a transferir");
@@ -104,13 +111,14 @@ export default function TransferirNissanModal({
           tanqueDestinoId,
           litros,
           folio: folioNum,
+          folioSerieId,
           fecha: form.fecha,
           notas: form.notas || undefined,
           cuentalitrosOrigen: inicioVal !== undefined && !isNaN(inicioVal) ? inicioVal : undefined,
         });
         onTransferComplete?.(res.origen.litrosActuales, res.destino.litrosActuales, res.origen.cuentalitros);
         setSuccess(
-          `Folio #${res.folio} · ${litros.toLocaleString()} L transferidos → NISSAN. ` +
+          `Folio T-${folioSeries.find((serie) => serie.id === folioSerieId)?.codigo ?? "—"}-${res.folio} · ${litros.toLocaleString()} L transferidos → NISSAN. ` +
           `Taller: ${res.origen.litrosActuales.toFixed(0)} L | ` +
           `NISSAN: ${res.destino.litrosActuales.toFixed(0)} L`
         );
@@ -158,6 +166,21 @@ export default function TransferirNissanModal({
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Folio del ticket físico */}
               <div className="space-y-1.5">
+                {folioSeries.length > 1 && (
+                  <div className="space-y-1.5 mb-3">
+                    <Label htmlFor="t-serie">Bloque físico</Label>
+                    <select id="t-serie" value={folioSerieId}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        setFolioSerieId(id);
+                        const selected = folioSeries.find((serie) => serie.id === id);
+                        setForm((prev) => ({ ...prev, folio: selected?.siguienteFolio == null ? "" : String(selected.siguienteFolio) }));
+                      }}
+                      className="w-full rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                      {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.nombre}{serie.predeterminada ? " (predeterminada)" : ""}</option>)}
+                    </select>
+                  </div>
+                )}
                 <Label htmlFor="t-folio">Folio del ticket *</Label>
                 <div className="relative">
                   <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
@@ -178,7 +201,7 @@ export default function TransferirNissanModal({
                   />
                 </div>
                 <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>
-                  Número del ticket físico (máx. 5 dígitos)
+                  Serie {folioSeries.find((serie) => serie.id === folioSerieId)?.codigo ?? "—"} · número físico (máx. 5 dígitos)
                 </p>
               </div>
 
