@@ -24,6 +24,9 @@ CREATE INDEX IF NOT EXISTS ordenes_taller_unidad_id_idx ON ordenes_taller (unida
 CREATE INDEX IF NOT EXISTS ordenes_taller_estado_idx ON ordenes_taller (estado);
 CREATE INDEX IF NOT EXISTS ordenes_taller_fecha_idx ON ordenes_taller (fecha);
 
+-- Columnas añadidas después de la migración inicial de bitácora.
+ALTER TABLE ordenes_taller ADD COLUMN IF NOT EXISTS actualizado_por_id text;
+
 CREATE TABLE IF NOT EXISTS orden_checklist (
   id serial PRIMARY KEY,
   orden_id integer NOT NULL,
@@ -33,6 +36,9 @@ CREATE TABLE IF NOT EXISTS orden_checklist (
 );
 
 CREATE INDEX IF NOT EXISTS orden_checklist_orden_id_idx ON orden_checklist (orden_id);
+
+-- Se guarda como JSON serializado por la aplicación (URL y key de UploadThing).
+ALTER TABLE orden_checklist ADD COLUMN IF NOT EXISTS fotos text;
 
 CREATE TABLE IF NOT EXISTS orden_refacciones (
   id serial PRIMARY KEY,
@@ -47,3 +53,13 @@ CREATE TABLE IF NOT EXISTS orden_refacciones (
 );
 
 CREATE INDEX IF NOT EXISTS orden_refacciones_orden_id_idx ON orden_refacciones (orden_id);
+
+CREATE TABLE IF NOT EXISTS orden_taller_log (
+  id serial PRIMARY KEY,
+  orden_id integer NOT NULL,
+  usuario_id text NOT NULL,
+  accion varchar(30) NOT NULL,
+  created_at timestamp DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS orden_taller_log_orden_id_idx ON orden_taller_log (orden_id);
