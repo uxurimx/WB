@@ -104,6 +104,7 @@ export async function insertCargaAtomic(opts: {
   fecha: string;
   hora: string | null;
   folio: number | null;
+  folioSerieId: number;
   periodoId: number | null;
   unidadId: number;
   operadorId: number | null;
@@ -137,7 +138,7 @@ export async function insertCargaAtomic(opts: {
     ),
     ins AS (
       INSERT INTO cargas (
-        fecha, hora, folio, periodo_id, unidad_id, operador_id, obra_id,
+        fecha, hora, folio, folio_serie_id, periodo_id, unidad_id, operador_id, obra_id,
         fuente_id, tanque_id, litros, odometro_hrs, km_estimado,
         cuenta_lt_inicio, cuenta_lt_fin, origen, tipo_diesel,
         quien_suministra_id, quien_recibe_id, notas, registrado_por_id
@@ -146,6 +147,7 @@ export async function insertCargaAtomic(opts: {
         ${opts.fecha},
         ${opts.hora}::time,
         ${opts.folio}::int,
+        ${opts.folioSerieId}::int,
         ${opts.periodoId}::int,
         ${opts.unidadId}::int,
         ${opts.operadorId}::int,

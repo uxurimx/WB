@@ -59,7 +59,8 @@ export default async function ImportarPage() {
           "Columnas mínimas: Fecha, Unidad/Equipo y Litros",
           "Opcionales: Folio, Operador, Obra, Origen, Odómetro/Hrs, Tipo Diesel",
           "Las unidades y operadores nuevos se crean automáticamente",
-          "Registros duplicados (mismo folio + fecha + origen) se omiten",
+          "Cada fila se asigna a la serie predeterminada de su origen",
+          "Los duplicados por folio, origen y serie se omiten",
         ].map((t) => (
           <p key={t} className="text-xs flex items-start gap-1.5" style={{ color: "var(--fg-muted)" }}>
             <span className="text-indigo-500 font-bold mt-0.5">·</span> {t}

@@ -6,7 +6,9 @@ import { tanques, recargasTanque, transferenciasTanque, auditLog, cargas } from 
 import { eq, inArray, gte, and, or, desc } from "drizzle-orm";
 import { requireManageRole } from "@/lib/authz";
 import {
-  assertFolioPatioCompartidoDisponible,
+  assertFolioTransferenciaDisponible,
+  assertFolioEnSerie,
+  getFolioSerieActiva,
 } from "@/lib/folios";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 import { conciliarTanques } from "@/lib/conciliacion";
@@ -84,6 +86,7 @@ export type TransferenciaInput = {
   litros: number;
   fecha: string; // "YYYY-MM-DD"
   folio: number;
+  folioSerieId: number;
   notas?: string;
   cuentalitrosOrigen?: number; // Lectura inicial del cuentalitros de taller (bomba) antes de la transferencia
 };
@@ -129,7 +132,9 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   const cuentaFin    = tallerInicio !== null ? tallerInicio + input.litros : null;
 
   const folio = input.folio;
-  await assertFolioPatioCompartidoDisponible(folio);
+  const serie = await getFolioSerieActiva("patio", input.folioSerieId);
+  assertFolioEnSerie(folio, serie);
+  await assertFolioTransferenciaDisponible(folio, serie.id);
 
   // Actualizar ambos tanques + insertar registro
   await Promise.all([
@@ -150,6 +155,7 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
       .where(eq(tanques.id, input.tanqueDestinoId)),
     db.insert(transferenciasTanque).values({
       folio,
+      folioSerieId: serie.id,
       fecha: input.fecha,
       litros: input.litros,
       tanqueOrigenId: input.tanqueOrigenId,
@@ -344,6 +350,7 @@ export async function updateTransferencia(
     fecha?: string;
     litros?: number;
     folio?: number | null;
+    folioSerieId?: number;
     notas?: string | null;
     cuentalitrosNissanInicio?: number | null;
     cuentalitrosDestino?: number | null;
@@ -356,10 +363,16 @@ export async function updateTransferencia(
   });
   if (!transferencia) throw new Error("Transferencia no encontrada");
 
-  if (data.folio !== undefined && data.folio !== null) {
-    if (data.folio <= 0 || data.folio > 99999)
-      throw new Error("Folio inválido. Debe ser un número entre 1 y 99999");
-    await assertFolioPatioCompartidoDisponible(data.folio, db, { transferenciaId: id });
+  const targetSerieId = data.folioSerieId ?? transferencia.folioSerieId;
+  if (data.folioSerieId !== undefined || (data.folio !== undefined && data.folio !== transferencia.folio)) {
+    const serie = await getFolioSerieActiva("patio", targetSerieId);
+    const targetFolio = data.folio !== undefined ? data.folio : transferencia.folio;
+    if (targetFolio !== null) {
+      if (targetFolio <= 0 || targetFolio > 99999)
+        throw new Error("Folio inválido. Debe ser un número entre 1 y 99999");
+      assertFolioEnSerie(targetFolio, serie);
+      await assertFolioTransferenciaDisponible(targetFolio, serie.id, db, id);
+    }
   }
 
   const litrosNuevos = data.litros ?? transferencia.litros;
@@ -410,6 +423,7 @@ export async function updateTransferencia(
         fecha:                    data.fecha !== undefined ? data.fecha : transferencia.fecha,
         litros:                   litrosNuevos,
         folio:                    data.folio !== undefined ? data.folio : transferencia.folio,
+        folioSerieId:             targetSerieId,
         notas:                    data.notas !== undefined ? data.notas : transferencia.notas,
         cuentalitrosNissanInicio: data.cuentalitrosNissanInicio !== undefined ? data.cuentalitrosNissanInicio : transferencia.cuentalitrosNissanInicio,
         cuentalitrosDestino:      data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,
@@ -429,6 +443,7 @@ export async function updateTransferencia(
     await db.update(transferenciasTanque).set({
       fecha:                    data.fecha !== undefined ? data.fecha : transferencia.fecha,
       folio:                    data.folio !== undefined ? data.folio : transferencia.folio,
+      folioSerieId:             targetSerieId,
       notas:                    data.notas !== undefined ? data.notas : transferencia.notas,
       cuentalitrosNissanInicio: data.cuentalitrosNissanInicio !== undefined ? data.cuentalitrosNissanInicio : transferencia.cuentalitrosNissanInicio,
       cuentalitrosDestino:      data.cuentalitrosDestino !== undefined ? data.cuentalitrosDestino : transferencia.cuentalitrosDestino,
@@ -555,6 +570,7 @@ export async function getTransferencias(
       : undefined,
     orderBy: (t, { desc }) => [desc(t.createdAt)],
     limit,
+    with: { folioSerie: { columns: { codigo: true } } },
   });
   // Enriquecer con nombres de tanque (evita join manual)
   const tanquesRows = await db.select({ id: tanques.id, nombre: tanques.nombre }).from(tanques);
@@ -575,6 +591,7 @@ export type EventoTimeline = {
   detalle: string;
   notas: string | null;
   folio?: number | null;
+  folioSerieCodigo?: string | null;
   proveedor?: string | null;
   precioLitro?: number | null;
   folioFactura?: string | null;
@@ -641,13 +658,12 @@ export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
           orderBy: (r, { desc: _desc }) => [_desc(r.fecha), _desc(r.createdAt)],
           limit: 60,
         }),
-        db.select().from(transferenciasTanque)
-          .where(or(
-            eq(transferenciasTanque.tanqueOrigenId, t.id),
-            eq(transferenciasTanque.tanqueDestinoId, t.id),
-          ))
-          .orderBy(desc(transferenciasTanque.fecha))
-          .limit(60),
+        db.query.transferenciasTanque.findMany({
+          where: (tr, { or: _or, eq: _eq }) => _or(_eq(tr.tanqueOrigenId, t.id), _eq(tr.tanqueDestinoId, t.id)),
+          with: { folioSerie: { columns: { codigo: true } } },
+          orderBy: (tr, { desc: _desc }) => [_desc(tr.fecha)],
+          limit: 60,
+        }),
         db.select({ fecha: cargas.fecha, litros: cargas.litros })
           .from(cargas)
           .where(and(eq(cargas.tanqueId, t.id), gte(cargas.fecha, hace30Str))),
@@ -699,6 +715,7 @@ export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
             detalle: `→ ${tanquesNombres[tr.tanqueDestinoId] ?? `Tanque ${tr.tanqueDestinoId}`}`,
             notas: tr.notas,
             folio: tr.folio,
+            folioSerieCodigo: tr.folioSerie?.codigo ?? null,
           });
         } else {
           timeline.push({
@@ -709,6 +726,7 @@ export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
             detalle: `← ${tanquesNombres[tr.tanqueOrigenId] ?? `Tanque ${tr.tanqueOrigenId}`}`,
             notas: tr.notas,
             folio: tr.folio,
+            folioSerieCodigo: tr.folioSerie?.codigo ?? null,
           });
         }
       }

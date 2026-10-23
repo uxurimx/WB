@@ -16,6 +16,7 @@ import { getNowLocal } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 
 import { KM_MAX_DIFERENCIA } from "@/lib/odometro";
+import type { FolioSerieCaptura } from "@/lib/folios";
 
 type Unidad = { id: number; codigo: string; nombre: string | null; tipo: string };
 type Operador = { id: number; nombre: string; tipo: string };
@@ -23,25 +24,25 @@ type Operador = { id: number; nombre: string; tipo: string };
 export default function FormCargaPatio({
   unidades,
   operadores,
-  siguienteFolio,
+  folioSeries,
   stockActual,
   ultimaCuentaLt,
-  folioMin = 0,
-  folioMax = 0,
 }: {
   unidades: Unidad[];
   operadores: Operador[];
-  siguienteFolio: number;
+  folioSeries: FolioSerieCaptura[];
   stockActual: number;
   ultimaCuentaLt?: number | null;
-  folioMin?: number;
-  folioMax?: number;
 }) {
   const router = useRouter();
+  const serieInicial = folioSeries.find((serie) => serie.predeterminada) ?? folioSeries[0];
+  const [folioSerieId, setFolioSerieId] = useState(serieInicial?.id ?? 0);
+  const serieSeleccionada = folioSeries.find((serie) => serie.id === folioSerieId) ?? serieInicial;
+  const siguienteFolio = serieSeleccionada?.siguienteFolio ?? null;
   const [isPending, setIsPending] = useState(false);
-  const [success, setSuccess] = useState<{ folio: number; litros: number } | null>(null);
+  const [success, setSuccess] = useState<{ folio: number; serie: string; litros: number } | null>(null);
   const [error, setError] = useState("");
-  const [folioManual, setFolioManual] = useState<string>(String(siguienteFolio));
+  const [folioManual, setFolioManual] = useState<string>(siguienteFolio == null ? "" : String(siguienteFolio));
   const [folioEditando, setFolioEditando] = useState(false);
   const skipFolioEffect = useRef(false);
 
@@ -80,8 +81,8 @@ export default function FormCargaPatio({
       skipFolioEffect.current = false;
       return;
     }
-    setFolioManual(String(siguienteFolio));
-  }, [siguienteFolio]);
+    setFolioManual(siguienteFolio == null ? "" : String(siguienteFolio));
+  }, [folioSerieId, siguienteFolio]);
 
   useEffect(() => {
     if (!form.unidadId) { setUltimoKm(null); setKmWarning(""); setKmEstimado(false); return; }
@@ -143,8 +144,9 @@ export default function FormCargaPatio({
     }
     const folioNum = parseInt(folioManual);
     if (isNaN(folioNum) || folioNum <= 0) { setError("Folio inválido"); return; }
-    if (folioMin > 0 && folioNum < folioMin) { setError(`Folio mínimo para patio: ${folioMin}`); return; }
-    if (folioMax > 0 && folioNum > folioMax) { setError(`Folio máximo para patio: ${folioMax}`); return; }
+    if (!serieSeleccionada) { setError("No hay una serie de folios activa"); return; }
+    if (serieSeleccionada.folioMin > 0 && folioNum < serieSeleccionada.folioMin) { setError(`Folio mínimo de ${serieSeleccionada.codigo}: ${serieSeleccionada.folioMin}`); return; }
+    if (serieSeleccionada.folioMax > 0 && folioNum > serieSeleccionada.folioMax) { setError(`Folio máximo de ${serieSeleccionada.codigo}: ${serieSeleccionada.folioMax}`); return; }
 
     const kmVal = parseFloat(form.odometroHrs);
     if (form.odometroHrs && !isNaN(kmVal)) {
@@ -172,6 +174,7 @@ export default function FormCargaPatio({
       const result = await createCargaPatio({
         fecha: form.fecha,
         hora: form.hora,
+        folioSerieId,
         folioManual: folioNum,
         unidadId: parseInt(form.unidadId),
         litros,
@@ -197,7 +200,7 @@ export default function FormCargaPatio({
         }
       }
 
-      setSuccess({ folio: result.folio, litros });
+      setSuccess({ folio: result.folio, serie: serieSeleccionada?.codigo ?? "", litros });
       clearFoto();
       const nextCuentaLt = form.cuentaLtFin;
       const { fecha, hora } = getNowLocal();
@@ -209,7 +212,7 @@ export default function FormCargaPatio({
       setKmEstimado(false);
       // nextFolio viene directo del server tras el insert — autoritativo, sin race condition
       skipFolioEffect.current = true;
-      setFolioManual(String(result.nextFolio));
+      setFolioManual(result.nextFolio == null ? "" : String(result.nextFolio));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar");
@@ -230,7 +233,7 @@ export default function FormCargaPatio({
           <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
           <div>
             <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
-              Carga registrada — Folio {success.folio}
+              Carga registrada — P-{success.serie}-{success.folio}
             </p>
             <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
               {success.litros} L despachados correctamente
@@ -290,6 +293,9 @@ export default function FormCargaPatio({
                 ↺
               </button>
             )}
+            <p className="text-[10px] mt-1" style={{ color: "var(--fg-muted)" }}>
+              Serie {serieSeleccionada?.codigo ?? "—"} · {serieSeleccionada?.nombre ?? "Sin serie"}
+            </p>
           </div>
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border"
             style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
@@ -302,6 +308,15 @@ export default function FormCargaPatio({
             </div>
           </div>
         </div>
+        {folioSeries.length > 1 && (
+          <div className="space-y-1.5">
+            <Label htmlFor="folioSeriePatio">Bloque físico</Label>
+            <select id="folioSeriePatio" value={folioSerieId} onChange={(e) => setFolioSerieId(Number(e.target.value))}
+              className="w-full rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}>
+              {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.nombre}{serie.predeterminada ? " (predeterminada)" : ""}</option>)}
+            </select>
+          </div>
+        )}
 
         {/* Fecha y hora */}
         <div className="grid grid-cols-2 gap-3">

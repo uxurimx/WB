@@ -54,11 +54,9 @@ export default function CargaRapidaModal({
           <FormCargaPatio
             unidades={data.unidades}
             operadores={data.operadores}
-            siguienteFolio={data.siguienteFolio}
+            folioSeries={data.folioSeries}
             stockActual={data.stockActual}
             ultimaCuentaLt={data.ultimaCuentaLt}
-            folioMin={data.folioMin}
-            folioMax={data.folioMax}
           />
         )}
         {!loading && !error && data?.tipo === "campo" && (
@@ -68,9 +66,7 @@ export default function CargaRapidaModal({
             obras={data.obras}
             saldoNissan={data.saldoNissan}
             cuentalitrosNissan={data.cuentalitrosNissan}
-            siguienteFolio={data.siguienteFolio}
-            folioMin={data.folioMin}
-            folioMax={data.folioMax}
+            folioSeries={data.folioSeries}
           />
         )}
       </DialogContent>

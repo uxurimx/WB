@@ -232,11 +232,12 @@ def main():
                     cur.execute(
                         """
                         INSERT INTO cargas (
-                            fecha, folio, periodo_id, unidad_id, operador_id,
+                            folio_serie_id, fecha, folio, periodo_id, unidad_id, operador_id,
                             litros, odometro_hrs,
                             cuenta_lt_inicio, cuenta_lt_fin,
                             origen, tipo_diesel, km_estimado
                         ) VALUES (
+                            (SELECT id FROM folio_series WHERE origen = 'patio' AND codigo = 'BASE'),
                             %s, %s, %s, %s, %s,
                             %s, %s,
                             %s, %s,

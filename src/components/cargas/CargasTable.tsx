@@ -33,6 +33,7 @@ export type CargaItem = {
   fecha: string;
   hora: string | null;
   folio: number | null;
+  folioSerieCodigo: string | null;
   litros: number;
   origen: string;
   tipoDiesel: string | null;
@@ -57,6 +58,7 @@ export type TransferenciaItem = {
   id: number;
   fecha: string;
   folio: number | null;
+  folioSerieCodigo: string | null;
   litros: number;
   origenNombre: string;
   destinoNombre: string;
@@ -93,13 +95,14 @@ function formatFechaHora(fecha: string, createdAt?: string | null, hora?: string
   return formatFechaHoraMx(fecha, createdAt, hora);
 }
 
-function formatFolioCarga(item: Pick<CargaItem, "folio" | "origen">) {
+function formatFolioCarga(item: Pick<CargaItem, "folio" | "folioSerieCodigo" | "origen">) {
   if (item.folio == null) return "—";
-  return `${item.origen === "campo" ? "C" : "P"}-${item.folio}`;
+  const origen = item.origen === "campo" ? "C" : item.origen === "externo" ? "E" : "P";
+  return `${origen}-${item.folioSerieCodigo ? `${item.folioSerieCodigo}-` : ""}${item.folio}`;
 }
 
-function formatFolioTransferencia(item: Pick<TransferenciaItem, "folio">) {
-  return item.folio != null ? `T-${item.folio}` : "—";
+function formatFolioTransferencia(item: Pick<TransferenciaItem, "folio" | "folioSerieCodigo">) {
+  return item.folio != null ? `T-${item.folioSerieCodigo ? `${item.folioSerieCodigo}-` : ""}${item.folio}` : "—";
 }
 
 function DetailPill({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
@@ -513,7 +516,8 @@ export default function CargasTable({
     if (!busqueda) return true;
     const q = busqueda.toLowerCase();
     if (item._tipo === "recarga") return (item.proveedor ?? "").toLowerCase().includes(q) || item.tanqueNombre.toLowerCase().includes(q);
-    return item.origenNombre.toLowerCase().includes(q) || item.destinoNombre.toLowerCase().includes(q);
+    return item.origenNombre.toLowerCase().includes(q) || item.destinoNombre.toLowerCase().includes(q)
+      || String(item.folio ?? "").includes(q) || (item.folioSerieCodigo ?? "").toLowerCase().includes(q);
   };
 
   const recargasView = (tipoFiltro === "actividad" || tipoFiltro === "recarga")

@@ -9,6 +9,7 @@ import {
   serial,
   date,
   time,
+  check,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
@@ -92,6 +93,22 @@ export const odometroResets = pgTable("odometro_resets", {
   registradoPorId: text("registrado_por_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Bloques físicos de folios. Cada origen puede tener varios bloques disponibles
+// y uno predeterminado para asignación automática.
+export const folioSeries = pgTable("folio_series", {
+  id: serial("id").primaryKey(),
+  origen: varchar("origen", { length: 10 }).notNull(),
+  codigo: varchar("codigo", { length: 20 }).notNull(),
+  nombre: varchar("nombre", { length: 80 }).notNull(),
+  folioMin: integer("folio_min").notNull().default(0),
+  folioMax: integer("folio_max").notNull().default(0),
+  folioBase: integer("folio_base").notNull().default(1),
+  activa: boolean("activa").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("folio_series_origen_codigo_unique").on(table.origen, table.codigo),
+]);
 
 export const mantenimientosEventos = pgTable("mantenimientos_eventos", {
   id: serial("id").primaryKey(),
@@ -233,6 +250,7 @@ export const cargas = pgTable("cargas", {
   fecha: date("fecha").notNull(),
   hora: time("hora"),
   folio: integer("folio"),
+  folioSerieId: integer("folio_serie_id").references(() => folioSeries.id),
   periodoId: integer("periodo_id"),
   unidadId: integer("unidad_id").notNull(),
   operadorId: integer("operador_id"),
@@ -256,10 +274,15 @@ export const cargas = pgTable("cargas", {
   registradoPorId: text("registrado_por_id"), // Clerk user ID
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
-  // Folio único por origen (patio y campo son secuencias separadas). NULLs permitidos.
-  uniqueIndex("cargas_folio_origen_unique")
+  // Los folios físicos Patio/Campo requieren serie; los externos conservan
+  // su folio de proveedor sin pertenecer a esos bloques.
+  check("cargas_folio_serie_required", sql`${table.origen} = 'externo' OR ${table.folioSerieId} IS NOT NULL`),
+  uniqueIndex("cargas_folio_origen_serie_unique")
+    .on(table.folio, table.origen, table.folioSerieId)
+    .where(sql`${table.folio} IS NOT NULL AND ${table.folioSerieId} IS NOT NULL`),
+  uniqueIndex("cargas_folio_origen_without_serie_unique")
     .on(table.folio, table.origen)
-    .where(sql`${table.folio} IS NOT NULL`),
+    .where(sql`${table.folio} IS NOT NULL AND ${table.folioSerieId} IS NULL`),
 ]);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -285,6 +308,7 @@ export const recargasTanque = pgTable("recargas_tanque", {
 export const transferenciasTanque = pgTable("transferencias_tanque", {
   id: serial("id").primaryKey(),
   folio: integer("folio"),
+  folioSerieId: integer("folio_serie_id").notNull().references(() => folioSeries.id),
   fecha: date("fecha").notNull(),
   litros: real("litros").notNull(),
   tanqueOrigenId: integer("tanque_origen_id").notNull(),
@@ -294,7 +318,11 @@ export const transferenciasTanque = pgTable("transferencias_tanque", {
   registradoPorId: text("registrado_por_id"),
   notas: text("notas"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  uniqueIndex("transferencias_folio_serie_unique")
+    .on(table.folioSerieId, table.folio)
+    .where(sql`${table.folio} IS NOT NULL`),
+]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RENDIMIENTOS — calculados al cerrar cada periodo
@@ -571,6 +599,10 @@ export const periodosRelations = relations(periodos, ({ many }) => ({
 }));
 
 export const cargasRelations = relations(cargas, ({ one, many }) => ({
+  folioSerie: one(folioSeries, {
+    fields: [cargas.folioSerieId],
+    references: [folioSeries.id],
+  }),
   unidad: one(unidades, {
     fields: [cargas.unidadId],
     references: [unidades.id],
@@ -630,6 +662,10 @@ export const recargasTanqueRelations = relations(recargasTanque, ({ one }) => ({
 }));
 
 export const transferenciasTanqueRelations = relations(transferenciasTanque, ({ one }) => ({
+  folioSerie: one(folioSeries, {
+    fields: [transferenciasTanque.folioSerieId],
+    references: [folioSeries.id],
+  }),
   tanqueOrigen: one(tanques, {
     fields: [transferenciasTanque.tanqueOrigenId],
     references: [tanques.id],

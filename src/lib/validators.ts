@@ -10,13 +10,18 @@ export function parseOrThrow<T>(schema: z.ZodType<T>, data: unknown): T {
 
 export const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida (YYYY-MM-DD)");
 export const horaSchema = z.string().regex(/^\d{2}:\d{2}/, "Hora inválida (HH:MM)");
-export const litrosSchema = z.number().positive("Los litros deben ser mayores a 0").max(5000, "Litros fuera de rango");
+// Límite técnico amplio para evitar capturas absurdas sin bloquear pipas,
+// transferencias o movimientos operativos válidos.
+export const litrosSchema = z.number()
+  .positive("Los litros deben ser mayores a 0")
+  .max(50000, "Los litros exceden el límite permitido");
 export const folioSchema = z.number().int().positive().max(99999, "Folio inválido. Debe ser un número entre 1 y 99999");
 export const idSchema = z.number().int().positive();
 
 export const cargaPatioSchema = z.object({
   fecha: fechaSchema,
   hora: horaSchema,
+  folioSerieId: idSchema,
   folioManual: folioSchema.optional(),
   unidadId: idSchema,
   litros: litrosSchema,
@@ -32,6 +37,7 @@ export const cargaPatioSchema = z.object({
 export const cargaCampoSchema = z.object({
   fecha: fechaSchema,
   hora: horaSchema,
+  folioSerieId: idSchema,
   folioNissan: folioSchema,
   unidadId: idSchema,
   litros: litrosSchema,
@@ -64,6 +70,7 @@ export const transferenciaSchema = z.object({
   litros: litrosSchema,
   fecha: fechaSchema,
   folio: folioSchema,
+  folioSerieId: idSchema,
   notas: z.string().max(2000).optional(),
   cuentalitrosOrigen: z.number().nonnegative().optional(),
 });

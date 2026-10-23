@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import {
   Fuel, LayoutDashboard, Settings, ChevronRight, ChevronDown,
   PlusCircle, ClipboardList, Truck, Users, HardHat, Menu, X,
-  Wrench, Calendar, Shield, TicketCheck, Megaphone, Blocks, BarChart2, Gauge,
+  Wrench, Calendar, Shield, TicketCheck, Megaphone, Blocks, BarChart2, Gauge, Bot,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
@@ -18,7 +18,7 @@ import { ROLE_NAV_PERMISSIONS, type NavPermission } from "@/lib/permissions";
 
 type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ className?: string }>; badge?: number };
 
-function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedades = 0) {
+function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedades = 0, devAgentEnabled = false) {
   const has = (p: NavPermission) => permisos.includes(p);
 
   const cargasItems: NavItemDef[] = [
@@ -76,13 +76,18 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedade
       collapsible: true,
       items: sistemaItems,
     }] : []),
-    ...(has("poxelbit") ? [{
+    ...((has("poxelbit") || devAgentEnabled) ? [{
       label: "PoxelBit",
       collapsible: true,
       items: [
-        { name: "Portal",    href: "/poxelbit",           icon: Blocks      },
-        { name: "Tickets",   href: "/poxelbit/tickets",   icon: TicketCheck, badge: pbOpenTickets },
-        { name: "Novedades", href: "/poxelbit/novedades", icon: Megaphone,   badge: pbNovedades   },
+        ...(has("poxelbit") ? [
+          { name: "Portal",    href: "/poxelbit",           icon: Blocks      },
+          { name: "Tickets",   href: "/poxelbit/tickets",   icon: TicketCheck, badge: pbOpenTickets },
+          { name: "Novedades", href: "/poxelbit/novedades", icon: Megaphone,   badge: pbNovedades   },
+        ] : []),
+        ...(devAgentEnabled
+          ? [{ name: "Agente Dev", href: "/poxelbit/dev", icon: Bot }]
+          : []),
       ],
     }] : []),
   ];
@@ -132,7 +137,7 @@ function NavItem({
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const role     = user?.publicMetadata?.role as string | undefined;
   const pathname = usePathname();
 
@@ -141,6 +146,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
   const [pbOpenTickets, setPbOpenTickets] = useState(0);
   const [pbNovedades, setPbNovedades]     = useState(0);
+  const [devAgentEnabled, setDevAgentEnabled] = useState(false);
 
   useEffect(() => {
     fetch("/api/me/perms")
@@ -161,7 +167,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       .catch(() => {});
   }, [permisos]);
 
-  const navSections = getNavSections(permisos, pbOpenTickets, pbNovedades);
+  useEffect(() => {
+    if (!isLoaded) return;
+    fetch("/api/poxelbit/dev-agent/config")
+      .then((r) => r.json())
+      .then((data) => setDevAgentEnabled(data.enabled === true))
+      .catch(() => setDevAgentEnabled(false));
+  }, [isLoaded, user?.id]);
+
+  const navSections = getNavSections(permisos, pbOpenTickets, pbNovedades, devAgentEnabled);
 
   // Sección abierta solo si la ruta activa está dentro de ella
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {

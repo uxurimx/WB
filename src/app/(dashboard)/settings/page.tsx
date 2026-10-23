@@ -9,21 +9,21 @@ import {
   getAlertaDias,
   getMantenimientoConfigGlobal,
   getTolerancia,
-  getFolioRangos,
 } from "@/app/actions/setup";
+import { getFolioSeriesConfig } from "@/app/actions/folios";
 import { TOLERANCIA_DEFAULT } from "@/lib/alertas-config";
 import ToleranciaConfig from "@/components/settings/ToleranciaConfig";
-import FolioRangoConfig from "@/components/settings/FolioRangoConfig";
+import FolioSeriesConfig from "@/components/settings/FolioSeriesConfig";
 import MantenimientoConfig from "@/components/settings/MantenimientoConfig";
 
 export default async function SettingsPage() {
   await requirePermission("settings");
 
-  const [user, alertaDias, tolerancia, folioRangos, mantenimientoConfig] = await Promise.all([
+  const [user, alertaDias, tolerancia, folioSeries, mantenimientoConfig] = await Promise.all([
     currentUser(),
     getAlertaDias(),
     getTolerancia(),
-    getFolioRangos(),
+    getFolioSeriesConfig(),
     getMantenimientoConfigGlobal(),
   ]);
   const isAdmin = user?.publicMetadata?.role === "admin";
@@ -127,19 +127,11 @@ export default async function SettingsPage() {
         <div className="p-5 rounded-2xl border space-y-3"
           style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}>
           <div>
-            <p className="font-semibold text-sm mb-0.5" style={{ color: "var(--fg)" }}>
-              Rango válido de folios
-            </p>
+            <p className="font-semibold text-sm mb-0.5" style={{ color: "var(--fg)" }}>Series de folios</p>
             <p className="text-xs mb-4" style={{ color: "var(--fg-muted)" }}>
-              El sistema rechazará cualquier folio fuera del rango al registrar una carga.
-              Usa 0 en ambos campos para deshabilitar la validación de esa secuencia.
+              Registra cada bloque físico. El código debe aparecer marcado en sus tickets; el sistema guarda el folio junto con esa serie.
             </p>
-            <FolioRangoConfig
-              initialPatioMin={folioRangos.patioMin}
-              initialPatioMax={folioRangos.patioMax}
-              initialCampoMin={folioRangos.campoMin}
-              initialCampoMax={folioRangos.campoMax}
-            />
+            <FolioSeriesConfig series={folioSeries} />
           </div>
         </div>
       </section>
