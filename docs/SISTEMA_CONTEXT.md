@@ -46,7 +46,7 @@ El usuario `admin` tiene amplias facultades en el sistema. `gerente` ve PoxelBit
 
 ## Agente local
 
-`src/lib/poxelbit-dev-agent.ts` mantiene un proceso Codex `app-server` por stdio. La instancia local de Next debe correr en `NODE_ENV=development`, desde la raíz del repositorio y sobre la rama `dev_agent`; el agente no se ejecuta en Vercel/serverless porque necesita un proceso persistente con acceso al checkout.
+`src/lib/poxelbit-dev-agent.ts` mantiene un proceso Codex `app-server` por stdio. La instancia local de Next debe correr en `NODE_ENV=development`, desde la raíz del repositorio y sobre `dev_agent` o `feat/bitacora-taller`; el agente no se ejecuta en Vercel/serverless porque necesita un proceso persistente con acceso al checkout.
 
 En la prueba local, `POXELBIT_DEV_AGENT_DANGER=true` arranca Codex con `--dangerously-bypass-approvals-and-sandbox`, lo que elimina sandbox y aprobaciones. Solo usar en este host de pruebas y a petición del usuario. En producción el agente permanece desactivado. Antes de alojar el portal remotamente se necesitará un runner persistente aislado y un canal autenticado; no abrir el proceso app-server directamente a la red.
 
@@ -68,4 +68,4 @@ Comandos documentados en `package.json`:
 
 Convenciones: TypeScript, dos espacios, comillas dobles, punto y coma; Server Components por defecto; mutaciones del lado servidor, autorización explícita y revalidación de rutas. No crear ni ejecutar pruebas salvo petición del usuario. Para flujos de folios, stock y períodos, documentar verificación manual si el usuario solicita validar.
 
-Antes de una tarea, revisar estado de Git y conservar cambios preexistentes. Mantener el trabajo en la rama `dev_agent`; no cambiar de rama, hacer commit, push, publicar o desplegar sin instrucción explícita. Al informar el cierre, distinguir cambios, comprobaciones realizadas y pendientes.
+Antes de una tarea, revisar estado de Git y conservar cambios preexistentes. Trabajar en la rama activa autorizada (`dev_agent` o `feat/bitacora-taller`); no cambiar de rama, hacer commit, push, publicar o desplegar sin instrucción explícita. Al informar el cierre, distinguir cambios, comprobaciones realizadas y pendientes.

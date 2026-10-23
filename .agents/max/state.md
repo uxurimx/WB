@@ -2,7 +2,7 @@
 
 Última actualización: 2026-10-23.
 
-- Rama de trabajo: `dev_agent`.
+- Rama original del agente: `dev_agent`; el portal también se habilita en `feat/bitacora-taller` para el desarrollo de Bitácora.
 - Se está conectando el panel interno PoxelBit a Codex app-server local.
 - El acceso web está restringido a una identidad Clerk concreta: correo principal `poxelbit@gmail.com` y verificado; el chequeo debe existir en menú, página y todas las APIs del agente.
 - Conversaciones de prueba persistidas localmente en `.poxelbit/dev-agent/threads`; no usan Neon.

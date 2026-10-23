@@ -4,7 +4,7 @@ El panel de prueba está en **PoxelBit → Agente Dev**. Solo lo ve y puede usar
 
 ## Registro de implementación — 2026-10-23
 
-- Se agregó `/poxelbit/dev` con historial local, vista del estado de archivos del checkout y chat en streaming conectado a Codex `app-server` por stdio.
+- Se agregó `/poxelbit/dev` con historial local, vista del estado de archivos del checkout y chat en streaming conectado a Codex `app-server` por stdio. Tras integrar el agente a Bitácora, se permite ejecutarlo en `dev_agent` y `feat/bitacora-taller`.
 - Se definió a Max como responsable de desarrollo/mantenimiento. El perfil, la memoria, el estado, las instrucciones del repositorio y el contexto técnico se cargan al crear y al reanudar conversaciones.
 - Se aplicó una autorización por correo principal Clerk verificado en el menú, la página y todos los endpoints del agente; no depende del rol `admin` ni cambia el acceso al portal cliente.
 - Se incorporó soporte para imágenes y documentos adjuntos, incluido pegar capturas con `Ctrl+V`. El servidor vuelve a validar tipos/tamaños y limpia los temporales al finalizar cada turno.
@@ -20,7 +20,7 @@ POXELBIT_DEV_AGENT_ENABLED=true
 POXELBIT_DEV_AGENT_DANGER=true
 ```
 
-Reinicia `npm run dev`. Codex CLI debe estar instalado e iniciado para el mismo usuario del sistema que ejecuta Next. Si el ejecutable no está en `PATH`, define `POXELBIT_DEV_AGENT_CODEX_BIN` con su ruta absoluta. Next debe iniciarse desde la raíz del repositorio; el agente comprueba que la rama activa sea `dev_agent`.
+Reinicia `npm run dev`. Codex CLI debe estar instalado e iniciado para el mismo usuario del sistema que ejecuta Next. Si el ejecutable no está en `PATH`, define `POXELBIT_DEV_AGENT_CODEX_BIN` con su ruta absoluta. Next debe iniciarse desde la raíz del repositorio; el agente comprueba que la rama activa sea `dev_agent` o `feat/bitacora-taller`.
 
 `POXELBIT_DEV_AGENT_DANGER=true` usa `--dangerously-bypass-approvals-and-sandbox`, con acceso completo al usuario del servidor y sin pedir confirmación por comando. Úsalo únicamente en la máquina de pruebas y con cuentas staff autorizadas. No habilites esta opción en una instancia publicada o accesible desde Internet. Para trabajar sin ese bypass, deja el valor en `false`; Codex usará el sandbox `workspace-write`.
 
