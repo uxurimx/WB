@@ -3,20 +3,23 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Download, Fuel, Plus, Wrench } from "lucide-react";
+import { Download, Fuel, Plus, Search, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import OrdenNuevaForm from "@/components/taller/OrdenNuevaForm";
-import { ESTADO_LABEL, type EstadoOrden } from "@/lib/taller-checklist";
+import { CHECKLIST_PUNTOS, ESTADO_LABEL, type EstadoOrden } from "@/lib/taller-checklist";
 import { formatFechaHoraMx, getNowLocal } from "@/lib/date-utils";
 import {
   crearIncidenciaTaller,
   crearRegistroUreaTaller,
   getIncidenciasTaller,
   recibirIncidenciaTaller,
+  cerrarOrdenTaller,
+  cancelarOrdenTaller,
+  getOrdenTaller,
 } from "@/app/actions/taller";
 import type { AlertaMantenimiento } from "@/app/actions/mantenimiento";
 import type { getBitacoraGeneralTaller, getUreaTaller } from "@/app/actions/taller";
@@ -25,6 +28,7 @@ import { CATEGORIAS_SIN_TALLER, etiquetaCategoriaTaller, formatoFolioTaller, TAL
 type Incidencia = Awaited<ReturnType<typeof getIncidenciasTaller>>[number];
 type Evento = Awaited<ReturnType<typeof getBitacoraGeneralTaller>>[number];
 type UreaRegistro = Awaited<ReturnType<typeof getUreaTaller>>[number];
+type OrdenDetalleBitacora = NonNullable<Awaited<ReturnType<typeof getOrdenTaller>>>;
 type RegistroBitacora = {
   id: string;
   fecha: string;
@@ -61,7 +65,7 @@ type Orden = {
   diagnosticoFinal?: string | null;
   trabajoRealizado?: string | null;
   observacionesSalida?: string | null;
-  refacciones: { descripcion?: string; proveedor?: string | null; precio: number | null; cantidad: number | null; iva: boolean }[];
+  refacciones: { descripcion?: string; proveedor?: string | null; folioFactura?: string | null; origen?: string | null; precio: number | null; cantidad: number | null; iva: boolean }[];
   unidad: { id: number; codigo: string; tipo: string } | null;
   operador: { nombre: string } | null;
 };
@@ -119,6 +123,23 @@ function textoFallaReportada(value: string | null | undefined, descripcion: stri
   return detalle && detalle !== resumen ? `${resumen} · ${detalle}` : resumen;
 }
 
+function resumenProveedores(refacciones: Orden["refacciones"]) {
+  return [...new Set(refacciones.flatMap((item) => {
+    const proveedor = item.proveedor?.trim();
+    if (!proveedor) return [];
+    return [`${proveedor}${item.folioFactura ? ` · Factura ${item.folioFactura}` : ""}`];
+  }))].join(", ");
+}
+
+function fotosChecklistJson(value: string | null | undefined): { url: string; key?: string; tipo?: string }[] {
+  try {
+    const parsed: unknown = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed.filter((item): item is { url: string; key?: string; tipo?: string } => Boolean(item && typeof item === "object" && "url" in item && typeof item.url === "string")) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function TallerBoard({
   ordenes,
   programados,
@@ -130,6 +151,7 @@ export default function TallerBoard({
   urea = [],
   ureaReady = true,
   canViewExpediente = false,
+  canManageOrders = false,
   extensionReady = true,
   initialNueva = false,
   initialUnidadId = "",
@@ -147,6 +169,7 @@ export default function TallerBoard({
   urea?: UreaRegistro[];
   ureaReady?: boolean;
   canViewExpediente?: boolean;
+  canManageOrders?: boolean;
   extensionReady?: boolean;
   initialNueva?: boolean;
   initialUnidadId?: string;
@@ -170,6 +193,11 @@ export default function TallerBoard({
   const [preventivoInicial, setPreventivoInicial] = useState<"km" | "hrs" | null>(initialPreventivo);
   const [filtroCategoria, setFiltroCategoria] = useState<"todas" | "camion" | "maquina" | "equipo_ligero">("todas");
   const [filtroEstado, setFiltroEstado] = useState<"todas" | EstadoUnidad>("todas");
+  const [filtroEstatusOrden, setFiltroEstatusOrden] = useState("todas");
+  const [filtroEquipoOrden, setFiltroEquipoOrden] = useState("todos");
+  const [filtroCategoriaOrden, setFiltroCategoriaOrden] = useState("todas");
+  const [filtroLugarOrden, setFiltroLugarOrden] = useState("todos");
+  const [busquedaOrden, setBusquedaOrden] = useState("");
   const [unidadIncidencia, setUnidadIncidencia] = useState("");
   const [operadorIncidencia, setOperadorIncidencia] = useState("");
   const [categoriaIncidencia, setCategoriaIncidencia] = useState<CategoriaTaller>("otro");
@@ -198,6 +226,13 @@ export default function TallerBoard({
   const [filtroTipoUnidad, setFiltroTipoUnidad] = useState("todas");
   const [filtroCategoriaBitacora, setFiltroCategoriaBitacora] = useState("todas");
   const [filtroEstadoBitacora, setFiltroEstadoBitacora] = useState("todas");
+  const [ordenesSeleccionadas, setOrdenesSeleccionadas] = useState<number[]>([]);
+  const [modalDetalleBitacora, setModalDetalleBitacora] = useState(false);
+  const [registroDetalleBitacora, setRegistroDetalleBitacora] = useState<RegistroBitacora | null>(null);
+  const [ordenDetalleBitacora, setOrdenDetalleBitacora] = useState<OrdenDetalleBitacora | null>(null);
+  const [tabDetalleBitacora, setTabDetalleBitacora] = useState<"datos" | "checklist" | "refacciones">("datos");
+  const [cargandoDetalleBitacora, setCargandoDetalleBitacora] = useState(false);
+  const [errorDetalleBitacora, setErrorDetalleBitacora] = useState("");
   const [incluirUrea, setIncluirUrea] = useState(true);
   const [cargandoIncidencias, setCargandoIncidencias] = useState(false);
   const [error, setError] = useState("");
@@ -247,6 +282,29 @@ export default function TallerBoard({
     });
   }, [unidades, ordenes, incidenciasActivas, programados, filtroCategoria, filtroEstado]);
 
+  const ordenesFiltradas = useMemo(() => {
+    const query = busquedaOrden.trim().toLocaleLowerCase("es-MX");
+    return ordenes.filter((orden) => {
+      const categoria = orden.categoria ?? "otro";
+      const esProveedor = Boolean(orden.proveedorExterno?.trim()) || orden.refacciones.some((r) => r.origen === "Proveedor externo");
+      const texto = [
+        orden.folio != null ? formatoFolioTaller(orden.folio) : "",
+        orden.motivo,
+        orden.trabajoRealizado,
+        orden.diagnosticoFinal,
+        orden.comentarios,
+        orden.unidad?.codigo,
+        orden.proveedorExterno,
+        ...orden.refacciones.flatMap((r) => [r.descripcion, r.proveedor, r.folioFactura]),
+      ].filter(Boolean).join(" ").toLocaleLowerCase("es-MX");
+      return (filtroEstatusOrden === "todas" || orden.estado === filtroEstatusOrden)
+        && (filtroEquipoOrden === "todos" || String(orden.unidad?.id ?? orden.unidadId) === filtroEquipoOrden)
+        && (filtroCategoriaOrden === "todas" || categoria === filtroCategoriaOrden)
+        && (filtroLugarOrden === "todos" || (filtroLugarOrden === "proveedor" ? esProveedor : !esProveedor))
+        && (!query || texto.includes(query));
+    });
+  }, [ordenes, filtroEstatusOrden, filtroEquipoOrden, filtroCategoriaOrden, filtroLugarOrden, busquedaOrden]);
+
   const conteos = useMemo(() => {
     const rows = unidades.map((u) => {
       const conOrden = ordenes.some((o) => o.unidad?.id === u.id && (o.estado === "abierta" || o.estado === "en_proceso"));
@@ -282,15 +340,14 @@ export default function TallerBoard({
         const base = (Number(ref.precio) || 0) * (Number(ref.cantidad) || 1);
         return total + (ref.iva ? base * 1.16 : base);
       }, 0);
-      const status = orden?.estado === "cerrada" ? "Terminada"
-        : orden?.estado === "cancelada" ? "Cancelada"
-          : proveedor ? "Proveedor externo"
-            : orden?.estado === "abierta" ? "En piso"
-              : orden ? "En reparación"
-        : CATEGORIAS_SIN_TALLER.includes(incidencia.categoria as typeof CATEGORIAS_SIN_TALLER[number]) ? "Cerrada"
-          : incidencia.estado === "resuelta" ? "Terminada"
-                : incidencia.estado === "cancelada" ? "Cancelada"
-                  : incidencia.estado === "en_revision" ? "Reportada" : "Por ingresar";
+      const status = orden?.estado === "cerrada" ? "TERMINADO"
+        : orden?.estado === "cancelada" ? "CANCELADO"
+          : orden?.estado === "en_proceso" ? "EN PROCESO"
+            : orden ? "ABIERTO"
+        : CATEGORIAS_SIN_TALLER.includes(incidencia.categoria as typeof CATEGORIAS_SIN_TALLER[number]) ? "CERRADO"
+          : incidencia.estado === "resuelta" ? "TERMINADO"
+            : incidencia.estado === "cancelada" ? "CANCELADO"
+              : incidencia.estado === "en_revision" || incidencia.estado === "recibida" ? "EN PROCESO" : "ABIERTO";
       const historial = eventos.filter((evento) => evento.incidenciaId === incidencia.id || (orden && evento.ordenId === orden.id)).map((evento) => ({
         tipo: evento.tipo,
         detalle: evento.detalle,
@@ -309,7 +366,7 @@ export default function TallerBoard({
         operador: incidencia.operador?.nombre ?? "—",
         atendio: orden?.quienAtendio ?? incidencia.atendio ?? "—",
         lugar: proveedor ? `Proveedor externo · ${proveedor}` : orden ? "Piso de taller" : incidencia.ubicacion ?? "—",
-        resolucion: orden?.trabajoRealizado || orden?.diagnosticoFinal || orden?.observacionesSalida || incidencia.resolucion || incidencia.observaciones || orden?.comentarios || "—",
+        resolucion: [orden?.trabajoRealizado || orden?.diagnosticoFinal || orden?.observacionesSalida || incidencia.resolucion || incidencia.observaciones || orden?.comentarios, orden && resumenProveedores(orden.refacciones) ? `Proveedores: ${resumenProveedores(orden.refacciones)}` : null].filter(Boolean).join(" · ") || "—",
         costo,
         status,
         ordenId: orden?.id ?? incidencia.orden?.id ?? null,
@@ -337,9 +394,9 @@ export default function TallerBoard({
         operador: orden.operador?.nombre ?? "—",
         atendio: orden.quienAtendio ?? "—",
         lugar: proveedor ? `Proveedor externo · ${proveedor}` : "Piso de taller",
-        resolucion: orden.trabajoRealizado || orden.diagnosticoFinal || orden.observacionesSalida || orden.comentarios || "—",
+        resolucion: [orden.trabajoRealizado || orden.diagnosticoFinal || orden.observacionesSalida || orden.comentarios, resumenProveedores(orden.refacciones) ? `Proveedores: ${resumenProveedores(orden.refacciones)}` : null].filter(Boolean).join(" · ") || "—",
         costo,
-        status: orden.estado === "cerrada" ? "Terminada" : orden.estado === "cancelada" ? "Cancelada" : proveedor ? "Proveedor externo" : orden.estado === "abierta" ? "En piso" : "En reparación",
+        status: orden.estado === "cerrada" ? "TERMINADO" : orden.estado === "cancelada" ? "CANCELADO" : orden.estado === "abierta" ? "ABIERTO" : "EN PROCESO",
         ordenId: orden.id,
         observaciones: "",
         historial: eventos.filter((evento) => evento.ordenId === orden.id).map((evento) => ({ tipo: evento.tipo, detalle: evento.detalle, createdAt: evento.createdAt, usuarioNombre: evento.usuarioNombre })),
@@ -360,7 +417,7 @@ export default function TallerBoard({
         lugar: "Carga de urea",
         resolucion: registro.observaciones ?? "—",
         costo: 0,
-        status: "Cerrada",
+        status: "CERRADO",
         ordenId: null,
         observaciones: registro.observaciones ?? "",
         historial: [],
@@ -402,26 +459,136 @@ export default function TallerBoard({
   const llantasMes = useMemo(() => incidencias.filter((i) => i.fecha.startsWith(mesVigente) && (i.categoria === "llanta_danada" || leerFallas(i.fallas, i.descripcion).includes("Llantas"))), [incidencias, mesVigente]);
 
   async function exportarBitacora() {
-    const XLSX = await import("xlsx");
-    const data = registrosBitacoraFiltrados.map((row) => ({
-      Fecha: row.fecha,
-      Folio: row.folio != null ? formatoFolioTaller(row.folio) : "",
-      Categoría: row.categoria,
-      Unidad: row.unidad,
-      Tipo: row.tipoUnidad,
-      Falla: row.falla,
-      Operador: row.operador,
-      Atiende: row.atendio,
-      Lugar: row.lugar,
-      Resolución: row.resolucion,
-      Costo: row.costo,
-      Status: row.status,
-    }));
-    const sheet = XLSX.utils.json_to_sheet(data);
-    sheet["!cols"] = [{ wch: 13 }, { wch: 13 }, { wch: 14 }, { wch: 16 }, { wch: 38 }, { wch: 24 }, { wch: 24 }, { wch: 28 }, { wch: 45 }, { wch: 14 }, { wch: 20 }];
-    const book = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book, sheet, "Bitácora general");
-    XLSX.writeFile(book, `bitacora-taller-${getNowLocal().fecha}.xlsx`);
+    const ExcelJS = await import("exceljs");
+    const response = await fetch("/templates/bitacora-general-template.xlsx");
+    if (!response.ok) throw new Error("No se pudo cargar la plantilla de Bitácora.");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await response.arrayBuffer());
+    const actual = workbook.getWorksheet("BITACORA ACTUAL");
+    const costos = workbook.getWorksheet("BITACORA COSTOS");
+    if (!actual || !costos) throw new Error("La plantilla no contiene las hojas requeridas.");
+
+    actual.getCell("K5").value = "ESTADO";
+    const actualRows = registrosBitacoraFiltrados;
+    actualRows.forEach((row, index) => {
+      const n = index + 6;
+      const source = actual.getRow(6);
+      const target = actual.getRow(n);
+      target.height = source.height;
+      for (let col = 2; col <= 11; col += 1) target.getCell(col).style = structuredClone(source.getCell(col).style);
+      target.getCell(2).value = new Date(`${row.fecha.slice(0, 10)}T12:00:00.000Z`);
+      target.getCell(2).numFmt = "dd/mm/yyyy";
+      [row.folio != null ? formatoFolioTaller(row.folio) : "", row.unidad, row.falla, row.operador, row.atendio, row.lugar, row.resolucion, row.costo || "—", row.status].forEach((value, offset) => { target.getCell(offset + 3).value = typeof value === "string" ? value.toLocaleUpperCase("es-MX") : value; });
+      const estado = target.getCell(11);
+      const color = row.status === "CANCELADO" ? "FCE4D6" : row.status === "TERMINADO" || row.status === "CERRADO" ? "E2F0D9" : row.status === "EN PROCESO" ? "FFF2CC" : "DDEBF7";
+      estado.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${color}` } };
+      estado.font = { ...structuredClone(estado.font), bold: true, color: { argb: row.status === "CANCELADO" ? "FFC00000" : row.status === "TERMINADO" || row.status === "CERRADO" ? "FF00843D" : row.status === "EN PROCESO" ? "FF9C6500" : "FF1F4E78" } };
+    });
+    actual.autoFilter = { from: "B5", to: `K${Math.max(5, actualRows.length + 5)}` };
+    actual.pageSetup.printArea = `B4:K${Math.max(5, actualRows.length + 5)}`;
+
+    const styleSnapshot = (rowNumber: number) => {
+      const row = costos.getRow(rowNumber);
+      return { height: row.height, styles: Array.from({ length: 11 }, (_, index) => structuredClone(row.getCell(index + 2).style)) };
+    };
+    const sourceHeader = styleSnapshot(8);
+    const sourceMeta = styleSnapshot(9);
+    const sourcePart = styleSnapshot(10);
+    const sourceTotal = styleSnapshot(12);
+    for (let rowNumber = 8; rowNumber <= Math.max(costos.rowCount, 66); rowNumber += 1) {
+      const row = costos.getRow(rowNumber);
+      row.eachCell({ includeEmpty: true }, (cell) => { cell.value = null; cell.style = {}; });
+      row.height = 15;
+    }
+    costos.getColumn(2).width = 13;
+    const cloneRow = (rowNumber: number, source: ReturnType<typeof styleSnapshot>, height = source.height) => {
+      const target = costos.getRow(rowNumber);
+      target.height = height;
+      for (let col = 2; col <= 12; col += 1) target.getCell(col).style = structuredClone(source.styles[col - 2]);
+      return target;
+    };
+    let next = 8;
+    const costOrders = actualRows.flatMap((row) => {
+      if (row.ordenId == null) return [];
+      const order = ordenes.find((item) => item.id === row.ordenId);
+      return order?.refacciones?.length ? [{ row, order }] : [];
+    });
+    let previousCostDate = "";
+    costOrders.forEach(({ row, order }) => {
+      if (previousCostDate && previousCostDate !== row.fecha.slice(0, 10)) next += 1;
+      previousCostDate = row.fecha.slice(0, 10);
+      const header = cloneRow(next++, sourceHeader);
+      ["UNIDAD", "FALLA", "OPERADOR", "ATIENDE", "LUGAR", "DESCRIPCION", "CANT", "UNIT", "IMPORTE", "IMPUESTO"].forEach((v, i) => { header.getCell(i + 3).value = v.toLocaleUpperCase("es-MX"); });
+      const meta = cloneRow(next++, sourceMeta, sourcePart.height);
+      meta.getCell(2).value = new Date(`${row.fecha.slice(0, 10)}T12:00:00.000Z`);
+      meta.getCell(2).numFmt = "dd/mm/yyyy";
+      const partStart = meta.number;
+      [row.unidad, row.falla, row.operador, row.atendio, row.lugar].forEach((v, i) => { meta.getCell(i + 3).value = v.toLocaleUpperCase("es-MX"); });
+      order.refacciones.forEach((ref, refIndex) => {
+        const part = refIndex === 0 ? meta : cloneRow(next++, sourcePart);
+        if (refIndex === 0) {
+          for (let col = 8; col <= 12; col += 1) part.getCell(col).style = structuredClone(sourcePart.styles[col - 2]);
+        }
+        const detail = [ref.descripcion, ref.proveedor ? `PROVEEDOR: ${ref.proveedor}` : "", ref.folioFactura ? `FACTURA: ${ref.folioFactura}` : ""].filter(Boolean).join(" · ").toLocaleUpperCase("es-MX");
+        part.getCell(8).value = detail;
+        part.getCell(9).value = ref.cantidad ?? 1;
+        part.getCell(10).value = ref.precio ?? 0;
+        part.getCell(10).numFmt = "$#,##0.00";
+        part.getCell(11).value = { formula: `J${part.number}*I${part.number}` };
+        part.getCell(11).numFmt = "$#,##0.00";
+        part.getCell(12).value = { formula: `K${part.number}*${ref.iva ? "1.16" : "1"}` };
+        part.getCell(12).numFmt = "$#,##0.00";
+      });
+      const totalRow = cloneRow(next++, sourceTotal);
+      totalRow.getCell(11).value = "TOTAL";
+      totalRow.getCell(12).value = { formula: `SUM(L${partStart}:L${next - 2})` };
+      totalRow.getCell(12).numFmt = "$#,##0.00";
+    });
+    costos.pageSetup.printArea = `B4:L${costOrders.length ? next - 1 : 7}`;
+    const bytes = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([new Uint8Array(bytes)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bitacora-taller-${getNowLocal().fecha}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function ejecutarAccionOrdenes(accion: "cierre" | "cancelar") {
+    const ids = ordenesSeleccionadas.filter((id) => ordenes.some((orden) => orden.id === id && ["abierta", "en_proceso"].includes(orden.estado)));
+    if (!ids.length) return;
+    const verbo = accion === "cierre" ? "cerrar" : "cancelar";
+    if (!confirm(`¿${verbo === "cerrar" ? "Cerrar" : "Cancelar"} ${ids.length} orden(es) seleccionada(s)?`)) return;
+    start(async () => {
+      try {
+        for (const id of ids) {
+          if (accion === "cierre") await cerrarOrdenTaller(id);
+          else await cancelarOrdenTaller(id);
+        }
+        setOrdenesSeleccionadas([]);
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No fue posible actualizar las órdenes.");
+      }
+    });
+  }
+
+  async function abrirDetalleBitacora(registro: RegistroBitacora) {
+    setRegistroDetalleBitacora(registro);
+    setOrdenDetalleBitacora(null);
+    setTabDetalleBitacora("datos");
+    setErrorDetalleBitacora("");
+    setModalDetalleBitacora(true);
+    if (registro.ordenId == null) return;
+    setCargandoDetalleBitacora(true);
+    try {
+      setOrdenDetalleBitacora(await getOrdenTaller(registro.ordenId));
+    } catch (err) {
+      setErrorDetalleBitacora(err instanceof Error ? err.message : "No fue posible cargar la orden.");
+    } finally {
+      setCargandoDetalleBitacora(false);
+    }
   }
 
   function abrirOrden(unidadId = "", preventivo: "km" | "hrs" | null = null) {
@@ -719,15 +886,29 @@ export default function TallerBoard({
       )}
 
       {seccion === "ordenes" && (
-        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-          {ordenes.map((o) => (
+        <section className="space-y-3">
+          <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => { setFiltroEstatusOrden("todas"); setFiltroEquipoOrden("todos"); setFiltroCategoriaOrden("todas"); setFiltroLugarOrden("todos"); setBusquedaOrden(""); }} className="rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}>Todos</button>
+              <label className="min-w-[135px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Estatus</span><Select value={filtroEstatusOrden} onChange={(e) => setFiltroEstatusOrden(e.target.value)} className="h-9 text-xs"><option value="todas">Todos</option><option value="abierta">Abierta</option><option value="en_proceso">En reparación</option><option value="cerrada">Terminada</option><option value="cancelada">Cancelada</option></Select></label>
+              <label className="min-w-[150px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Equipo</span><Select value={filtroEquipoOrden} onChange={(e) => setFiltroEquipoOrden(e.target.value)} className="h-9 text-xs"><option value="todos">Todos los equipos</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></label>
+              <label className="min-w-[145px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Categoría</span><Select value={filtroCategoriaOrden} onChange={(e) => setFiltroCategoriaOrden(e.target.value)} className="h-9 text-xs"><option value="todas">Todas</option>{TALLER_CATEGORIAS.filter((item) => !CATEGORIAS_SIN_TALLER.includes(item.value as typeof CATEGORIAS_SIN_TALLER[number])).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</Select></label>
+              <label className="min-w-[145px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Lugar</span><Select value={filtroLugarOrden} onChange={(e) => setFiltroLugarOrden(e.target.value)} className="h-9 text-xs"><option value="todos">Todos</option><option value="piso">Piso de taller</option><option value="proveedor">Proveedor externo</option></Select></label>
+              <label className="min-w-[220px] flex-[2] space-y-1 text-[10px] font-semibold"><span>Buscar por falla o trabajo realizado</span><span className="relative block"><Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: "var(--fg-muted)" }} /><Input value={busquedaOrden} onChange={(e) => setBusquedaOrden(e.target.value)} placeholder="Falla, reparación, proveedor…" className="h-9 pl-8 text-xs" /></span></label>
+            </div>
+            <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>{ordenesFiltradas.length} de {ordenes.length} órdenes</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {ordenesFiltradas.map((o) => (
             <Link key={o.id} href={`/taller/${o.id}`} className="rounded-2xl border p-4 hover:border-indigo-400/50" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
               <div className="flex items-center justify-between gap-2"><p className="font-mono font-bold">{formatoFolioTaller(o.folio)} · {o.unidad?.codigo ?? "—"}</p><Badge variant={estadoOrdenVariant(o.estado)}>{ESTADO_LABEL[o.estado as EstadoOrden] ?? o.estado}</Badge></div>
               <p className="text-sm mt-2 line-clamp-2">{o.motivo || "Sin motivo"}</p>
+              {o.trabajoRealizado && <p className="mt-1 line-clamp-2 text-xs" style={{ color: "var(--fg-muted)" }}>{o.trabajoRealizado}</p>}
               <p className="text-xs mt-2" style={{ color: "var(--fg-muted)" }}>{fechaMx(o.createdAt)}{o.operador?.nombre ? ` · ${o.operador.nombre}` : ""}</p>
             </Link>
           ))}
-          {ordenes.length === 0 && <p className="col-span-full rounded-2xl border p-8 text-center text-sm" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>No hay órdenes registradas.</p>}
+          {ordenesFiltradas.length === 0 && <p className="col-span-full rounded-2xl border p-8 text-center text-sm" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>{ordenes.length ? "Ninguna orden coincide con estos filtros." : "No hay órdenes registradas."}</p>}
+          </div>
         </section>
       )}
 
@@ -740,7 +921,7 @@ export default function TallerBoard({
               <label className="space-y-1 text-xs font-semibold"><span>Unidad</span><Select value={filtroUnidadIncidencia} onChange={(e) => setFiltroUnidadIncidencia(e.target.value)}><option value="todas">Todas las unidades</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></label>
               <label className="space-y-1 text-xs font-semibold"><span>Tipo de unidad</span><Select value={filtroTipoUnidad} onChange={(e) => setFiltroTipoUnidad(e.target.value)}><option value="todas">Todos</option><option value="camion">Camión</option><option value="maquina">Maquinaria</option><option value="nissan">NISSAN</option><option value="otro">Otro</option></Select></label>
               <label className="space-y-1 text-xs font-semibold"><span>Categoría</span><Select value={filtroCategoriaBitacora} onChange={(e) => setFiltroCategoriaBitacora(e.target.value)}><option value="todas">Todas</option>{TALLER_CATEGORIAS.map((item) => <option key={item.value} value={item.label}>{item.label}</option>)}</Select></label>
-              <label className="space-y-1 text-xs font-semibold"><span>Status</span><Select value={filtroEstadoBitacora} onChange={(e) => setFiltroEstadoBitacora(e.target.value)}><option value="todas">Todos</option>{["Por ingresar", "Reportada", "En piso", "En reparación", "Proveedor externo", "Terminada", "Cerrada", "Cancelada", "Carga registrada"].map((status) => <option key={status} value={status}>{status}</option>)}</Select></label>
+              <label className="space-y-1 text-xs font-semibold"><span>Estado</span><Select value={filtroEstadoBitacora} onChange={(e) => setFiltroEstadoBitacora(e.target.value)}><option value="todas">Todos</option>{["ABIERTO", "EN PROCESO", "TERMINADO", "CERRADO", "CANCELADO"].map((status) => <option key={status} value={status}>{status}</option>)}</Select></label>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Input className="min-w-[180px] flex-1 sm:max-w-[260px]" value={busquedaIncidencia} onChange={(e) => setBusquedaIncidencia(e.target.value)} placeholder="Buscar en la bitácora…" />
@@ -748,7 +929,11 @@ export default function TallerBoard({
               <button type="button" onClick={() => { setDesdeIncidencias(""); setHastaIncidencias(""); setFiltroUnidadIncidencia("todas"); setFiltroTipoUnidad("todas"); setFiltroCategoriaBitacora("todas"); setFiltroEstadoBitacora("todas"); setBusquedaIncidencia(""); setSoloConObservaciones(false); setIncluirUrea(true); }} className="rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}>Limpiar filtros</button>
               <label className="flex items-center gap-2 px-1 text-xs"><input type="checkbox" checked={incluirUrea} onChange={(e) => setIncluirUrea(e.target.checked)} className="h-4 w-4 accent-indigo-600" />Incluir cargas de urea</label>
               <label className="flex items-center gap-2 px-1 text-xs"><input type="checkbox" checked={soloConObservaciones} onChange={(e) => setSoloConObservaciones(e.target.checked)} className="h-4 w-4 accent-indigo-600" />Solo con observaciones</label>
-              <button type="button" disabled={!registrosBitacoraFiltrados.length} onClick={exportarBitacora} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[#207783] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download className="h-3.5 w-3.5" />Bitácora general Excel ({registrosBitacoraFiltrados.length})</button>
+              {canManageOrders && <>
+                <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("cierre")} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-800 disabled:opacity-40">Cierre ({ordenesSeleccionadas.length})</button>
+                <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("cancelar")} className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-40">Cancelar</button>
+              </>}
+              <button type="button" disabled={!registrosBitacoraFiltrados.length} onClick={() => { void exportarBitacora().catch((err) => setError(err instanceof Error ? err.message : "No se pudo generar el Excel.")); }} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[#207783] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download className="h-3.5 w-3.5" />Bitácora general Excel ({registrosBitacoraFiltrados.length})</button>
             </div>
           </div>
 
@@ -757,7 +942,7 @@ export default function TallerBoard({
           <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
             {[
               ["Folios en la vista", registrosBitacoraFiltrados.filter((r) => r.folio != null).length],
-              ["Activos", registrosBitacoraFiltrados.filter((r) => ["Por ingresar", "Reportada", "En piso", "En reparación", "Proveedor externo"].includes(r.status)).length],
+              ["Activos", registrosBitacoraFiltrados.filter((r) => ["ABIERTO", "EN PROCESO"].includes(r.status)).length],
               ["Pasaron a taller", registrosBitacoraFiltrados.filter((r) => r.ordenId != null).length],
               ["Refacciones (con IVA)", registrosBitacoraFiltrados.reduce((total, row) => total + row.costo, 0)],
             ].map(([label, value]) => <div key={label} className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}><p className="text-xl font-bold leading-none">{typeof value === "number" && label === "Refacciones (con IVA)" ? `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : value}</p><p className="mt-1 text-[11px] font-medium" style={{ color: "var(--fg-muted)" }}>{label}</p></div>)}
@@ -766,15 +951,16 @@ export default function TallerBoard({
           <div className="overflow-x-auto rounded-xl border" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
             <table className="w-full min-w-[1180px] text-sm">
               <thead><tr className="border-b text-left text-[10px] font-semibold uppercase tracking-wide" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>
-                {(["Fecha", "Folio", "Unidad", "Falla", "Operador", "Atiende", "Lugar", "Resolución", "Costo", "Status"] as const).map((label) => <th key={label} className="px-2.5 py-2.5">{label}</th>)}
+                {(["Fecha", "Folio", "Unidad", "Falla", "Operador", "Atiende", "Lugar", "Resolución", "Costo", "Estado"] as const).map((label) => <th key={label} className="px-2.5 py-2.5">{label}</th>)}
+                {canManageOrders && <th className="w-8 px-2 py-2.5"><input aria-label="Seleccionar órdenes activas visibles" type="checkbox" checked={registrosBitacoraFiltrados.filter((row) => row.ordenId != null && ["ABIERTO", "EN PROCESO"].includes(row.status)).every((row) => ordenesSeleccionadas.includes(row.ordenId!)) && registrosBitacoraFiltrados.some((row) => row.ordenId != null && ["ABIERTO", "EN PROCESO"].includes(row.status))} onChange={(e) => { const ids = [...new Set(registrosBitacoraFiltrados.flatMap((row) => row.ordenId != null && ["ABIERTO", "EN PROCESO"].includes(row.status) ? [row.ordenId] : []))]; setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, ...ids])] : prev.filter((id) => !ids.includes(id))); }} className="h-4 w-4 accent-indigo-600" /></th>}
               </tr></thead>
               <tbody>
                 {registrosBitacoraFiltrados.map((row) => {
-                  const badgeVariant = row.status === "Terminada" || row.status === "Cerrada" || row.status === "Carga registrada" ? "success" : row.status === "Proveedor externo" ? "secondary" : row.status === "En reparación" || row.status === "En piso" ? "warning" : row.status === "Reportada" ? "danger" : row.status === "Cancelada" ? "secondary" : "default";
+                  const badgeVariant = row.status === "TERMINADO" || row.status === "CERRADO" ? "success" : row.status === "EN PROCESO" ? "warning" : row.status === "CANCELADO" ? "danger" : "default";
                   return <tr key={row.id} className="align-top border-b last:border-0" style={{ borderColor: "var(--border)" }}>
                     <td className="whitespace-nowrap px-2.5 py-2.5 text-xs">{fechaMx(row.fecha)}</td>
-                    <td className="px-2.5 py-2.5 font-mono text-xs font-bold text-[#207783]">{row.folio != null ? formatoFolioTaller(row.folio) : row.categoria === "Urea" ? "UREA" : "Pendiente"}{row.ordenId && <Link href={`/taller/${row.ordenId}`} className="mt-1 block text-[10px] font-normal text-indigo-600 underline">Abrir orden</Link>}</td>
-                    <td className="px-2.5 py-2.5"><Link href={`/catalogo/unidades/${row.unidadId}`} className="rounded-md bg-neutral-800 px-2 py-1 font-mono text-xs font-bold text-white hover:underline">{row.unidad}</Link></td>
+                    <td className="px-2.5 py-2.5 font-mono text-xs font-bold text-[#207783]"><button type="button" onClick={() => { void abrirDetalleBitacora(row); }} className="text-left hover:underline">{row.folio != null ? formatoFolioTaller(row.folio) : row.categoria === "Urea" ? "UREA" : "Pendiente"}</button></td>
+                    <td className="px-2.5 py-2.5"><button type="button" onClick={() => { void abrirDetalleBitacora(row); }} className="rounded-md bg-neutral-800 px-2 py-1 font-mono text-xs font-bold text-white hover:underline">{row.unidad}</button></td>
                     <td className="max-w-[240px] px-2.5 py-2.5 text-xs">{row.falla}<p className="mt-0.5 text-[10px]" style={{ color: "var(--fg-muted)" }}>{row.categoria}</p></td>
                     <td className="px-2.5 py-2.5 text-xs">{row.operador}</td>
                     <td className="px-2.5 py-2.5 text-xs">{row.atendio}</td>
@@ -782,14 +968,66 @@ export default function TallerBoard({
                     <td className="max-w-[250px] px-2.5 py-2.5 text-xs">{row.resolucion}{row.historial.length > 0 && <details className="mt-1"><summary className="cursor-pointer text-[10px] text-indigo-600">Actualizaciones ({row.historial.length})</summary><ol className="mt-1 space-y-1">{row.historial.map((item, index) => <li key={`${row.id}-h-${index}`}><span className="font-semibold">{item.tipo.replaceAll("_", " ")}</span>{item.detalle ? ` · ${item.detalle}` : ""}{item.usuarioNombre ? ` · ${item.usuarioNombre}` : ""}</li>)}</ol></details>}</td>
                     <td className="whitespace-nowrap px-2.5 py-2.5 text-right text-xs">{row.costo > 0 ? `$${row.costo.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
                     <td className="px-2.5 py-2.5"><Badge variant={badgeVariant}>{row.status}</Badge></td>
+                    {canManageOrders && <td className="px-2 py-2.5"><input aria-label={`Seleccionar orden ${row.folio ?? row.unidad}`} type="checkbox" disabled={row.ordenId == null || !["ABIERTO", "EN PROCESO"].includes(row.status)} checked={row.ordenId != null && ordenesSeleccionadas.includes(row.ordenId)} onChange={(e) => { if (row.ordenId == null) return; setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, row.ordenId!])] : prev.filter((id) => id !== row.ordenId)); }} className="h-4 w-4 accent-indigo-600" /></td>}
                   </tr>;
                 })}
-                {registrosBitacoraFiltrados.length === 0 && <tr><td colSpan={10} className="px-4 py-10 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay registros para estos filtros.</td></tr>}
+                {registrosBitacoraFiltrados.length === 0 && <tr><td colSpan={canManageOrders ? 11 : 10} className="px-4 py-10 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay registros para estos filtros.</td></tr>}
               </tbody>
             </table>
           </div>
         </section>
       )}
+
+      <Dialog open={modalDetalleBitacora} onOpenChange={setModalDetalleBitacora}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader><DialogTitle>{ordenDetalleBitacora?.folio ? `${formatoFolioTaller(ordenDetalleBitacora.folio)} · ${ordenDetalleBitacora.unidad?.codigo ?? registroDetalleBitacora?.unidad}` : `Bitácora · ${registroDetalleBitacora?.unidad ?? "Registro"}`}</DialogTitle></DialogHeader>
+          {cargandoDetalleBitacora && <p className="py-8 text-center text-sm" style={{ color: "var(--fg-muted)" }}>Cargando expediente…</p>}
+          {errorDetalleBitacora && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{errorDetalleBitacora}</p>}
+          {registroDetalleBitacora && !ordenDetalleBitacora && !cargandoDetalleBitacora && <div className="grid gap-3 rounded-xl border p-4 text-sm sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
+            <p><b>Fecha:</b> {fechaMx(registroDetalleBitacora.fecha)}</p><p><b>Estado:</b> {registroDetalleBitacora.status}</p>
+            <p><b>Categoría:</b> {registroDetalleBitacora.categoria}</p><p><b>Unidad:</b> {registroDetalleBitacora.unidad}</p>
+            <p><b>Falla:</b> {registroDetalleBitacora.falla}</p><p><b>Operador:</b> {registroDetalleBitacora.operador}</p>
+            <p><b>Atiende:</b> {registroDetalleBitacora.atendio}</p><p><b>Lugar:</b> {registroDetalleBitacora.lugar}</p>
+            <p className="sm:col-span-2"><b>Resolución / observaciones:</b> {registroDetalleBitacora.resolucion}</p>
+            <p className="sm:col-span-2 text-xs" style={{ color: "var(--fg-muted)" }}>Este registro no tiene una orden de servicio vinculada.</p>
+          </div>}
+          {ordenDetalleBitacora && <>
+            <div className="grid grid-cols-3 gap-1 rounded-xl border p-1" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>
+              {([["datos", "Datos"], ["checklist", "Checklist"], ["refacciones", "Refacciones"]] as const).map(([tab, label]) => <button key={tab} type="button" onClick={() => setTabDetalleBitacora(tab)} className={`rounded-lg px-3 py-2 text-xs font-semibold ${tabDetalleBitacora === tab ? "bg-indigo-600 text-white" : ""}`}>{label}</button>)}
+            </div>
+            {tabDetalleBitacora === "datos" && <div className="grid gap-3 rounded-xl border p-4 text-sm sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
+              <p><b>Fecha:</b> {fechaMx(ordenDetalleBitacora.fecha)}</p><p><b>Estado:</b> {ESTADO_LABEL[ordenDetalleBitacora.estado as EstadoOrden] ?? ordenDetalleBitacora.estado}</p>
+              <p><b>Equipo:</b> {ordenDetalleBitacora.unidad?.codigo ?? "—"}</p><p><b>Categoría:</b> {etiquetaCategoriaTaller(ordenDetalleBitacora.categoria)}</p>
+              <p><b>Operador:</b> {ordenDetalleBitacora.operador?.nombre ?? "—"}</p><p><b>Quién recibió:</b> {ordenDetalleBitacora.quienRecibio ?? "—"}</p>
+              <p><b>Atiende:</b> {ordenDetalleBitacora.quienAtendio ?? "—"}</p><p><b>Proveedor / ubicación:</b> {ordenDetalleBitacora.proveedorExterno ?? "Piso de taller"}</p>
+              <p className="sm:col-span-2"><b>Motivo:</b> {ordenDetalleBitacora.motivo ?? "—"}</p>
+              <p className="sm:col-span-2 whitespace-pre-wrap"><b>Trabajo realizado / comentarios:</b> {ordenDetalleBitacora.trabajoRealizado ?? ordenDetalleBitacora.comentarios ?? "—"}</p>
+              <p><b>Próximo mantenimiento:</b> {ordenDetalleBitacora.proximoMto ?? "—"}</p><p><b>Lectura:</b> {ordenDetalleBitacora.kmHrs ?? "—"}</p>
+              {fotosChecklistJson(ordenDetalleBitacora.fotosSalida).length > 0 && <div className="sm:col-span-2"><b>Fotos de resolución / entrega</b><div className="mt-2 flex flex-wrap gap-2">{fotosChecklistJson(ordenDetalleBitacora.fotosSalida).map((foto, index) => <a key={foto.key ?? `salida-${index}`} href={foto.url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>{foto.tipo === "video" ? <video src={foto.url} controls className="h-20 w-28 object-cover" /> : <img src={foto.url} alt="Foto de entrega" className="h-20 w-28 object-cover" />}</a>)}</div></div>}
+            </div>}
+            {tabDetalleBitacora === "checklist" && <div className="space-y-2">
+              {ordenDetalleBitacora.checklist.map((item) => {
+                const punto = CHECKLIST_PUNTOS.find((x) => x.clave === item.clave);
+                const fotos = fotosChecklistJson(item.fotos);
+                const respuesta = item.respuesta === "si" ? "SÍ" : item.respuesta === "no" ? "NO" : item.respuesta === "na" ? "N/A" : item.ok == null ? "SIN MARCAR" : item.ok ? "SÍ" : "NO";
+                return <div key={item.id} className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
+                  <div className="flex items-start justify-between gap-3"><p className="text-sm font-semibold">{punto?.label ?? item.clave}</p><Badge variant={respuesta === "NO" ? "danger" : respuesta === "SÍ" ? "success" : "secondary"}>{respuesta}</Badge></div>
+                  {item.nota && <p className="mt-1 whitespace-pre-wrap text-sm">{item.nota}</p>}
+                  {fotos.length > 0 && <div className="mt-2 flex flex-wrap gap-2">{fotos.map((foto, index) => <a key={foto.key ?? `${item.id}-${index}`} href={foto.url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}><img src={foto.url} alt={`Evidencia ${punto?.label ?? item.clave}`} className="h-20 w-28 object-cover" /></a>)}</div>}
+                </div>;
+              })}
+              {fotosChecklistJson(ordenDetalleBitacora.fotosIngreso).length > 0 && <section className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}><p className="text-sm font-semibold">Fotos y videos de ingreso</p><div className="mt-2 flex flex-wrap gap-2">{fotosChecklistJson(ordenDetalleBitacora.fotosIngreso).map((foto, index) => <a key={foto.key ?? `ingreso-${index}`} href={foto.url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>{foto.tipo === "video" ? <video src={foto.url} controls className="h-20 w-28 object-cover" /> : <img src={foto.url} alt="Evidencia de ingreso" className="h-20 w-28 object-cover" />}</a>)}</div></section>}
+            </div>}
+            {tabDetalleBitacora === "refacciones" && <div className="space-y-2">
+              {ordenDetalleBitacora.refacciones.map((ref, index) => <div key={ref.id ?? index} className="grid gap-2 rounded-xl border p-3 text-sm sm:grid-cols-[2fr_0.7fr_1fr_1fr]" style={{ borderColor: "var(--border)" }}>
+                <p className="font-semibold">{ref.descripcion}</p><p>{ref.cantidad ?? 1} {ref.unidadMedida}</p><p>{ref.proveedor || "Sin proveedor"}</p><p>{ref.folioFactura ? `Factura ${ref.folioFactura}` : "Sin factura"}</p>
+                <p className="text-xs" style={{ color: "var(--fg-muted)" }}>Unitario: {Number(ref.precio ?? 0).toLocaleString("es-MX", { style: "currency", currency: "MXN" })} · IVA {ref.iva ? "incluido" : "no incluido"}</p>
+              </div>)}
+              {ordenDetalleBitacora.refacciones.length === 0 && <p className="rounded-xl border p-4 text-sm" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>Sin refacciones registradas.</p>}
+            </div>}
+          </>}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={modalIncidencia} onOpenChange={setModalIncidencia}>
         <DialogContent className="max-w-md">

@@ -2,16 +2,15 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Camera, ClipboardList, Printer, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { CHECKLIST_PUNTOS, ESTADO_LABEL, type EstadoOrden } from "@/lib/taller-checklist";
-import { guardarOrdenTaller, cerrarOrdenTaller, cancelarOrdenTaller, type RefaccionInput } from "@/app/actions/taller";
+import { guardarOrdenTaller, type RefaccionInput } from "@/app/actions/taller";
 import ChecklistIngreso, { parseChecklistRow, serializeCheck, type CheckState } from "@/components/taller/ChecklistIngreso";
-import { formatFechaHoraMx } from "@/lib/date-utils";
+import { formatFechaHoraMx, getLocalDateString } from "@/lib/date-utils";
 import { formatoFolioTaller, TALLER_CATEGORIAS, type CategoriaTaller } from "@/lib/taller-incidencias";
 import { useUploadThing } from "@/lib/uploadthing";
 import FotoLightbox from "@/components/taller/FotoLightbox";
@@ -43,6 +42,7 @@ type Orden = {
   trabajoRealizado: string | null;
   observacionesSalida: string | null;
   quienEntrega: string | null;
+  fechaSalida: Date | string | null;
   extensionReady: boolean;
   proximoMto: string | null;
   fotosIngreso: string | null;
@@ -102,21 +102,19 @@ function MediaGallery({ label, items, locked, uploading, onAdd, onRemove }: {
 export default function OrdenDetalleForm({
   orden,
   operadores,
-  canCerrar,
   sugeridas = { descripciones: [], proveedores: [] },
   initialTab = "datos",
 }: {
   orden: Orden;
   operadores: { id: number; nombre: string }[];
-  canCerrar: boolean;
   sugeridas?: { descripciones: string[]; proveedores: string[] };
   initialTab?: "datos" | "ingreso";
 }) {
-  const router = useRouter();
   const locked = orden.estado === "cerrada" || orden.estado === "cancelada";
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
   const [okMsg, setOkMsg] = useState("");
+  const [estadoOrden, setEstadoOrden] = useState(orden.estado);
   const [operadorId, setOperadorId] = useState(orden.operadorId ? String(orden.operadorId) : "");
   const [fecha, setFecha] = useState(orden.fecha.slice(0, 10));
   const kmHrs = orden.kmHrs != null ? String(orden.kmHrs) : "";
@@ -141,7 +139,11 @@ export default function OrdenDetalleForm({
   const { startUpload } = useUploadThing("tallerExpediente", { onUploadError: (e) => { setError(e.message); setUploading(null); } });
   const esPreventivo = orden.esPreventivo;
   const tipoPrev = orden.tipoControlPreventivo === "hrs" ? "hrs" : "km";
-  const [sec, setSec] = useState<"datos" | "ingreso" | "piezas" | "proveedores">(initialTab);
+  const fechaSalidaInicial = orden.fechaSalida
+    ? typeof orden.fechaSalida === "string" ? orden.fechaSalida.slice(0, 10) : getLocalDateString(orden.fechaSalida)
+    : "";
+  const [fechaSalida, setFechaSalida] = useState(fechaSalidaInicial);
+  const [sec, setSec] = useState<"datos" | "ingreso" | "piezas">(initialTab);
   const [checks, setChecks] = useState<Record<string, CheckState>>(() => {
     const map: Record<string, CheckState> = {};
     for (const p of CHECKLIST_PUNTOS) {
@@ -178,6 +180,7 @@ export default function OrdenDetalleForm({
       mecanicoOtro,
       proveedorExterno,
       trabajoRealizado,
+      fechaSalida: fechaSalida || null,
       proximoMto: proximoActivo && proximoValor ? proximoValor : "",
       fotosIngreso,
       fotosSalida,
@@ -197,7 +200,8 @@ export default function OrdenDetalleForm({
     start(async () => {
       try {
         await guardarOrdenTaller(orden.id, { ...payload(), estado });
-        if (!silent) setOkMsg("Guardado.");
+        if (estado) setEstadoOrden(estado);
+        setOkMsg(silent ? "Guardado automáticamente." : "Guardado.");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al guardar");
       }
@@ -215,37 +219,7 @@ export default function OrdenDetalleForm({
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fecha, motivo, categoria, quienRecibio, quienAtendio, mecanicos, mecanicoOtro, proveedorExterno, trabajoRealizado, proximoActivo, proximoValor, fotosIngreso, fotosSalida, operadorId, checks, refs]);
-
-  function cerrar() {
-    setError("");
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    start(async () => {
-      try {
-        await cerrarOrdenTaller(orden.id, {
-          quienAtendio: mecanicosLabel || quienAtendio,
-          esPreventivo,
-          tipoControlPreventivo: tipoPrev as "km" | "hrs",
-          datos: payload(),
-        });
-        router.refresh();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al cerrar");
-      }
-    });
-  }
-
-  function cancelar() {
-    if (!confirm("¿Cancelar esta orden?")) return;
-    start(async () => {
-      try {
-        await cancelarOrdenTaller(orden.id);
-        router.refresh();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error");
-      }
-    });
-  }
+  }, [fecha, motivo, categoria, quienRecibio, quienAtendio, mecanicos, mecanicoOtro, proveedorExterno, trabajoRealizado, fechaSalida, proximoActivo, proximoValor, fotosIngreso, fotosSalida, operadorId, checks, refs]);
 
   const total = refs.reduce((s, r) => {
     const p = (r.precio ?? 0) * (r.cantidad ?? 1);
@@ -298,12 +272,15 @@ export default function OrdenDetalleForm({
           <button
             type="button"
             disabled={pending}
-            onClick={() => save(orden.estado === "en_proceso" ? "abierta" : "en_proceso")}
-            title="Toca para pasar a en proceso o abierta"
+            onClick={() => save(estadoOrden === "en_proceso" ? "abierta" : "en_proceso")}
+            title="Cambiar estado de la orden"
+            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition hover:shadow-sm disabled:opacity-50"
+            style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}
           >
-            <Badge variant={orden.estado === "en_proceso" ? "default" : "warning"}>
-              {ESTADO_LABEL[orden.estado as EstadoOrden] ?? orden.estado}
+            <Badge variant={estadoOrden === "en_proceso" ? "default" : "warning"}>
+              {ESTADO_LABEL[estadoOrden as EstadoOrden] ?? estadoOrden}
             </Badge>
+            <span>{estadoOrden === "en_proceso" ? "Volver a ABIERTO" : "Marcar EN PROCESO"}</span>
           </button>
         ) : (
           <Badge variant={orden.estado === "cerrada" ? "success" : "secondary"}>
@@ -321,12 +298,11 @@ export default function OrdenDetalleForm({
         </p>
       )}
 
-      <div className="flex gap-1 p-1 rounded-xl border" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+      <div className="sticky top-0 z-30 -mx-2 flex gap-1 border-y px-2 py-2" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
         {([
           ["datos", "Datos"],
           ["ingreso", "Checklist"],
           ["piezas", "Refacciones"],
-          ["proveedores", "Proveedores"],
         ] as const).map(([k, label]) => (
           <button
             key={k}
@@ -400,6 +376,7 @@ export default function OrdenDetalleForm({
         <div className="border-t pt-3 space-y-3" style={{ borderColor: "var(--border)" }}>
           <p className="text-sm font-semibold">Resolución y entrega</p>
           <div><Label>Trabajo realizado / comentarios</Label><textarea disabled={locked || !orden.extensionReady} value={trabajoRealizado} onChange={(e) => setTrabajoRealizado(e.target.value)} rows={4} maxLength={6000} className="w-full rounded-xl border px-3 py-2 text-sm bg-transparent disabled:opacity-50" style={{ borderColor: "var(--border)" }} placeholder="Reparación realizada, comentarios o condición de entrega" /></div>
+          <div className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}><p className="text-[10px] font-semibold uppercase" style={{ color: "var(--fg-muted)" }}>Proveedores y facturas</p><p className="mt-1 text-xs">{proveedorExterno ? `Proveedor externo · ${proveedorExterno}` : "Sin proveedor externo"}{refs.filter((r) => r.proveedor?.trim()).map((r) => ` · ${r.proveedor}${r.folioFactura ? ` · Factura ${r.folioFactura}` : ""}`).join("")}</p></div>
           <MediaGallery label="Fotos de la resolución y entrega" items={fotosSalida} locked={locked} uploading={uploading === "salida"} onAdd={() => inputSalida.current?.click()} onRemove={(key) => setFotosSalida((current) => current.filter((item) => item.key !== key))} />
           <input ref={inputSalida} type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple capture="environment" className="hidden" onChange={(e) => { void subirMedia("salida", e.target.files); e.target.value = ""; }} />
         </div>
@@ -424,15 +401,14 @@ export default function OrdenDetalleForm({
         <div className="space-y-3 rounded-xl border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
           <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--fg-muted)" }}>Refacciones / materiales utilizados</p>
           <div className="overflow-x-auto">
-            <div className="min-w-[1120px] space-y-2">
-              <div className="grid grid-cols-[2fr_.55fr_.7fr_.8fr_.45fr_.9fr_1.1fr_.8fr_24px] gap-1.5 text-[10px] font-semibold uppercase" style={{ color: "var(--fg-muted)" }}><span>Descripción</span><span>Cant.</span><span>Unidad</span><span>P. unit. sin IVA</span><span>+IVA</span><span>Origen</span><span>Proveedor</span><span>Factura</span><span /></div>
-              {refs.map((r, i) => <div key={i} className="grid grid-cols-[2fr_.55fr_.7fr_.8fr_.45fr_.9fr_1.1fr_.8fr_24px] items-center gap-1.5">
+            <div className="min-w-[850px] space-y-2">
+              <div className="grid grid-cols-[2fr_.55fr_.7fr_.8fr_.4fr_1.1fr_.85fr_24px] gap-1.5 text-[10px] font-semibold uppercase" style={{ color: "var(--fg-muted)" }}><span>Descripción</span><span>Cant.</span><span>Unidad</span><span>P. unit. sin IVA</span><span>+IVA</span><span>Proveedor</span><span>Factura</span><span /></div>
+              {refs.map((r, i) => <div key={i} className="grid grid-cols-[2fr_.55fr_.7fr_.8fr_.4fr_1.1fr_.85fr_24px] items-center gap-1.5">
                 <Input list="ref-desc" disabled={locked} value={r.descripcion} onChange={(e) => setRefs((all) => all.map((row, j) => j === i ? { ...row, descripcion: e.target.value } : row))} placeholder="Refacción / material" className="h-8 px-2 text-xs" />
                 <Input type="number" inputMode="decimal" disabled={locked} value={r.cantidad ?? ""} onChange={(e) => setRefs((all) => all.map((row, j) => j === i ? { ...row, cantidad: e.target.value ? Number(e.target.value) : null } : row))} className="h-8 px-2 text-xs" />
                 <Select disabled={locked} value={r.unidadMedida ?? "pz"} onChange={(e) => setRefs((all) => all.map((row, j) => j === i ? { ...row, unidadMedida: e.target.value } : row))} className="h-8 px-2 text-xs">{["pz", "caja", "juego", "lt", "cubeta", "kit", "servicio", "m"].map((u) => <option key={u}>{u}</option>)}</Select>
                 <Input type="number" inputMode="decimal" disabled={locked} value={r.precio ?? ""} onChange={(e) => setRefs((all) => all.map((row, j) => j === i ? { ...row, precio: e.target.value ? Number(e.target.value) : null } : row))} placeholder="$ sin IVA" className="h-8 px-2 text-xs" />
                 <input aria-label="Agregar IVA" type="checkbox" disabled={locked} checked={r.iva !== false} onChange={(e) => setRefs((all) => all.map((row, j) => j === i ? { ...row, iva: e.target.checked } : row))} className="justify-self-center" />
-                <Select disabled={locked} value={r.origen ?? "Comprado"} onChange={(e) => setRefs((all) => all.map((row, j) => j === i ? { ...row, origen: e.target.value } : row))} className="h-8 px-2 text-xs"><option>Comprado</option><option>Almacén</option><option>Proveedor externo</option></Select>
                 <Input list="ref-prov" disabled={locked} value={r.proveedor ?? ""} onChange={(e) => setRefs((all) => all.map((row, j) => j === i ? { ...row, proveedor: e.target.value } : row))} placeholder="Proveedor" className="h-8 px-2 text-xs" />
                 <Input disabled={locked} value={r.folioFactura ?? ""} onChange={(e) => setRefs((all) => all.map((row, j) => j === i ? { ...row, folioFactura: e.target.value } : row))} placeholder="Factura" className="h-8 px-2 text-xs" />
                 {!locked && <button type="button" aria-label="Eliminar refacción" onClick={() => setRefs((all) => all.filter((_, j) => j !== i))} className="text-red-500"><X className="h-4 w-4" /></button>}
@@ -443,43 +419,21 @@ export default function OrdenDetalleForm({
           <datalist id="ref-prov">{sugeridas.proveedores.map((d) => <option key={d} value={d} />)}</datalist>
           {!locked && <button type="button" onClick={() => setRefs((all) => [...all, emptyRef()])} className="inline-flex items-center gap-1 text-xs font-bold text-[#207783]"><Plus className="h-3.5 w-3.5" />Agregar refacción</button>}
           <div className="flex flex-wrap justify-end gap-4 text-xs"><span>Subtotal <b>{subtotal.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}</b></span><span>IVA <b>{ivaTotal.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}</b></span><span>Total <b>{total.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}</b></span></div>
+          <div className="grid gap-3 border-t pt-3 sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
+            <div><Label>Resolución / trabajo realizado</Label><textarea disabled={locked || !orden.extensionReady} value={trabajoRealizado} onChange={(e) => setTrabajoRealizado(e.target.value)} rows={4} maxLength={6000} className="w-full rounded-xl border px-3 py-2 text-sm bg-transparent disabled:opacity-50" style={{ borderColor: "var(--border)" }} placeholder="Se sincroniza con Datos y Bitácora General" /></div>
+            <div className="space-y-3">
+              <div><Label>Proveedor externo / ubicación (opcional)</Label><Input disabled={locked || !orden.proveedorExternoReady} value={proveedorExterno} onChange={(e) => { setProveedorExterno(e.target.value); if (e.target.value.trim()) setMecanicos((current) => current.includes("Externo") ? current : [...current, "Externo"]); }} placeholder="Proveedor que atendió la unidad" /></div>
+              <div><Label>Fecha de salida</Label><Input type="date" disabled={locked || !orden.extensionReady} value={fechaSalida} onChange={(e) => setFechaSalida(e.target.value)} /></div>
+            </div>
+          </div>
         </div>
       )}
-
-      {sec === "proveedores" && <section className="space-y-3 rounded-xl border p-4" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
-        <h2 className="text-sm font-bold">Proveedores y trabajo realizado</h2>
-        {proveedorExterno && <div className="rounded-lg border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}><p className="text-[10px] font-semibold uppercase" style={{ color: "var(--fg-muted)" }}>Proveedor externo · ubicación</p><p className="mt-1 text-sm font-semibold">{proveedorExterno}</p></div>}
-        {refs.filter((item) => item.proveedor?.trim()).length > 0 && <div className="space-y-2">{refs.filter((item) => item.proveedor?.trim()).map((item, index) => <div key={`${item.proveedor}-${index}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs" style={{ borderColor: "var(--border)" }}><span><b>{item.proveedor}</b>{item.folioFactura ? ` · Factura ${item.folioFactura}` : ""}</span><span>{item.descripcion || "Servicio / material"}</span></div>)}</div>}
-        {!proveedorExterno && !refs.some((item) => item.proveedor?.trim()) && <p className="text-xs" style={{ color: "var(--fg-muted)" }}>No hay proveedores asociados a esta orden.</p>}
-        <div className="border-t pt-3" style={{ borderColor: "var(--border)" }}><p className="text-[10px] font-semibold uppercase" style={{ color: "var(--fg-muted)" }}>Trabajo realizado / comentarios</p><p className="mt-1 whitespace-pre-wrap text-sm">{trabajoRealizado || "Sin información registrada."}</p></div>
-      </section>}
 
       {error && <p className="text-sm text-red-500">{error}</p>}
       {pending && !error && (
         <p className="text-[11px] text-center" style={{ color: "var(--fg-muted)" }}>Guardando…</p>
       )}
 
-      {canCerrar && !locked && (
-        <div className="flex gap-2 pt-2">
-          <button
-            type="button"
-            disabled={pending}
-            onClick={cerrar}
-            className="flex-1 py-3 rounded-xl text-sm font-semibold bg-indigo-600 text-white disabled:opacity-50"
-          >
-            Cerrar · ya terminó
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={cancelar}
-            className="px-4 py-3 rounded-xl text-sm font-semibold border"
-            style={{ borderColor: "var(--border)" }}
-          >
-            Anular
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -18,7 +18,7 @@ import { eq, and, inArray, gte, lte, desc } from "drizzle-orm";
 import { requireActionPermission, requireAnyActionPermission, requireManageRole } from "@/lib/authz";
 import { CHECKLIST_PUNTOS, type EstadoOrden } from "@/lib/taller-checklist";
 import { registrarMantenimientoUnidad } from "@/app/actions/mantenimiento";
-import { getNowLocal } from "@/lib/date-utils";
+import { getNowLocal, parseLocalDate } from "@/lib/date-utils";
 import { CATEGORIAS_SIN_TALLER, formatoFolioTaller, TALLER_FALLAS, type CategoriaTaller } from "@/lib/taller-incidencias";
 
 export type RefaccionInput = {
@@ -57,6 +57,7 @@ export type OrdenTallerUpdateInput = {
   trabajoRealizado?: string | null;
   observacionesSalida?: string | null;
   quienEntrega?: string | null;
+  fechaSalida?: string | null;
   proximoMto?: string | null;
   fotosIngreso?: { url: string; key: string; tipo: "imagen" | "video" }[];
   fotosSalida?: { url: string; key: string; tipo: "imagen" | "video" }[];
@@ -919,6 +920,9 @@ export async function guardarOrdenTaller(id: number, input: OrdenTallerUpdateInp
   if ((input.comentarios?.trim().length ?? 0) > 4000) {
     throw new Error("Los comentarios no pueden exceder 4,000 caracteres.");
   }
+  if (input.fechaSalida && !/^\d{4}-\d{2}-\d{2}$/.test(input.fechaSalida)) {
+    throw new Error("La fecha de salida no es válida.");
+  }
   const orden = await db.query.ordenesTaller.findFirst({
     where: eq(ordenesTaller.id, id),
     columns: {
@@ -969,6 +973,7 @@ export async function guardarOrdenTaller(id: number, input: OrdenTallerUpdateInp
         trabajoRealizado: input.trabajoRealizado !== undefined ? (input.trabajoRealizado?.trim() || null) : extension.trabajoRealizado,
         observacionesSalida: input.observacionesSalida !== undefined ? (input.observacionesSalida?.trim() || null) : extension.observacionesSalida,
         quienEntrega: input.quienEntrega !== undefined ? (input.quienEntrega?.trim() || null) : extension.quienEntrega,
+        fechaSalida: input.fechaSalida !== undefined ? (input.fechaSalida ? parseLocalDate(input.fechaSalida) : null) : extension.fechaSalida,
         ...(extension.proveedorExternoReady ? {
           proveedorExterno: input.proveedorExterno !== undefined ? (input.proveedorExterno?.trim() || null) : extension.proveedorExterno,
         } : {}),
@@ -1119,7 +1124,7 @@ export async function cerrarOrdenTaller(id: number, input?: {
       updatedAt: new Date(),
       ...(extension ? {
         quienEntrega: input?.quienEntrega !== undefined ? input.quienEntrega : extension.quienEntrega,
-        fechaSalida: new Date(),
+        fechaSalida: extension.fechaSalida ?? new Date(),
       } : {}),
     })
     .where(eq(ordenesTaller.id, id));

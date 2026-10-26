@@ -105,9 +105,12 @@ function NavItem({
   onNavigate,
 }: NavItemDef & { onNavigate?: () => void }) {
   const pathname  = usePathname();
+  const isOrdenDetalle = /^\/taller\/\d+(?:\/|$)/.test(pathname);
   const isActive  = href === "/taller"
-    ? pathname === "/taller" || /^\/taller\/\d+(?:\/|$)/.test(pathname)
-    : pathname === href || (href !== "/overview" && pathname.startsWith(href));
+    ? pathname === "/taller"
+    : href === "/taller/ordenes"
+      ? pathname === href || isOrdenDetalle
+      : pathname === href || (href !== "/overview" && pathname.startsWith(href));
 
   return (
     <Link

@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { requirePermission } from "@/lib/server-guard";
+import { currentUser } from "@clerk/nextjs/server";
+import { MANAGE_ROLES } from "@/lib/authz";
 import { getNowLocal } from "@/lib/date-utils";
 import {
   getOrdenesTaller,
@@ -15,6 +17,8 @@ import TallerBoard from "@/components/taller/TallerBoard";
 
 export default async function TallerBitacoraPage() {
   await requirePermission("taller");
+  const user = await currentUser();
+  const canManageOrders = MANAGE_ROLES.includes(user?.publicMetadata?.role as string);
   const mes = getNowLocal().fecha.slice(0, 7);
   const [ordenes, programados, catalogos] = await Promise.all([
     getOrdenesTaller(), getServiciosProgramadosTaller(), getUnidadesYOperadoresTaller(),
@@ -27,6 +31,6 @@ export default async function TallerBitacoraPage() {
   ]);
 
   return <div className="max-w-[1536px] p-3 sm:p-4 md:p-5">
-    <TallerBoard ordenes={ordenes} programados={programados} unidades={catalogos.unidades} operadores={catalogos.operadores} incidencias={incidenciasResult.items} incidenciasActivas={incidenciasActivas} eventos={eventos} urea={ureaResult.items} extensionReady={incidenciasResult.schemaReady} ureaReady={ureaResult.schemaReady} initialMes={mes} initialSeccion="bitacora" />
+    <TallerBoard ordenes={ordenes} programados={programados} unidades={catalogos.unidades} operadores={catalogos.operadores} incidencias={incidenciasResult.items} incidenciasActivas={incidenciasActivas} eventos={eventos} urea={ureaResult.items} extensionReady={incidenciasResult.schemaReady} ureaReady={ureaResult.schemaReady} canManageOrders={canManageOrders} initialMes={mes} initialSeccion="bitacora" />
   </div>;
 }

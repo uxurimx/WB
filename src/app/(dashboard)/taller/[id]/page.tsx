@@ -3,10 +3,8 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { currentUser } from "@clerk/nextjs/server";
 import { requirePermission } from "@/lib/server-guard";
 import { getOrdenTaller, getUnidadesYOperadoresTaller, getRefaccionesSugeridas } from "@/app/actions/taller";
-import { MANAGE_ROLES } from "@/lib/authz";
 import OrdenDetalleForm from "@/components/taller/OrdenDetalleForm";
 
 export default async function TallerOrdenPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
@@ -15,20 +13,17 @@ export default async function TallerOrdenPage({ params, searchParams }: { params
   const ordenId = parseInt(id, 10);
   if (Number.isNaN(ordenId)) notFound();
 
-  const [orden, catalogos, clerkUser, sugeridas] = await Promise.all([
+  const [orden, catalogos, sugeridas] = await Promise.all([
     getOrdenTaller(ordenId),
     getUnidadesYOperadoresTaller(),
-    currentUser(),
     getRefaccionesSugeridas(),
   ]);
   if (!orden) notFound();
 
-  const canCerrar = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
-
   return (
-    <div className="p-6 md:p-8 max-w-3xl">
+    <div className="p-6 md:p-8 max-w-5xl">
       <Link
-        href="/taller"
+        href="/taller/ordenes"
         className="flex items-center gap-1.5 text-xs font-semibold mb-4 hover:text-indigo-500"
         style={{ color: "var(--fg-muted)" }}
       >
@@ -37,7 +32,6 @@ export default async function TallerOrdenPage({ params, searchParams }: { params
       <OrdenDetalleForm
         orden={JSON.parse(JSON.stringify(orden))}
         operadores={catalogos.operadores}
-        canCerrar={canCerrar}
         sugeridas={sugeridas}
         initialTab={q.tab === "ingreso" ? "ingreso" : "datos"}
       />
