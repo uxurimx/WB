@@ -164,7 +164,7 @@ export default function OrdenDetalleForm({
       folioFactura: r.folioFactura ?? "",
     })) : [emptyRef()],
   );
-  const skipSave = useRef(true);
+  const lastSavedPayload = useRef<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function payload() {
@@ -196,10 +196,14 @@ export default function OrdenDetalleForm({
 
   function save(estado?: "abierta" | "en_proceso", silent = false) {
     if (locked) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
     setError("");
+    const data = payload();
+    const fingerprint = JSON.stringify(data);
     start(async () => {
       try {
-        await guardarOrdenTaller(orden.id, { ...payload(), estado });
+        await guardarOrdenTaller(orden.id, { ...data, estado });
+        lastSavedPayload.current = fingerprint;
         if (estado) setEstadoOrden(estado);
         setOkMsg(silent ? "Guardado automáticamente." : "Guardado.");
       } catch (err) {
@@ -210,16 +214,19 @@ export default function OrdenDetalleForm({
 
   useEffect(() => {
     if (locked) return;
-    if (skipSave.current) {
-      skipSave.current = false;
+    const fingerprint = JSON.stringify(payload());
+    if (lastSavedPayload.current === null) {
+      lastSavedPayload.current = fingerprint;
       return;
     }
-    saveTimer.current = setTimeout(() => save(undefined, true), 800);
+    if (fingerprint === lastSavedPayload.current) return;
+    const estadoAlEditar = estadoOrden === "abierta" ? "en_proceso" : undefined;
+    saveTimer.current = setTimeout(() => save(estadoAlEditar, true), 800);
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fecha, motivo, categoria, quienRecibio, quienAtendio, mecanicos, mecanicoOtro, proveedorExterno, trabajoRealizado, fechaSalida, proximoActivo, proximoValor, fotosIngreso, fotosSalida, operadorId, checks, refs]);
+  }, [fecha, motivo, categoria, quienRecibio, quienAtendio, mecanicos, mecanicoOtro, proveedorExterno, trabajoRealizado, fechaSalida, proximoActivo, proximoValor, fotosIngreso, fotosSalida, operadorId, checks, refs, estadoOrden]);
 
   const total = refs.reduce((s, r) => {
     const p = (r.precio ?? 0) * (r.cantidad ?? 1);
