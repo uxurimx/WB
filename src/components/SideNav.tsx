@@ -55,7 +55,11 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedade
     ...(has("taller") ? [{
       label: "Taller",
       collapsible: false,
-      items: [{ name: "Órdenes", href: "/taller", icon: Wrench }],
+      items: [
+        { name: "Tablero general", href: "/taller", icon: LayoutDashboard },
+        { name: "Órdenes de servicio", href: "/taller/ordenes", icon: Wrench },
+        { name: "Bitácora", href: "/taller/bitacora", icon: ClipboardList },
+      ],
     }] : []),
     ...(catalogoItems.length ? [{
       label: "Catálogos",
@@ -101,7 +105,9 @@ function NavItem({
   onNavigate,
 }: NavItemDef & { onNavigate?: () => void }) {
   const pathname  = usePathname();
-  const isActive  = pathname === href || (href !== "/overview" && pathname.startsWith(href));
+  const isActive  = href === "/taller"
+    ? pathname === "/taller" || /^\/taller\/\d+(?:\/|$)/.test(pathname)
+    : pathname === href || (href !== "/overview" && pathname.startsWith(href));
 
   return (
     <Link

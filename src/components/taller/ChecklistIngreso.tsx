@@ -1,19 +1,22 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Plus, X } from "lucide-react";
+import { Camera, Check, Plus, X } from "lucide-react";
 import { CHECKLIST_PUNTOS } from "@/lib/taller-checklist";
 import { useUploadThing } from "@/lib/uploadthing";
 import FotoLightbox from "@/components/taller/FotoLightbox";
 
+export type RespuestaChecklist = "si" | "no" | "na" | null;
+
 export type CheckState = {
+  respuesta: RespuestaChecklist;
   ok: boolean | null;
   nota: string;
   extras: string[];
   fotos: { url: string; key: string }[];
 };
 
-export function parseChecklistRow(row?: { ok: boolean | null; nota: string | null; fotos?: string | null }): CheckState {
+export function parseChecklistRow(row?: { ok: boolean | null; respuesta?: string | null; nota: string | null; fotos?: string | null }): CheckState {
   const extras: string[] = [];
   let nota = row?.nota ?? "";
   if (nota.includes("\n---\n")) {
@@ -25,12 +28,15 @@ export function parseChecklistRow(row?: { ok: boolean | null; nota: string | nul
   if (row?.fotos) {
     try { fotos = JSON.parse(row.fotos); } catch { fotos = []; }
   }
-  return { ok: row?.ok ?? null, nota, extras, fotos };
+  const respuesta = row?.respuesta === "si" || row?.respuesta === "no" || row?.respuesta === "na"
+    ? row.respuesta
+    : row?.ok === true ? "si" : row?.ok === false ? "no" : null;
+  return { respuesta, ok: respuesta === "si" ? true : respuesta === "no" ? false : null, nota, extras, fotos };
 }
 
-export function serializeCheck(c: CheckState): { nota: string; fotos: { url: string; key: string }[] } {
+export function serializeCheck(c: CheckState): { respuesta: RespuestaChecklist; ok: boolean | null; nota: string; fotos: { url: string; key: string }[] } {
   const nota = [c.nota, ...c.extras].filter((t) => t.trim()).join("\n---\n");
-  return { nota, fotos: c.fotos };
+  return { respuesta: c.respuesta, ok: c.ok, nota, fotos: c.fotos };
 }
 
 export default function ChecklistIngreso({
@@ -50,17 +56,27 @@ export default function ChecklistIngreso({
     onUploadError: () => setUploading(null),
   });
 
-  const bien = CHECKLIST_PUNTOS.filter((p) => value[p.clave]?.ok === true).length;
-  const falla = CHECKLIST_PUNTOS.filter((p) => value[p.clave]?.ok === false).length;
-  const falta = CHECKLIST_PUNTOS.length - bien - falla;
+  const si = CHECKLIST_PUNTOS.filter((p) => value[p.clave]?.respuesta === "si").length;
+  const no = CHECKLIST_PUNTOS.filter((p) => value[p.clave]?.respuesta === "no").length;
+  const na = CHECKLIST_PUNTOS.filter((p) => value[p.clave]?.respuesta === "na").length;
+  const pendientes = CHECKLIST_PUNTOS.length - si - no - na;
 
   function patch(clave: string, partial: Partial<CheckState>) {
     onChange({ ...value, [clave]: { ...value[clave], ...partial } });
   }
 
-  function setOk(clave: string, ok: boolean) {
-    const next = value[clave].ok === ok ? null : ok;
-    patch(clave, { ok: next });
+  function setRespuesta(clave: string, respuesta: Exclude<RespuestaChecklist, null>) {
+    patch(clave, { respuesta, ok: respuesta === "si" ? true : respuesta === "no" ? false : null });
+    if (respuesta === "no") setOpen(clave);
+    else if (open === clave) setOpen(null);
+  }
+
+  function markAllGood() {
+    const next = { ...value };
+    for (const punto of CHECKLIST_PUNTOS) {
+      next[punto.clave] = { ...next[punto.clave], respuesta: "si", ok: true };
+    }
+    onChange(next);
   }
 
   async function onFiles(clave: string, files: FileList | null) {
@@ -81,28 +97,16 @@ export default function ChecklistIngreso({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="font-semibold text-sm">Cómo llegó</p>
-          <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
-            {bien} bien · {falla} con falla · {falta} sin marcar
+          <p className="text-xs font-bold uppercase tracking-wide">Checklist de ingreso · unidad</p>
+          <p className="mt-0.5 text-[11px]" style={{ color: "var(--fg-muted)" }}>
+            {si} SI · {no} NO · {na} N/A · {pendientes} sin marcar
           </p>
         </div>
-        {!locked && falta > 0 && (
-          <button
-            type="button"
-            className="text-xs font-semibold text-indigo-500"
-            onClick={() => {
-              const next = { ...value };
-              for (const p of CHECKLIST_PUNTOS) {
-                if (next[p.clave].ok == null) next[p.clave] = { ...next[p.clave], ok: true };
-              }
-              onChange(next);
-            }}
-          >
-            Marcar el resto bien
-          </button>
-        )}
+        {!locked && <button type="button" onClick={markAllGood} className="rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold" style={{ borderColor: "var(--border)" }}>
+          Marcar todo en buen estado
+        </button>}
       </div>
 
       <input
@@ -119,124 +123,85 @@ export default function ChecklistIngreso({
         }}
       />
 
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {CHECKLIST_PUNTOS.map((p) => {
           const c = value[p.clave];
-          const expanded = open === p.clave;
-          const tieneDetalle = Boolean(c.nota || c.extras.length || c.fotos.length);
+          const expanded = c.respuesta === "no" || open === p.clave;
+          const tieneDetalle = Boolean(c.nota || c.extras.some((item) => item.trim()) || c.fotos.length);
+          const opciones = [
+            { value: "si" as const, label: "SI" },
+            { value: "no" as const, label: "NO" },
+            { value: "na" as const, label: "N/A" },
+          ];
           return (
-            <li key={p.clave} className="rounded-2xl border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
-              <div className="flex items-start justify-between gap-2">
-                <button type="button" className="text-left flex-1 min-w-0" onClick={() => setOpen(open === p.clave ? null : p.clave)}>
-                  <p className="text-sm font-semibold">{p.label}</p>
-                  <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>
-                    {expanded ? (p.hint || "") : tieneDetalle ? `${c.fotos.length ? `${c.fotos.length} foto${c.fotos.length === 1 ? "" : "s"}` : "con notas"}` : (p.hint || "Toca para nota o foto")}
-                  </p>
+            <li key={p.clave} onClick={(event) => {
+              if ((event.target as HTMLElement).closest("button, textarea, input, a")) return;
+              setOpen(expanded ? null : p.clave);
+            }} className="cursor-pointer rounded-lg border px-2.5 py-2" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+              <div className="flex items-center gap-2">
+                <button type="button" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : p.clave)} className="min-w-0 flex-1 text-left">
+                  <p className="truncate text-xs font-semibold">{p.label}</p>
+                  {p.hint && <p className="truncate text-[10px] leading-tight" style={{ color: "var(--fg-muted)" }}>{p.hint}</p>}
                 </button>
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    type="button"
-                    disabled={locked}
-                    onClick={() => setOk(p.clave, true)}
-                    className={`h-10 min-w-14 rounded-xl text-sm font-semibold ${
-                      c.ok === true ? "bg-indigo-600 text-white" : "border"
-                    }`}
-                    style={c.ok === true ? undefined : { borderColor: "var(--border)", color: "var(--fg-muted)" }}
-                  >
-                    Bien
-                  </button>
-                  <button
-                    type="button"
-                    disabled={locked}
-                    onClick={() => setOk(p.clave, false)}
-                    className={`h-10 min-w-14 rounded-xl text-sm font-semibold ${
-                      c.ok === false ? "bg-[var(--surface-2)] text-[var(--fg)] border-2 border-indigo-500" : "border"
-                    }`}
-                    style={c.ok === false ? undefined : { borderColor: "var(--border)", color: "var(--fg-muted)" }}
-                  >
-                    Falla
-                  </button>
+                <div className="flex shrink-0 gap-1">
+                  {opciones.map((opcion) => {
+                    const active = c.respuesta === opcion.value;
+                    return <button
+                      key={opcion.value}
+                      type="button"
+                      disabled={locked}
+                      aria-pressed={active}
+                      onClick={() => setRespuesta(p.clave, opcion.value)}
+                      className={`min-w-10 rounded-md border px-2 py-1.5 text-[11px] font-bold ${active ? "border-indigo-600 bg-indigo-600 text-white" : ""}`}
+                      style={active ? undefined : { borderColor: "var(--border)", color: "var(--fg-muted)" }}
+                    >{opcion.label}</button>;
+                  })}
                 </div>
               </div>
 
               {expanded && (
-                <div className="mt-3 space-y-2">
-                  {p.hint && (
-                    <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>{p.hint}</p>
-                  )}
+                <div className="mt-2 space-y-2 border-t pt-2" style={{ borderColor: "var(--border)" }}>
                   <textarea
                     disabled={locked}
                     rows={2}
-                    placeholder={p.clave === "neumaticos" ? "Posición 7,8,9,10 gastados…" : "Qué viste"}
+                    placeholder={c.respuesta === "no" ? "Describe qué detectaste o la falla" : "Anotación opcional"}
                     value={c.nota}
                     onChange={(e) => patch(p.clave, { nota: e.target.value })}
-                    className="w-full rounded-xl border px-3 py-2 text-sm"
+                    className="w-full rounded-md border px-2.5 py-2 text-xs"
                     style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)", color: "var(--fg)" }}
                   />
-                  {c.extras.map((n, i) => (
-                    <div key={i} className="flex gap-2">
+                  {c.extras.map((nota, index) => (
+                    <div key={index} className="flex gap-1.5">
                       <textarea
                         disabled={locked}
                         rows={2}
-                        value={n}
+                        value={nota}
                         onChange={(e) => {
                           const extras = [...c.extras];
-                          extras[i] = e.target.value;
+                          extras[index] = e.target.value;
                           patch(p.clave, { extras });
                         }}
-                        className="w-full rounded-xl border px-3 py-2 text-sm"
+                        className="w-full rounded-md border px-2.5 py-2 text-xs"
                         style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)", color: "var(--fg)" }}
                       />
-                      {!locked && (
-                        <button type="button" onClick={() => patch(p.clave, { extras: c.extras.filter((_, j) => j !== i) })}>
-                          <X className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />
-                        </button>
-                      )}
+                      {!locked && <button type="button" aria-label="Quitar nota" onClick={() => patch(p.clave, { extras: c.extras.filter((_, i) => i !== index) })}><X className="h-4 w-4" style={{ color: "var(--fg-muted)" }} /></button>}
                     </div>
                   ))}
-                  {!locked && (
-                    <button
-                      type="button"
-                      className="text-xs font-semibold flex items-center gap-1"
-                      onClick={() => patch(p.clave, { extras: [...c.extras, ""] })}
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Otra nota
-                    </button>
-                  )}
 
-                  <div className="flex flex-wrap gap-2">
-                    {c.fotos.map((f) => (
-                      <div key={f.key} className="relative">
-                        <FotoLightbox foto={{ ...f, alt: p.label }} />
-                        {!locked && (
-                          <button
-                            type="button"
-                            className="absolute -top-1 -right-1 bg-black/70 rounded-full p-0.5"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              patch(p.clave, { fotos: c.fotos.filter((x) => x.key !== f.key) });
-                            }}
-                          >
-                            <X className="w-3 h-3 text-white" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    {!locked && c.fotos.length < 6 && (
-                      <button
-                        type="button"
-                        disabled={uploading === p.clave}
-                        onClick={() => {
-                          pendingClave.current = p.clave;
-                          fileRef.current?.click();
-                        }}
-                        className="h-16 w-16 rounded-lg border border-dashed flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold"
-                        style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
-                      >
-                        <Camera className="w-4 h-4" />
-                        {uploading === p.clave ? "…" : "Foto"}
-                      </button>
-                    )}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {!locked && <button type="button" className="inline-flex items-center gap-1 text-[10px] font-semibold" onClick={() => patch(p.clave, { extras: [...c.extras, ""] })}><Plus className="h-3 w-3" />Otra nota</button>}
+                    {c.fotos.map((foto) => <div key={foto.key} className="relative">
+                      <FotoLightbox foto={{ ...foto, alt: p.label }} />
+                      {!locked && <button type="button" aria-label="Quitar foto" className="absolute -right-1 -top-1 rounded-full bg-black/70 p-0.5" onClick={(e) => { e.preventDefault(); patch(p.clave, { fotos: c.fotos.filter((item) => item.key !== foto.key) }); }}><X className="h-3 w-3 text-white" /></button>}
+                    </div>)}
+                    {!locked && c.fotos.length < 6 && <button
+                      type="button"
+                      disabled={uploading === p.clave}
+                      onClick={() => { pendingClave.current = p.clave; fileRef.current?.click(); }}
+                      className="inline-flex items-center gap-1 rounded-md border border-dashed px-2 py-1.5 text-[10px] font-semibold"
+                      style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+                    ><Camera className="h-3.5 w-3.5" />{uploading === p.clave ? "Subiendo…" : "Foto"}</button>}
+                    {c.respuesta === "no" && tieneDetalle && <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-indigo-600"><Check className="h-3 w-3" />Falla documentada</span>}
                   </div>
                 </div>
               )}

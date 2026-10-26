@@ -129,18 +129,31 @@ export const mantenimientosEventos = pgTable("mantenimientos_eventos", {
 // ─────────────────────────────────────────────────────────────────────────────
 export const ordenesTaller = pgTable("ordenes_taller", {
   id: serial("id").primaryKey(),
+  folio: integer("folio").notNull().default(sql`nextval('taller_folio_seq')`),
   unidadId: integer("unidad_id").notNull(),
+  incidenciaId: integer("incidencia_id"),
   operadorId: integer("operador_id"),
   fecha: date("fecha").notNull(),
   kmHrs: real("km_hrs"),
   motivo: text("motivo"),
+  categoria: varchar("categoria", { length: 30 }).notNull().default("correctivo"),
   estado: varchar("estado", { length: 20 }).notNull().default("abierta"),
   esPreventivo: boolean("es_preventivo").notNull().default(false),
   tipoControlPreventivo: varchar("tipo_control_preventivo", { length: 10 }),
   eventoMantenimientoId: integer("evento_mantenimiento_id"),
   quienRecibio: text("quien_recibio"),
   quienAtendio: text("quien_atendio"),
+  mecanicos: text("mecanicos"),
+  mecanicoOtro: text("mecanico_otro"),
+  proveedorExterno: text("proveedor_externo"),
   comentarios: text("comentarios"),
+  diagnosticoFinal: text("diagnostico_final"),
+  trabajoRealizado: text("trabajo_realizado"),
+  observacionesSalida: text("observaciones_salida"),
+  quienEntrega: text("quien_entrega"),
+  fechaSalida: timestamp("fecha_salida"),
+  fotosIngreso: text("fotos_ingreso"),
+  fotosSalida: text("fotos_salida"),
   proximoMto: text("proximo_mto"),
   abiertoPorId: text("abierto_por_id"),
   actualizadoPorId: text("actualizado_por_id"),
@@ -148,7 +161,12 @@ export const ordenesTaller = pgTable("ordenes_taller", {
   cerradoAt: timestamp("cerrado_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  uniqueIndex("ordenes_taller_folio_unique").on(table.folio),
+  uniqueIndex("ordenes_taller_incidencia_id_unique")
+    .on(table.incidenciaId)
+    .where(sql`${table.incidenciaId} IS NOT NULL`),
+]);
 
 export const ordenTallerLog = pgTable("orden_taller_log", {
   id: serial("id").primaryKey(),
@@ -163,6 +181,7 @@ export const ordenChecklist = pgTable("orden_checklist", {
   ordenId: integer("orden_id").notNull(),
   clave: varchar("clave", { length: 40 }).notNull(),
   ok: boolean("ok"),
+  respuesta: varchar("respuesta", { length: 2 }),
   nota: text("nota"),
   fotos: text("fotos"),
 });
@@ -173,10 +192,57 @@ export const ordenRefacciones = pgTable("orden_refacciones", {
   descripcion: text("descripcion").notNull(),
   cantidad: real("cantidad").default(1),
   cajas: real("cajas"),
+  unidadMedida: varchar("unidad_medida", { length: 20 }).notNull().default("pz"),
   precio: real("precio"),
   iva: boolean("iva").notNull().default(true),
+  origen: varchar("origen", { length: 30 }).notNull().default("Comprado"),
   proveedor: text("proveedor"),
   folioFactura: text("folio_factura"),
+});
+
+export const incidenciasTaller = pgTable("incidencias_taller", {
+  id: serial("id").primaryKey(),
+  folio: integer("folio"),
+  unidadId: integer("unidad_id").notNull(),
+  operadorId: integer("operador_id"),
+  reportadaPorId: text("reportada_por_id"),
+  fecha: date("fecha").notNull(),
+  categoria: varchar("categoria", { length: 30 }).notNull().default("otro"),
+  prioridad: varchar("prioridad", { length: 12 }).notNull().default("media"),
+  fallas: text("fallas"), // JSON de fallas seleccionadas
+  descripcion: text("descripcion").notNull(),
+  ubicacion: text("ubicacion"),
+  observaciones: text("observaciones"),
+  estado: varchar("estado", { length: 20 }).notNull().default("abierta"),
+  ordenId: integer("orden_id"),
+  resolucion: text("resolucion"),
+  creadoPorId: text("creado_por_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("incidencias_taller_folio_unique").on(table.folio),
+]);
+
+export const tallerEventos = pgTable("taller_eventos", {
+  id: serial("id").primaryKey(),
+  unidadId: integer("unidad_id").notNull(),
+  incidenciaId: integer("incidencia_id"),
+  ordenId: integer("orden_id"),
+  tipo: varchar("tipo", { length: 40 }).notNull(),
+  detalle: text("detalle"),
+  usuarioId: text("usuario_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const tallerUrea = pgTable("taller_urea", {
+  id: serial("id").primaryKey(),
+  unidadId: integer("unidad_id").notNull().references(() => unidades.id),
+  operadorId: integer("operador_id").references(() => operadores.id),
+  fecha: date("fecha").notNull(),
+  litros: real("litros").notNull(),
+  observaciones: text("observaciones"),
+  registradoPorId: text("registrado_por_id"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -529,6 +595,9 @@ export const unidadesRelations = relations(unidades, ({ one, many }) => ({
   mantenimientosEventos: many(mantenimientosEventos),
   odometroResets: many(odometroResets),
   ordenesTaller: many(ordenesTaller),
+  incidenciasTaller: many(incidenciasTaller),
+  tallerEventos: many(tallerEventos),
+  ureaTaller: many(tallerUrea),
 }));
 
 export const ordenesTallerRelations = relations(ordenesTaller, ({ one, many }) => ({
@@ -540,8 +609,47 @@ export const ordenesTallerRelations = relations(ordenesTaller, ({ one, many }) =
     fields: [ordenesTaller.operadorId],
     references: [operadores.id],
   }),
+  eventos: many(tallerEventos),
   checklist: many(ordenChecklist),
   refacciones: many(ordenRefacciones),
+}));
+
+export const incidenciasTallerRelations = relations(incidenciasTaller, ({ one, many }) => ({
+  unidad: one(unidades, {
+    fields: [incidenciasTaller.unidadId],
+    references: [unidades.id],
+  }),
+  operador: one(operadores, {
+    fields: [incidenciasTaller.operadorId],
+    references: [operadores.id],
+  }),
+  eventos: many(tallerEventos),
+}));
+
+export const tallerEventosRelations = relations(tallerEventos, ({ one }) => ({
+  unidad: one(unidades, {
+    fields: [tallerEventos.unidadId],
+    references: [unidades.id],
+  }),
+  incidencia: one(incidenciasTaller, {
+    fields: [tallerEventos.incidenciaId],
+    references: [incidenciasTaller.id],
+  }),
+  orden: one(ordenesTaller, {
+    fields: [tallerEventos.ordenId],
+    references: [ordenesTaller.id],
+  }),
+}));
+
+export const tallerUreaRelations = relations(tallerUrea, ({ one }) => ({
+  unidad: one(unidades, {
+    fields: [tallerUrea.unidadId],
+    references: [unidades.id],
+  }),
+  operador: one(operadores, {
+    fields: [tallerUrea.operadorId],
+    references: [operadores.id],
+  }),
 }));
 
 export const ordenChecklistRelations = relations(ordenChecklist, ({ one }) => ({
@@ -587,6 +695,7 @@ export const mantenimientosEventosRelations = relations(mantenimientosEventos, (
 export const operadoresRelations = relations(operadores, ({ many }) => ({
   cargas: many(cargas),
   rendimientos: many(rendimientos),
+  ureaTaller: many(tallerUrea),
 }));
 
 export const obrasRelations = relations(obras, ({ many }) => ({

@@ -4,8 +4,9 @@ import { useMemo, useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { crearOrdenTaller } from "@/app/actions/taller";
+import { crearIncidenciaTaller, crearOrdenTaller } from "@/app/actions/taller";
 import { getNowLocal } from "@/lib/date-utils";
+import { CATEGORIAS_SIN_TALLER, TALLER_CATEGORIAS, type CategoriaTaller } from "@/lib/taller-incidencias";
 
 type Unidad = {
   id: number;
@@ -29,7 +30,7 @@ export default function OrdenNuevaForm({
   operadores: Operador[];
   initialUnidadId?: string;
   initialPreventivo?: "km" | "hrs" | null;
-  onCreated: (id: number) => void;
+  onCreated: (id: number, tipo: "orden" | "incidencia") => void;
   onCancel?: () => void;
 }) {
   const seed = unidades.find((u) => String(u.id) === initialUnidadId);
@@ -45,6 +46,7 @@ export default function OrdenNuevaForm({
     return acum > 0 ? String(Math.round(acum)) : "";
   });
   const [motivo, setMotivo] = useState(initialPreventivo ? `Servicio programado (${initialPreventivo})` : "");
+  const [categoria, setCategoria] = useState<CategoriaTaller>(initialPreventivo ? "preventivo" : "correctivo");
   const [quienRecibio, setQuienRecibio] = useState("");
 
   const unidad = useMemo(() => unidades.find((u) => String(u.id) === unidadId), [unidades, unidadId]);
@@ -67,17 +69,30 @@ export default function OrdenNuevaForm({
     }
     start(async () => {
       try {
+        if (CATEGORIAS_SIN_TALLER.includes(categoria as typeof CATEGORIAS_SIN_TALLER[number])) {
+          const incidence = await crearIncidenciaTaller({
+            unidadId: Number(unidadId),
+            operadorId: operadorId ? Number(operadorId) : null,
+            fecha,
+            categoria,
+            fallas: categoria === "llanta_danada" ? ["Llantas"] : [],
+            descripcion: motivo || (categoria === "urea" ? "Incidencia de urea" : "Llanta dañada"),
+          });
+          onCreated(incidence.id, "incidencia");
+          return;
+        }
         const res = await crearOrdenTaller({
           unidadId: Number(unidadId),
           operadorId: operadorId ? Number(operadorId) : null,
           fecha,
           kmHrs: kmHrs ? Number(kmHrs) : null,
           motivo: motivo || (initialPreventivo ? `Servicio programado (${initialPreventivo})` : ""),
+          categoria,
           quienRecibio,
-          esPreventivo: Boolean(initialPreventivo),
+          esPreventivo: categoria === "preventivo" || Boolean(initialPreventivo),
           tipoControlPreventivo: initialPreventivo,
         });
-        onCreated(res.id);
+        onCreated(res.id, "orden");
       } catch (err) {
         setError(err instanceof Error ? err.message : "No se pudo abrir la orden.");
       }
@@ -87,7 +102,7 @@ export default function OrdenNuevaForm({
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <Label htmlFor="unidad">Unidad</Label>
+        <Label htmlFor="unidad">Equipo</Label>
         <Select id="unidad" value={unidadId} onChange={(e) => onUnidad(e.target.value)} required>
           <option value="">Elegir económico…</option>
           {unidades.map((u) => (
@@ -111,6 +126,13 @@ export default function OrdenNuevaForm({
         </div>
       </div>
       <div>
+        <Label htmlFor="categoria-ingreso">Categoría</Label>
+        <Select id="categoria-ingreso" value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaTaller)}>
+          {TALLER_CATEGORIAS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </Select>
+        {CATEGORIAS_SIN_TALLER.includes(categoria as typeof CATEGORIAS_SIN_TALLER[number]) && <p className="mt-1 text-xs text-amber-700">Se guardará como incidencia en Bitácora; no abrirá checklist ni orden.</p>}
+      </div>
+      <div>
         <Label htmlFor="op">Operador que la trajo</Label>
         <Select id="op" value={operadorId} onChange={(e) => setOperadorId(e.target.value)}>
           <option value="">—</option>
@@ -120,7 +142,7 @@ export default function OrdenNuevaForm({
         </Select>
       </div>
       <div>
-        <Label htmlFor="motivo">¿Por qué entra?</Label>
+        <Label htmlFor="motivo">Motivo o descripción</Label>
         <Input id="motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Balatas, booster, falla…" />
       </div>
       <div>
@@ -135,7 +157,7 @@ export default function OrdenNuevaForm({
           </button>
         )}
         <button type="submit" disabled={pending} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white disabled:opacity-50">
-          {pending ? "Guardando…" : "Crear orden"}
+          {pending ? "Guardando…" : CATEGORIAS_SIN_TALLER.includes(categoria as typeof CATEGORIAS_SIN_TALLER[number]) ? "Registrar incidencia" : "Crear orden"}
         </button>
       </div>
     </form>

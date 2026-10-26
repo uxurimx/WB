@@ -9,9 +9,9 @@ import { getOrdenTaller, getUnidadesYOperadoresTaller, getRefaccionesSugeridas }
 import { MANAGE_ROLES } from "@/lib/authz";
 import OrdenDetalleForm from "@/components/taller/OrdenDetalleForm";
 
-export default async function TallerOrdenPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TallerOrdenPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   await requirePermission("taller");
-  const { id } = await params;
+  const [{ id }, q] = await Promise.all([params, searchParams]);
   const ordenId = parseInt(id, 10);
   if (Number.isNaN(ordenId)) notFound();
 
@@ -39,6 +39,7 @@ export default async function TallerOrdenPage({ params }: { params: Promise<{ id
         operadores={catalogos.operadores}
         canCerrar={canCerrar}
         sugeridas={sugeridas}
+        initialTab={q.tab === "ingreso" ? "ingreso" : "datos"}
       />
     </div>
   );

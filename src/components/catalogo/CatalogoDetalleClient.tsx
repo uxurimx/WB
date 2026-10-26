@@ -31,6 +31,7 @@ import type {
 } from "@/app/actions/mantenimiento";
 import UnidadMantenimientoTab from "@/components/catalogo/UnidadMantenimientoTab";
 import UnidadBitacoraTab from "@/components/taller/UnidadBitacoraTab";
+import type { getBitacoraGeneralTaller, getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
 
 type Carga     = Awaited<ReturnType<typeof getCatalogoCargas>>[number];
 type RendItem  = Awaited<ReturnType<typeof getRendimientosUnidad>>[number];
@@ -38,6 +39,9 @@ type FotoItem  = Awaited<ReturnType<typeof getArchivosUnidad>>[number];
 type AuditItem = Awaited<ReturnType<typeof getAuditLogCargasUnidad>>[number];
 type MantenimientoResumen = Awaited<ReturnType<typeof getResumenMantenimientoUnidad>>;
 type MantenimientoEvento = Awaited<ReturnType<typeof getEventosMantenimientoUnidad>>[number];
+type TallerEvento = Awaited<ReturnType<typeof getBitacoraGeneralTaller>>[number];
+type TallerIncidencia = Awaited<ReturnType<typeof getIncidenciasTaller>>[number];
+type TallerUrea = Awaited<ReturnType<typeof getUreaTaller>>[number];
 
 type Tab          = "cargas" | "rendimiento" | "mantenimiento" | "bitacora" | "fotos" | "cambios";
 type SortCol      = "fecha" | "folio" | "litros" | "odometro";
@@ -68,6 +72,7 @@ function SortIcon({ col, current, dir }: { col: SortCol; current: SortCol; dir: 
 
 export default function CatalogoDetalleClient({
   tipo,
+  initialTab,
   unidadId,
   unidadTipo,
   cargas: cargasInit,
@@ -84,8 +89,12 @@ export default function CatalogoDetalleClient({
   odometroOffset = 0,
   odometroResets = [],
   ordenesTaller = [],
+  eventosTaller = [],
+  incidenciasTaller = [],
+  ureaTaller = [],
 }: {
   tipo: "unidad" | "operador" | "obra";
+  initialTab?: Tab;
   unidadId?: number;
   unidadTipo?: string;
   cargas: Carga[];
@@ -103,20 +112,28 @@ export default function CatalogoDetalleClient({
   odometroResets?: { id: number; fecha: string; lecturaAnterior: number; lecturaNueva: number; notas: string | null }[];
   ordenesTaller?: {
     id: number;
+    folio: number | null;
     fecha: string;
     createdAt: string | null;
     kmHrs: number | null;
     motivo: string | null;
+    categoria: string | null;
     estado: string;
     quienAtendio: string | null;
+    trabajoRealizado: string | null;
+    comentarios: string | null;
+    proveedorExterno: string | null;
     operador: { nombre: string } | null;
     refacciones: { precio: number | null; cantidad: number | null; iva: boolean }[];
     checklist: { clave: string; fotos: string | null }[];
   }[];
+  eventosTaller?: TallerEvento[];
+  incidenciasTaller?: TallerIncidencia[];
+  ureaTaller?: TallerUrea[];
 }) {
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<Tab>("cargas");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab ?? "cargas");
 
   // Cargas locales para actualizaciones optimistas
   const [localCargas, setLocalCargas] = useState<Carga[]>(cargasInit);
@@ -840,7 +857,7 @@ export default function CatalogoDetalleClient({
 
       {/* ── Tab Mantenimiento ─────────────────────────────── */}
       {activeTab === "bitacora" && tipo === "unidad" && unidadId && (
-        <UnidadBitacoraTab unidadId={unidadId} ordenes={ordenesTaller} canOpen={canEdit} />
+        <UnidadBitacoraTab unidadId={unidadId} ordenes={ordenesTaller} eventos={eventosTaller} incidencias={incidenciasTaller} urea={ureaTaller} canOpen={canEdit} />
       )}
 
       {activeTab === "mantenimiento" && tipo === "unidad" && unidadId && (
