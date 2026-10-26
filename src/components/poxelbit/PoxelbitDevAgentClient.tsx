@@ -15,7 +15,7 @@ const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_ATTACHMENT_BYTES = 16 * 1024 * 1024;
 const ALLOWED_FILE_KINDS = new Map<string, "image" | "document">([
   ["png", "image"], ["jpg", "image"], ["jpeg", "image"], ["webp", "image"], ["gif", "image"],
-  ["pdf", "document"], ["docx", "document"], ["txt", "document"], ["md", "document"], ["csv", "document"], ["json", "document"],
+  ["pdf", "document"], ["docx", "document"], ["txt", "document"], ["md", "document"], ["csv", "document"], ["json", "document"], ["html", "document"],
 ]);
 
 function fileAsDataUrl(file: File) {
@@ -60,7 +60,7 @@ export default function PoxelbitDevAgentClient({ config }: { config: AgentConfig
     for (const file of files) {
       const extension = file.name.split(".").at(-1)?.toLowerCase() || "";
       const kind = ALLOWED_FILE_KINDS.get(extension);
-      if (!kind) { validationError ||= `No se admite ${file.name}. Usa imágenes, PDF, DOCX, TXT, MD, CSV o JSON.`; continue; }
+      if (!kind) { validationError ||= `No se admite ${file.name}. Usa imágenes, PDF, DOCX, TXT, MD, CSV, JSON o HTML.`; continue; }
       if (file.size <= 0 || file.size > MAX_ATTACHMENT_BYTES) { validationError ||= `Cada archivo debe pesar hasta 8 MB: ${file.name}.`; continue; }
       if (next.length >= MAX_ATTACHMENTS) { validationError ||= `Puedes adjuntar hasta ${MAX_ATTACHMENTS} archivos por mensaje.`; break; }
       if (totalBytes + file.size > MAX_TOTAL_ATTACHMENT_BYTES) { validationError ||= "El total de los adjuntos debe ser de hasta 16 MB."; break; }
@@ -298,7 +298,7 @@ export default function PoxelbitDevAgentClient({ config }: { config: AgentConfig
               <div className="flex items-end gap-2 rounded-xl border p-2" style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
                 <textarea id="poxelbit-dev-agent-input" value={message} onChange={(event) => setMessage(event.target.value)} onPaste={onPaste} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} maxLength={5000} rows={3} disabled={!selectedId || sending} placeholder="Escribe o pega una captura; también puedes adjuntar archivos…" className="min-h-[72px] flex-1 resize-y bg-transparent px-2 py-1 text-sm outline-none disabled:opacity-50" style={{ color: "var(--fg)" }} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!selectedId || sending || attachments.length >= MAX_ATTACHMENTS} aria-label="Adjuntar archivos" className="inline-flex h-10 w-10 items-center justify-center rounded-lg border disabled:opacity-50" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}><Paperclip className="h-4 w-4" /></button>
-                <input ref={fileInputRef} type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.docx,.txt,.md,.csv,.json" onChange={onFileSelection} className="hidden" />
+                <input ref={fileInputRef} type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.docx,.txt,.md,.csv,.json,.html" onChange={onFileSelection} className="hidden" />
                 <button type="submit" disabled={!selectedId || (!message.trim() && attachments.length === 0) || sending} className="inline-flex h-10 items-center gap-2 rounded-lg bg-indigo-600 px-3 text-sm font-semibold text-white disabled:opacity-50"><Send className="h-4 w-4" /><span className="hidden sm:inline">{sending ? "Enviando" : "Enviar"}</span></button>
               </div>
               {attachments.length > 0 && <div className="mt-2 flex flex-wrap gap-2">

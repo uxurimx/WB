@@ -13,7 +13,7 @@ const MAX_TOTAL_ATTACHMENT_BYTES = 16 * 1024 * 1024;
 const MAX_REQUEST_BYTES = 23 * 1024 * 1024;
 const ALLOWED_ATTACHMENTS = new Map<string, "image" | "document">([
   [".png", "image"], [".jpg", "image"], [".jpeg", "image"], [".webp", "image"], [".gif", "image"],
-  [".pdf", "document"], [".docx", "document"], [".txt", "document"], [".md", "document"], [".csv", "document"], [".json", "document"],
+  [".pdf", "document"], [".docx", "document"], [".txt", "document"], [".md", "document"], [".csv", "document"], [".json", "document"], [".html", "document"],
 ]);
 
 type IncomingAttachment = { name?: unknown; data?: unknown };
@@ -60,7 +60,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const name = path.basename(item.name).replace(/[\u0000-\u001f]/g, "_").slice(0, 180);
     const extension = path.extname(name).toLowerCase();
     const kind = ALLOWED_ATTACHMENTS.get(extension);
-    if (!kind) return Response.json({ error: "Usa PNG, JPG, WEBP o GIF; también PDF, DOCX, TXT, MD, CSV o JSON." }, { status: 400 });
+    if (!kind) return Response.json({ error: "Usa PNG, JPG, WEBP o GIF; también PDF, DOCX, TXT, MD, CSV, JSON o HTML." }, { status: 400 });
     const encoded = item.data.replace(/^data:[^,]*;base64,/, "");
     if (!encoded || !/^[\da-z+/]*={0,2}$/i.test(encoded) || encoded.length % 4 !== 0 || encoded.length > Math.ceil(MAX_ATTACHMENT_BYTES / 3) * 4 + 4) {
       return Response.json({ error: `No se pudo leer ${name} o supera el máximo de 8 MB.` }, { status: 400 });
