@@ -16,7 +16,7 @@ import {
   getResumenMantenimientoUnidad,
 } from "@/app/actions/mantenimiento";
 import { getOdometroResetsUnidad } from "@/app/actions/cargas";
-import { getOrdenesUnidad, getBitacoraGeneralTaller, getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
+import { getOrdenesUnidad, getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
 import { Badge } from "@/components/ui/badge";
 import CatalogoDetalleClient from "@/components/catalogo/CatalogoDetalleClient";
 import { CatalogDetalleHeader } from "@/components/ui/mobile-list";
@@ -50,7 +50,7 @@ export default async function UnidadDetallePage({
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
   const canManageMaintenance = canEdit;
 
-  const [cargas, rends, fotos, audits, operadores, obras, mantenimientoResumen, mantenimientoEventos, odometroResets, ordenesTaller, bitacoraTaller, incidenciasTaller, ureaTaller] = await Promise.all([
+  const [cargas, rends, fotos, audits, operadores, obras, mantenimientoResumen, mantenimientoEventos, odometroResets, ordenesTaller, incidenciasTaller, ureaTaller] = await Promise.all([
     getCatalogoCargas("unidad", unidadId),
     getRendimientosUnidad(unidadId),
     getArchivosUnidad(unidadId),
@@ -61,7 +61,6 @@ export default async function UnidadDetallePage({
     getEventosMantenimientoUnidad(unidadId),
     getOdometroResetsUnidad(unidadId),
     getOrdenesUnidad(unidadId),
-    getBitacoraGeneralTaller(unidadId),
     getIncidenciasTaller({ desde: "2000-01-01", hasta: getNowLocal().fecha, unidadId }),
     getUreaTaller(unidadId),
   ]);
@@ -148,7 +147,6 @@ export default async function UnidadDetallePage({
           })),
           checklist: o.checklist.map((c) => ({ clave: c.clave, fotos: c.fotos })),
         }))}
-        eventosTaller={bitacoraTaller}
         incidenciasTaller={incidenciasTaller}
         ureaTaller={ureaTaller}
       />

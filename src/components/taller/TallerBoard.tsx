@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Download, Fuel, Plus, Search, Wrench } from "lucide-react";
+import { Download, Fuel, Pencil, Plus, Search, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import OrdenNuevaForm from "@/components/taller/OrdenNuevaForm";
+import FotoLightbox from "@/components/taller/FotoLightbox";
 import { CHECKLIST_PUNTOS, ESTADO_LABEL, type EstadoOrden } from "@/lib/taller-checklist";
 import { formatFechaHoraMx, getNowLocal } from "@/lib/date-utils";
 import {
@@ -18,12 +19,14 @@ import {
   getIncidenciasTaller,
   recibirIncidenciaTaller,
   cerrarOrdenTaller,
+  terminarOrdenTaller,
   cancelarOrdenTaller,
   getOrdenTaller,
 } from "@/app/actions/taller";
 import type { AlertaMantenimiento } from "@/app/actions/mantenimiento";
 import type { getBitacoraGeneralTaller, getUreaTaller } from "@/app/actions/taller";
 import { CATEGORIAS_SIN_TALLER, etiquetaCategoriaTaller, formatoFolioTaller, TALLER_CATEGORIAS, TALLER_FALLAS, type CategoriaTaller } from "@/lib/taller-incidencias";
+import { parseActividadesTaller, textoActividadesTaller } from "@/lib/taller-actividades";
 
 type Incidencia = Awaited<ReturnType<typeof getIncidenciasTaller>>[number];
 type Evento = Awaited<ReturnType<typeof getBitacoraGeneralTaller>>[number];
@@ -46,6 +49,8 @@ type RegistroBitacora = {
   status: string;
   ordenId: number | null;
   observaciones: string;
+  fechaEgreso: string | null;
+  diasAbierta: number | null;
   historial: { tipo: string; detalle: string | null; createdAt: string | Date | null; usuarioNombre: string | null }[];
 };
 type Orden = {
@@ -62,10 +67,12 @@ type Orden = {
   quienAtendio?: string | null;
   proveedorExterno?: string | null;
   comentarios?: string | null;
+  fechaSalida?: string | Date | null;
+  cerradoAt?: string | Date | null;
   diagnosticoFinal?: string | null;
   trabajoRealizado?: string | null;
   observacionesSalida?: string | null;
-  refacciones: { descripcion?: string; proveedor?: string | null; folioFactura?: string | null; origen?: string | null; precio: number | null; cantidad: number | null; iva: boolean }[];
+  refacciones: { descripcion?: string; unidadMedida?: string | null; proveedor?: string | null; folioFactura?: string | null; origen?: string | null; precio: number | null; cantidad: number | null; iva: boolean }[];
   unidad: { id: number; codigo: string; tipo: string } | null;
   operador: { nombre: string } | null;
 };
@@ -103,6 +110,7 @@ function fechaMx(value: string | Date | null) {
 function estadoOrdenVariant(estado: string) {
   if (estado === "abierta") return "warning" as const;
   if (estado === "en_proceso") return "default" as const;
+  if (estado === "terminada") return "warning" as const;
   if (estado === "cerrada") return "success" as const;
   return "secondary" as const;
 }
@@ -151,7 +159,11 @@ export default function TallerBoard({
   urea = [],
   ureaReady = true,
   canViewExpediente = false,
-  canManageOrders = false,
+  canViewBitacora = false,
+  canEditOrders = false,
+  canFinishOrders = false,
+  canCloseOrders = false,
+  canCancelOrders = false,
   extensionReady = true,
   initialNueva = false,
   initialUnidadId = "",
@@ -169,7 +181,11 @@ export default function TallerBoard({
   urea?: UreaRegistro[];
   ureaReady?: boolean;
   canViewExpediente?: boolean;
-  canManageOrders?: boolean;
+  canViewBitacora?: boolean;
+  canEditOrders?: boolean;
+  canFinishOrders?: boolean;
+  canCloseOrders?: boolean;
+  canCancelOrders?: boolean;
   extensionReady?: boolean;
   initialNueva?: boolean;
   initialUnidadId?: string;
@@ -193,7 +209,9 @@ export default function TallerBoard({
   const [preventivoInicial, setPreventivoInicial] = useState<"km" | "hrs" | null>(initialPreventivo);
   const [filtroCategoria, setFiltroCategoria] = useState<"todas" | "camion" | "maquina" | "equipo_ligero">("todas");
   const [filtroEstado, setFiltroEstado] = useState<"todas" | EstadoUnidad>("todas");
-  const [filtroEstatusOrden, setFiltroEstatusOrden] = useState("todas");
+  const [filtroEstatusOrden, setFiltroEstatusOrden] = useState("activas");
+  const [desdeOrdenes, setDesdeOrdenes] = useState("");
+  const [hastaOrdenes, setHastaOrdenes] = useState("");
   const [filtroEquipoOrden, setFiltroEquipoOrden] = useState("todos");
   const [filtroCategoriaOrden, setFiltroCategoriaOrden] = useState("todas");
   const [filtroLugarOrden, setFiltroLugarOrden] = useState("todos");
@@ -218,15 +236,16 @@ export default function TallerBoard({
   const [observacionesLlanta, setObservacionesLlanta] = useState("");
   const [fallasSeleccionadas, setFallasSeleccionadas] = useState<string[]>([]);
   const [incidenciasVista, setIncidenciasVista] = useState(incidencias);
-  const [desdeIncidencias, setDesdeIncidencias] = useState("");
-  const [hastaIncidencias, setHastaIncidencias] = useState("");
+  const [desdeIncidencias, setDesdeIncidencias] = useState(() => `${getNowLocal().fecha.slice(0, 7)}-01`);
+  const [hastaIncidencias, setHastaIncidencias] = useState(() => getNowLocal().fecha);
   const [filtroUnidadIncidencia, setFiltroUnidadIncidencia] = useState("todas");
-  const [soloConObservaciones, setSoloConObservaciones] = useState(false);
+  const [incluirLlantas, setIncluirLlantas] = useState(true);
   const [busquedaIncidencia, setBusquedaIncidencia] = useState("");
   const [filtroTipoUnidad, setFiltroTipoUnidad] = useState("todas");
   const [filtroCategoriaBitacora, setFiltroCategoriaBitacora] = useState("todas");
   const [filtroEstadoBitacora, setFiltroEstadoBitacora] = useState("todas");
   const [ordenesSeleccionadas, setOrdenesSeleccionadas] = useState<number[]>([]);
+  const [registrosSeleccionados, setRegistrosSeleccionados] = useState<string[]>([]);
   const [modalDetalleBitacora, setModalDetalleBitacora] = useState(false);
   const [registroDetalleBitacora, setRegistroDetalleBitacora] = useState<RegistroBitacora | null>(null);
   const [ordenDetalleBitacora, setOrdenDetalleBitacora] = useState<OrdenDetalleBitacora | null>(null);
@@ -263,7 +282,7 @@ export default function TallerBoard({
 
   const unidadesEnVista = useMemo(() => {
     const unidadesConIncidencias = new Set(incidenciasActivas.map((i) => i.unidadId));
-    const ordenesActivas = new Set(ordenes.filter((o) => o.estado === "abierta" || o.estado === "en_proceso").map((o) => o.unidad?.id).filter((id): id is number => Boolean(id)));
+    const ordenesActivas = new Set(ordenes.filter((o) => ["abierta", "en_proceso", "terminada"].includes(o.estado)).map((o) => o.unidad?.id).filter((id): id is number => Boolean(id)));
     const programadas = new Set(programados.map((p) => p.unidadId));
     return unidades.map((unidad) => {
       const estado: EstadoUnidad = ordenesActivas.has(unidad.id)
@@ -281,6 +300,9 @@ export default function TallerBoard({
       return categoriaCoincide && (filtroEstado === "todas" || unidad.estado === filtroEstado);
     });
   }, [unidades, ordenes, incidenciasActivas, programados, filtroCategoria, filtroEstado]);
+  const hoyLocal = getNowLocal().fecha;
+  const inicioMesActual = `${hoyLocal.slice(0, 7)}-01`;
+  const esteMesActivo = desdeIncidencias === inicioMesActual && hastaIncidencias === hoyLocal;
 
   const ordenesFiltradas = useMemo(() => {
     const query = busquedaOrden.trim().toLocaleLowerCase("es-MX");
@@ -297,24 +319,41 @@ export default function TallerBoard({
         orden.proveedorExterno,
         ...orden.refacciones.flatMap((r) => [r.descripcion, r.proveedor, r.folioFactura]),
       ].filter(Boolean).join(" ").toLocaleLowerCase("es-MX");
-      return (filtroEstatusOrden === "todas" || orden.estado === filtroEstatusOrden)
+      const coincideEstado = filtroEstatusOrden === "todas"
+        || (filtroEstatusOrden === "activas" && ["abierta", "en_proceso", "terminada"].includes(orden.estado))
+        || orden.estado === filtroEstatusOrden;
+      return coincideEstado
+        && (!desdeOrdenes || orden.fecha >= desdeOrdenes)
+        && (!hastaOrdenes || orden.fecha <= hastaOrdenes)
         && (filtroEquipoOrden === "todos" || String(orden.unidad?.id ?? orden.unidadId) === filtroEquipoOrden)
         && (filtroCategoriaOrden === "todas" || categoria === filtroCategoriaOrden)
         && (filtroLugarOrden === "todos" || (filtroLugarOrden === "proveedor" ? esProveedor : !esProveedor))
         && (!query || texto.includes(query));
     });
-  }, [ordenes, filtroEstatusOrden, filtroEquipoOrden, filtroCategoriaOrden, filtroLugarOrden, busquedaOrden]);
+  }, [ordenes, filtroEstatusOrden, desdeOrdenes, hastaOrdenes, filtroEquipoOrden, filtroCategoriaOrden, filtroLugarOrden, busquedaOrden]);
+
+  const columnasOrdenes = [
+    { estado: "abierta", titulo: "ABIERTO" },
+    { estado: "en_proceso", titulo: "EN PROCESO" },
+    { estado: "terminada", titulo: "TERMINADO · EN PROCESO DE CIERRE" },
+  ].map((columna) => ({ ...columna, ordenes: ordenesFiltradas.filter((orden) => orden.estado === columna.estado) }));
+  const ordenesNoActivasFiltradas = ordenesFiltradas.filter((orden) => !["abierta", "en_proceso", "terminada"].includes(orden.estado));
 
   const conteos = useMemo(() => {
     const rows = unidades.map((u) => {
-      const conOrden = ordenes.some((o) => o.unidad?.id === u.id && (o.estado === "abierta" || o.estado === "en_proceso"));
+      const conOrden = ordenes.some((o) => o.unidad?.id === u.id && ["abierta", "en_proceso", "terminada"].includes(o.estado));
       const conIncidencia = incidenciasActivas.some((i) => i.unidadId === u.id);
       const programada = programados.some((p) => p.unidadId === u.id);
       return conOrden ? "taller" : conIncidencia ? "incidencia" : programada ? "programada" : "disponible";
     });
+    const proveedorExterno = new Set(ordenes
+      .filter((o) => ["abierta", "en_proceso", "terminada"].includes(o.estado) && Boolean(o.proveedorExterno?.trim()))
+      .map((o) => o.unidad?.id ?? o.unidadId));
+    const unidadesEnTaller = rows.filter((estado) => estado === "taller").length;
     return {
       unidades: unidades.length,
-      taller: rows.filter((s) => s === "taller").length,
+      taller: Math.max(0, unidadesEnTaller - proveedorExterno.size),
+      proveedorExterno: proveedorExterno.size,
       incidencias: rows.filter((s) => s === "incidencia").length,
       programadas: rows.filter((s) => s === "programada").length,
       disponibles: rows.filter((s) => s === "disponible").length,
@@ -340,7 +379,8 @@ export default function TallerBoard({
         const base = (Number(ref.precio) || 0) * (Number(ref.cantidad) || 1);
         return total + (ref.iva ? base * 1.16 : base);
       }, 0);
-      const status = orden?.estado === "cerrada" ? "TERMINADO"
+      const status = orden?.estado === "cerrada" ? "CERRADO"
+        : orden?.estado === "terminada" ? "PENDIENTE DE CIERRE"
         : orden?.estado === "cancelada" ? "CANCELADO"
           : orden?.estado === "en_proceso" ? "EN PROCESO"
             : orden ? "ABIERTO"
@@ -354,9 +394,12 @@ export default function TallerBoard({
         createdAt: evento.createdAt,
         usuarioNombre: evento.usuarioNombre,
       }));
+      const esLlantaInformativa = incidencia.categoria === "llanta_danada";
       return {
         id: `incidencia-${incidencia.id}`,
-        fecha: incidencia.fecha,
+        fecha: orden?.fecha ?? incidencia.fecha,
+        fechaEgreso: fechaComoTexto(orden?.fechaSalida) ?? fechaComoTexto(orden?.cerradoAt),
+        diasAbierta: orden ? diasEntre(orden.fecha, fechaComoTexto(orden.fechaSalida) ?? fechaComoTexto(orden.cerradoAt) ?? getNowLocal().fecha) : null,
         folio: orden?.folio ?? incidencia.folio,
         unidadId: incidencia.unidadId,
         unidad: incidencia.unidad?.codigo ?? "—",
@@ -364,13 +407,13 @@ export default function TallerBoard({
         categoria: etiquetaCategoriaTaller(orden?.categoria ?? incidencia.categoria),
         falla: textoFallaReportada(incidencia.fallas, incidencia.descripcion),
         operador: incidencia.operador?.nombre ?? "—",
-        atendio: orden?.quienAtendio ?? incidencia.atendio ?? "—",
-        lugar: proveedor ? `Proveedor externo · ${proveedor}` : orden ? "Piso de taller" : incidencia.ubicacion ?? "—",
-        resolucion: [orden?.trabajoRealizado || orden?.diagnosticoFinal || orden?.observacionesSalida || incidencia.resolucion || incidencia.observaciones || orden?.comentarios, orden && resumenProveedores(orden.refacciones) ? `Proveedores: ${resumenProveedores(orden.refacciones)}` : null].filter(Boolean).join(" · ") || "—",
+        atendio: orden ? [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map((a) => a.atendio).filter(Boolean))].join(", ") || orden.quienAtendio || incidencia.atendio || "—" : incidencia.atendio ?? "—",
+        lugar: esLlantaInformativa ? "" : proveedor ? proveedor : orden ? "TALLER" : incidencia.ubicacion ?? "—",
+        resolucion: esLlantaInformativa ? "" : [...new Set([textoActividadesTaller(orden?.trabajoRealizado, orden?.quienAtendio), orden?.diagnosticoFinal, orden?.observacionesSalida, incidencia.resolucion, incidencia.observaciones, orden?.comentarios].map((value) => value?.trim()).filter((value): value is string => Boolean(value)))].join(", ") || "—",
         costo,
         status,
         ordenId: orden?.id ?? incidencia.orden?.id ?? null,
-        observaciones: incidencia.observaciones ?? "",
+        observaciones: esLlantaInformativa ? "" : incidencia.observaciones ?? "",
         historial,
       };
     });
@@ -385,6 +428,8 @@ export default function TallerBoard({
       registros.push({
         id: `orden-${orden.id}`,
         fecha: orden.fecha,
+        fechaEgreso: fechaComoTexto(orden.fechaSalida) ?? fechaComoTexto(orden.cerradoAt),
+        diasAbierta: diasEntre(orden.fecha, fechaComoTexto(orden.fechaSalida) ?? fechaComoTexto(orden.cerradoAt) ?? getNowLocal().fecha),
         folio: orden.folio,
         unidadId: orden.unidad?.id ?? orden.unidadId,
         unidad: orden.unidad?.codigo ?? "—",
@@ -392,11 +437,11 @@ export default function TallerBoard({
         categoria: etiquetaCategoriaTaller(orden.categoria),
         falla: orden.motivo ?? "Servicio de taller",
         operador: orden.operador?.nombre ?? "—",
-        atendio: orden.quienAtendio ?? "—",
-        lugar: proveedor ? `Proveedor externo · ${proveedor}` : "Piso de taller",
-        resolucion: [orden.trabajoRealizado || orden.diagnosticoFinal || orden.observacionesSalida || orden.comentarios, resumenProveedores(orden.refacciones) ? `Proveedores: ${resumenProveedores(orden.refacciones)}` : null].filter(Boolean).join(" · ") || "—",
+        atendio: [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map((a) => a.atendio).filter(Boolean))].join(", ") || orden.quienAtendio || "—",
+        lugar: proveedor || "TALLER",
+        resolucion: [...new Set([textoActividadesTaller(orden.trabajoRealizado, orden.quienAtendio), orden.diagnosticoFinal, orden.observacionesSalida, orden.comentarios].map((value) => value?.trim()).filter((value): value is string => Boolean(value)))].join(", ") || "—",
         costo,
-        status: orden.estado === "cerrada" ? "TERMINADO" : orden.estado === "cancelada" ? "CANCELADO" : orden.estado === "abierta" ? "ABIERTO" : "EN PROCESO",
+        status: orden.estado === "cerrada" ? "CERRADO" : orden.estado === "terminada" ? "PENDIENTE DE CIERRE" : orden.estado === "cancelada" ? "CANCELADO" : orden.estado === "abierta" ? "ABIERTO" : "EN PROCESO",
         ordenId: orden.id,
         observaciones: "",
         historial: eventos.filter((evento) => evento.ordenId === orden.id).map((evento) => ({ tipo: evento.tipo, detalle: evento.detalle, createdAt: evento.createdAt, usuarioNombre: evento.usuarioNombre })),
@@ -406,6 +451,8 @@ export default function TallerBoard({
       registros.push(...urea.map((registro) => ({
         id: `urea-${registro.id}`,
         fecha: registro.fecha,
+        fechaEgreso: null,
+        diasAbierta: null,
         folio: null,
         unidadId: registro.unidadId,
         unidad: registro.unidadCodigo,
@@ -414,12 +461,12 @@ export default function TallerBoard({
         falla: `${Number(registro.litros).toLocaleString("es-MX")} L de urea`,
         operador: registro.operadorNombre ?? "—",
         atendio: "—",
-        lugar: "Carga de urea",
-        resolucion: registro.observaciones ?? "—",
+        lugar: "",
+        resolucion: "",
         costo: 0,
         status: "CERRADO",
         ordenId: null,
-        observaciones: registro.observaciones ?? "",
+        observaciones: "",
         historial: [],
       })));
     }
@@ -437,10 +484,10 @@ export default function TallerBoard({
         && (filtroTipoUnidad === "todas" || registro.tipoUnidad === filtroTipoUnidad)
         && (filtroCategoriaBitacora === "todas" || registro.categoria === filtroCategoriaBitacora)
         && (filtroEstadoBitacora === "todas" || registro.status === filtroEstadoBitacora)
-        && (!soloConObservaciones || Boolean(registro.observaciones.trim()))
+        && (incluirLlantas || !registro.categoria.toLocaleLowerCase("es-MX").includes("llanta"))
         && (!query || texto.includes(query));
     });
-  }, [registrosBitacora, desdeIncidencias, hastaIncidencias, filtroUnidadIncidencia, filtroTipoUnidad, filtroCategoriaBitacora, filtroEstadoBitacora, soloConObservaciones, busquedaIncidencia]);
+  }, [registrosBitacora, desdeIncidencias, hastaIncidencias, filtroUnidadIncidencia, filtroTipoUnidad, filtroCategoriaBitacora, filtroEstadoBitacora, incluirLlantas, busquedaIncidencia]);
 
   const mesVigente = getNowLocal().fecha.slice(0, 7);
   const ureaPorMes = useMemo(() => {
@@ -454,97 +501,261 @@ export default function TallerBoard({
     }
     return { rows, litros: rows.reduce((total, row) => total + (Number(row.litros) || 0), 0), porUnidad: [...porUnidad.values()].sort((a, b) => b.litros - a.litros) };
   }, [urea, mesVigente]);
-  const litrosUreaMesActual = ureaPorMes.litros;
   const etiquetaMesUrea = new Date(`${mesVigente}-15T12:00:00`).toLocaleDateString("es-MX", { month: "long", year: "numeric" });
   const llantasMes = useMemo(() => incidencias.filter((i) => i.fecha.startsWith(mesVigente) && (i.categoria === "llanta_danada" || leerFallas(i.fallas, i.descripcion).includes("Llantas"))), [incidencias, mesVigente]);
 
   async function exportarBitacora() {
     const ExcelJS = await import("exceljs");
-    const response = await fetch("/templates/bitacora-general-template.xlsx");
+    const response = await fetch("/templates/bitacora-taller-cliente-template.xlsx");
     if (!response.ok) throw new Error("No se pudo cargar la plantilla de Bitácora.");
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await response.arrayBuffer());
-    const actual = workbook.getWorksheet("BITACORA ACTUAL");
-    const costos = workbook.getWorksheet("BITACORA COSTOS");
-    if (!actual || !costos) throw new Error("La plantilla no contiene las hojas requeridas.");
-
-    actual.getCell("K5").value = "ESTADO";
-    const actualRows = registrosBitacoraFiltrados;
-    actualRows.forEach((row, index) => {
-      const n = index + 6;
-      const source = actual.getRow(6);
-      const target = actual.getRow(n);
-      target.height = source.height;
-      for (let col = 2; col <= 11; col += 1) target.getCell(col).style = structuredClone(source.getCell(col).style);
-      target.getCell(2).value = new Date(`${row.fecha.slice(0, 10)}T12:00:00.000Z`);
-      target.getCell(2).numFmt = "dd/mm/yyyy";
-      [row.folio != null ? formatoFolioTaller(row.folio) : "", row.unidad, row.falla, row.operador, row.atendio, row.lugar, row.resolucion, row.costo || "—", row.status].forEach((value, offset) => { target.getCell(offset + 3).value = typeof value === "string" ? value.toLocaleUpperCase("es-MX") : value; });
-      const estado = target.getCell(11);
-      const color = row.status === "CANCELADO" ? "FCE4D6" : row.status === "TERMINADO" || row.status === "CERRADO" ? "E2F0D9" : row.status === "EN PROCESO" ? "FFF2CC" : "DDEBF7";
-      estado.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${color}` } };
-      estado.font = { ...structuredClone(estado.font), bold: true, color: { argb: row.status === "CANCELADO" ? "FFC00000" : row.status === "TERMINADO" || row.status === "CERRADO" ? "FF00843D" : row.status === "EN PROCESO" ? "FF9C6500" : "FF1F4E78" } };
-    });
-    actual.autoFilter = { from: "B5", to: `K${Math.max(5, actualRows.length + 5)}` };
-    actual.pageSetup.printArea = `B4:K${Math.max(5, actualRows.length + 5)}`;
-
-    const styleSnapshot = (rowNumber: number) => {
-      const row = costos.getRow(rowNumber);
-      return { height: row.height, styles: Array.from({ length: 11 }, (_, index) => structuredClone(row.getCell(index + 2).style)) };
-    };
-    const sourceHeader = styleSnapshot(8);
-    const sourceMeta = styleSnapshot(9);
-    const sourcePart = styleSnapshot(10);
-    const sourceTotal = styleSnapshot(12);
-    for (let rowNumber = 8; rowNumber <= Math.max(costos.rowCount, 66); rowNumber += 1) {
-      const row = costos.getRow(rowNumber);
-      row.eachCell({ includeEmpty: true }, (cell) => { cell.value = null; cell.style = {}; });
-      row.height = 15;
+    const general = workbook.getWorksheet("BITACORA GENERAL");
+    const desglose = workbook.getWorksheet("BITACORA DESGLOSE");
+    const costos = workbook.getWorksheet("COSTOS");
+    if (!general || !desglose || !costos) throw new Error("La plantilla debe contener BITACORA GENERAL, BITACORA DESGLOSE y COSTOS.");
+    for (const sheet of [general, desglose, costos]) {
+      sheet.views = [{ showGridLines: false }];
+      sheet.pageSetup.showGridLines = false;
     }
-    costos.getColumn(2).width = 13;
-    const cloneRow = (rowNumber: number, source: ReturnType<typeof styleSnapshot>, height = source.height) => {
-      const target = costos.getRow(rowNumber);
-      target.height = height;
-      for (let col = 2; col <= 12; col += 1) target.getCell(col).style = structuredClone(source.styles[col - 2]);
-      return target;
+
+    const actualRows = registrosSeleccionados.length
+      ? registrosBitacora.filter((row) => registrosSeleccionados.includes(row.id))
+      : registrosBitacoraFiltrados;
+
+    const rowStyles = (sheet: NonNullable<typeof general>, sourceRow: number, firstColumn: number, lastColumn: number) => ({
+      height: sheet.getRow(sourceRow).height,
+      cells: Array.from({ length: lastColumn - firstColumn + 1 }, (_, index) => structuredClone(sheet.getRow(sourceRow).getCell(firstColumn + index).style)),
+    });
+    const applyRowStyles = (sheet: NonNullable<typeof general>, targetRow: number, source: ReturnType<typeof rowStyles>, firstColumn: number) => {
+      const row = sheet.getRow(targetRow);
+      if (source.height != null) row.height = source.height;
+      source.cells.forEach((style, index) => { row.getCell(firstColumn + index).style = structuredClone(style); });
+      return row;
     };
-    let next = 8;
-    const costOrders = actualRows.flatMap((row) => {
-      if (row.ordenId == null) return [];
-      const order = ordenes.find((item) => item.id === row.ordenId);
-      return order?.refacciones?.length ? [{ row, order }] : [];
-    });
-    let previousCostDate = "";
-    costOrders.forEach(({ row, order }) => {
-      if (previousCostDate && previousCostDate !== row.fecha.slice(0, 10)) next += 1;
-      previousCostDate = row.fecha.slice(0, 10);
-      const header = cloneRow(next++, sourceHeader);
-      ["UNIDAD", "FALLA", "OPERADOR", "ATIENDE", "LUGAR", "DESCRIPCION", "CANT", "UNIT", "IMPORTE", "IMPUESTO"].forEach((v, i) => { header.getCell(i + 3).value = v.toLocaleUpperCase("es-MX"); });
-      const meta = cloneRow(next++, sourceMeta, sourcePart.height);
-      meta.getCell(2).value = new Date(`${row.fecha.slice(0, 10)}T12:00:00.000Z`);
-      meta.getCell(2).numFmt = "dd/mm/yyyy";
-      const partStart = meta.number;
-      [row.unidad, row.falla, row.operador, row.atendio, row.lugar].forEach((v, i) => { meta.getCell(i + 3).value = v.toLocaleUpperCase("es-MX"); });
-      order.refacciones.forEach((ref, refIndex) => {
-        const part = refIndex === 0 ? meta : cloneRow(next++, sourcePart);
-        if (refIndex === 0) {
-          for (let col = 8; col <= 12; col += 1) part.getCell(col).style = structuredClone(sourcePart.styles[col - 2]);
-        }
-        const detail = [ref.descripcion, ref.proveedor ? `PROVEEDOR: ${ref.proveedor}` : "", ref.folioFactura ? `FACTURA: ${ref.folioFactura}` : ""].filter(Boolean).join(" · ").toLocaleUpperCase("es-MX");
-        part.getCell(8).value = detail;
-        part.getCell(9).value = ref.cantidad ?? 1;
-        part.getCell(10).value = ref.precio ?? 0;
-        part.getCell(10).numFmt = "$#,##0.00";
-        part.getCell(11).value = { formula: `J${part.number}*I${part.number}` };
-        part.getCell(11).numFmt = "$#,##0.00";
-        part.getCell(12).value = { formula: `K${part.number}*${ref.iva ? "1.16" : "1"}` };
-        part.getCell(12).numFmt = "$#,##0.00";
+    const clearValues = (sheet: NonNullable<typeof general>, fromRow: number) => {
+      sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+        if (rowNumber < fromRow) return;
+        row.eachCell({ includeEmpty: true }, (cell) => { cell.value = null; });
       });
-      const totalRow = cloneRow(next++, sourceTotal);
-      totalRow.getCell(11).value = "TOTAL";
-      totalRow.getCell(12).value = { formula: `SUM(L${partStart}:L${next - 2})` };
-      totalRow.getCell(12).numFmt = "$#,##0.00";
+    };
+    const clearStyles = (sheet: NonNullable<typeof general>, fromRow: number, toRow: number, fromColumn: number, toColumn: number) => {
+      for (let rowNo = fromRow; rowNo <= toRow; rowNo += 1) {
+        const row = sheet.getRow(rowNo);
+        for (let col = fromColumn; col <= toColumn; col += 1) row.getCell(col).style = {};
+      }
+    };
+    const dateOnly = (value: string | Date | null | undefined) => {
+      if (!value) return "";
+      return value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10);
+    };
+    const excelDate = (value: string | Date | null | undefined) => {
+      const date = dateOnly(value);
+      return date ? new Date(`${date}T12:00:00.000Z`) : "";
+    };
+    const folioLabel = (row: RegistroBitacora) => row.categoria === "Urea"
+      ? "UREA"
+      : row.categoria === "Llanta dañada"
+        ? "LLANTA DAÑADA"
+        : row.folio != null ? formatoFolioTaller(row.folio) : "Pendiente";
+    const esInformativo = (row: RegistroBitacora) => row.categoria === "Urea" || row.categoria === "Llanta dañada";
+
+    // Hoja general: se conserva el formato del cliente y se repite la fila modelo.
+    const generalModel = rowStyles(general, 5, 2, 11);
+    const generalTemplateEnd = Math.max(general.rowCount, 5);
+    clearValues(general, 5);
+    clearStyles(general, 5, generalTemplateEnd, 2, 11);
+    actualRows.forEach((row, index) => {
+      const n = index + 5;
+      const target = applyRowStyles(general, n, generalModel, 2);
+      target.getCell(2).value = excelDate(row.fecha);
+      target.getCell(2).numFmt = "dd/mm/yyyy";
+      const values = [folioLabel(row), row.unidad, row.falla, row.operador, row.atendio, esInformativo(row) ? "" : row.lugar, esInformativo(row) ? "" : row.resolucion, row.costo || "—", row.status];
+      values.forEach((value, offset) => {
+        const cell = target.getCell(offset + 3);
+        cell.value = typeof value === "string" ? value.toLocaleUpperCase("es-MX") : value;
+        cell.alignment = { ...cell.alignment, vertical: "top", wrapText: true };
+      });
+      const estado = target.getCell(11);
+      estado.fill = { type: "pattern", pattern: "none" };
+      estado.font = { ...structuredClone(estado.font), bold: true, color: { argb: "FF000000" } };
     });
-    costos.pageSetup.printArea = `B4:L${costOrders.length ? next - 1 : 7}`;
+    if (!actualRows.length) general.getCell("B5").value = "SIN REGISTROS PARA LOS FILTROS SELECCIONADOS";
+    const generalLastRow = actualRows.length ? actualRows.length + 4 : 5;
+    general.autoFilter = { from: "B4", to: `K${generalLastRow}` };
+    general.pageSetup.printArea = `B3:K${generalLastRow}`;
+
+    // Prepara datos de órdenes una sola vez para las hojas de actividades y costos.
+    const rowsByOrder = new Map<number, RegistroBitacora>();
+    for (const row of actualRows) if (row.ordenId != null && !esInformativo(row)) rowsByOrder.set(row.ordenId, row);
+    const selectedOrders = ordenes
+      .filter((order) => rowsByOrder.has(order.id))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id - b.id);
+    const groupedOrders = new Map<number, Orden[]>();
+    for (const order of selectedOrders) {
+      const key = order.unidad?.id ?? order.unidadId;
+      groupedOrders.set(key, [...(groupedOrders.get(key) ?? []), order]);
+    }
+
+    // BITACORA DESGLOSE: un bloque por unidad y una fila por actividad registrada.
+    const detailStyles = new Map<number, ReturnType<typeof rowStyles>>();
+    const detailTemplateEnd = Math.max(desglose.rowCount, 32);
+    for (let row = 1; row <= detailTemplateEnd; row += 1) detailStyles.set(row, rowStyles(desglose, row, 2, 4));
+    for (const merge of [...desglose.model.merges]) desglose.unMergeCells(merge);
+    clearValues(desglose, 2);
+    clearStyles(desglose, 2, detailTemplateEnd, 2, 4);
+    let detailLastRow = 1;
+    let detailStart = 3;
+    const detailGroups = [...groupedOrders.entries()].sort((a, b) => (a[1][0]?.unidad?.codigo ?? "").localeCompare(b[1][0]?.unidad?.codigo ?? "", "es-MX"));
+    const activityRows = (orders: Orden[]) => orders.flatMap((order) => {
+      const source = rowsByOrder.get(order.id);
+      const work = parseActividadesTaller(order.trabajoRealizado, order.quienAtendio ?? "");
+      const fallback = [order.diagnosticoFinal, order.observacionesSalida, order.comentarios, source?.resolucion]
+        .find((value) => value?.trim())?.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) ?? [];
+      const activities = work.length ? work.map((activity) => activity.trabajo) : fallback;
+      const notes = [order.comentarios, order.observacionesSalida]
+        .map((value) => value?.trim())
+        .filter((value): value is string => Boolean(value) && !activities.includes(value));
+      const note = [
+        `OS ${formatoFolioTaller(order.folio)} · ingreso ${dateOnly(order.fecha)}`,
+        ...notes,
+      ].join(" · ");
+      return activities.map((activity) => ({ order, activity, note, atendio: work.find((row) => row.trabajo === activity)?.atendio || order.quienAtendio || "—" }));
+    });
+    for (const [, orders] of detailGroups) {
+      const activities = activityRows(orders);
+      const metaLabels = ["No. ECONOMICO:", "OPERADOR:", "KM/HRS", "FECHA DE INGRESO:", "FECHA DE SALIDA:", "FOLIO OS:"];
+      const exitDates = orders.map((order) => dateOnly(order.fechaSalida) || dateOnly(order.cerradoAt)).filter(Boolean).sort();
+      const tieneOrdenAbierta = orders.some((order) => !["cerrada", "cancelada"].includes(order.estado));
+      const entries = [
+        orders[0]?.unidad?.codigo ?? "—",
+        [...new Set(orders.map((order) => order.operador?.nombre).filter((name): name is string => Boolean(name)))].join(", ") || "—",
+        orders.at(-1)?.kmHrs ?? "—",
+        excelDate(orders[0]?.fecha),
+        tieneOrdenAbierta && exitDates.length === 0 ? "PENDIENTE" : excelDate(exitDates.at(-1)),
+        orders.map((order) => formatoFolioTaller(order.folio)).join(", "),
+      ];
+      metaLabels.forEach((label, index) => {
+        const rowNo = detailStart + index;
+        const target = applyRowStyles(desglose, rowNo, detailStyles.get(index + 3)!, 2);
+        target.getCell(2).value = label;
+        target.getCell(3).value = entries[index];
+        target.getCell(3).alignment = { ...target.getCell(3).alignment, wrapText: true, vertical: "top" };
+        desglose.mergeCells(rowNo, 3, rowNo, 4);
+        if (index === 3 || index === 4) target.getCell(3).numFmt = "dd/mm/yyyy";
+      });
+      const issueRowNo = detailStart + 7;
+      const issue = applyRowStyles(desglose, issueRowNo, detailStyles.get(10)!, 2);
+      issue.getCell(2).value = "FALLA / REVISION";
+      issue.getCell(3).value = [...new Set(orders.map((order) => rowsByOrder.get(order.id)?.falla || order.motivo).filter(Boolean))].join("\n") || "—";
+      issue.getCell(3).alignment = { ...issue.getCell(3).alignment, wrapText: true, vertical: "top" };
+      desglose.mergeCells(issueRowNo, 3, issueRowNo, 4);
+      const tableHeaderNo = detailStart + 9;
+      if (activities.length) {
+        const tableHeader = applyRowStyles(desglose, tableHeaderNo, detailStyles.get(12)!, 2);
+        ["ATIENDE", "NOTAS", "RESOLUCION"].forEach((value, index) => { tableHeader.getCell(index + 2).value = value; });
+      }
+      const dataStart = detailStart + 10;
+      activities.forEach((activity, index) => {
+        const sourceRowNo = 13 + (index % 7);
+        const target = applyRowStyles(desglose, dataStart + index, detailStyles.get(sourceRowNo)!, 2);
+        const values = [activity.atendio, activity.note, activity.activity];
+        values.forEach((value, offset) => {
+          const cell = target.getCell(offset + 2);
+          cell.value = value;
+          cell.alignment = { ...cell.alignment, wrapText: true, vertical: "top" };
+        });
+        const lines = Math.max(1, ...values.map((value) => Math.ceil(String(value).length / (value === activity.activity ? 78 : 26))));
+        target.height = Math.max(target.height ?? 0, Math.min(120, lines * 15));
+      });
+      detailLastRow = activities.length ? dataStart + activities.length - 1 : issueRowNo;
+      detailStart = detailLastRow + 3;
+    }
+    if (!detailGroups.length) {
+      const empty = applyRowStyles(desglose, 3, detailStyles.get(3)!, 2);
+      empty.getCell(2).value = "SIN ÓRDENES CON ACTIVIDADES EN LA SELECCIÓN";
+      detailLastRow = 3;
+    }
+    desglose.pageSetup.printArea = `B1:D${detailLastRow}`;
+
+    // COSTOS: una sección por orden con sus refacciones, proveedor, factura y total con IVA.
+    const costStyles = new Map<number, ReturnType<typeof rowStyles>>();
+    const costTemplateEnd = Math.max(costos.rowCount, 38);
+    for (let row = 1; row <= costTemplateEnd; row += 1) costStyles.set(row, rowStyles(costos, row, 2, 8));
+    for (const merge of [...costos.model.merges]) if (merge !== "B1:D1") costos.unMergeCells(merge);
+    clearValues(costos, 2);
+    clearStyles(costos, 2, costTemplateEnd, 2, 8);
+    const ordersWithCosts = selectedOrders.filter((order) => order.refacciones?.length);
+    let costLastRow = 1;
+    let costStart = 3;
+    for (const order of ordersWithCosts) {
+      const metadata = [
+        ["No. ECONOMICO:", order.unidad?.codigo ?? "—", 3],
+        ["OPERADOR:", order.operador?.nombre ?? "—", 4],
+        ["KM/HRS", order.kmHrs ?? "—", 5],
+        ["FECHA DE INGRESO:", excelDate(order.fecha), 6],
+        ["FECHA DE SALIDA:", excelDate(order.fechaSalida ?? order.cerradoAt) || (!["cerrada", "cancelada"].includes(order.estado) ? "PENDIENTE" : ""), 7],
+        ["FOLIO OS:", formatoFolioTaller(order.folio), 32],
+      ] as const;
+      metadata.forEach(([label, value, sourceRow], index) => {
+        const rowNo = costStart + index;
+        const target = applyRowStyles(costos, rowNo, costStyles.get(sourceRow)!, 2);
+        target.getCell(2).value = label;
+        target.getCell(3).value = value;
+        target.getCell(3).alignment = { ...target.getCell(3).alignment, wrapText: true };
+        costos.mergeCells(rowNo, 3, rowNo, 4);
+        if (index === 3 || index === 4) target.getCell(3).numFmt = "dd/mm/yyyy";
+      });
+      const costLabelRow = costStart + 6;
+      const costLabel = applyRowStyles(costos, costLabelRow, costStyles.get(9)!, 2);
+      costLabel.getCell(2).value = "COSTO:";
+      const sectionTitleRow = costStart + 8;
+      const sectionTitle = applyRowStyles(costos, sectionTitleRow, costStyles.get(11)!, 2);
+      sectionTitle.getCell(2).value = "DETALLE DE GASTOS Y REFACCIONES";
+      costos.mergeCells(sectionTitleRow, 2, sectionTitleRow, 6);
+      const headerRowNo = costStart + 9;
+      const header = applyRowStyles(costos, headerRowNo, costStyles.get(12)!, 2);
+      ["CANT.", "MATERIAL UTILIZADO:", "COSTO U.", "IMPORTE", "IMPUESTO", "PROVEEDOR:", "FACTURA:"].forEach((value, index) => { header.getCell(index + 2).value = value; });
+      const itemStart = headerRowNo + 1;
+      order.refacciones.forEach((ref, index) => {
+        const rowNo = itemStart + index;
+        const item = applyRowStyles(costos, rowNo, costStyles.get(13)!, 2);
+        item.getCell(2).value = ref.cantidad ?? 1;
+        item.getCell(3).value = [ref.descripcion, ref.unidadMedida && ref.unidadMedida !== "pz" ? `(${ref.unidadMedida})` : ""].filter(Boolean).join(" ").toLocaleUpperCase("es-MX");
+        item.getCell(4).value = ref.precio ?? 0;
+        item.getCell(4).numFmt = "$#,##0.00";
+        item.getCell(5).value = { formula: `D${rowNo}*B${rowNo}` };
+        item.getCell(5).numFmt = "$#,##0.00";
+        item.getCell(6).value = { formula: `E${rowNo}*${ref.iva === false ? "1" : "1.16"}` };
+        item.getCell(6).numFmt = "$#,##0.00";
+        item.getCell(7).value = ref.proveedor?.toLocaleUpperCase("es-MX") ?? "—";
+        item.getCell(8).value = ref.folioFactura?.toLocaleUpperCase("es-MX") ?? "—";
+        item.getCell(3).alignment = { ...item.getCell(3).alignment, wrapText: true, vertical: "top" };
+      });
+      const totalRowNo = itemStart + order.refacciones.length;
+      const total = applyRowStyles(costos, totalRowNo, costStyles.get(21)!, 2);
+      total.getCell(5).value = "TOTAL";
+      total.getCell(6).value = { formula: `SUM(F${itemStart}:F${totalRowNo - 1})` };
+      total.getCell(6).numFmt = "$#,##0.00";
+      costLabel.getCell(3).value = { formula: `F${totalRowNo}` };
+      costLabel.getCell(3).numFmt = "$#,##0.00";
+      costLastRow = totalRowNo;
+      costStart = totalRowNo + 3;
+    }
+    if (!ordersWithCosts.length) {
+      const empty = applyRowStyles(costos, 3, costStyles.get(3)!, 2);
+      empty.getCell(2).value = "SIN REFACCIONES EN LA SELECCIÓN";
+      costLastRow = 3;
+    }
+    costos.pageSetup.printArea = `B1:H${costLastRow}`;
+    workbook.calcProperties.fullCalcOnLoad = true;
+
+    for (const sheet of [general, desglose, costos]) {
+      sheet.eachRow({ includeEmpty: false }, (row) => row.eachCell({ includeEmpty: false }, (cell) => {
+        if (typeof cell.value === "string") cell.value = cell.value.toLocaleUpperCase("es-MX");
+      }));
+    }
+
     const bytes = await workbook.xlsx.writeBuffer();
     const blob = new Blob([new Uint8Array(bytes)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const url = URL.createObjectURL(blob);
@@ -555,15 +766,53 @@ export default function TallerBoard({
     URL.revokeObjectURL(url);
   }
 
-  async function ejecutarAccionOrdenes(accion: "cierre" | "cancelar") {
-    const ids = ordenesSeleccionadas.filter((id) => ordenes.some((orden) => orden.id === id && ["abierta", "en_proceso"].includes(orden.estado)));
+  function puedeSeleccionarOrden(row: RegistroBitacora) {
+    if (row.ordenId == null) return false;
+    if (["ABIERTO", "EN PROCESO"].includes(row.status)) return canFinishOrders || canCancelOrders;
+    if (row.status === "PENDIENTE DE CIERRE") return canCloseOrders || canCancelOrders;
+    return false;
+  }
+
+  function puedeEditarDesdeBitacora(row: RegistroBitacora) {
+    return canEditOrders && row.ordenId != null && ["ABIERTO", "EN PROCESO", "PENDIENTE DE CIERRE"].includes(row.status);
+  }
+
+  function tarjetaOrden(orden: Orden) {
+    return <Link key={orden.id} href={`/taller/${orden.id}`} className="block rounded-xl border p-3 hover:border-indigo-400/50" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+      <div className="flex items-center justify-between gap-2"><p className="font-mono text-sm font-bold">{formatoFolioTaller(orden.folio)} · {orden.unidad?.codigo ?? "—"}</p><Badge variant={estadoOrdenVariant(orden.estado)}>{ESTADO_LABEL[orden.estado as EstadoOrden] ?? orden.estado}</Badge></div>
+      <p className="mt-2 line-clamp-2 text-sm">{orden.motivo || "Sin motivo"}</p>
+      {orden.trabajoRealizado && <p className="mt-1 line-clamp-2 text-xs" style={{ color: "var(--fg-muted)" }}>{textoActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "")}</p>}
+      <p className="mt-2 text-xs" style={{ color: "var(--fg-muted)" }}>{fechaMx(orden.createdAt)}{orden.operador?.nombre ? ` · ${orden.operador.nombre}` : ""}</p>
+    </Link>;
+  }
+
+  function fechaComoTexto(value: string | Date | null | undefined) {
+    if (!value) return null;
+    return value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10);
+  }
+
+  function diasEntre(inicio: string | null, fin: string | null) {
+    if (!inicio || !fin) return null;
+    const a = Date.parse(`${inicio}T12:00:00Z`);
+    const b = Date.parse(`${fin}T12:00:00Z`);
+    return Number.isFinite(a) && Number.isFinite(b) ? Math.max(0, Math.floor((b - a) / 86_400_000)) : null;
+  }
+
+  async function ejecutarAccionOrdenes(accion: "terminar" | "cierre" | "cancelar") {
+    const estadosPermitidos = accion === "terminar"
+      ? ["abierta", "en_proceso"]
+      : accion === "cierre"
+        ? ["terminada"]
+        : ["abierta", "en_proceso", "terminada"];
+    const ids = ordenesSeleccionadas.filter((id) => ordenes.some((orden) => orden.id === id && estadosPermitidos.includes(orden.estado)));
     if (!ids.length) return;
-    const verbo = accion === "cierre" ? "cerrar" : "cancelar";
-    if (!confirm(`¿${verbo === "cerrar" ? "Cerrar" : "Cancelar"} ${ids.length} orden(es) seleccionada(s)?`)) return;
+    const verbo = accion === "cierre" ? "cerrar" : accion === "terminar" ? "marcar como terminadas" : "cancelar";
+    if (!confirm(`¿${verbo === "cerrar" ? "Cerrar" : verbo === "cancelar" ? "Cancelar" : "Marcar como terminadas"} ${ids.length} orden(es) seleccionada(s)?`)) return;
     start(async () => {
       try {
         for (const id of ids) {
           if (accion === "cierre") await cerrarOrdenTaller(id);
+          else if (accion === "terminar") await terminarOrdenTaller(id);
           else await cancelarOrdenTaller(id);
         }
         setOrdenesSeleccionadas([]);
@@ -765,10 +1014,7 @@ export default function TallerBoard({
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <>
-            <div className="flex flex-col items-center">
-              <button type="button" onClick={abrirCapturaUrea} className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-xs font-semibold text-amber-950 disabled:opacity-40"><Fuel className="h-3.5 w-3.5" />UREA</button>
-              <span className="mt-0.5 rounded-md bg-amber-100 px-2 py-1 text-[10px] font-semibold leading-none text-amber-900">{etiquetaMesUrea}: {new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1 }).format(litrosUreaMesActual)} L</span>
-            </div>
+            <button type="button" onClick={abrirCapturaUrea} className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-xs font-semibold text-amber-950 disabled:opacity-40"><Fuel className="h-3.5 w-3.5" />UREA</button>
             <button type="button" onClick={abrirCapturaLlanta} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold disabled:opacity-40" style={{ borderColor: "var(--border)" }}>🛞 LLANTA DAÑADA</button>
             <button type="button" onClick={() => abrirOrden()} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}><Wrench className="h-3.5 w-3.5" />NUEVO INGRESO</button>
             <button type="button" onClick={() => abrirNuevaIncidencia()} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Plus className="h-3.5 w-3.5" />INCIDENCIA</button>
@@ -776,17 +1022,14 @@ export default function TallerBoard({
         </div>
       </header>
 
-      {seccion === "tablero" && <section className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-7">
+      {seccion === "tablero" && <section className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         {[
-          ["Flota completa", conteos.unidades],
-          ["Disponibles", conteos.disponibles],
-          ["Con incidencias", conteos.incidencias],
-          ["En taller", conteos.taller],
-          ["Preventivos próximos", conteos.programadas],
-          ["Órdenes activas", ordenes.filter((o) => o.estado === "abierta" || o.estado === "en_proceso").length],
-          ["Incidencias pendientes", incidencias.filter((i) => !i.orden && !["resuelta", "cancelada"].includes(i.estado)).length],
+          ["CON INCIDENCIAS", conteos.incidencias],
+          ["EN TALLER", conteos.taller],
+          ["EN PROVEEDOR EXTERNO", conteos.proveedorExterno],
+          ["PREVENTIVOS PRÓXIMOS", conteos.programadas],
         ].map(([label, count]) => (
-          <div key={label} className="min-w-0 rounded-lg border border-l-[3px] p-2" style={{ borderColor: "var(--border)", borderLeftColor: label === "En taller" ? "#167d86" : label === "Con incidencias" ? "#ea7a13" : label === "Incidencias pendientes" ? "#d64832" : "#4455bd", backgroundColor: "var(--surface)" }}>
+          <div key={label} className="min-w-0 rounded-lg border border-l-[3px] p-2" style={{ borderColor: "var(--border)", borderLeftColor: label === "EN TALLER" ? "#167d86" : label === "CON INCIDENCIAS" ? "#ea7a13" : label === "EN PROVEEDOR EXTERNO" ? "#d64832" : "#4455bd", backgroundColor: "var(--surface)" }}>
             <p className="text-[10px] font-semibold leading-tight sm:text-[11px]" style={{ color: "var(--fg-muted)" }}>{label}</p>
             <p className="mt-0.5 text-xl font-bold leading-none sm:text-2xl">{count}</p>
           </div>
@@ -804,8 +1047,8 @@ export default function TallerBoard({
         <section className="space-y-3">
           <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
             <div className="flex items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: "var(--border)" }}><div><h2 className="text-sm font-bold">Control de piso de taller</h2><p className="text-xs" style={{ color: "var(--fg-muted)" }}>Órdenes activas por etapa</p></div><Link href="/taller/ordenes" className="text-xs text-indigo-600 underline">Ver órdenes</Link></div>
-            <div className="grid grid-cols-1 gap-3 overflow-x-auto p-3 lg:grid-cols-3">
-              {([ ["abierta", "ABIERTA"], ["en_proceso", "EN REPARACIÓN"], ["cerrada", "TERMINADA"] ] as const).map(([estado, label]) => {
+            <div className="grid grid-cols-1 gap-3 overflow-x-auto p-3 lg:grid-cols-4">
+              {([ ["abierta", "ABIERTA"], ["en_proceso", "EN REPARACIÓN"], ["terminada", "PENDIENTE DE CIERRE"], ["cerrada", "CERRADA"] ] as const).map(([estado, label]) => {
                 const allRows = ordenes.filter((o) => o.estado === estado);
                 const rows = allRows.slice(0, estado === "cerrada" ? 5 : undefined);
                 return <div key={estado} className="min-w-0 rounded-xl p-3" style={{ backgroundColor: "var(--surface-2)" }}><div className="mb-2 flex justify-between text-xs font-bold uppercase"><span>{label}</span><span>{allRows.length}</span></div>
@@ -815,7 +1058,7 @@ export default function TallerBoard({
             </div>
           </div>
           <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
-            <div className="flex items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: "var(--border)" }}><div><h2 className="text-sm font-bold">Nuevas incidencias</h2><p className="text-xs" style={{ color: "var(--fg-muted)" }}>Pendientes de recibir en taller</p></div><Link href="/taller/bitacora" className="text-xs text-indigo-600 underline">Ver bitácora</Link></div>
+            <div className="flex items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: "var(--border)" }}><div><h2 className="text-sm font-bold">Nuevas incidencias</h2><p className="text-xs" style={{ color: "var(--fg-muted)" }}>Pendientes de recibir en taller</p></div>{canViewBitacora && <Link href="/taller/bitacora" className="text-xs text-indigo-600 underline">Ver bitácora</Link>}</div>
             <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-left text-xs uppercase" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}><th className="px-3 py-2">Fecha</th><th className="px-3 py-2">Equipo</th><th className="px-3 py-2">Falla</th><th className="px-3 py-2">Prioridad</th><th className="px-3 py-2">Acción</th></tr></thead><tbody>
               {incidencias.filter((i) => !i.orden && !CATEGORIAS_SIN_TALLER.includes(i.categoria as typeof CATEGORIAS_SIN_TALLER[number]) && !["resuelta", "cancelada"].includes(i.estado)).map((i) => <tr key={i.id} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}><td className="px-3 py-2">{i.fecha}</td><td className="px-3 py-2">{i.unidad?.codigo ?? "—"}</td><td className="px-3 py-2">{textoFallaReportada(i.fallas, i.descripcion)}<span className="ml-2 text-[10px]" style={{ color: "var(--fg-muted)" }}>{etiquetaCategoriaTaller(i.categoria)}</span></td><td className="px-3 py-2 capitalize">{i.prioridad}</td><td className="px-3 py-2"><button type="button" onClick={() => recibirIncidencia(i)} className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white">Pasar a taller</button></td></tr>)}
               {!incidencias.some((i) => !i.orden && !CATEGORIAS_SIN_TALLER.includes(i.categoria as typeof CATEGORIAS_SIN_TALLER[number]) && !["resuelta", "cancelada"].includes(i.estado)) && <tr><td colSpan={5} className="py-6 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay incidencias pendientes de recepción.</td></tr>}
@@ -826,7 +1069,7 @@ export default function TallerBoard({
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-bold">Flota completa</h2>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]" style={{ color: "var(--fg-muted)" }}>
-                  {([ ["disponible", "Por ingresar"], ["taller", "En piso"], ["incidencia", "Reportada"], ["programada", "Próximo"] ] as const).map(([estado, label]) => <span key={estado} className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ backgroundColor: estado === "disponible" ? "#e7edf7" : estado === "taller" ? "#fff2cf" : estado === "incidencia" ? "#ffe5cf" : "#d6a400" }} />{label}</span>)}
+                  {([ ["taller", "En piso"], ["incidencia", "Reportada"], ["programada", "Próximo"] ] as const).map(([estado, label]) => <span key={estado} className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ backgroundColor: estado === "taller" ? "#fff5dc" : estado === "incidencia" ? "#ffeadc" : "#f2eafa" }} />{label}</span>)}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
@@ -843,15 +1086,15 @@ export default function TallerBoard({
             <div className="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-1.5 p-3 sm:grid-cols-[repeat(auto-fill,minmax(128px,1fr))]">
               {unidadesEnVista.map((u) => {
                 const estilosEstado = {
-                  disponible: { backgroundColor: "#f6f7f9", borderColor: "#dce1e8", punto: "#d6a400" },
+                  disponible: { backgroundColor: "var(--surface)", borderColor: "var(--border)", punto: "transparent" },
                   taller: { backgroundColor: "#fff5dc", borderColor: "#f4d28b", punto: "#e9aa00" },
                   incidencia: { backgroundColor: "#ffeadc", borderColor: "#ffc99e", punto: "#ce4935" },
                   programada: { backgroundColor: "#f2eafa", borderColor: "#dac5f3", punto: "#8750b4" },
                 }[u.estado];
-                return <button key={u.id} type="button" onClick={() => setEquipoSeleccionado(u)} className="relative min-w-0 rounded-lg border px-2.5 py-2 text-left transition-shadow hover:shadow-sm" style={{ backgroundColor: estilosEstado.backgroundColor, borderColor: estilosEstado.borderColor, color: "var(--fg)" }} title={`${u.codigo} · ${ETIQUETA_ESTADO[u.estado]}`}>
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ backgroundColor: estilosEstado.punto }} />
+                return <button key={u.id} type="button" onClick={() => setEquipoSeleccionado(u)} className="relative min-w-0 rounded-lg border px-2.5 py-2 text-left transition-shadow hover:shadow-sm" style={{ backgroundColor: estilosEstado.backgroundColor, borderColor: estilosEstado.borderColor, color: "var(--fg)" }} title={u.estado === "disponible" ? u.codigo : `${u.codigo} · ${ETIQUETA_ESTADO[u.estado]}`}>
+                  {u.estado !== "disponible" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ backgroundColor: estilosEstado.punto }} />}
                   <span className="block truncate pr-3 font-mono text-sm font-bold leading-tight">{u.codigo}</span>
-                  <span className="mt-1 block truncate text-[10px] leading-tight" style={{ color: "var(--fg-muted)" }}>{ETIQUETA_ESTADO[u.estado]}</span>
+                  {u.estado !== "disponible" && <span className="mt-1 block truncate text-[10px] leading-tight" style={{ color: "var(--fg-muted)" }}>{ETIQUETA_ESTADO[u.estado]}</span>}
                 </button>;
               })}
               {unidadesEnVista.length === 0 && <p className="col-span-full py-8 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay unidades para estos filtros.</p>}
@@ -889,26 +1132,28 @@ export default function TallerBoard({
         <section className="space-y-3">
           <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => { setFiltroEstatusOrden("todas"); setFiltroEquipoOrden("todos"); setFiltroCategoriaOrden("todas"); setFiltroLugarOrden("todos"); setBusquedaOrden(""); }} className="rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}>Todos</button>
-              <label className="min-w-[135px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Estatus</span><Select value={filtroEstatusOrden} onChange={(e) => setFiltroEstatusOrden(e.target.value)} className="h-9 text-xs"><option value="todas">Todos</option><option value="abierta">Abierta</option><option value="en_proceso">En reparación</option><option value="cerrada">Terminada</option><option value="cancelada">Cancelada</option></Select></label>
+              <button type="button" onClick={() => { setFiltroEstatusOrden("todas"); setDesdeOrdenes(""); setHastaOrdenes(""); setFiltroEquipoOrden("todos"); setFiltroCategoriaOrden("todas"); setFiltroLugarOrden("todos"); setBusquedaOrden(""); }} className="rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}>Todos</button>
+              <label className="min-w-[135px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Desde</span><Input type="date" value={desdeOrdenes} onChange={(e) => setDesdeOrdenes(e.target.value)} className="h-9 text-xs" /></label>
+              <label className="min-w-[135px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Hasta</span><Input type="date" value={hastaOrdenes} onChange={(e) => setHastaOrdenes(e.target.value)} className="h-9 text-xs" /></label>
+              <label className="min-w-[150px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Estatus</span><Select value={filtroEstatusOrden} onChange={(e) => setFiltroEstatusOrden(e.target.value)} className="h-9 text-xs"><option value="activas">Activas</option><option value="todas">Todos</option><option value="abierta">Abierto</option><option value="en_proceso">En proceso</option><option value="terminada">Terminado · En proceso de cierre</option><option value="cerrada">Cerradas</option><option value="cancelada">Canceladas</option></Select></label>
               <label className="min-w-[150px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Equipo</span><Select value={filtroEquipoOrden} onChange={(e) => setFiltroEquipoOrden(e.target.value)} className="h-9 text-xs"><option value="todos">Todos los equipos</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></label>
               <label className="min-w-[145px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Categoría</span><Select value={filtroCategoriaOrden} onChange={(e) => setFiltroCategoriaOrden(e.target.value)} className="h-9 text-xs"><option value="todas">Todas</option>{TALLER_CATEGORIAS.filter((item) => !CATEGORIAS_SIN_TALLER.includes(item.value as typeof CATEGORIAS_SIN_TALLER[number])).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</Select></label>
-              <label className="min-w-[145px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Lugar</span><Select value={filtroLugarOrden} onChange={(e) => setFiltroLugarOrden(e.target.value)} className="h-9 text-xs"><option value="todos">Todos</option><option value="piso">Piso de taller</option><option value="proveedor">Proveedor externo</option></Select></label>
+              <label className="min-w-[145px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Lugar</span><Select value={filtroLugarOrden} onChange={(e) => setFiltroLugarOrden(e.target.value)} className="h-9 text-xs"><option value="todos">Todos</option><option value="piso">TALLER</option><option value="proveedor">Proveedor externo</option></Select></label>
               <label className="min-w-[220px] flex-[2] space-y-1 text-[10px] font-semibold"><span>Buscar por falla o trabajo realizado</span><span className="relative block"><Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: "var(--fg-muted)" }} /><Input value={busquedaOrden} onChange={(e) => setBusquedaOrden(e.target.value)} placeholder="Falla, reparación, proveedor…" className="h-9 pl-8 text-xs" /></span></label>
             </div>
             <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>{ordenesFiltradas.length} de {ordenes.length} órdenes</p>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {ordenesFiltradas.map((o) => (
-            <Link key={o.id} href={`/taller/${o.id}`} className="rounded-2xl border p-4 hover:border-indigo-400/50" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
-              <div className="flex items-center justify-between gap-2"><p className="font-mono font-bold">{formatoFolioTaller(o.folio)} · {o.unidad?.codigo ?? "—"}</p><Badge variant={estadoOrdenVariant(o.estado)}>{ESTADO_LABEL[o.estado as EstadoOrden] ?? o.estado}</Badge></div>
-              <p className="text-sm mt-2 line-clamp-2">{o.motivo || "Sin motivo"}</p>
-              {o.trabajoRealizado && <p className="mt-1 line-clamp-2 text-xs" style={{ color: "var(--fg-muted)" }}>{o.trabajoRealizado}</p>}
-              <p className="text-xs mt-2" style={{ color: "var(--fg-muted)" }}>{fechaMx(o.createdAt)}{o.operador?.nombre ? ` · ${o.operador.nombre}` : ""}</p>
-            </Link>
-          ))}
-          {ordenesFiltradas.length === 0 && <p className="col-span-full rounded-2xl border p-8 text-center text-sm" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>{ordenes.length ? "Ninguna orden coincide con estos filtros." : "No hay órdenes registradas."}</p>}
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+            {columnasOrdenes.map((columna) => <section key={columna.estado} className="min-w-0 rounded-xl border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>
+              <header className="mb-2 flex items-center justify-between gap-2"><h2 className="text-xs font-bold">{columna.titulo}</h2><span className="text-xs" style={{ color: "var(--fg-muted)" }}>{columna.ordenes.length}</span></header>
+              <div className="space-y-2">{columna.ordenes.map(tarjetaOrden)}{!columna.ordenes.length && <p className="rounded-lg border border-dashed p-4 text-center text-xs" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>Sin órdenes</p>}</div>
+            </section>)}
           </div>
+          {ordenesNoActivasFiltradas.length > 0 && <section className="space-y-2 rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
+            <h2 className="text-xs font-bold">{filtroEstatusOrden === "cerrada" ? "CERRADAS" : filtroEstatusOrden === "cancelada" ? "CANCELADAS" : "CERRADAS Y CANCELADAS"}</h2>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">{ordenesNoActivasFiltradas.map(tarjetaOrden)}</div>
+          </section>}
+          {ordenesFiltradas.length === 0 && <p className="rounded-2xl border p-8 text-center text-sm" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>{ordenes.length ? "Ninguna orden coincide con estos filtros." : "No hay órdenes registradas."}</p>}
         </section>
       )}
 
@@ -921,19 +1166,18 @@ export default function TallerBoard({
               <label className="space-y-1 text-xs font-semibold"><span>Unidad</span><Select value={filtroUnidadIncidencia} onChange={(e) => setFiltroUnidadIncidencia(e.target.value)}><option value="todas">Todas las unidades</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></label>
               <label className="space-y-1 text-xs font-semibold"><span>Tipo de unidad</span><Select value={filtroTipoUnidad} onChange={(e) => setFiltroTipoUnidad(e.target.value)}><option value="todas">Todos</option><option value="camion">Camión</option><option value="maquina">Maquinaria</option><option value="nissan">NISSAN</option><option value="otro">Otro</option></Select></label>
               <label className="space-y-1 text-xs font-semibold"><span>Categoría</span><Select value={filtroCategoriaBitacora} onChange={(e) => setFiltroCategoriaBitacora(e.target.value)}><option value="todas">Todas</option>{TALLER_CATEGORIAS.map((item) => <option key={item.value} value={item.label}>{item.label}</option>)}</Select></label>
-              <label className="space-y-1 text-xs font-semibold"><span>Estado</span><Select value={filtroEstadoBitacora} onChange={(e) => setFiltroEstadoBitacora(e.target.value)}><option value="todas">Todos</option>{["ABIERTO", "EN PROCESO", "TERMINADO", "CERRADO", "CANCELADO"].map((status) => <option key={status} value={status}>{status}</option>)}</Select></label>
+              <label className="space-y-1 text-xs font-semibold"><span>Estado</span><Select value={filtroEstadoBitacora} onChange={(e) => setFiltroEstadoBitacora(e.target.value)}><option value="todas">Todos</option>{["ABIERTO", "EN PROCESO", "PENDIENTE DE CIERRE", "TERMINADO", "CERRADO", "CANCELADO"].map((status) => <option key={status} value={status}>{status}</option>)}</Select></label>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Input className="min-w-[180px] flex-1 sm:max-w-[260px]" value={busquedaIncidencia} onChange={(e) => setBusquedaIncidencia(e.target.value)} placeholder="Buscar en la bitácora…" />
-              <button type="button" onClick={() => { const hoy = getNowLocal().fecha; setDesdeIncidencias(`${hoy.slice(0, 7)}-01`); setHastaIncidencias(hoy); }} className="rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}>Este mes</button>
-              <button type="button" onClick={() => { setDesdeIncidencias(""); setHastaIncidencias(""); setFiltroUnidadIncidencia("todas"); setFiltroTipoUnidad("todas"); setFiltroCategoriaBitacora("todas"); setFiltroEstadoBitacora("todas"); setBusquedaIncidencia(""); setSoloConObservaciones(false); setIncluirUrea(true); }} className="rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}>Limpiar filtros</button>
+              <button type="button" aria-pressed={esteMesActivo} onClick={() => { setDesdeIncidencias(inicioMesActual); setHastaIncidencias(hoyLocal); }} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${esteMesActivo ? "border-indigo-600 bg-indigo-600 text-white" : ""}`} style={esteMesActivo ? undefined : { borderColor: "var(--border)" }}>Este mes</button>
+              <button type="button" onClick={() => { setDesdeIncidencias(inicioMesActual); setHastaIncidencias(hoyLocal); setFiltroUnidadIncidencia("todas"); setFiltroTipoUnidad("todas"); setFiltroCategoriaBitacora("todas"); setFiltroEstadoBitacora("todas"); setBusquedaIncidencia(""); setIncluirLlantas(true); setIncluirUrea(true); }} className="rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}>Limpiar filtros</button>
               <label className="flex items-center gap-2 px-1 text-xs"><input type="checkbox" checked={incluirUrea} onChange={(e) => setIncluirUrea(e.target.checked)} className="h-4 w-4 accent-indigo-600" />Incluir cargas de urea</label>
-              <label className="flex items-center gap-2 px-1 text-xs"><input type="checkbox" checked={soloConObservaciones} onChange={(e) => setSoloConObservaciones(e.target.checked)} className="h-4 w-4 accent-indigo-600" />Solo con observaciones</label>
-              {canManageOrders && <>
-                <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("cierre")} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-800 disabled:opacity-40">Cierre ({ordenesSeleccionadas.length})</button>
-                <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("cancelar")} className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-40">Cancelar</button>
-              </>}
-              <button type="button" disabled={!registrosBitacoraFiltrados.length} onClick={() => { void exportarBitacora().catch((err) => setError(err instanceof Error ? err.message : "No se pudo generar el Excel.")); }} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[#207783] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download className="h-3.5 w-3.5" />Bitácora general Excel ({registrosBitacoraFiltrados.length})</button>
+              <label className="flex items-center gap-2 px-1 text-xs"><input type="checkbox" checked={incluirLlantas} onChange={(e) => setIncluirLlantas(e.target.checked)} className="h-4 w-4 accent-indigo-600" />Incluir llanta dañada</label>
+              {canFinishOrders && <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("terminar")} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-800 disabled:opacity-40">Pendiente de cierre ({ordenesSeleccionadas.length})</button>}
+              {canCloseOrders && <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("cierre")} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-800 disabled:opacity-40">Cerrar ({ordenesSeleccionadas.length})</button>}
+              {canCancelOrders && <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("cancelar")} className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-40">Cancelar</button>}
+              <button type="button" disabled={!registrosBitacoraFiltrados.length} onClick={() => { void exportarBitacora().catch((err) => setError(err instanceof Error ? err.message : "No se pudo generar el Excel.")); }} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[#207783] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download className="h-3.5 w-3.5" />{registrosSeleccionados.length ? `Descargar seleccionados (${registrosSeleccionados.length})` : `Bitácora general Excel (${registrosBitacoraFiltrados.length})`}</button>
             </div>
           </div>
 
@@ -942,7 +1186,7 @@ export default function TallerBoard({
           <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
             {[
               ["Folios en la vista", registrosBitacoraFiltrados.filter((r) => r.folio != null).length],
-              ["Activos", registrosBitacoraFiltrados.filter((r) => ["ABIERTO", "EN PROCESO"].includes(r.status)).length],
+              ["Activos", registrosBitacoraFiltrados.filter((r) => ["ABIERTO", "EN PROCESO", "PENDIENTE DE CIERRE"].includes(r.status)).length],
               ["Pasaron a taller", registrosBitacoraFiltrados.filter((r) => r.ordenId != null).length],
               ["Refacciones (con IVA)", registrosBitacoraFiltrados.reduce((total, row) => total + row.costo, 0)],
             ].map(([label, value]) => <div key={label} className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}><p className="text-xl font-bold leading-none">{typeof value === "number" && label === "Refacciones (con IVA)" ? `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : value}</p><p className="mt-1 text-[11px] font-medium" style={{ color: "var(--fg-muted)" }}>{label}</p></div>)}
@@ -951,27 +1195,29 @@ export default function TallerBoard({
           <div className="overflow-x-auto rounded-xl border" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
             <table className="w-full min-w-[1180px] text-sm">
               <thead><tr className="border-b text-left text-[10px] font-semibold uppercase tracking-wide" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>
-                {(["Fecha", "Folio", "Unidad", "Falla", "Operador", "Atiende", "Lugar", "Resolución", "Costo", "Estado"] as const).map((label) => <th key={label} className="px-2.5 py-2.5">{label}</th>)}
-                {canManageOrders && <th className="w-8 px-2 py-2.5"><input aria-label="Seleccionar órdenes activas visibles" type="checkbox" checked={registrosBitacoraFiltrados.filter((row) => row.ordenId != null && ["ABIERTO", "EN PROCESO"].includes(row.status)).every((row) => ordenesSeleccionadas.includes(row.ordenId!)) && registrosBitacoraFiltrados.some((row) => row.ordenId != null && ["ABIERTO", "EN PROCESO"].includes(row.status))} onChange={(e) => { const ids = [...new Set(registrosBitacoraFiltrados.flatMap((row) => row.ordenId != null && ["ABIERTO", "EN PROCESO"].includes(row.status) ? [row.ordenId] : []))]; setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, ...ids])] : prev.filter((id) => !ids.includes(id))); }} className="h-4 w-4 accent-indigo-600" /></th>}
+                {(["Ingreso / egreso · días", "Folio", "Unidad", "Falla", "Operador", "Atiende", "Lugar", "Resolución", "Costo", "Estado"] as const).map((label) => <th key={label} className="px-2.5 py-2.5">{label}</th>)}
+                <th className="w-8 px-2 py-2.5"><input aria-label="Seleccionar registros para descargar" type="checkbox" checked={registrosBitacoraFiltrados.length > 0 && registrosBitacoraFiltrados.every((row) => registrosSeleccionados.includes(row.id))} onChange={(e) => { const ids = registrosBitacoraFiltrados.map((row) => row.id); setRegistrosSeleccionados((prev) => e.target.checked ? [...new Set([...prev, ...ids])] : prev.filter((id) => !ids.includes(id))); setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, ...registrosBitacoraFiltrados.filter(puedeSeleccionarOrden).flatMap((row) => row.ordenId == null ? [] : [row.ordenId])])] : prev.filter((id) => !registrosBitacoraFiltrados.some((row) => row.ordenId === id))); }} className="h-4 w-4 accent-indigo-600" /></th>
+                <th className="w-9 px-2 py-2.5">Editar</th>
               </tr></thead>
               <tbody>
                 {registrosBitacoraFiltrados.map((row) => {
-                  const badgeVariant = row.status === "TERMINADO" || row.status === "CERRADO" ? "success" : row.status === "EN PROCESO" ? "warning" : row.status === "CANCELADO" ? "danger" : "default";
+                  const badgeVariant = row.status === "TERMINADO" || row.status === "CERRADO" ? "success" : row.status === "EN PROCESO" || row.status === "PENDIENTE DE CIERRE" ? "warning" : row.status === "CANCELADO" ? "danger" : "default";
                   return <tr key={row.id} className="align-top border-b last:border-0" style={{ borderColor: "var(--border)" }}>
-                    <td className="whitespace-nowrap px-2.5 py-2.5 text-xs">{fechaMx(row.fecha)}</td>
-                    <td className="px-2.5 py-2.5 font-mono text-xs font-bold text-[#207783]"><button type="button" onClick={() => { void abrirDetalleBitacora(row); }} className="text-left hover:underline">{row.folio != null ? formatoFolioTaller(row.folio) : row.categoria === "Urea" ? "UREA" : "Pendiente"}</button></td>
+                    <td className="whitespace-nowrap px-2.5 py-2.5 text-[10px]">Ingreso: {fechaMx(row.fecha)}<br />Egreso: {row.fechaEgreso ? fechaMx(row.fechaEgreso) : "—"}{row.diasAbierta != null && <p className="mt-0.5 font-semibold">{row.diasAbierta} días</p>}</td>
+                    <td className="px-2.5 py-2.5 font-mono text-xs font-bold text-[#207783]"><button type="button" onClick={() => { void abrirDetalleBitacora(row); }} className="text-left hover:underline">{row.categoria === "Urea" ? "UREA" : row.categoria === "Llanta dañada" ? "LLANTA DAÑADA" : row.folio != null ? formatoFolioTaller(row.folio) : "Pendiente"}</button></td>
                     <td className="px-2.5 py-2.5"><button type="button" onClick={() => { void abrirDetalleBitacora(row); }} className="rounded-md bg-neutral-800 px-2 py-1 font-mono text-xs font-bold text-white hover:underline">{row.unidad}</button></td>
                     <td className="max-w-[240px] px-2.5 py-2.5 text-xs">{row.falla}<p className="mt-0.5 text-[10px]" style={{ color: "var(--fg-muted)" }}>{row.categoria}</p></td>
                     <td className="px-2.5 py-2.5 text-xs">{row.operador}</td>
                     <td className="px-2.5 py-2.5 text-xs">{row.atendio}</td>
                     <td className="max-w-[180px] px-2.5 py-2.5 text-xs">{row.lugar}</td>
-                    <td className="max-w-[250px] px-2.5 py-2.5 text-xs">{row.resolucion}{row.historial.length > 0 && <details className="mt-1"><summary className="cursor-pointer text-[10px] text-indigo-600">Actualizaciones ({row.historial.length})</summary><ol className="mt-1 space-y-1">{row.historial.map((item, index) => <li key={`${row.id}-h-${index}`}><span className="font-semibold">{item.tipo.replaceAll("_", " ")}</span>{item.detalle ? ` · ${item.detalle}` : ""}{item.usuarioNombre ? ` · ${item.usuarioNombre}` : ""}</li>)}</ol></details>}</td>
+                    <td className="max-w-[250px] px-2.5 py-2.5 text-xs">{row.resolucion}</td>
                     <td className="whitespace-nowrap px-2.5 py-2.5 text-right text-xs">{row.costo > 0 ? `$${row.costo.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
                     <td className="px-2.5 py-2.5"><Badge variant={badgeVariant}>{row.status}</Badge></td>
-                    {canManageOrders && <td className="px-2 py-2.5"><input aria-label={`Seleccionar orden ${row.folio ?? row.unidad}`} type="checkbox" disabled={row.ordenId == null || !["ABIERTO", "EN PROCESO"].includes(row.status)} checked={row.ordenId != null && ordenesSeleccionadas.includes(row.ordenId)} onChange={(e) => { if (row.ordenId == null) return; setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, row.ordenId!])] : prev.filter((id) => id !== row.ordenId)); }} className="h-4 w-4 accent-indigo-600" /></td>}
+                    <td className="px-2 py-2.5"><input aria-label={`Seleccionar registro ${row.folio ?? row.unidad}`} type="checkbox" checked={registrosSeleccionados.includes(row.id)} onChange={(e) => { setRegistrosSeleccionados((prev) => e.target.checked ? [...new Set([...prev, row.id])] : prev.filter((id) => id !== row.id)); if (row.ordenId != null && puedeSeleccionarOrden(row)) setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, row.ordenId!])] : prev.filter((id) => id !== row.ordenId)); }} className="h-4 w-4 accent-indigo-600" /></td>
+                    <td className="px-2 py-2.5"><button type="button" disabled={!registrosSeleccionados.includes(row.id) || !puedeEditarDesdeBitacora(row)} title={puedeEditarDesdeBitacora(row) ? "Editar orden de servicio" : "Solo se pueden editar órdenes abiertas"} onClick={() => { if (row.ordenId != null) router.push(`/taller/${row.ordenId}`); }} className="rounded p-1.5 text-indigo-600 disabled:cursor-not-allowed disabled:opacity-25"><Pencil className="h-4 w-4" /></button></td>
                   </tr>;
                 })}
-                {registrosBitacoraFiltrados.length === 0 && <tr><td colSpan={canManageOrders ? 11 : 10} className="px-4 py-10 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay registros para estos filtros.</td></tr>}
+                {registrosBitacoraFiltrados.length === 0 && <tr><td colSpan={12} className="px-4 py-10 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay registros para estos filtros.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -979,7 +1225,7 @@ export default function TallerBoard({
       )}
 
       <Dialog open={modalDetalleBitacora} onOpenChange={setModalDetalleBitacora}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+        <DialogContent className="flex h-[min(88vh,760px)] max-h-[88vh] max-w-4xl flex-col overflow-hidden">
           <DialogHeader><DialogTitle>{ordenDetalleBitacora?.folio ? `${formatoFolioTaller(ordenDetalleBitacora.folio)} · ${ordenDetalleBitacora.unidad?.codigo ?? registroDetalleBitacora?.unidad}` : `Bitácora · ${registroDetalleBitacora?.unidad ?? "Registro"}`}</DialogTitle></DialogHeader>
           {cargandoDetalleBitacora && <p className="py-8 text-center text-sm" style={{ color: "var(--fg-muted)" }}>Cargando expediente…</p>}
           {errorDetalleBitacora && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{errorDetalleBitacora}</p>}
@@ -995,28 +1241,35 @@ export default function TallerBoard({
             <div className="grid grid-cols-3 gap-1 rounded-xl border p-1" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>
               {([["datos", "Datos"], ["checklist", "Checklist"], ["refacciones", "Refacciones"]] as const).map(([tab, label]) => <button key={tab} type="button" onClick={() => setTabDetalleBitacora(tab)} className={`rounded-lg px-3 py-2 text-xs font-semibold ${tabDetalleBitacora === tab ? "bg-indigo-600 text-white" : ""}`}>{label}</button>)}
             </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
             {tabDetalleBitacora === "datos" && <div className="grid gap-3 rounded-xl border p-4 text-sm sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
               <p><b>Fecha:</b> {fechaMx(ordenDetalleBitacora.fecha)}</p><p><b>Estado:</b> {ESTADO_LABEL[ordenDetalleBitacora.estado as EstadoOrden] ?? ordenDetalleBitacora.estado}</p>
               <p><b>Equipo:</b> {ordenDetalleBitacora.unidad?.codigo ?? "—"}</p><p><b>Categoría:</b> {etiquetaCategoriaTaller(ordenDetalleBitacora.categoria)}</p>
               <p><b>Operador:</b> {ordenDetalleBitacora.operador?.nombre ?? "—"}</p><p><b>Quién recibió:</b> {ordenDetalleBitacora.quienRecibio ?? "—"}</p>
-              <p><b>Atiende:</b> {ordenDetalleBitacora.quienAtendio ?? "—"}</p><p><b>Proveedor / ubicación:</b> {ordenDetalleBitacora.proveedorExterno ?? "Piso de taller"}</p>
+              <p><b>Atiende:</b> {ordenDetalleBitacora.quienAtendio ?? "—"}</p><p><b>Proveedor / ubicación:</b> {ordenDetalleBitacora.proveedorExterno ?? "TALLER"}</p>
               <p className="sm:col-span-2"><b>Motivo:</b> {ordenDetalleBitacora.motivo ?? "—"}</p>
-              <p className="sm:col-span-2 whitespace-pre-wrap"><b>Trabajo realizado / comentarios:</b> {ordenDetalleBitacora.trabajoRealizado ?? ordenDetalleBitacora.comentarios ?? "—"}</p>
+              <p className="sm:col-span-2 whitespace-pre-wrap"><b>Trabajo realizado / comentarios:</b> {textoActividadesTaller(ordenDetalleBitacora.trabajoRealizado, ordenDetalleBitacora.quienAtendio ?? "") || ordenDetalleBitacora.comentarios || "—"}</p>
               <p><b>Próximo mantenimiento:</b> {ordenDetalleBitacora.proximoMto ?? "—"}</p><p><b>Lectura:</b> {ordenDetalleBitacora.kmHrs ?? "—"}</p>
               {fotosChecklistJson(ordenDetalleBitacora.fotosSalida).length > 0 && <div className="sm:col-span-2"><b>Fotos de resolución / entrega</b><div className="mt-2 flex flex-wrap gap-2">{fotosChecklistJson(ordenDetalleBitacora.fotosSalida).map((foto, index) => <a key={foto.key ?? `salida-${index}`} href={foto.url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>{foto.tipo === "video" ? <video src={foto.url} controls className="h-20 w-28 object-cover" /> : <img src={foto.url} alt="Foto de entrega" className="h-20 w-28 object-cover" />}</a>)}</div></div>}
             </div>}
-            {tabDetalleBitacora === "checklist" && <div className="space-y-2">
-              {ordenDetalleBitacora.checklist.map((item) => {
+            {tabDetalleBitacora === "checklist" && <div className="grid grid-cols-1 content-start gap-2 md:grid-cols-2">
+              {[ordenDetalleBitacora.checklist.slice(0, 5), ordenDetalleBitacora.checklist.slice(5, 10)].map((columna, columnaIndex) => <div key={columnaIndex} className="space-y-2">
+              {columna.map((item) => {
                 const punto = CHECKLIST_PUNTOS.find((x) => x.clave === item.clave);
                 const fotos = fotosChecklistJson(item.fotos);
                 const respuesta = item.respuesta === "si" ? "SÍ" : item.respuesta === "no" ? "NO" : item.respuesta === "na" ? "N/A" : item.ok == null ? "SIN MARCAR" : item.ok ? "SÍ" : "NO";
                 return <div key={item.id} className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
                   <div className="flex items-start justify-between gap-3"><p className="text-sm font-semibold">{punto?.label ?? item.clave}</p><Badge variant={respuesta === "NO" ? "danger" : respuesta === "SÍ" ? "success" : "secondary"}>{respuesta}</Badge></div>
                   {item.nota && <p className="mt-1 whitespace-pre-wrap text-sm">{item.nota}</p>}
-                  {fotos.length > 0 && <div className="mt-2 flex flex-wrap gap-2">{fotos.map((foto, index) => <a key={foto.key ?? `${item.id}-${index}`} href={foto.url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}><img src={foto.url} alt={`Evidencia ${punto?.label ?? item.clave}`} className="h-20 w-28 object-cover" /></a>)}</div>}
+                  {fotos.length > 0 && <div className="mt-2 flex flex-wrap gap-2">{fotos.map((foto, index) => foto.tipo === "video"
+                    ? <a key={foto.key ?? `${item.id}-${index}`} href={foto.url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}><video src={foto.url} className="h-12 w-16 object-cover" /></a>
+                    : <FotoLightbox key={foto.key ?? `${item.id}-${index}`} foto={{ url: foto.url, key: foto.key ?? `${item.id}-${index}`, alt: `Evidencia ${punto?.label ?? item.clave}` }} />)}</div>}
                 </div>;
               })}
-              {fotosChecklistJson(ordenDetalleBitacora.fotosIngreso).length > 0 && <section className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}><p className="text-sm font-semibold">Fotos y videos de ingreso</p><div className="mt-2 flex flex-wrap gap-2">{fotosChecklistJson(ordenDetalleBitacora.fotosIngreso).map((foto, index) => <a key={foto.key ?? `ingreso-${index}`} href={foto.url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>{foto.tipo === "video" ? <video src={foto.url} controls className="h-20 w-28 object-cover" /> : <img src={foto.url} alt="Evidencia de ingreso" className="h-20 w-28 object-cover" />}</a>)}</div></section>}
+              </div>)}
+              {fotosChecklistJson(ordenDetalleBitacora.fotosIngreso).length > 0 && <section className="rounded-xl border p-3 md:col-span-2" style={{ borderColor: "var(--border)" }}><p className="text-sm font-semibold">Fotos y videos de ingreso</p><div className="mt-2 flex flex-wrap gap-2">{fotosChecklistJson(ordenDetalleBitacora.fotosIngreso).map((foto, index) => foto.tipo === "video"
+                ? <a key={foto.key ?? `ingreso-${index}`} href={foto.url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}><video src={foto.url} className="h-12 w-16 object-cover" /></a>
+                : <FotoLightbox key={foto.key ?? `ingreso-${index}`} foto={{ url: foto.url, key: foto.key ?? `ingreso-${index}`, alt: "Evidencia de ingreso" }} />)}</div></section>}
             </div>}
             {tabDetalleBitacora === "refacciones" && <div className="space-y-2">
               {ordenDetalleBitacora.refacciones.map((ref, index) => <div key={ref.id ?? index} className="grid gap-2 rounded-xl border p-3 text-sm sm:grid-cols-[2fr_0.7fr_1fr_1fr]" style={{ borderColor: "var(--border)" }}>
@@ -1025,6 +1278,7 @@ export default function TallerBoard({
               </div>)}
               {ordenDetalleBitacora.refacciones.length === 0 && <p className="rounded-xl border p-4 text-sm" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>Sin refacciones registradas.</p>}
             </div>}
+            </div>
           </>}
         </DialogContent>
       </Dialog>
@@ -1081,7 +1335,7 @@ export default function TallerBoard({
       <Dialog open={Boolean(equipoSeleccionado)} onOpenChange={(open) => { if (!open) setEquipoSeleccionado(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{equipoSeleccionado?.codigo}</DialogTitle></DialogHeader>
-          <p className="text-sm" style={{ color: "var(--fg-muted)" }}>{equipoSeleccionado ? ETIQUETA_ESTADO[unidadesEnVista.find((u) => u.id === equipoSeleccionado.id)?.estado ?? "disponible"] : ""}</p>
+          <p className="text-sm" style={{ color: "var(--fg-muted)" }}>{equipoSeleccionado && unidadesEnVista.find((u) => u.id === equipoSeleccionado.id)?.estado !== "disponible" ? ETIQUETA_ESTADO[unidadesEnVista.find((u) => u.id === equipoSeleccionado.id)?.estado ?? "disponible"] : ""}</p>
           <div className="grid gap-2">
             <button type="button" onClick={() => { if (!equipoSeleccionado) return; const unidadId = String(equipoSeleccionado.id); setEquipoSeleccionado(null); abrirOrden(unidadId); }} className="w-full rounded-lg bg-[#207783] px-4 py-2.5 text-sm font-semibold text-white">Ingresar</button>
             {canViewExpediente && equipoSeleccionado && <button type="button" onClick={() => router.push(`/catalogo/unidades/${equipoSeleccionado.id}?tab=bitacora`)} className="w-full rounded-lg border px-4 py-2.5 text-sm font-semibold" style={{ borderColor: "var(--border)" }}>Ver Expediente</button>}

@@ -20,7 +20,7 @@ export default async function TallerPage({
 }: {
   searchParams: Promise<{ nueva?: string; unidadId?: string; preventivo?: string; mes?: string }>;
 }) {
-  await requirePermission("taller");
+  const permisos = await requirePermission("taller");
   const [q, user] = await Promise.all([searchParams, currentUser()]);
   const mesActivo = /^\d{4}-(0[1-9]|1[0-2])$/.test(q.mes ?? "") ? q.mes! : getNowLocal().fecha.slice(0, 7);
   const [ordenes, programados, catalogos] = await Promise.all([
@@ -32,12 +32,12 @@ export default async function TallerPage({
     getIncidenciasTaller({ desde: "2000-01-01", hasta: getNowLocal().fecha }).then((items) => ({ items, schemaReady: true as const }))
       .catch(() => ({ items: [], schemaReady: false as const })),
     getIncidenciasActivasTaller().catch(() => []),
-    getBitacoraGeneralTaller(),
+    permisos.includes("taller.bitacora") ? getBitacoraGeneralTaller() : Promise.resolve([]),
     getUreaTaller().then((items) => ({ items, schemaReady: true as const }))
       .catch(() => ({ items: [], schemaReady: false as const })),
   ]);
 
-  const abiertas = ordenes.filter((o) => o.estado === "abierta" || o.estado === "en_proceso").length;
+  const abiertas = ordenes.filter((o) => ["abierta", "en_proceso", "terminada"].includes(o.estado)).length;
 
   return (
     <div className="max-w-[1536px] p-3 sm:p-4 md:p-5">
@@ -52,6 +52,11 @@ export default async function TallerPage({
         urea={ureaResult.items}
         ureaReady={ureaResult.schemaReady}
         canViewExpediente={MANAGE_ROLES.includes(user?.publicMetadata?.role as string)}
+        canViewBitacora={permisos.includes("taller.bitacora")}
+        canEditOrders={permisos.includes("taller")}
+        canFinishOrders={permisos.includes("taller.terminar")}
+        canCloseOrders={permisos.includes("taller.cerrar")}
+        canCancelOrders={permisos.includes("taller.cancelar")}
         extensionReady={incidenciasResult.schemaReady}
         initialNueva={q.nueva === "1"}
         initialUnidadId={q.unidadId ?? ""}

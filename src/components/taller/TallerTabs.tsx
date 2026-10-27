@@ -16,7 +16,7 @@ export default function TallerTabs({
   programados: AlertaMantenimiento[];
 }) {
   const [tab, setTab] = useState<"ordenes" | "programados">("ordenes");
-  const abiertas = ordenes.filter((o) => o.estado === "abierta" || o.estado === "en_proceso").length;
+  const abiertas = ordenes.filter((o) => ["abierta", "en_proceso", "terminada"].includes(o.estado)).length;
 
   return (
     <div className="space-y-4">

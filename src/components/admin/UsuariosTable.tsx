@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { updateRolUsuario, toggleActivoUsuario } from "@/app/actions/admin";
-import { VALID_ROLES, ROLE_LABELS, type Role } from "@/lib/roles";
+import { isProtectedUserEmail } from "@/lib/roles";
 
 type Usuario = {
   id: string;
@@ -16,6 +16,8 @@ type Usuario = {
   activo: boolean;
   createdAt: Date | null;
 };
+
+type RolOption = { id: string; label: string };
 
 function initials(name: string) {
   return name
@@ -33,6 +35,8 @@ const ROLE_COLORS: Record<string, string> = {
   operador_nissan: "bg-amber-500/15 text-amber-500",
   encargado_obra: "bg-blue-500/15 text-blue-500",
   chofer: "bg-gray-500/15 text-gray-400",
+  taller: "bg-cyan-500/15 text-cyan-600",
+  encargado_taller: "bg-indigo-500/15 text-indigo-500",
 };
 
 function fmtFecha(d: Date | null) {
@@ -46,11 +50,13 @@ function fmtFecha(d: Date | null) {
 
 function UserRow({
   user,
+  roles,
   isCurrentUser,
   onRoleChange,
   onToggle,
 }: {
   user: Usuario;
+  roles: RolOption[];
   isCurrentUser: boolean;
   onRoleChange: (id: string, role: string) => void;
   onToggle: (id: string) => void;
@@ -86,6 +92,7 @@ function UserRow({
   }
 
   const avatarColor = ROLE_COLORS[user.role] ?? ROLE_COLORS.chofer;
+  const protectedAccount = isProtectedUserEmail(user.email);
 
   return (
     <div
@@ -112,6 +119,7 @@ function UserRow({
               Tú
             </Badge>
           )}
+          {protectedAccount && <Badge variant="secondary" className="text-[10px] py-0">Protegida</Badge>}
           {!user.activo && (
             <Badge variant="danger" className="text-[10px] py-0">
               Inactivo
@@ -145,19 +153,19 @@ function UserRow({
         <Select
           value={user.role}
           onChange={handleRoleChange}
-          disabled={isCurrentUser || pendingRole}
+          disabled={isCurrentUser || protectedAccount || pendingRole}
           className="text-xs h-8 min-w-[150px]"
         >
-          {VALID_ROLES.map((r) => (
-            <option key={r} value={r}>
-              {ROLE_LABELS[r]}
+          {roles.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.label}
             </option>
           ))}
         </Select>
       </div>
 
       {/* Toggle activo */}
-      <Button
+      {!protectedAccount ? <Button
         type="button"
         variant={user.activo ? "secondary" : "ghost"}
         size="sm"
@@ -174,16 +182,18 @@ function UserRow({
           : user.activo
           ? "Desactivar"
           : "Reactivar"}
-      </Button>
+      </Button> : <div aria-hidden="true" className="w-[79px] shrink-0" />}
     </div>
   );
 }
 
 export default function UsuariosTable({
   initialUsuarios,
+  roles,
   currentUserId,
 }: {
   initialUsuarios: Usuario[];
+  roles: RolOption[];
   currentUserId: string;
 }) {
   const [usuarios, setUsuarios] = useState(initialUsuarios);
@@ -254,6 +264,7 @@ export default function UsuariosTable({
             <UserRow
               key={u.id}
               user={u}
+              roles={roles}
               isCurrentUser={u.id === currentUserId}
               onRoleChange={handleRoleChange}
               onToggle={handleToggle}

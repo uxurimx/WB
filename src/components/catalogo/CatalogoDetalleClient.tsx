@@ -31,7 +31,7 @@ import type {
 } from "@/app/actions/mantenimiento";
 import UnidadMantenimientoTab from "@/components/catalogo/UnidadMantenimientoTab";
 import UnidadBitacoraTab from "@/components/taller/UnidadBitacoraTab";
-import type { getBitacoraGeneralTaller, getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
+import type { getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
 
 type Carga     = Awaited<ReturnType<typeof getCatalogoCargas>>[number];
 type RendItem  = Awaited<ReturnType<typeof getRendimientosUnidad>>[number];
@@ -39,7 +39,6 @@ type FotoItem  = Awaited<ReturnType<typeof getArchivosUnidad>>[number];
 type AuditItem = Awaited<ReturnType<typeof getAuditLogCargasUnidad>>[number];
 type MantenimientoResumen = Awaited<ReturnType<typeof getResumenMantenimientoUnidad>>;
 type MantenimientoEvento = Awaited<ReturnType<typeof getEventosMantenimientoUnidad>>[number];
-type TallerEvento = Awaited<ReturnType<typeof getBitacoraGeneralTaller>>[number];
 type TallerIncidencia = Awaited<ReturnType<typeof getIncidenciasTaller>>[number];
 type TallerUrea = Awaited<ReturnType<typeof getUreaTaller>>[number];
 
@@ -89,7 +88,6 @@ export default function CatalogoDetalleClient({
   odometroOffset = 0,
   odometroResets = [],
   ordenesTaller = [],
-  eventosTaller = [],
   incidenciasTaller = [],
   ureaTaller = [],
 }: {
@@ -127,7 +125,6 @@ export default function CatalogoDetalleClient({
     refacciones: { precio: number | null; cantidad: number | null; iva: boolean }[];
     checklist: { clave: string; fotos: string | null }[];
   }[];
-  eventosTaller?: TallerEvento[];
   incidenciasTaller?: TallerIncidencia[];
   ureaTaller?: TallerUrea[];
 }) {
@@ -389,7 +386,7 @@ export default function CatalogoDetalleClient({
         { key: "cargas" as Tab,      label: "Cargas" },
         { key: "rendimiento" as Tab, label: "Rendimiento" },
         { key: "mantenimiento" as Tab, label: "Mantenimiento" },
-        { key: "bitacora" as Tab, label: `Bitácora${ordenesTaller.length ? ` (${ordenesTaller.length})` : ""}` },
+        { key: "bitacora" as Tab, label: `Incidencias${ordenesTaller.length ? ` (${ordenesTaller.length})` : ""}` },
         { key: "fotos" as Tab,       label: `Fotos${fotos && fotos.length > 0 ? ` (${fotos.length})` : ""}` },
         { key: "cambios" as Tab,     label: `Cambios${audits && audits.length > 0 ? ` (${audits.length})` : ""}` },
       ]
@@ -857,7 +854,7 @@ export default function CatalogoDetalleClient({
 
       {/* ── Tab Mantenimiento ─────────────────────────────── */}
       {activeTab === "bitacora" && tipo === "unidad" && unidadId && (
-        <UnidadBitacoraTab unidadId={unidadId} ordenes={ordenesTaller} eventos={eventosTaller} incidencias={incidenciasTaller} urea={ureaTaller} canOpen={canEdit} />
+        <UnidadBitacoraTab unidadId={unidadId} ordenes={ordenesTaller} incidencias={incidenciasTaller} urea={ureaTaller} canOpen={canEdit} />
       )}
 
       {activeTab === "mantenimiento" && tipo === "unidad" && unidadId && (

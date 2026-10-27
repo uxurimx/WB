@@ -159,8 +159,7 @@ export default function ChecklistIngreso({
                 </div>
               </div>
 
-              {expanded && (
-                <div className="mt-2 space-y-2 border-t pt-2" style={{ borderColor: "var(--border)" }}>
+                <div className={`${expanded ? "" : "hidden"} print:block mt-2 space-y-2 border-t pt-2`} style={{ borderColor: "var(--border)" }}>
                   <textarea
                     disabled={locked}
                     rows={2}
@@ -204,7 +203,6 @@ export default function ChecklistIngreso({
                     {c.respuesta === "no" && tieneDetalle && <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-indigo-600"><Check className="h-3 w-3" />Falla documentada</span>}
                   </div>
                 </div>
-              )}
             </li>
           );
         })}

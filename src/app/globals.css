@@ -41,6 +41,16 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+@page taller { size: landscape; margin: 10mm; }
+
+@media print {
+  .orden-servicio-print { page: taller; color: #111 !important; }
+  .orden-servicio-print input,
+  .orden-servicio-print textarea,
+  .orden-servicio-print select { color: #111 !important; background: #fff !important; }
+  .orden-servicio-print video { display: none !important; }
+}
+
 /* ─── Animations ─── */
 @keyframes blob {
   0%   { transform: translate(0px, 0px) scale(1); }

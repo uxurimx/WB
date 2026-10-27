@@ -24,12 +24,14 @@ const FILTROS: { id: "todas" | EstadoOrden; label: string }[] = [
   { id: "todas", label: "Todas" },
   { id: "abierta", label: "Abiertas" },
   { id: "en_proceso", label: "En proceso" },
+  { id: "terminada", label: "Pendiente de cierre" },
   { id: "cerrada", label: "Cerradas" },
 ];
 
 function badgeVariant(estado: string) {
   if (estado === "abierta") return "warning" as const;
   if (estado === "en_proceso") return "default" as const;
+  if (estado === "terminada") return "warning" as const;
   if (estado === "cerrada") return "success" as const;
   return "secondary" as const;
 }

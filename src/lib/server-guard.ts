@@ -12,6 +12,7 @@ function getHomeUrl(permisos: NavPermission[]): string {
   if (permisos.includes("cargas.nueva_patio")) return "/cargas/nueva";
   if (permisos.includes("cargas.nueva_campo")) return "/cargas/campo";
   if (permisos.includes("cargas.historial"))   return "/cargas";
+  if (permisos.includes("taller"))              return "/taller";
   return "/sign-in";
 }
 

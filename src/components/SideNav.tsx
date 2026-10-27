@@ -58,7 +58,7 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedade
       items: [
         { name: "Tablero general", href: "/taller", icon: LayoutDashboard },
         { name: "Órdenes de servicio", href: "/taller/ordenes", icon: Wrench },
-        { name: "Bitácora", href: "/taller/bitacora", icon: ClipboardList },
+        ...(has("taller.bitacora") ? [{ name: "Bitácora", href: "/taller/bitacora", icon: ClipboardList }] : []),
       ],
     }] : []),
     ...(catalogoItems.length ? [{

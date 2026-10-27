@@ -14,12 +14,12 @@ import {
   tallerEventos,
   tallerUrea,
 } from "@/db/schema";
-import { eq, and, inArray, gte, lte, desc } from "drizzle-orm";
-import { requireActionPermission, requireAnyActionPermission, requireManageRole } from "@/lib/authz";
+import { eq, and, inArray, gte, lte, desc, ne } from "drizzle-orm";
+import { requireActionPermission, requireAnyActionPermission } from "@/lib/authz";
 import { CHECKLIST_PUNTOS, type EstadoOrden } from "@/lib/taller-checklist";
-import { registrarMantenimientoUnidad } from "@/app/actions/mantenimiento";
 import { getNowLocal, parseLocalDate } from "@/lib/date-utils";
 import { CATEGORIAS_SIN_TALLER, formatoFolioTaller, TALLER_FALLAS, type CategoriaTaller } from "@/lib/taller-incidencias";
+import { textoActividadesTaller } from "@/lib/taller-actividades";
 
 export type RefaccionInput = {
   descripcion: string;
@@ -256,6 +256,7 @@ export async function getOrdenesTaller(opts?: { unidadId?: number; estado?: Esta
       estado: true,
       abiertoPorId: true,
       cerradoPorId: true,
+      cerradoAt: true,
       quienAtendio: true,
       mecanicos: true,
       mecanicoOtro: true,
@@ -511,7 +512,7 @@ export async function getIncidenciasActivasTaller() {
 
 export async function getBitacoraGeneralTaller(unidadId?: number) {
   if (unidadId) await requireAnyActionPermission(["taller", "catalogo"]);
-  else await requireActionPermission("taller");
+  else await requireActionPermission("taller.bitacora");
   type TallerEventoConRelaciones = {
     id: number;
     unidadId: number;
@@ -812,14 +813,51 @@ export async function getRefaccionesSugeridas() {
 
 export async function getServiciosProgramadosTaller() {
   await requireActionPermission("taller");
-  const { getAlertasMantenimientoOverview } = await import("@/app/actions/mantenimiento");
-  const [alertas, abiertas] = await Promise.all([
+  const { getAlertasMantenimientoOverview, getResumenMantenimientoUnidades } = await import("@/app/actions/mantenimiento");
+  const [alertasBase, resumen, programaciones, abiertas] = await Promise.all([
     getAlertasMantenimientoOverview(),
+    getResumenMantenimientoUnidades(),
+    db.query.ordenesTaller.findMany({
+      columns: { id: true, unidadId: true, proximoMto: true, estado: true },
+      with: { unidad: { columns: { codigo: true, tipo: true } } },
+      where: eq(ordenesTaller.estado, "cerrada"),
+      orderBy: (t, { desc: d }) => [d(t.id)],
+    }),
     db.query.ordenesTaller.findMany({
       columns: { unidadId: true, esPreventivo: true, tipoControlPreventivo: true, estado: true },
-      where: (t, { inArray }) => inArray(t.estado, ["abierta", "en_proceso"]),
+      where: (t, { inArray }) => inArray(t.estado, ["abierta", "en_proceso", "terminada"]),
     }),
   ]);
+  const resumenPorUnidad = new Map(resumen.map((r) => [r.unidadId, r]));
+  const alertasProgramadas = programaciones.flatMap((o) => {
+    const target = Number.parseFloat((o.proximoMto ?? "").replace(/,/g, ""));
+    const controlGuardado = (o.proximoMto ?? "").match(/\b(hrs?|km)\b/i)?.[1]?.toLowerCase();
+    const tipoControl = (controlGuardado?.startsWith("hr") ? "hrs" : controlGuardado === "km" ? "km" : o.unidad?.tipo === "maquina" ? "hrs" : "km") as "hrs" | "km";
+    const plan = resumenPorUnidad.get(o.unidadId)?.planes.find((p) => p.tipoControl === tipoControl);
+    const actual = plan?.lecturaActual;
+    if (!Number.isFinite(target) || target <= 0 || actual == null) return [];
+    const faltante = target - actual;
+    // Con configuración activa, respetar su umbral de aviso. Sin umbral activo,
+    // mostrar la programación manual solo cuando ya llegó o se pasó la meta.
+    if (plan?.activo && plan.umbralAlerta != null ? faltante > plan.umbralAlerta : faltante > 0) return [];
+    return [{
+      unidadId: o.unidadId,
+      unidadCodigo: o.unidad?.codigo ?? "",
+      tipoControl,
+      estado: faltante <= 0 ? "vencido" as const : "proximo" as const,
+      nivelAlerta: faltante <= 0 ? "vencido" as const : "proximo" as const,
+      lecturaActual: actual,
+      lecturaServicio: actual,
+      proximoServicioEn: target,
+      faltante,
+    }];
+  });
+  const programadasPorTipo = new Map<string, (typeof alertasProgramadas)[number]>();
+  for (const alerta of alertasProgramadas) {
+    const key = `${alerta.unidadId}:${alerta.tipoControl}`;
+    if (!programadasPorTipo.has(key)) programadasPorTipo.set(key, alerta);
+  }
+  const alertas = [...alertasBase.filter((a) => !programadasPorTipo.has(`${a.unidadId}:${a.tipoControl}`)), ...programadasPorTipo.values()];
   const ocupadas = new Set(
     abiertas
       .filter((o) => o.esPreventivo)
@@ -920,6 +958,9 @@ export async function guardarOrdenTaller(id: number, input: OrdenTallerUpdateInp
   if ((input.comentarios?.trim().length ?? 0) > 4000) {
     throw new Error("Los comentarios no pueden exceder 4,000 caracteres.");
   }
+  if (input.kmHrs != null && (!Number.isFinite(input.kmHrs) || input.kmHrs < 0)) {
+    throw new Error("La lectura KM/HRS debe ser un número igual o mayor a cero.");
+  }
   if (input.fechaSalida && !/^\d{4}-\d{2}-\d{2}$/.test(input.fechaSalida)) {
     throw new Error("La fecha de salida no es válida.");
   }
@@ -942,6 +983,7 @@ export async function guardarOrdenTaller(id: number, input: OrdenTallerUpdateInp
       esPreventivo: true,
       tipoControlPreventivo: true,
     },
+    with: { unidad: { columns: { tipo: true } } },
   });
   if (!orden) throw new Error("Orden no encontrada");
   if (orden.estado === "cerrada" || orden.estado === "cancelada") {
@@ -1048,6 +1090,34 @@ export async function guardarOrdenTaller(id: number, input: OrdenTallerUpdateInp
   return { ok: true };
 }
 
+export async function terminarOrdenTaller(id: number) {
+  const { userId } = await requireActionPermission("taller.terminar");
+  const orden = await db.query.ordenesTaller.findFirst({
+    where: eq(ordenesTaller.id, id),
+    columns: { id: true, unidadId: true, estado: true, motivo: true },
+  });
+  if (!orden) throw new Error("Orden no encontrada");
+  if (orden.estado === "terminada") throw new Error("El trabajo ya está marcado como terminado");
+  if (orden.estado === "cerrada" || orden.estado === "cancelada") throw new Error("Esta orden ya está cerrada o cancelada");
+
+  await db.update(ordenesTaller).set({ estado: "terminada", updatedAt: new Date() }).where(eq(ordenesTaller.id, id));
+  await logOrden(id, userId, "terminar");
+  await logTallerEvento({
+    unidadId: orden.unidadId,
+    ordenId: id,
+    tipo: "orden_terminada",
+    detalle: `Orden #${id} · trabajo terminado; pendiente de cierre gerencial${orden.motivo ? ` · ${orden.motivo}` : ""}`,
+    usuarioId: userId,
+  });
+
+  revalidatePath("/taller");
+  revalidatePath("/taller/ordenes");
+  revalidatePath("/taller/bitacora");
+  revalidatePath(`/taller/${id}`);
+  revalidatePath(`/catalogo/unidades/${orden.unidadId}`);
+  return { ok: true };
+}
+
 export async function cerrarOrdenTaller(id: number, input?: {
   quienAtendio?: string | null;
   quienEntrega?: string | null;
@@ -1055,7 +1125,7 @@ export async function cerrarOrdenTaller(id: number, input?: {
   tipoControlPreventivo?: "km" | "hrs";
   datos?: OrdenTallerUpdateInput;
 }) {
-  const { userId } = await requireManageRole();
+  const { userId } = await requireActionPermission("taller.cerrar");
   if (input?.datos) await guardarOrdenTaller(id, input.datos);
   const orden = await db.query.ordenesTaller.findFirst({
     where: eq(ordenesTaller.id, id),
@@ -1072,26 +1142,35 @@ export async function cerrarOrdenTaller(id: number, input?: {
       quienAtendio: true,
       cerradoPorId: true,
       abiertoPorId: true,
+      proximoMto: true,
     },
+    with: { unidad: { columns: { tipo: true } } },
   });
   if (!orden) throw new Error("Orden no encontrada");
   if (orden.estado === "cerrada") throw new Error("Ya está cerrada");
   if (orden.estado === "cancelada") throw new Error("Está cancelada");
+  if (orden.estado !== "terminada") throw new Error("Primero debe marcarse el trabajo como terminado.");
+  if (orden.proximoMto && orden.kmHrs == null) throw new Error("Agrega la lectura KM/HRS antes de programar el próximo mantenimiento.");
   const folio = (await leerFoliosOrdenes([id])).get(id) ?? null;
   const extension = await leerExtensionOrden(id);
   const incidenciaId = extension?.incidenciaId ?? null;
 
   const esPreventivo = input?.esPreventivo ?? orden.esPreventivo;
-  const tipoControl = input?.tipoControlPreventivo ?? (orden.tipoControlPreventivo as "km" | "hrs" | null) ?? "km";
+  const controlProgramado = orden.proximoMto?.match(/\b(hrs?|km)\b/i)?.[1]?.toLowerCase();
+  const tipoControl = input?.tipoControlPreventivo
+    ?? (orden.tipoControlPreventivo as "km" | "hrs" | null)
+    ?? (controlProgramado?.startsWith("hr") ? "hrs" : controlProgramado === "km" ? "km" : orden.unidad?.tipo === "maquina" ? "hrs" : "km");
+  const registrarServicioBase = esPreventivo || Boolean(orden.proximoMto);
 
   let eventoId = orden.eventoMantenimientoId;
-  if (esPreventivo && orden.kmHrs != null && !eventoId) {
+  if (registrarServicioBase && orden.kmHrs != null && !eventoId) {
     const { mantenimientosEventos } = await import("@/db/schema");
     const ya = await db.query.mantenimientosEventos.findFirst({
       where: and(
         eq(mantenimientosEventos.unidadId, orden.unidadId),
         eq(mantenimientosEventos.tipoControl, tipoControl),
         eq(mantenimientosEventos.fechaServicio, orden.fecha),
+        eq(mantenimientosEventos.notas, `Orden #${orden.id}`),
       ),
       orderBy: (e, { desc: d }) => [d(e.createdAt)],
     });
@@ -1099,16 +1178,40 @@ export async function cerrarOrdenTaller(id: number, input?: {
       eventoId = ya.id;
     }
   }
-  if (esPreventivo && orden.kmHrs != null && !eventoId) {
-    const ev = await registrarMantenimientoUnidad({
+  if (registrarServicioBase && orden.kmHrs != null && !eventoId) {
+    const { mantenimientosEventos, mantenimientosPlanes } = await import("@/db/schema");
+    const plan = await db.query.mantenimientosPlanes.findFirst({
+      where: and(eq(mantenimientosPlanes.unidadId, orden.unidadId), eq(mantenimientosPlanes.tipoControl, tipoControl)),
+    });
+    const [evento] = await db.insert(mantenimientosEventos).values({
       unidadId: orden.unidadId,
+      planId: plan?.id ?? null,
       tipoControl,
       fechaServicio: orden.fecha,
       lecturaServicio: orden.kmHrs,
-      descripcion: orden.motivo ?? "Servicio de taller (preventivo)",
+      descripcion: orden.motivo ?? (esPreventivo ? "Servicio de taller (preventivo)" : "Servicio de taller"),
       notas: `Orden #${orden.id}`,
+      registradoPorId: userId,
+    }).returning({ id: mantenimientosEventos.id });
+    eventoId = evento.id;
+  }
+
+  if (esPreventivo) {
+    const anteriores = await db.query.ordenesTaller.findMany({
+      columns: { id: true, proximoMto: true },
+      where: and(eq(ordenesTaller.unidadId, orden.unidadId), ne(ordenesTaller.id, id), eq(ordenesTaller.estado, "cerrada")),
     });
-    eventoId = ev.id;
+    const consumidas = anteriores.filter((anterior) => {
+      if (!anterior.proximoMto) return false;
+      const guardado = anterior.proximoMto.match(/\b(hrs?|km)\b/i)?.[1]?.toLowerCase();
+      const tipoAnterior = guardado?.startsWith("hr") ? "hrs" : guardado === "km" ? "km" : tipoControl;
+      return tipoAnterior === tipoControl;
+    }).map((anterior) => anterior.id);
+    if (consumidas.length) {
+      await db.update(ordenesTaller)
+        .set({ proximoMto: null, updatedAt: new Date() })
+        .where(inArray(ordenesTaller.id, consumidas));
+    }
   }
 
   await db
@@ -1130,8 +1233,9 @@ export async function cerrarOrdenTaller(id: number, input?: {
     .where(eq(ordenesTaller.id, id));
 
   await logOrden(id, userId, "cerrar");
-  const cierreDetalle = extension?.trabajoRealizado
-    ? `Trabajo realizado: ${extension.trabajoRealizado}`
+  const actividadesTexto = textoActividadesTaller(extension?.trabajoRealizado, orden.quienAtendio ?? "");
+  const cierreDetalle = actividadesTexto
+    ? `Trabajo realizado: ${actividadesTexto}`
     : [
       extension?.diagnosticoFinal && `Diagnóstico: ${extension.diagnosticoFinal}`,
       extension?.observacionesSalida && `Salida: ${extension.observacionesSalida}`,
@@ -1170,19 +1274,20 @@ export async function cerrarOrdenTaller(id: number, input?: {
 }
 
 export async function cancelarOrdenTaller(id: number) {
-  const { userId } = await requireManageRole();
+  const { userId } = await requireActionPermission("taller.cancelar");
   const orden = await db.query.ordenesTaller.findFirst({
     where: eq(ordenesTaller.id, id),
     columns: { id: true, unidadId: true, motivo: true, estado: true },
   });
   if (!orden) throw new Error("Orden no encontrada");
   if (orden.estado === "cerrada") throw new Error("No se puede cancelar una orden cerrada");
+  if (orden.estado === "cancelada") throw new Error("La orden ya está cancelada");
   const folio = (await leerFoliosOrdenes([id])).get(id) ?? null;
   const extension = await leerExtensionOrden(id);
 
   await db
     .update(ordenesTaller)
-    .set({ estado: "cancelada", updatedAt: new Date() })
+    .set({ estado: "cancelada", cerradoAt: new Date(), updatedAt: new Date() })
     .where(eq(ordenesTaller.id, id));
   await logOrden(id, userId, "cancelar");
   await logTallerEvento({

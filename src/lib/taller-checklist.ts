@@ -13,12 +13,13 @@ export const CHECKLIST_PUNTOS = [
 
 export type ChecklistClave = (typeof CHECKLIST_PUNTOS)[number]["clave"];
 
-export const ESTADOS_ORDEN = ["abierta", "en_proceso", "cerrada", "cancelada"] as const;
+export const ESTADOS_ORDEN = ["abierta", "en_proceso", "terminada", "cerrada", "cancelada"] as const;
 export type EstadoOrden = (typeof ESTADOS_ORDEN)[number];
 
 export const ESTADO_LABEL: Record<EstadoOrden, string> = {
   abierta: "Abierta",
   en_proceso: "En proceso",
+  terminada: "Pendiente de cierre",
   cerrada: "Cerrada",
   cancelada: "Cancelada",
 };

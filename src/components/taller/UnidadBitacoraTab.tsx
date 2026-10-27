@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { ExternalLink } from "lucide-react";
 import { formatFechaHoraMx } from "@/lib/date-utils";
+import { parseActividadesTaller, textoActividadesTaller } from "@/lib/taller-actividades";
 import FotoLightbox, { type TallerFoto } from "@/components/taller/FotoLightbox";
-import type { getBitacoraGeneralTaller, getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
-import { formatoFolioTaller } from "@/lib/taller-incidencias";
+import type { getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
+import { etiquetaCategoriaTaller, formatoFolioTaller } from "@/lib/taller-incidencias";
 
 type Orden = {
   id: number;
@@ -25,7 +26,6 @@ type Orden = {
   refacciones: { precio: number | null; cantidad: number | null; iva: boolean; descripcion?: string }[];
   checklist: { clave: string; fotos: string | null }[];
 };
-type Evento = Awaited<ReturnType<typeof getBitacoraGeneralTaller>>[number];
 type Incidencia = Awaited<ReturnType<typeof getIncidenciasTaller>>[number];
 type Urea = Awaited<ReturnType<typeof getUreaTaller>>[number];
 type FiltroExpediente = "historial" | "activos" | "refacciones" | "urea";
@@ -38,7 +38,10 @@ type Registro = {
   resolucion: string;
   estado: string;
   operador: string;
+  atendio: string;
   lugar: string;
+  lectura: string;
+  falla: string;
   costo: number;
   ordenId: number | null;
   tipo: "orden" | "incidencia" | "urea";
@@ -64,7 +67,8 @@ function costo(refs: Orden["refacciones"]) {
 }
 
 function estadoRegistro(estado: string) {
-  if (estado === "cerrada" || estado === "resuelta") return "Terminada";
+  if (estado === "terminada") return "Pendiente de cierre";
+  if (estado === "cerrada" || estado === "resuelta") return "Cerrada · entregada";
   if (estado === "en_proceso" || estado === "en_revision") return "En reparación";
   if (estado === "cancelada") return "Cancelada";
   return "Abierta";
@@ -72,14 +76,12 @@ function estadoRegistro(estado: string) {
 
 export default function UnidadBitacoraTab({
   ordenes,
-  eventos,
   incidencias,
   urea,
   canOpen,
 }: {
   unidadId: number;
   ordenes: Orden[];
-  eventos: Evento[];
   incidencias: Incidencia[];
   urea: Urea[];
   canOpen: boolean;
@@ -92,11 +94,14 @@ export default function UnidadBitacoraTab({
       fecha: o.fecha,
       folio: o.folio,
       titulo: o.motivo || "Orden de servicio",
-      categoria: o.categoria || "Servicio de taller",
-      resolucion: o.trabajoRealizado || o.comentarios || "Sin resolución registrada.",
+      categoria: etiquetaCategoriaTaller(o.categoria || "otro"),
+      resolucion: textoActividadesTaller(o.trabajoRealizado, o.quienAtendio ?? "") || o.comentarios || "Sin resolución registrada.",
       estado: estadoRegistro(o.estado),
       operador: o.operador?.nombre ?? "—",
-      lugar: o.proveedorExterno ? `Proveedor externo · ${o.proveedorExterno}` : "Piso de taller",
+      atendio: [...new Set(parseActividadesTaller(o.trabajoRealizado, o.quienAtendio ?? "").map((item) => item.atendio).filter(Boolean))].join(", ") || o.quienAtendio || "—",
+      lugar: o.proveedorExterno || "TALLER",
+      lectura: o.kmHrs != null ? `${Math.round(o.kmHrs).toLocaleString("es-MX")} km/hrs` : "—",
+      falla: o.motivo || "—",
       costo: costo(o.refacciones),
       ordenId: o.id,
       tipo: "orden",
@@ -112,7 +117,10 @@ export default function UnidadBitacoraTab({
         resolucion: i.resolucion || i.observaciones || "Sin observaciones.",
         estado: i.categoria === "urea" || i.categoria === "llanta_danada" ? "Cerrada" : estadoRegistro(i.estado),
         operador: i.operador?.nombre ?? "—",
+        atendio: i.atendio ?? "—",
         lugar: i.ubicacion || "—",
+        lectura: "—",
+        falla: i.descripcion || "—",
         costo: 0,
         ordenId: null,
         tipo: "incidencia",
@@ -127,7 +135,10 @@ export default function UnidadBitacoraTab({
       resolucion: r.observaciones || "Carga registrada.",
       estado: "Cerrada",
       operador: r.operadorNombre ?? "—",
+      atendio: "—",
       lugar: "Carga de urea",
+      lectura: "—",
+      falla: `${Number(r.litros).toLocaleString("es-MX")} L UREA`,
       costo: 0,
       ordenId: null,
       tipo: "urea",
@@ -136,10 +147,7 @@ export default function UnidadBitacoraTab({
   }, [ordenes, incidencias, urea]);
 
   const refacciones = ordenes.reduce((total, o) => total + o.refacciones.length, 0);
-  const litrosUrea = urea.reduce((total, r) => total + (Number(r.litros) || 0), 0);
   const activos = registros.filter((r) => ["Abierta", "En reparación"].includes(r.estado)).length;
-  const eventosLlanta = incidencias.filter((i) => i.categoria === "llanta_danada").length;
-  const folios = ordenes.length + incidencias.filter((i) => !i.orden?.id).length;
   const registrosVisibles = registros.filter((r) => {
     if (filtro === "activos") return ["Abierta", "En reparación"].includes(r.estado);
     if (filtro === "refacciones") return r.tipo === "orden" && (ordenes.find((o) => o.id === r.ordenId)?.refacciones.length ?? 0) > 0;
@@ -152,17 +160,6 @@ export default function UnidadBitacoraTab({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm" style={{ color: "var(--fg-muted)" }}>Expediente completo de esta unidad.</p>
         {canOpen && <Link href="/taller/nueva" className="text-xs font-semibold underline">Nueva orden</Link>}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 xl:grid-cols-6">
-        {[
-          ["Incidencias / folios", folios],
-          ["Órdenes de servicio", ordenes.length],
-          ["Activos", activos],
-          ["Refacciones", refacciones],
-          ["Urea", `${litrosUrea.toLocaleString("es-MX", { maximumFractionDigits: 1 })} L`],
-          ["Eventos de llantas", eventosLlanta],
-        ].map(([label, value]) => <div key={String(label)} className="min-w-0 rounded-lg border px-3 py-2" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}><p className="truncate text-lg font-bold leading-tight">{value}</p><p className="truncate text-[10px] font-semibold" style={{ color: "var(--fg-muted)" }}>{label}</p></div>)}
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -178,32 +175,23 @@ export default function UnidadBitacoraTab({
         {registrosVisibles.map((r) => {
           const orden = r.ordenId ? ordenes.find((o) => o.id === r.ordenId) : undefined;
           const fotos = orden ? fotosDeOrden(orden.checklist) : [];
-          const variant = r.estado === "Terminada" || r.estado === "Cerrada" ? "success" : r.estado === "En reparación" ? "warning" : r.estado === "Cancelada" ? "secondary" : "default";
           return <article key={r.key} className="py-3" style={{ borderColor: "var(--border)" }}>
             <div className="flex items-start gap-3">
-              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${r.estado === "Terminada" || r.estado === "Cerrada" ? "bg-emerald-600" : r.estado === "Cancelada" ? "bg-slate-400" : "bg-amber-500"}`} />
+              <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-slate-400" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--fg-muted)" }}>{formatFechaHoraMx(r.fecha)} · {r.folio != null ? <span className="text-[#207783]">{formatoFolioTaller(r.folio)} · </span> : null}{r.categoria}</p>
-                  <Badge variant={variant}>{r.estado}</Badge>
+                  {r.ordenId && <Link href={`/taller/${r.ordenId}`} aria-label="Ir a la orden de servicio" title="Ir a la orden de servicio" className="rounded-md p-1.5 text-indigo-600 hover:bg-[var(--surface-2)]"><ExternalLink className="h-4 w-4" /></Link>}
                 </div>
                 <p className="mt-1 text-sm font-semibold">{r.titulo}</p>
                 <p className="mt-0.5 text-xs" style={{ color: "var(--fg-muted)" }}><span className="font-semibold">Resolución:</span> {r.resolucion}</p>
-                <p className="mt-0.5 text-xs" style={{ color: "var(--fg-muted)" }}>{r.operador !== "—" ? `Operador: ${r.operador} · ` : ""}Lugar: {r.lugar}{r.tipo === "orden" && orden?.kmHrs != null ? ` · ${Math.round(orden.kmHrs).toLocaleString("es-MX")} km/hrs` : ""}{r.tipo === "orden" && orden?.refacciones.length ? ` · Refacciones: ${r.costo.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2 })}` : ""}</p>
-                {r.ordenId && <Link href={`/taller/${r.ordenId}`} className="mt-1 inline-block text-[11px] font-semibold text-indigo-600 underline">Abrir orden de servicio</Link>}
+                <p className="mt-0.5 text-xs" style={{ color: "var(--fg-muted)" }}>{r.operador !== "—" ? `Operador: ${r.operador} · ` : ""}Lugar: {r.lugar}{r.lectura !== "—" ? ` · ${r.lectura}` : ""}{r.costo > 0 ? ` · Refacciones: ${r.costo.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2 })}` : ""}</p>
                 {fotos.length > 0 && <div className="mt-2 flex gap-2">{fotos.map((foto) => <FotoLightbox key={foto.key} foto={foto} />)}</div>}
               </div>
             </div>
           </article>;
         })}
       </div> : <p className="rounded-xl border py-8 text-center text-sm" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>No hay registros en esta vista.</p>}
-
-      {eventos.length > 0 && <details className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--border)" }}>
-        <summary className="cursor-pointer text-xs font-semibold">Actividad y actualizaciones ({eventos.length})</summary>
-        <ul className="mt-2 space-y-2">
-          {eventos.map((e) => <li key={e.id} className="border-t pt-2 text-xs" style={{ borderColor: "var(--border)" }}><span className="font-semibold capitalize">{e.tipo.replaceAll("_", " ")}</span>{e.detalle ? ` · ${e.detalle}` : e.incidencia?.descripcion ? ` · ${e.incidencia.descripcion}` : e.orden?.motivo ? ` · ${e.orden.motivo}` : ""}{e.usuarioNombre ? ` · ${e.usuarioNombre}` : ""}{e.ordenId && <Link href={`/taller/${e.ordenId}`} className="ml-2 text-indigo-600 underline">Ver orden</Link>}</li>)}
-        </ul>
-      </details>}
     </div>
   );
 }

@@ -15,6 +15,11 @@ const PERMISOS: { key: NavPermission; label: string; desc: string }[] = [
   { key: "catalogo",           label: "Catálogos",            desc: "Gestiona unidades, operadores y obras" },
   { key: "periodos",           label: "Períodos / Análisis",  desc: "Accede a análisis por período" },
   { key: "tanques",            label: "Tanques",              desc: "Control de inventario, historial y conciliación de tanques" },
+  { key: "taller",             label: "Taller",               desc: "Tablero general y órdenes de servicio" },
+  { key: "taller.bitacora",    label: "Bitácora de taller",   desc: "Historial completo del taller" },
+  { key: "taller.terminar",    label: "Terminar órdenes",     desc: "Marcar el trabajo como terminado" },
+  { key: "taller.cerrar",      label: "Cerrar órdenes",       desc: "Cerrar órdenes como responsable de taller" },
+  { key: "taller.cancelar",    label: "Cancelar órdenes",     desc: "Cancelar órdenes de servicio" },
   { key: "analiticas",         label: "Analíticas",           desc: "Estadísticas avanzadas y métricas históricas" },
   { key: "poxelbit",           label: "PoxelBit",             desc: "Portal de soporte y tickets de desarrollo" },
   { key: "admin",              label: "Administración",        desc: "Panel de administración del sistema" },
@@ -152,13 +157,17 @@ export default function RolesTab({
           </h2>
           <button
             type="button"
-            onClick={() => { setShowNew((v) => !v); setNewError(""); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+            disabled
+            title="La creación de roles está pausada hasta definir su alcance."
+            className="flex cursor-not-allowed items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white opacity-50"
           >
             <Plus className="w-3.5 h-3.5" />
             Nuevo Rol
           </button>
         </div>
+        <p className="mb-3 text-xs" style={{ color: "var(--fg-muted)" }}>
+          Alta temporalmente pausada. Los nuevos roles deberán definirse como operativos o gerenciales y administrativos antes de habilitarse.
+        </p>
 
         {/* Formulario nuevo rol */}
         {showNew && (
@@ -280,18 +289,19 @@ export default function RolesTab({
                     </td>
                     {rolesList.map((r) => {
                       const tiene = r.permisos.includes(key);
+                      const fixedWorkshopRole = r.id === "taller" || r.id === "encargado_taller";
                       return (
                         <td key={r.id} className="px-3 py-3 text-center">
                           <button
                             type="button"
                             onClick={() => togglePerm(r.id, key)}
-                            disabled={isPending}
-                            title={tiene ? `Quitar "${label}" de ${r.label}` : `Dar "${label}" a ${r.label}`}
+                            disabled={isPending || fixedWorkshopRole}
+                            title={fixedWorkshopRole ? "Los permisos de este rol del sistema están definidos por la aplicación." : tiene ? `Quitar "${label}" de ${r.label}` : `Dar "${label}" a ${r.label}`}
                             className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition-all mx-auto ${
                               tiene
                                 ? "bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30"
                                 : "hover:bg-[var(--surface-2)] border border-transparent"
-                            } disabled:opacity-50`}
+                            } disabled:cursor-not-allowed disabled:opacity-50`}
                           >
                             {tiene
                               ? <Check className="w-3.5 h-3.5 text-emerald-500" />
