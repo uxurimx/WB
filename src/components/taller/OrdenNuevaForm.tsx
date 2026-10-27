@@ -7,6 +7,7 @@ import { Select } from "@/components/ui/select";
 import { crearIncidenciaTaller, crearOrdenTaller } from "@/app/actions/taller";
 import { getNowLocal } from "@/lib/date-utils";
 import { CATEGORIAS_SIN_TALLER, TALLER_CATEGORIAS, type CategoriaTaller } from "@/lib/taller-incidencias";
+import DateDmyInput from "@/components/taller/DateDmyInput";
 
 type Unidad = {
   id: number;
@@ -113,7 +114,7 @@ export default function OrdenNuevaForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label htmlFor="fecha">Fecha</Label>
-          <Input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          <DateDmyInput id="fecha" value={fecha} onChange={setFecha} />
         </div>
         <div>
           <Label htmlFor="km">Km / hrs</Label>
@@ -128,9 +129,9 @@ export default function OrdenNuevaForm({
       <div>
         <Label htmlFor="categoria-ingreso">Categoría</Label>
         <Select id="categoria-ingreso" value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaTaller)}>
-          {TALLER_CATEGORIAS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          {TALLER_CATEGORIAS.map((item) => <option key={item.value} value={item.value} disabled={item.value === "llanta_danada"}>{item.label}</option>)}
         </Select>
-        {CATEGORIAS_SIN_TALLER.includes(categoria as typeof CATEGORIAS_SIN_TALLER[number]) && <p className="mt-1 text-xs text-amber-700">Se guardará como incidencia en Bitácora; no abrirá checklist ni orden.</p>}
+        {CATEGORIAS_SIN_TALLER.includes(categoria as typeof CATEGORIAS_SIN_TALLER[number]) && <p className="mt-1 text-xs text-amber-700">La urea se guardará como incidencia en Bitácora; no abrirá checklist ni orden. Las llantas dañadas se capturan con el botón del Tablero.</p>}
       </div>
       <div>
         <Label htmlFor="op">Operador que la trajo</Label>

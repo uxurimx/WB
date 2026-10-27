@@ -16,8 +16,10 @@ import { formatoFolioTaller, TALLER_CATEGORIAS, type CategoriaTaller } from "@/l
 import { useUploadThing } from "@/lib/uploadthing";
 import FotoLightbox from "@/components/taller/FotoLightbox";
 import { parseActividadesTaller, serializeActividadesTaller, type ActividadTaller } from "@/lib/taller-actividades";
+import DateDmyInput from "@/components/taller/DateDmyInput";
 
 type MediaFile = { url: string; key: string; tipo: "imagen" | "video" };
+const actividadVacia = (): ActividadTaller => ({ atendio: "", trabajo: "" });
 
 type Orden = {
   id: number;
@@ -138,7 +140,10 @@ export default function OrdenDetalleForm({
   const mecanicosGuardados = (() => { try { return JSON.parse(orden.mecanicos ?? "[]") as string[]; } catch { return []; } })();
   const [mecanicoOtro, setMecanicoOtro] = useState(orden.mecanicoOtro ?? "");
   const [proveedorExterno, setProveedorExterno] = useState(orden.proveedorExterno ?? "");
-  const [actividades, setActividades] = useState<ActividadTaller[]>(() => parseActividadesTaller(orden.trabajoRealizado ?? orden.comentarios, mecanicosGuardados.join(", ") || orden.quienAtendio || ""));
+  const [actividades, setActividades] = useState<ActividadTaller[]>(() => {
+    const rows = parseActividadesTaller(orden.trabajoRealizado ?? orden.comentarios, mecanicosGuardados.join(", ") || orden.quienAtendio || "");
+    return rows.length ? rows : [actividadVacia()];
+  });
   const proximoMatch = (orden.proximoMto ?? "").match(/([\d,.]+)\s*(hrs?|hor[oó]metro|km|kms?)/i);
   const [proximoActivo, setProximoActivo] = useState(Boolean(orden.proximoMto));
   const [proximoValor, setProximoValor] = useState(proximoMatch?.[1].replace(",", "") ?? (orden.proximoMto ? String(Number.parseFloat(orden.proximoMto) || "") : ""));
@@ -414,7 +419,7 @@ export default function OrdenDetalleForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>Fecha</Label>
-            <Input type="date" disabled={locked} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+            <DateDmyInput disabled={locked} value={fecha} onChange={setFecha} aria-label="Fecha (DD/MM/AAAA)" />
           </div>
           <div>
             <Label>Operador</Label>
@@ -430,7 +435,7 @@ export default function OrdenDetalleForm({
             <Input disabled={locked} value={quienRecibio} onChange={(e) => setQuienRecibio(e.target.value)} />
           </div>
           <div>
-            <Label>Lectura ({tipoPrev === "hrs" ? "HRS" : "KM"})</Label>
+            <Label>Lectura (KM / HRS)</Label>
             <Input disabled={locked} type="number" inputMode="decimal" min="0" step="any" value={kmHrs} onChange={(e) => setKmHrs(e.target.value)} placeholder={tipoPrev === "hrs" ? "Horas actuales" : "Kilómetros actuales"} />
           </div>
         </div>
@@ -447,7 +452,7 @@ export default function OrdenDetalleForm({
         </div>
         <div className="border-t pt-3 space-y-3" style={{ borderColor: "var(--border)" }}>
           <p className="text-sm font-semibold">Resolución y entrega</p>
-          <div className="space-y-2"><div className="flex items-center justify-between"><Label>Actividades realizadas</Label>{!locked && <button type="button" onClick={() => setActividades((rows) => [...rows, { atendio: "", trabajo: "" }])} className="inline-flex items-center gap-1 text-xs font-bold text-[#207783]"><Plus className="h-3.5 w-3.5" />Agregar actividad</button>}</div>
+          <div className="space-y-2"><div className="flex flex-wrap items-center justify-between gap-2"><Label>Actividades realizadas</Label>{!locked && <button type="button" onClick={() => setActividades((rows) => [...rows, { atendio: "", trabajo: "" }])} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold text-[#207783] transition hover:brightness-95" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}><Plus className="h-3.5 w-3.5" />Agregar actividad</button>}</div>
             <div className="hidden gap-2 text-[10px] font-semibold uppercase sm:grid sm:grid-cols-[minmax(0,1.35fr)_minmax(300px,1fr)_auto]"><span>Trabajo realizado</span><span>Atiende</span><span /></div>
             {actividades.map((actividad, index) => {
               const nombres = actividad.atendio.split(",").map((nombre) => nombre.trim()).filter(Boolean);
@@ -464,23 +469,34 @@ export default function OrdenDetalleForm({
                   }))} className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium ${active ? "border-[#207783] bg-[#207783] text-white" : ""}`} style={active ? undefined : { borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>{nombre}</button>;
                 })}
               </div>
-              {!locked && <button type="button" aria-label="Quitar actividad" onClick={() => setActividades((rows) => rows.filter((_, i) => i !== index))} className="px-2 text-red-500"><X className="h-4 w-4" /></button>}
+              {!locked && <button type="button" aria-label="Quitar actividad" onClick={() => setActividades((rows) => { const remaining = rows.filter((_, i) => i !== index); return remaining.length ? remaining : [actividadVacia()]; })} className="px-2 text-red-500"><X className="h-4 w-4" /></button>}
             </div>;
             })}
             {actividades.some((actividad) => actividad.atendio.split(",").map((nombre) => nombre.trim()).includes("Otro")) && <Input disabled={locked} value={mecanicoOtro} onChange={(e) => setMecanicoOtro(e.target.value)} placeholder="Nombre del mecánico (Otro)" />}
             <div><Label>Proveedor externo / ubicación</Label><Input disabled={locked || !orden.proveedorExternoReady} value={proveedorExterno} onChange={(e) => setProveedorExterno(e.target.value)} placeholder="En blanco = TALLER; escribe el proveedor si es externo" /></div>
             {!orden.proveedorExternoReady && <p className="text-[11px] text-amber-700">Hace falta aplicar la migración para guardar proveedor externo.</p>}
           </div>
-          <div className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}><p className="text-[10px] font-semibold uppercase" style={{ color: "var(--fg-muted)" }}>Proveedores y facturas</p><p className="mt-1 text-xs">{proveedorExterno ? `Proveedor externo · ${proveedorExterno}` : "Sin proveedor externo"}{refs.filter((r) => r.proveedor?.trim()).map((r) => ` · ${r.proveedor}${r.folioFactura ? ` · Factura ${r.folioFactura}` : ""}`).join("")}</p></div>
           <MediaGallery label="Fotos de la resolución y entrega" items={fotosSalida} locked={locked} uploading={uploading === "salida"} onAdd={() => inputSalida.current?.click()} onRemove={(key) => setFotosSalida((current) => current.filter((item) => item.key !== key))} />
           <input ref={inputSalida} type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple capture="environment" className="hidden" onChange={(e) => { void subirMedia("salida", e.target.files); e.target.value = ""; }} />
         </div>
-        <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>
-          <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" disabled={locked || !kmHrs} checked={proximoActivo} onChange={(e) => setProximoActivo(e.target.checked)} /> Programar próximo mantenimiento</label>
-          {proximoActivo && intervaloMantenimiento != null && proximoValorCalculado && <p className="mt-2 text-sm">Siguiente servicio: <b>{Number(proximoValorCalculado).toLocaleString("es-MX")} {tipoPrev.toUpperCase()}</b> <span className="text-xs" style={{ color: "var(--fg-muted)" }}>(lectura actual + intervalo configurado de {intervaloMantenimiento.toLocaleString("es-MX")})</span></p>}
-          {proximoActivo && intervaloMantenimiento != null && !kmHrs && <p className="mt-1 text-[11px] text-amber-700">Ingresa la lectura actual para calcular la próxima.</p>}
-          {proximoActivo && intervaloMantenimiento == null && <div className="mt-2"><Label>Lectura objetivo ({tipoPrev === "hrs" ? "HRS" : "KM"})</Label><Input disabled={locked} type="number" min={kmHrs || 0} step="any" value={proximoValor} onChange={(e) => setProximoValor(e.target.value)} placeholder="Lectura para volver a atender" /><p className="mt-1 text-[11px] text-amber-700">No hay un intervalo activo configurado para esta unidad; indica manualmente la lectura objetivo.</p></div>}
-          <p className="mt-1 text-[11px]" style={{ color: "var(--fg-muted)" }}>Al cerrar esta orden, el servicio se registra en Mantenimiento de la unidad y la próxima lectura aparece en el Tablero general.</p>
+        <div className="grid items-start gap-3 border-t pt-3 sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
+          <div className="space-y-3">
+            <div>
+              <Label>Fecha de salida</Label>
+              <DateDmyInput disabled={locked || !orden.extensionReady} value={fechaSalida} onChange={setFechaSalida} aria-label="Fecha de salida (DD/MM/AAAA)" />
+            </div>
+            <div className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>
+              <p className="text-[10px] font-semibold uppercase" style={{ color: "var(--fg-muted)" }}>Proveedores y facturas</p>
+              <p className="mt-1 text-xs">{proveedorExterno ? `Proveedor externo · ${proveedorExterno}` : "Sin proveedor externo"}{refs.filter((r) => r.proveedor?.trim()).map((r) => ` · ${r.proveedor}${r.folioFactura ? ` · Factura ${r.folioFactura}` : ""}`).join("")}</p>
+            </div>
+          </div>
+          <div className="rounded-xl border p-3 sm:mt-6" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>
+            <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" disabled={locked || !kmHrs} checked={proximoActivo} onChange={(e) => setProximoActivo(e.target.checked)} /> Programar próximo mantenimiento</label>
+            {proximoActivo && intervaloMantenimiento != null && proximoValorCalculado && <p className="mt-2 text-sm">Siguiente servicio: <b>{Number(proximoValorCalculado).toLocaleString("es-MX")} {tipoPrev.toUpperCase()}</b> <span className="text-xs" style={{ color: "var(--fg-muted)" }}>(lectura actual + intervalo configurado de {intervaloMantenimiento.toLocaleString("es-MX")})</span></p>}
+            {proximoActivo && intervaloMantenimiento != null && !kmHrs && <p className="mt-1 text-[11px] text-amber-700">Ingresa la lectura actual para calcular la próxima.</p>}
+            {proximoActivo && intervaloMantenimiento == null && <div className="mt-2"><Label>Lectura objetivo ({tipoPrev === "hrs" ? "HRS" : "KM"})</Label><Input disabled={locked} type="number" min={kmHrs || 0} step="any" value={proximoValor} onChange={(e) => setProximoValor(e.target.value)} placeholder="Lectura para volver a atender" /><p className="mt-1 text-[11px] text-amber-700">No hay un intervalo activo configurado para esta unidad; indica manualmente la lectura objetivo.</p></div>}
+            <p className="mt-1 text-[11px]" style={{ color: "var(--fg-muted)" }}>Al cerrar esta orden, el servicio se registra en Mantenimiento de la unidad y la próxima lectura aparece en el Tablero general.</p>
+          </div>
         </div>
         <p className="text-[11px] pt-2" style={{ color: "var(--fg-muted)" }}>
           {orden.abiertoPorNombre ? `Abrió ${orden.abiertoPorNombre}` : "—"}
@@ -518,11 +534,6 @@ export default function OrdenDetalleForm({
           <datalist id="ref-prov">{sugeridas.proveedores.map((d) => <option key={d} value={d} />)}</datalist>
           {!locked && <button type="button" onClick={() => setRefs((all) => [...all, emptyRef()])} className="inline-flex items-center gap-1 text-xs font-bold text-[#207783]"><Plus className="h-3.5 w-3.5" />Agregar refacción</button>}
           <div className="flex flex-wrap justify-end gap-4 text-xs"><span>Subtotal <b>{subtotal.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}</b></span><span>IVA <b>{ivaTotal.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}</b></span><span>Total <b>{total.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}</b></span></div>
-          <div className="grid gap-3 border-t pt-3 sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
-            <div className="space-y-3">
-              <div><Label>Fecha de salida</Label><Input type="date" disabled={locked || !orden.extensionReady} value={fechaSalida} onChange={(e) => setFechaSalida(e.target.value)} /></div>
-            </div>
-          </div>
       </div>
 
       {error && <p className="print:hidden text-sm text-red-500">{error}</p>}

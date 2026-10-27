@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ESTADO_LABEL, type EstadoOrden } from "@/lib/taller-checklist";
 import { useRouter } from "next/navigation";
-import { formatFechaHoraMx } from "@/lib/date-utils";
+import { formatFechaDmy } from "@/lib/date-utils";
 
 type Orden = {
   id: number;
@@ -102,7 +102,7 @@ export default function TallerLista({ ordenes }: { ordenes: Orden[] }) {
                 >
                   <TableCell className="font-mono font-bold text-sm">{o.unidad?.codigo ?? "—"}</TableCell>
                   <TableCell className="text-sm font-mono" style={{ color: "var(--fg-muted)" }}>
-                    {formatFechaHoraMx(o.fecha, o.createdAt instanceof Date ? o.createdAt.toISOString() : o.createdAt)}
+                    {formatFechaDmy(o.fecha)}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-sm max-w-[220px] truncate">
                     {o.motivo || "—"}

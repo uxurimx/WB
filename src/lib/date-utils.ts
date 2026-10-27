@@ -41,6 +41,34 @@ export function getNowLocal() {
   };
 }
 
+/** Muestra una fecha de negocio como DD/MM/AAAA sin convertirla de zona horaria. */
+export function formatFechaDmy(value: string | Date | null | undefined): string {
+  if (!value) return "";
+  const iso = value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : "";
+}
+
+/** Convierte DD/MM/AAAA a YYYY-MM-DD y rechaza fechas de calendario inválidas. */
+export function parseFechaDmy(value: string): string | null {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) return null;
+  const [, day, month, year] = match;
+  const parsed = new Date(0);
+  parsed.setUTCHours(0, 0, 0, 0);
+  parsed.setUTCFullYear(Number(year), Number(month) - 1, Number(day));
+  if (parsed.getUTCFullYear() !== Number(year) || parsed.getUTCMonth() !== Number(month) - 1 || parsed.getUTCDate() !== Number(day)) return null;
+  return `${year}-${month}-${day}`;
+}
+
+/** Mantiene la entrada como DD/MM/AAAA mientras el usuario escribe dígitos. */
+export function normalizarBorradorFechaDmy(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
 /** 0=domingo … 6=sábado, en Monterrey. */
 export function getLocalDayOfWeek(date: Date = new Date()): number {
   const wd = tzParts(date).weekday;

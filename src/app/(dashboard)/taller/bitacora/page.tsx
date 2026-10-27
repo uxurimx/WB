@@ -27,6 +27,6 @@ export default async function TallerBitacoraPage() {
   ]);
 
   return <div className="max-w-[1536px] p-3 sm:p-4 md:p-5">
-    <TallerBoard ordenes={ordenes} programados={programados} unidades={catalogos.unidades} operadores={catalogos.operadores} incidencias={incidenciasResult.items} incidenciasActivas={incidenciasActivas} eventos={eventos} urea={ureaResult.items} extensionReady={incidenciasResult.schemaReady} ureaReady={ureaResult.schemaReady} canViewBitacora={true} canEditOrders={permisos.includes("taller")} canFinishOrders={permisos.includes("taller.terminar")} canCloseOrders={permisos.includes("taller.cerrar")} canCancelOrders={permisos.includes("taller.cancelar")} initialMes={mes} initialSeccion="bitacora" />
+    <TallerBoard ordenes={ordenes} programados={programados} unidades={catalogos.unidades} operadores={catalogos.operadores} incidencias={incidenciasResult.items} incidenciasActivas={incidenciasActivas} eventos={eventos} urea={ureaResult.items} extensionReady={incidenciasResult.schemaReady} ureaReady={ureaResult.schemaReady} canViewBitacora={true} canFinishOrders={permisos.includes("taller.terminar")} canCloseOrders={permisos.includes("taller.cerrar")} canCancelOrders={permisos.includes("taller.cancelar")} initialMes={mes} initialSeccion="bitacora" />
   </div>;
 }

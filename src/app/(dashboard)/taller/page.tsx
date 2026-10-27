@@ -53,7 +53,6 @@ export default async function TallerPage({
         ureaReady={ureaResult.schemaReady}
         canViewExpediente={MANAGE_ROLES.includes(user?.publicMetadata?.role as string)}
         canViewBitacora={permisos.includes("taller.bitacora")}
-        canEditOrders={permisos.includes("taller")}
         canFinishOrders={permisos.includes("taller.terminar")}
         canCloseOrders={permisos.includes("taller.cerrar")}
         canCancelOrders={permisos.includes("taller.cancelar")}

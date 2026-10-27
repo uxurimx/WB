@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Download, Fuel, Pencil, Plus, Search, Wrench } from "lucide-react";
+import { Download, Fuel, Plus, Search, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,8 @@ import { Select } from "@/components/ui/select";
 import OrdenNuevaForm from "@/components/taller/OrdenNuevaForm";
 import FotoLightbox from "@/components/taller/FotoLightbox";
 import { CHECKLIST_PUNTOS, ESTADO_LABEL, type EstadoOrden } from "@/lib/taller-checklist";
-import { formatFechaHoraMx, getNowLocal } from "@/lib/date-utils";
+import { formatFechaDmy, formatFechaHoraMx, getNowLocal } from "@/lib/date-utils";
+import DateDmyInput from "@/components/taller/DateDmyInput";
 import {
   crearIncidenciaTaller,
   crearRegistroUreaTaller,
@@ -160,7 +161,6 @@ export default function TallerBoard({
   ureaReady = true,
   canViewExpediente = false,
   canViewBitacora = false,
-  canEditOrders = false,
   canFinishOrders = false,
   canCloseOrders = false,
   canCancelOrders = false,
@@ -182,7 +182,6 @@ export default function TallerBoard({
   ureaReady?: boolean;
   canViewExpediente?: boolean;
   canViewBitacora?: boolean;
-  canEditOrders?: boolean;
   canFinishOrders?: boolean;
   canCloseOrders?: boolean;
   canCancelOrders?: boolean;
@@ -217,6 +216,7 @@ export default function TallerBoard({
   const [filtroLugarOrden, setFiltroLugarOrden] = useState("todos");
   const [busquedaOrden, setBusquedaOrden] = useState("");
   const [unidadIncidencia, setUnidadIncidencia] = useState("");
+  const [fechaIncidencia, setFechaIncidencia] = useState(getNowLocal().fecha);
   const [operadorIncidencia, setOperadorIncidencia] = useState("");
   const [categoriaIncidencia, setCategoriaIncidencia] = useState<CategoriaTaller>("otro");
   const [prioridad, setPrioridad] = useState("media");
@@ -502,7 +502,11 @@ export default function TallerBoard({
     return { rows, litros: rows.reduce((total, row) => total + (Number(row.litros) || 0), 0), porUnidad: [...porUnidad.values()].sort((a, b) => b.litros - a.litros) };
   }, [urea, mesVigente]);
   const etiquetaMesUrea = new Date(`${mesVigente}-15T12:00:00`).toLocaleDateString("es-MX", { month: "long", year: "numeric" });
-  const llantasMes = useMemo(() => incidencias.filter((i) => i.fecha.startsWith(mesVigente) && (i.categoria === "llanta_danada" || leerFallas(i.fallas, i.descripcion).includes("Llantas"))), [incidencias, mesVigente]);
+  const llantasMes = useMemo(() => incidencias.filter((i) =>
+    i.fecha.startsWith(mesVigente)
+    && i.categoria === "llanta_danada"
+    && /·\s*\d+(?:[.,]\d+)?%\s+de vida$/i.test(i.descripcion)
+  ), [incidencias, mesVigente]);
 
   async function exportarBitacora() {
     const ExcelJS = await import("exceljs");
@@ -767,14 +771,7 @@ export default function TallerBoard({
   }
 
   function puedeSeleccionarOrden(row: RegistroBitacora) {
-    if (row.ordenId == null) return false;
-    if (["ABIERTO", "EN PROCESO"].includes(row.status)) return canFinishOrders || canCancelOrders;
-    if (row.status === "PENDIENTE DE CIERRE") return canCloseOrders || canCancelOrders;
-    return false;
-  }
-
-  function puedeEditarDesdeBitacora(row: RegistroBitacora) {
-    return canEditOrders && row.ordenId != null && ["ABIERTO", "EN PROCESO", "PENDIENTE DE CIERRE"].includes(row.status);
+    return canCancelOrders && row.ordenId != null && ["ABIERTO", "EN PROCESO", "PENDIENTE DE CIERRE"].includes(row.status);
   }
 
   function tarjetaOrden(orden: Orden) {
@@ -798,27 +795,42 @@ export default function TallerBoard({
     return Number.isFinite(a) && Number.isFinite(b) ? Math.max(0, Math.floor((b - a) / 86_400_000)) : null;
   }
 
-  async function ejecutarAccionOrdenes(accion: "terminar" | "cierre" | "cancelar") {
-    const estadosPermitidos = accion === "terminar"
-      ? ["abierta", "en_proceso"]
-      : accion === "cierre"
-        ? ["terminada"]
-        : ["abierta", "en_proceso", "terminada"];
-    const ids = ordenesSeleccionadas.filter((id) => ordenes.some((orden) => orden.id === id && estadosPermitidos.includes(orden.estado)));
+  async function ejecutarCancelacionOrdenes() {
+    const ids = ordenesSeleccionadas.filter((id) => ordenes.some((orden) => orden.id === id && ["abierta", "en_proceso", "terminada"].includes(orden.estado)));
     if (!ids.length) return;
-    const verbo = accion === "cierre" ? "cerrar" : accion === "terminar" ? "marcar como terminadas" : "cancelar";
-    if (!confirm(`¿${verbo === "cerrar" ? "Cerrar" : verbo === "cancelar" ? "Cancelar" : "Marcar como terminadas"} ${ids.length} orden(es) seleccionada(s)?`)) return;
+    if (!confirm(`¿Cancelar ${ids.length} orden(es) seleccionada(s)?`)) return;
     start(async () => {
       try {
-        for (const id of ids) {
-          if (accion === "cierre") await cerrarOrdenTaller(id);
-          else if (accion === "terminar") await terminarOrdenTaller(id);
-          else await cancelarOrdenTaller(id);
-        }
+        for (const id of ids) await cancelarOrdenTaller(id);
         setOrdenesSeleccionadas([]);
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "No fue posible actualizar las órdenes.");
+      }
+    });
+  }
+
+  function accionDesdeEstado(row: RegistroBitacora): "terminar" | "cierre" | null {
+    if (row.ordenId == null) return null;
+    if (["ABIERTO", "EN PROCESO"].includes(row.status) && canFinishOrders) return "terminar";
+    if (row.status === "PENDIENTE DE CIERRE" && canCloseOrders) return "cierre";
+    return null;
+  }
+
+  function ejecutarAccionDesdeEstado(row: RegistroBitacora) {
+    const accion = accionDesdeEstado(row);
+    if (!accion || row.ordenId == null) return;
+    const mensaje = accion === "terminar"
+      ? "¿Marcar el trabajo como terminado y dejar la orden pendiente de cierre?"
+      : "¿Cerrar esta orden de servicio?";
+    if (!confirm(mensaje)) return;
+    start(async () => {
+      try {
+        if (accion === "terminar") await terminarOrdenTaller(row.ordenId!);
+        else await cerrarOrdenTaller(row.ordenId!);
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No fue posible actualizar la orden.");
       }
     });
   }
@@ -852,15 +864,18 @@ export default function TallerBoard({
     else router.refresh();
   }
 
-  function capturarIncidencia(e: React.FormEvent) {
+  function capturarIncidencia(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    const pasarATaller = submitter instanceof HTMLButtonElement && submitter.value === "pasar-taller";
     setError("");
     start(async () => {
+      let incidenciaCreada = false;
       try {
-        await crearIncidenciaTaller({
+        const creada = await crearIncidenciaTaller({
           unidadId: Number(unidadIncidencia),
           operadorId: operadorIncidencia ? Number(operadorIncidencia) : null,
-          fecha: getNowLocal().fecha,
+          fecha: fechaIncidencia,
           categoria: categoriaIncidencia,
           prioridad,
           fallas: fallasSeleccionadas,
@@ -868,6 +883,19 @@ export default function TallerBoard({
           ubicacion,
           observaciones,
         });
+        incidenciaCreada = true;
+        if (pasarATaller) {
+          setModalIncidencia(false);
+          const incidenciasDeFecha = await getIncidenciasTaller({ desde: fechaIncidencia, hasta: fechaIncidencia });
+          const incidencia = incidenciasDeFecha.find((item) => item.id === creada.id);
+          if (!incidencia) {
+            router.refresh();
+            setError("La incidencia se guardó, pero no se pudo abrir el formulario de recepción. Busca el registro en el tablero y usa Pasar a taller.");
+            return;
+          }
+          recibirIncidencia(incidencia);
+          return;
+        }
         setDescripcion("");
         setUbicacion("");
         setObservaciones("");
@@ -875,7 +903,9 @@ export default function TallerBoard({
         setModalIncidencia(false);
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "No se pudo registrar la incidencia.");
+        setError(incidenciaCreada
+          ? "La incidencia se guardó, pero no se pudo abrir el formulario de recepción. Busca el registro en el tablero y usa Pasar a taller."
+          : err instanceof Error ? err.message : "No se pudo registrar la incidencia.");
       }
     });
   }
@@ -884,6 +914,7 @@ export default function TallerBoard({
     const unidad = unidades.find((u) => String(u.id) === unidadId);
     setError("");
     setUnidadIncidencia(unidadId);
+    setFechaIncidencia(getNowLocal().fecha);
     setOperadorIncidencia(unidad?.operadorDefaultId ? String(unidad.operadorDefaultId) : "");
     setFallasSeleccionadas([]);
     setCategoriaIncidencia("otro");
@@ -1060,7 +1091,7 @@ export default function TallerBoard({
           <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
             <div className="flex items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: "var(--border)" }}><div><h2 className="text-sm font-bold">Nuevas incidencias</h2><p className="text-xs" style={{ color: "var(--fg-muted)" }}>Pendientes de recibir en taller</p></div>{canViewBitacora && <Link href="/taller/bitacora" className="text-xs text-indigo-600 underline">Ver bitácora</Link>}</div>
             <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-left text-xs uppercase" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}><th className="px-3 py-2">Fecha</th><th className="px-3 py-2">Equipo</th><th className="px-3 py-2">Falla</th><th className="px-3 py-2">Prioridad</th><th className="px-3 py-2">Acción</th></tr></thead><tbody>
-              {incidencias.filter((i) => !i.orden && !CATEGORIAS_SIN_TALLER.includes(i.categoria as typeof CATEGORIAS_SIN_TALLER[number]) && !["resuelta", "cancelada"].includes(i.estado)).map((i) => <tr key={i.id} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}><td className="px-3 py-2">{i.fecha}</td><td className="px-3 py-2">{i.unidad?.codigo ?? "—"}</td><td className="px-3 py-2">{textoFallaReportada(i.fallas, i.descripcion)}<span className="ml-2 text-[10px]" style={{ color: "var(--fg-muted)" }}>{etiquetaCategoriaTaller(i.categoria)}</span></td><td className="px-3 py-2 capitalize">{i.prioridad}</td><td className="px-3 py-2"><button type="button" onClick={() => recibirIncidencia(i)} className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white">Pasar a taller</button></td></tr>)}
+              {incidencias.filter((i) => !i.orden && !CATEGORIAS_SIN_TALLER.includes(i.categoria as typeof CATEGORIAS_SIN_TALLER[number]) && !["resuelta", "cancelada"].includes(i.estado)).map((i) => <tr key={i.id} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}><td className="px-3 py-2">{formatFechaDmy(i.fecha)}</td><td className="px-3 py-2">{i.unidad?.codigo ?? "—"}</td><td className="px-3 py-2">{textoFallaReportada(i.fallas, i.descripcion)}<span className="ml-2 text-[10px]" style={{ color: "var(--fg-muted)" }}>{etiquetaCategoriaTaller(i.categoria)}</span></td><td className="px-3 py-2 capitalize">{i.prioridad}</td><td className="px-3 py-2"><button type="button" onClick={() => recibirIncidencia(i)} className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white">Pasar a taller</button></td></tr>)}
               {!incidencias.some((i) => !i.orden && !CATEGORIAS_SIN_TALLER.includes(i.categoria as typeof CATEGORIAS_SIN_TALLER[number]) && !["resuelta", "cancelada"].includes(i.estado)) && <tr><td colSpan={5} className="py-6 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay incidencias pendientes de recepción.</td></tr>}
             </tbody></table></div>
           </div>
@@ -1121,8 +1152,8 @@ export default function TallerBoard({
               {ureaPorMes.porUnidad.length ? <div className="space-y-2">{ureaPorMes.porUnidad.map((row) => <div key={row.codigo} className="grid grid-cols-[minmax(56px,72px)_1fr_auto] items-center gap-2 text-xs"><span className="truncate rounded bg-neutral-800 px-2 py-1 font-mono font-bold text-white">{row.codigo}</span><div className="h-3 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-amber-400" style={{ width: `${Math.max(4, row.litros / Math.max(...ureaPorMes.porUnidad.map((item) => item.litros)) * 100)}%` }} /></div><span className="whitespace-nowrap font-semibold">{row.litros.toLocaleString("es-MX", { maximumFractionDigits: 1 })} L</span></div>)}</div> : <p className="py-4 text-center text-sm" style={{ color: "var(--fg-muted)" }}>Sin cargas de urea en este mes.</p>}
             </div>
             <div className="rounded-2xl border p-4" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
-              <div className="mb-3 flex items-center justify-between gap-2"><div><h2 className="text-sm font-bold">🛞 Llantas dañadas</h2><p className="text-xs" style={{ color: "var(--fg-muted)" }}>Incidencias de llantas del mes activo</p></div><Badge variant="secondary">{llantasMes.length} este mes</Badge></div>
-              {llantasMes.length ? <div className="space-y-2">{llantasMes.slice(0, 8).map((i) => <div key={i.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3" style={{ borderColor: "var(--border)" }}><div><p className="text-sm font-semibold">{i.unidad?.codigo ?? "Unidad"} · {i.operador?.nombre ?? "Sin chofer"}</p><p className="text-xs" style={{ color: "var(--fg-muted)" }}>{i.fecha} · {textoFallaReportada(i.fallas, i.descripcion)}</p></div><Badge variant={i.orden ? "warning" : i.estado === "resuelta" ? "success" : "default"}>{i.orden ? "En taller" : i.categoria === "llanta_danada" ? "Cerrada" : ESTADOS_INCIDENCIA[i.estado] ?? i.estado}</Badge></div>)}</div> : <p className="py-4 text-center text-sm" style={{ color: "var(--fg-muted)" }}>Sin llantas dañadas registradas este mes.</p>}
+              <div className="mb-3 flex items-center justify-between gap-2"><div><h2 className="text-sm font-bold">🛞 Llantas dañadas</h2><p className="text-xs" style={{ color: "var(--fg-muted)" }}>Registros del botón Llanta dañada · mes activo</p></div><Badge variant="secondary">{llantasMes.length} este mes</Badge></div>
+              {llantasMes.length ? <div className="space-y-2">{llantasMes.slice(0, 8).map((i) => <div key={i.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3" style={{ borderColor: "var(--border)" }}><div><p className="text-sm font-semibold">{i.unidad?.codigo ?? "Unidad"} · {i.operador?.nombre ?? "Sin chofer"}</p><p className="text-xs" style={{ color: "var(--fg-muted)" }}>{formatFechaDmy(i.fecha)} · {textoFallaReportada(i.fallas, i.descripcion)}</p></div><Badge variant={i.orden ? "warning" : i.estado === "resuelta" ? "success" : "default"}>{i.orden ? "En taller" : i.categoria === "llanta_danada" ? "Cerrada" : ESTADOS_INCIDENCIA[i.estado] ?? i.estado}</Badge></div>)}</div> : <p className="py-4 text-center text-sm" style={{ color: "var(--fg-muted)" }}>Sin llantas dañadas registradas este mes.</p>}
             </div>
           </div>
         </section>
@@ -1133,8 +1164,8 @@ export default function TallerBoard({
           <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => { setFiltroEstatusOrden("todas"); setDesdeOrdenes(""); setHastaOrdenes(""); setFiltroEquipoOrden("todos"); setFiltroCategoriaOrden("todas"); setFiltroLugarOrden("todos"); setBusquedaOrden(""); }} className="rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}>Todos</button>
-              <label className="min-w-[135px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Desde</span><Input type="date" value={desdeOrdenes} onChange={(e) => setDesdeOrdenes(e.target.value)} className="h-9 text-xs" /></label>
-              <label className="min-w-[135px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Hasta</span><Input type="date" value={hastaOrdenes} onChange={(e) => setHastaOrdenes(e.target.value)} className="h-9 text-xs" /></label>
+              <label className="min-w-[135px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Desde</span><DateDmyInput value={desdeOrdenes} onChange={setDesdeOrdenes} className="h-9 text-xs" /></label>
+              <label className="min-w-[135px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Hasta</span><DateDmyInput value={hastaOrdenes} onChange={setHastaOrdenes} className="h-9 text-xs" /></label>
               <label className="min-w-[150px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Estatus</span><Select value={filtroEstatusOrden} onChange={(e) => setFiltroEstatusOrden(e.target.value)} className="h-9 text-xs"><option value="activas">Activas</option><option value="todas">Todos</option><option value="abierta">Abierto</option><option value="en_proceso">En proceso</option><option value="terminada">Terminado · En proceso de cierre</option><option value="cerrada">Cerradas</option><option value="cancelada">Canceladas</option></Select></label>
               <label className="min-w-[150px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Equipo</span><Select value={filtroEquipoOrden} onChange={(e) => setFiltroEquipoOrden(e.target.value)} className="h-9 text-xs"><option value="todos">Todos los equipos</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></label>
               <label className="min-w-[145px] flex-1 space-y-1 text-[10px] font-semibold sm:flex-none"><span>Categoría</span><Select value={filtroCategoriaOrden} onChange={(e) => setFiltroCategoriaOrden(e.target.value)} className="h-9 text-xs"><option value="todas">Todas</option>{TALLER_CATEGORIAS.filter((item) => !CATEGORIAS_SIN_TALLER.includes(item.value as typeof CATEGORIAS_SIN_TALLER[number])).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</Select></label>
@@ -1161,8 +1192,8 @@ export default function TallerBoard({
         <section className="space-y-3">
           <div className="rounded-xl border p-3 sm:p-4" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <label className="space-y-1 text-xs font-semibold"><span>Desde</span><Input type="date" value={desdeIncidencias} onChange={(e) => setDesdeIncidencias(e.target.value)} /></label>
-              <label className="space-y-1 text-xs font-semibold"><span>Hasta</span><Input type="date" value={hastaIncidencias} onChange={(e) => setHastaIncidencias(e.target.value)} /></label>
+              <label className="space-y-1 text-xs font-semibold"><span>Desde</span><DateDmyInput value={desdeIncidencias} onChange={setDesdeIncidencias} /></label>
+              <label className="space-y-1 text-xs font-semibold"><span>Hasta</span><DateDmyInput value={hastaIncidencias} onChange={setHastaIncidencias} /></label>
               <label className="space-y-1 text-xs font-semibold"><span>Unidad</span><Select value={filtroUnidadIncidencia} onChange={(e) => setFiltroUnidadIncidencia(e.target.value)}><option value="todas">Todas las unidades</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></label>
               <label className="space-y-1 text-xs font-semibold"><span>Tipo de unidad</span><Select value={filtroTipoUnidad} onChange={(e) => setFiltroTipoUnidad(e.target.value)}><option value="todas">Todos</option><option value="camion">Camión</option><option value="maquina">Maquinaria</option><option value="nissan">NISSAN</option><option value="otro">Otro</option></Select></label>
               <label className="space-y-1 text-xs font-semibold"><span>Categoría</span><Select value={filtroCategoriaBitacora} onChange={(e) => setFiltroCategoriaBitacora(e.target.value)}><option value="todas">Todas</option>{TALLER_CATEGORIAS.map((item) => <option key={item.value} value={item.label}>{item.label}</option>)}</Select></label>
@@ -1174,9 +1205,7 @@ export default function TallerBoard({
               <button type="button" onClick={() => { setDesdeIncidencias(inicioMesActual); setHastaIncidencias(hoyLocal); setFiltroUnidadIncidencia("todas"); setFiltroTipoUnidad("todas"); setFiltroCategoriaBitacora("todas"); setFiltroEstadoBitacora("todas"); setBusquedaIncidencia(""); setIncluirLlantas(true); setIncluirUrea(true); }} className="rounded-lg border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)" }}>Limpiar filtros</button>
               <label className="flex items-center gap-2 px-1 text-xs"><input type="checkbox" checked={incluirUrea} onChange={(e) => setIncluirUrea(e.target.checked)} className="h-4 w-4 accent-indigo-600" />Incluir cargas de urea</label>
               <label className="flex items-center gap-2 px-1 text-xs"><input type="checkbox" checked={incluirLlantas} onChange={(e) => setIncluirLlantas(e.target.checked)} className="h-4 w-4 accent-indigo-600" />Incluir llanta dañada</label>
-              {canFinishOrders && <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("terminar")} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-800 disabled:opacity-40">Pendiente de cierre ({ordenesSeleccionadas.length})</button>}
-              {canCloseOrders && <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("cierre")} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-800 disabled:opacity-40">Cerrar ({ordenesSeleccionadas.length})</button>}
-              {canCancelOrders && <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={() => ejecutarAccionOrdenes("cancelar")} className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-40">Cancelar</button>}
+              {canCancelOrders && <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={ejecutarCancelacionOrdenes} className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-40">Cancelar</button>}
               <button type="button" disabled={!registrosBitacoraFiltrados.length} onClick={() => { void exportarBitacora().catch((err) => setError(err instanceof Error ? err.message : "No se pudo generar el Excel.")); }} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[#207783] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download className="h-3.5 w-3.5" />{registrosSeleccionados.length ? `Descargar seleccionados (${registrosSeleccionados.length})` : `Bitácora general Excel (${registrosBitacoraFiltrados.length})`}</button>
             </div>
           </div>
@@ -1197,13 +1226,12 @@ export default function TallerBoard({
               <thead><tr className="border-b text-left text-[10px] font-semibold uppercase tracking-wide" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>
                 {(["Ingreso / egreso · días", "Folio", "Unidad", "Falla", "Operador", "Atiende", "Lugar", "Resolución", "Costo", "Estado"] as const).map((label) => <th key={label} className="px-2.5 py-2.5">{label}</th>)}
                 <th className="w-8 px-2 py-2.5"><input aria-label="Seleccionar registros para descargar" type="checkbox" checked={registrosBitacoraFiltrados.length > 0 && registrosBitacoraFiltrados.every((row) => registrosSeleccionados.includes(row.id))} onChange={(e) => { const ids = registrosBitacoraFiltrados.map((row) => row.id); setRegistrosSeleccionados((prev) => e.target.checked ? [...new Set([...prev, ...ids])] : prev.filter((id) => !ids.includes(id))); setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, ...registrosBitacoraFiltrados.filter(puedeSeleccionarOrden).flatMap((row) => row.ordenId == null ? [] : [row.ordenId])])] : prev.filter((id) => !registrosBitacoraFiltrados.some((row) => row.ordenId === id))); }} className="h-4 w-4 accent-indigo-600" /></th>
-                <th className="w-9 px-2 py-2.5">Editar</th>
               </tr></thead>
               <tbody>
                 {registrosBitacoraFiltrados.map((row) => {
                   const badgeVariant = row.status === "TERMINADO" || row.status === "CERRADO" ? "success" : row.status === "EN PROCESO" || row.status === "PENDIENTE DE CIERRE" ? "warning" : row.status === "CANCELADO" ? "danger" : "default";
                   return <tr key={row.id} className="align-top border-b last:border-0" style={{ borderColor: "var(--border)" }}>
-                    <td className="whitespace-nowrap px-2.5 py-2.5 text-[10px]">Ingreso: {fechaMx(row.fecha)}<br />Egreso: {row.fechaEgreso ? fechaMx(row.fechaEgreso) : "—"}{row.diasAbierta != null && <p className="mt-0.5 font-semibold">{row.diasAbierta} días</p>}</td>
+                    <td className="whitespace-nowrap px-2.5 py-2.5 text-[10px]">Ingreso: {formatFechaDmy(row.fecha)}<br />Egreso: {row.fechaEgreso ? formatFechaDmy(row.fechaEgreso) : "—"}{row.diasAbierta != null && <p className="mt-0.5 font-semibold">{row.diasAbierta} días</p>}</td>
                     <td className="px-2.5 py-2.5 font-mono text-xs font-bold text-[#207783]"><button type="button" onClick={() => { void abrirDetalleBitacora(row); }} className="text-left hover:underline">{row.categoria === "Urea" ? "UREA" : row.categoria === "Llanta dañada" ? "LLANTA DAÑADA" : row.folio != null ? formatoFolioTaller(row.folio) : "Pendiente"}</button></td>
                     <td className="px-2.5 py-2.5"><button type="button" onClick={() => { void abrirDetalleBitacora(row); }} className="rounded-md bg-neutral-800 px-2 py-1 font-mono text-xs font-bold text-white hover:underline">{row.unidad}</button></td>
                     <td className="max-w-[240px] px-2.5 py-2.5 text-xs">{row.falla}<p className="mt-0.5 text-[10px]" style={{ color: "var(--fg-muted)" }}>{row.categoria}</p></td>
@@ -1212,12 +1240,13 @@ export default function TallerBoard({
                     <td className="max-w-[180px] px-2.5 py-2.5 text-xs">{row.lugar}</td>
                     <td className="max-w-[250px] px-2.5 py-2.5 text-xs">{row.resolucion}</td>
                     <td className="whitespace-nowrap px-2.5 py-2.5 text-right text-xs">{row.costo > 0 ? `$${row.costo.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
-                    <td className="px-2.5 py-2.5"><Badge variant={badgeVariant}>{row.status}</Badge></td>
+                    <td className="px-2.5 py-2.5">
+                      {accionDesdeEstado(row) ? <button type="button" disabled={pending} onClick={() => ejecutarAccionDesdeEstado(row)} title={row.status === "PENDIENTE DE CIERRE" ? "Cerrar orden" : "Marcar como pendiente de cierre"} aria-label={`${row.status}: ${row.status === "PENDIENTE DE CIERRE" ? "cerrar orden" : "marcar pendiente de cierre"}`} className="rounded-full text-left transition hover:brightness-95 disabled:opacity-60"><Badge variant={badgeVariant}>{row.status}</Badge></button> : <Badge variant={badgeVariant}>{row.status}</Badge>}
+                    </td>
                     <td className="px-2 py-2.5"><input aria-label={`Seleccionar registro ${row.folio ?? row.unidad}`} type="checkbox" checked={registrosSeleccionados.includes(row.id)} onChange={(e) => { setRegistrosSeleccionados((prev) => e.target.checked ? [...new Set([...prev, row.id])] : prev.filter((id) => id !== row.id)); if (row.ordenId != null && puedeSeleccionarOrden(row)) setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, row.ordenId!])] : prev.filter((id) => id !== row.ordenId)); }} className="h-4 w-4 accent-indigo-600" /></td>
-                    <td className="px-2 py-2.5"><button type="button" disabled={!registrosSeleccionados.includes(row.id) || !puedeEditarDesdeBitacora(row)} title={puedeEditarDesdeBitacora(row) ? "Editar orden de servicio" : "Solo se pueden editar órdenes abiertas"} onClick={() => { if (row.ordenId != null) router.push(`/taller/${row.ordenId}`); }} className="rounded p-1.5 text-indigo-600 disabled:cursor-not-allowed disabled:opacity-25"><Pencil className="h-4 w-4" /></button></td>
                   </tr>;
                 })}
-                {registrosBitacoraFiltrados.length === 0 && <tr><td colSpan={12} className="px-4 py-10 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay registros para estos filtros.</td></tr>}
+                {registrosBitacoraFiltrados.length === 0 && <tr><td colSpan={11} className="px-4 py-10 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay registros para estos filtros.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -1230,7 +1259,7 @@ export default function TallerBoard({
           {cargandoDetalleBitacora && <p className="py-8 text-center text-sm" style={{ color: "var(--fg-muted)" }}>Cargando expediente…</p>}
           {errorDetalleBitacora && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{errorDetalleBitacora}</p>}
           {registroDetalleBitacora && !ordenDetalleBitacora && !cargandoDetalleBitacora && <div className="grid gap-3 rounded-xl border p-4 text-sm sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
-            <p><b>Fecha:</b> {fechaMx(registroDetalleBitacora.fecha)}</p><p><b>Estado:</b> {registroDetalleBitacora.status}</p>
+            <p><b>Fecha:</b> {formatFechaDmy(registroDetalleBitacora.fecha)}</p><p><b>Estado:</b> {registroDetalleBitacora.status}</p>
             <p><b>Categoría:</b> {registroDetalleBitacora.categoria}</p><p><b>Unidad:</b> {registroDetalleBitacora.unidad}</p>
             <p><b>Falla:</b> {registroDetalleBitacora.falla}</p><p><b>Operador:</b> {registroDetalleBitacora.operador}</p>
             <p><b>Atiende:</b> {registroDetalleBitacora.atendio}</p><p><b>Lugar:</b> {registroDetalleBitacora.lugar}</p>
@@ -1243,13 +1272,14 @@ export default function TallerBoard({
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
             {tabDetalleBitacora === "datos" && <div className="grid gap-3 rounded-xl border p-4 text-sm sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
-              <p><b>Fecha:</b> {fechaMx(ordenDetalleBitacora.fecha)}</p><p><b>Estado:</b> {ESTADO_LABEL[ordenDetalleBitacora.estado as EstadoOrden] ?? ordenDetalleBitacora.estado}</p>
-              <p><b>Equipo:</b> {ordenDetalleBitacora.unidad?.codigo ?? "—"}</p><p><b>Categoría:</b> {etiquetaCategoriaTaller(ordenDetalleBitacora.categoria)}</p>
-              <p><b>Operador:</b> {ordenDetalleBitacora.operador?.nombre ?? "—"}</p><p><b>Quién recibió:</b> {ordenDetalleBitacora.quienRecibio ?? "—"}</p>
-              <p><b>Atiende:</b> {ordenDetalleBitacora.quienAtendio ?? "—"}</p><p><b>Proveedor / ubicación:</b> {ordenDetalleBitacora.proveedorExterno ?? "TALLER"}</p>
+              <p><b>Fecha:</b> {formatFechaDmy(ordenDetalleBitacora.fecha)}</p><p><b>Fecha de salida:</b> {formatFechaDmy(ordenDetalleBitacora.fechaSalida) || "—"}</p>
+              <p><b>Estado:</b> <Badge variant={estadoOrdenVariant(ordenDetalleBitacora.estado)}>{ESTADO_LABEL[ordenDetalleBitacora.estado as EstadoOrden] ?? ordenDetalleBitacora.estado}</Badge></p><p><b>Equipo:</b> {ordenDetalleBitacora.unidad?.codigo ?? "—"}</p>
+              <p><b>Categoría:</b> {etiquetaCategoriaTaller(ordenDetalleBitacora.categoria)}</p><p><b>Quién recibió:</b> {ordenDetalleBitacora.quienRecibio ?? "—"}</p>
+              <p><b>Operador:</b> {ordenDetalleBitacora.operador?.nombre ?? "—"}</p><p><b>Atiende:</b> {ordenDetalleBitacora.quienAtendio ?? "—"}</p>
+              <p><b>Lectura (KM / HRS):</b> {ordenDetalleBitacora.kmHrs ?? "—"}</p><p><b>Proveedor / ubicación:</b> {ordenDetalleBitacora.proveedorExterno ?? "TALLER"}</p>
               <p className="sm:col-span-2"><b>Motivo:</b> {ordenDetalleBitacora.motivo ?? "—"}</p>
               <p className="sm:col-span-2 whitespace-pre-wrap"><b>Trabajo realizado / comentarios:</b> {textoActividadesTaller(ordenDetalleBitacora.trabajoRealizado, ordenDetalleBitacora.quienAtendio ?? "") || ordenDetalleBitacora.comentarios || "—"}</p>
-              <p><b>Próximo mantenimiento:</b> {ordenDetalleBitacora.proximoMto ?? "—"}</p><p><b>Lectura:</b> {ordenDetalleBitacora.kmHrs ?? "—"}</p>
+              <p className="sm:col-start-2"><b>Próximo mantenimiento:</b> {ordenDetalleBitacora.proximoMto ?? "—"}</p>
               {fotosChecklistJson(ordenDetalleBitacora.fotosSalida).length > 0 && <div className="sm:col-span-2"><b>Fotos de resolución / entrega</b><div className="mt-2 flex flex-wrap gap-2">{fotosChecklistJson(ordenDetalleBitacora.fotosSalida).map((foto, index) => <a key={foto.key ?? `salida-${index}`} href={foto.url} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>{foto.tipo === "video" ? <video src={foto.url} controls className="h-20 w-28 object-cover" /> : <img src={foto.url} alt="Foto de entrega" className="h-20 w-28 object-cover" />}</a>)}</div></div>}
             </div>}
             {tabDetalleBitacora === "checklist" && <div className="grid grid-cols-1 content-start gap-2 md:grid-cols-2">
@@ -1284,19 +1314,25 @@ export default function TallerBoard({
       </Dialog>
 
       <Dialog open={modalIncidencia} onOpenChange={setModalIncidencia}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle>Nueva incidencia</DialogTitle></DialogHeader>
           <form onSubmit={capturarIncidencia} className="space-y-3">
             <div><Label>Equipo</Label><Select value={unidadIncidencia} onChange={(e) => { const id = e.target.value; setUnidadIncidencia(id); const unidad = unidades.find((u) => String(u.id) === id); setOperadorIncidencia(unidad?.operadorDefaultId ? String(unidad.operadorDefaultId) : ""); }} required><option value="">Elegir equipo…</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></div>
-            <div><Label>Categoría</Label><Select value={categoriaIncidencia} onChange={(e) => setCategoriaIncidencia(e.target.value as CategoriaTaller)}>{TALLER_CATEGORIAS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</Select>{CATEGORIAS_SIN_TALLER.includes(categoriaIncidencia as typeof CATEGORIAS_SIN_TALLER[number]) && <p className="mt-1 text-xs text-amber-700">Esta categoría quedará en Bitácora General y no se podrá pasar a taller.</p>}</div>
+            <div><Label>Fecha</Label><DateDmyInput value={fechaIncidencia} onChange={setFechaIncidencia} required /></div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div><Label>Categoría</Label><Select value={categoriaIncidencia} onChange={(e) => setCategoriaIncidencia(e.target.value as CategoriaTaller)}>{TALLER_CATEGORIAS.filter((item) => !CATEGORIAS_SIN_TALLER.includes(item.value as typeof CATEGORIAS_SIN_TALLER[number])).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</Select></div>
+              <div><Label>Prioridad</Label><Select value={prioridad} onChange={(e) => setPrioridad(e.target.value)}><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></Select></div>
+            </div>
             <div><Label>Chofer (opcional)</Label><Select value={operadorIncidencia} onChange={(e) => setOperadorIncidencia(e.target.value)}><option value="">Sin asignar</option>{operadores.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}</Select></div>
-            <div><Label>Prioridad</Label><Select value={prioridad} onChange={(e) => setPrioridad(e.target.value)}><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></Select></div>
-            <fieldset className="space-y-2"><legend className="text-sm font-medium">Fallas observadas · selección múltiple</legend><div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>{TALLER_FALLAS.map((falla) => <label key={falla} className="flex items-center gap-2 text-xs"><input type="checkbox" checked={fallasSeleccionadas.includes(falla)} onChange={(e) => setFallasSeleccionadas((actuales) => e.target.checked ? [...actuales, falla] : actuales.filter((x) => x !== falla))} />{falla}</label>)}</div></fieldset>
+            <fieldset className="space-y-2"><legend className="text-sm font-medium">Fallas observadas · selección múltiple</legend><div className="grid grid-cols-2 gap-2 rounded-xl border p-3 sm:grid-cols-3" style={{ borderColor: "var(--border)" }}>{TALLER_FALLAS.map((falla) => <label key={falla} className="flex items-start gap-2 text-xs"><input type="checkbox" checked={fallasSeleccionadas.includes(falla)} onChange={(e) => setFallasSeleccionadas((actuales) => e.target.checked ? [...actuales, falla] : actuales.filter((x) => x !== falla))} />{falla}</label>)}</div></fieldset>
             <div><Label>Descripción o detalle adicional (opcional)</Label><textarea autoFocus={fallasSeleccionadas.length > 0} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={2000} rows={3} placeholder="Describe brevemente qué se observó" className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm" style={{ borderColor: "var(--border)" }} /></div>
             <div><Label>Ubicación (opcional)</Label><Input value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} maxLength={200} placeholder="Lugar donde se detectó" /></div>
             <div><Label>Observaciones (opcional)</Label><textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} maxLength={2000} rows={2} placeholder="Notas adicionales" className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm" style={{ borderColor: "var(--border)" }} /></div>
             {error && <p className="text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={pending} className="w-full py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white disabled:opacity-50">{pending ? "Registrando…" : "Registrar incidencia"}</button>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="submit" value="guardar" disabled={pending} className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{pending ? "Guardando…" : "Guardar"}</button>
+              <button type="submit" value="pasar-taller" disabled={pending} className="w-full rounded-xl bg-[#207783] py-2.5 text-sm font-semibold text-white disabled:opacity-50">{pending ? "Procesando…" : "Pasar a Taller"}</button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
@@ -1306,7 +1342,7 @@ export default function TallerBoard({
           <DialogHeader><DialogTitle>Registrar carga de urea</DialogTitle></DialogHeader>
           <form noValidate onSubmit={guardarUrea} className="space-y-3">
             <div><Label>Unidad</Label><Select value={unidadUrea} onChange={(e) => { const id = e.target.value; setUnidadUrea(id); const unidad = unidades.find((u) => String(u.id) === id); setOperadorUrea(unidad?.operadorDefaultId ? String(unidad.operadorDefaultId) : ""); }} required><option value="">Elegir unidad…</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></div>
-            <div><Label>Fecha</Label><Input type="date" value={fechaUrea} onChange={(e) => setFechaUrea(e.target.value)} required /></div>
+            <div><Label>Fecha</Label><DateDmyInput value={fechaUrea} onChange={setFechaUrea} required /></div>
             <div><Label>Operador (opcional)</Label><Select value={operadorUrea} onChange={(e) => setOperadorUrea(e.target.value)}><option value="">Sin asignar</option>{operadores.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}</Select></div>
             <div><Label>Cantidad (litros)</Label><div className="mb-2 mt-2 flex flex-wrap gap-2">{[5, 10, 20, 40].map((cantidad) => <button key={cantidad} type="button" onClick={() => setLitrosUrea(String(cantidad))} className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${Number(litrosUrea) === cantidad ? "border-amber-500 bg-amber-300 text-amber-950" : ""}`} style={Number(litrosUrea) !== cantidad ? { borderColor: "var(--border)" } : undefined}>{cantidad} L</button>)}</div><Input type="number" inputMode="decimal" min="0.1" max="10000" step="0.1" value={litrosUrea} onChange={(e) => setLitrosUrea(e.target.value)} placeholder="Cantidad exacta" required /></div>
             <div><Label>Observaciones</Label><textarea value={observacionesUrea} onChange={(e) => setObservacionesUrea(e.target.value)} maxLength={2000} rows={3} placeholder="Observaciones de la carga" className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm" style={{ borderColor: "var(--border)" }} /></div>
@@ -1321,7 +1357,7 @@ export default function TallerBoard({
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Registrar llanta dañada</DialogTitle></DialogHeader>
           <form onSubmit={guardarLlanta} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3"><div><Label>Unidad</Label><Select value={unidadLlanta} onChange={(e) => { const id = e.target.value; setUnidadLlanta(id); const unidad = unidades.find((u) => String(u.id) === id); setOperadorLlanta(unidad?.operadorDefaultId ? String(unidad.operadorDefaultId) : ""); }} required><option value="">Elegir unidad…</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></div><div><Label>Fecha</Label><Input type="date" value={fechaLlanta} onChange={(e) => setFechaLlanta(e.target.value)} required /></div></div>
+            <div className="grid grid-cols-2 gap-3"><div><Label>Unidad</Label><Select value={unidadLlanta} onChange={(e) => { const id = e.target.value; setUnidadLlanta(id); const unidad = unidades.find((u) => String(u.id) === id); setOperadorLlanta(unidad?.operadorDefaultId ? String(unidad.operadorDefaultId) : ""); }} required><option value="">Elegir unidad…</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></div><div><Label>Fecha</Label><DateDmyInput value={fechaLlanta} onChange={setFechaLlanta} required /></div></div>
             <div><Label>Chofer (opcional)</Label><Select value={operadorLlanta} onChange={(e) => setOperadorLlanta(e.target.value)}><option value="">Sin asignar</option>{operadores.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}</Select></div>
             <div><Label>Vida restante (%)</Label><Input type="number" inputMode="decimal" min="0" max="100" step="1" value={vidaLlanta} onChange={(e) => setVidaLlanta(e.target.value)} required /></div>
             <fieldset><legend className="mb-2 text-xs font-semibold">Posición · selección múltiple</legend><div className="flex flex-wrap gap-2">{[...Array(10)].map((_, i) => String(i + 1)).concat("Refacción").map((posicion) => <button key={posicion} type="button" aria-pressed={posicionesLlanta.includes(posicion)} onClick={() => setPosicionesLlanta((actuales) => actuales.includes(posicion) ? actuales.filter((item) => item !== posicion) : [...actuales, posicion])} className={`min-w-10 rounded-lg border px-3 py-1.5 text-xs font-semibold ${posicionesLlanta.includes(posicion) ? "border-[#207783] bg-[#207783] text-white" : ""}`} style={!posicionesLlanta.includes(posicion) ? { borderColor: "var(--border)" } : undefined}>{posicion}</button>)}</div></fieldset>
@@ -1356,7 +1392,7 @@ export default function TallerBoard({
           <DialogHeader><DialogTitle>Recepción de unidad</DialogTitle></DialogHeader>
           {incidenciaRecepcion && <form onSubmit={confirmarRecepcion} className="space-y-3">
             <div className="rounded-xl border bg-indigo-50/70 border-indigo-200 px-3 py-2"><p className="text-xs font-semibold text-indigo-700">{incidenciaRecepcion.unidad?.codigo} · Falla reportada</p><p className="text-sm mt-1">{incidenciaRecepcion.descripcion}</p></div>
-            <div className="grid grid-cols-2 gap-3"><div><Label>Fecha de recepción</Label><Input type="date" value={fechaRecepcion} onChange={(e) => setFechaRecepcion(e.target.value)} required /></div><div><Label>Lectura</Label><Input type="number" inputMode="decimal" value={lecturaRecepcion} onChange={(e) => setLecturaRecepcion(e.target.value)} /></div></div>
+            <div className="grid grid-cols-2 gap-3"><div><Label>Fecha de recepción</Label><DateDmyInput value={fechaRecepcion} onChange={setFechaRecepcion} required /></div><div><Label>Lectura</Label><Input type="number" inputMode="decimal" value={lecturaRecepcion} onChange={(e) => setLecturaRecepcion(e.target.value)} /></div></div>
             <div><Label>Quién recibe</Label><Input value={recibioRecepcion} onChange={(e) => setRecibioRecepcion(e.target.value)} placeholder="Nombre" /></div>
             <p className="text-xs" style={{ color: "var(--fg-muted)" }}>Al continuar se abrirá la orden y el checklist de ingreso.</p>
             <button type="submit" disabled={pending} className="w-full py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white disabled:opacity-50">{pending ? "Recibiendo…" : "Crear orden y abrir checklist"}</button>

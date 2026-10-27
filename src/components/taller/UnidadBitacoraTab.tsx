@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { formatFechaHoraMx } from "@/lib/date-utils";
+import { formatFechaDmy } from "@/lib/date-utils";
 import { parseActividadesTaller, textoActividadesTaller } from "@/lib/taller-actividades";
 import FotoLightbox, { type TallerFoto } from "@/components/taller/FotoLightbox";
 import type { getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
@@ -180,7 +180,7 @@ export default function UnidadBitacoraTab({
               <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-slate-400" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--fg-muted)" }}>{formatFechaHoraMx(r.fecha)} · {r.folio != null ? <span className="text-[#207783]">{formatoFolioTaller(r.folio)} · </span> : null}{r.categoria}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--fg-muted)" }}>{formatFechaDmy(r.fecha)} · {r.folio != null ? <span className="text-[#207783]">{formatoFolioTaller(r.folio)} · </span> : null}{r.categoria}</p>
                   {r.ordenId && <Link href={`/taller/${r.ordenId}`} aria-label="Ir a la orden de servicio" title="Ir a la orden de servicio" className="rounded-md p-1.5 text-indigo-600 hover:bg-[var(--surface-2)]"><ExternalLink className="h-4 w-4" /></Link>}
                 </div>
                 <p className="mt-1 text-sm font-semibold">{r.titulo}</p>
