@@ -83,19 +83,20 @@ const emptyRef = (): RefaccionInput => ({
   folioFactura: "",
 });
 
-function MediaGallery({ label, items, locked, uploading, onAdd, onRemove }: {
+function MediaGallery({ label, items, locked, uploading, onAdd, onRemove, showHeader = true }: {
   label: string;
   items: MediaFile[];
   locked: boolean;
   uploading: boolean;
   onAdd: () => void;
   onRemove: (key: string) => void;
+  showHeader?: boolean;
 }) {
   return <div className="space-y-2">
-    <div className="flex flex-wrap items-center gap-2">
+    {showHeader && <div className="flex flex-wrap items-center gap-2">
       <p className="text-xs font-semibold">{label}</p>
       {!locked && <button type="button" disabled={uploading} onClick={onAdd} className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold" style={{ borderColor: "var(--border)" }}><Camera className="h-3.5 w-3.5" />{uploading ? "Subiendo…" : "Foto o video"}</button>}
-    </div>
+    </div>}
     {items.length > 0 && <div className="flex flex-wrap gap-2">{items.map((item) => <div key={item.key} className="relative overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>
       {item.tipo === "video" ? <video src={item.url} controls className="h-24 w-36 object-cover" /> : <FotoLightbox foto={{ url: item.url, key: item.key, alt: label }} />}
       {!locked && <button type="button" aria-label="Quitar archivo" onClick={() => onRemove(item.key)} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"><X className="h-3 w-3" /></button>}
@@ -473,11 +474,19 @@ export default function OrdenDetalleForm({
             </div>;
             })}
             {actividades.some((actividad) => actividad.atendio.split(",").map((nombre) => nombre.trim()).includes("Otro")) && <Input disabled={locked} value={mecanicoOtro} onChange={(e) => setMecanicoOtro(e.target.value)} placeholder="Nombre del mecánico (Otro)" />}
-            <div><Label>Proveedor externo / ubicación</Label><Input disabled={locked || !orden.proveedorExternoReady} value={proveedorExterno} onChange={(e) => setProveedorExterno(e.target.value)} placeholder="En blanco = TALLER; escribe el proveedor si es externo" /></div>
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1.35fr)_minmax(300px,1fr)_auto]">
+              <div className="min-w-0 space-y-1">
+                <Label>Lugar / Ubicación</Label>
+                <Input disabled={locked || !orden.proveedorExternoReady} value={proveedorExterno} onChange={(e) => setProveedorExterno(e.target.value)} placeholder="TALLER" className="h-10 min-w-0" />
+                <MediaGallery label="Evidencia del lugar / ubicación" items={fotosSalida} locked={locked} uploading={uploading === "salida"} onAdd={() => inputSalida.current?.click()} onRemove={(key) => setFotosSalida((current) => current.filter((item) => item.key !== key))} showHeader={false} />
+                <input ref={inputSalida} type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple capture="environment" className="hidden" onChange={(e) => { void subirMedia("salida", e.target.files); e.target.value = ""; }} />
+              </div>
+              <div className="flex items-start pt-0 sm:pt-[18px]">
+                {!locked && <button type="button" disabled={uploading === "salida"} onClick={() => inputSalida.current?.click()} aria-label={uploading === "salida" ? "Subiendo foto o video" : "Agregar foto o video del lugar"} title={uploading === "salida" ? "Subiendo…" : "Agregar foto o video"} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border disabled:opacity-50" style={{ borderColor: "var(--border)" }}><Camera className="h-4 w-4" /></button>}
+              </div>
+            </div>
             {!orden.proveedorExternoReady && <p className="text-[11px] text-amber-700">Hace falta aplicar la migración para guardar proveedor externo.</p>}
           </div>
-          <MediaGallery label="Fotos de la resolución y entrega" items={fotosSalida} locked={locked} uploading={uploading === "salida"} onAdd={() => inputSalida.current?.click()} onRemove={(key) => setFotosSalida((current) => current.filter((item) => item.key !== key))} />
-          <input ref={inputSalida} type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple capture="environment" className="hidden" onChange={(e) => { void subirMedia("salida", e.target.files); e.target.value = ""; }} />
         </div>
         <div className="grid items-start gap-3 border-t pt-3 sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
           <div className="space-y-3">
