@@ -1140,7 +1140,7 @@ export default function CatalogoDetalleClient({
       <Dialog open={!!editCarga} onOpenChange={(v) => { if (!v) setEditCarga(null); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar carga {editCarga ? formatFolioCarga(editCarga) : `#${editCarga?.id}`}</DialogTitle>
+            <DialogTitle>{editCarga ? `Editar carga ${formatFolioCarga(editCarga)}` : "Editar carga"}</DialogTitle>
           </DialogHeader>
           {editCarga && (
             <div className="rounded-xl border p-3 grid grid-cols-2 gap-3 text-xs"

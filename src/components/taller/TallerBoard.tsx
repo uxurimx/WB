@@ -411,7 +411,7 @@ export default function TallerBoard({
         operador: incidencia.operador?.nombre ?? "—",
         atendio: orden ? [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map((a) => a.atendio).filter(Boolean))].join(", ") || orden.quienAtendio || incidencia.atendio || "—" : incidencia.atendio ?? "—",
         lugar: esLlantaInformativa ? "" : proveedor ? proveedor : orden ? "TALLER" : incidencia.ubicacion ?? "—",
-        resolucion: esLlantaInformativa ? "" : [...new Set([textoActividadesTaller(orden?.trabajoRealizado, orden?.quienAtendio), orden?.diagnosticoFinal, orden?.observacionesSalida, incidencia.resolucion, incidencia.observaciones, orden?.comentarios].map((value) => value?.trim()).filter((value): value is string => Boolean(value)))].join(", ") || "—",
+        resolucion: esLlantaInformativa ? "" : [...new Set([textoActividadesTaller(orden?.trabajoRealizado, orden?.quienAtendio ?? ""), orden?.diagnosticoFinal, orden?.observacionesSalida, incidencia.resolucion, incidencia.observaciones, orden?.comentarios].map((value) => value?.trim()).filter((value): value is string => Boolean(value)))].join(", ") || "—",
         costo,
         status,
         ordenId: orden?.id ?? incidencia.orden?.id ?? null,
@@ -441,7 +441,7 @@ export default function TallerBoard({
         operador: orden.operador?.nombre ?? "—",
         atendio: [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map((a) => a.atendio).filter(Boolean))].join(", ") || orden.quienAtendio || "—",
         lugar: proveedor || "TALLER",
-        resolucion: [...new Set([textoActividadesTaller(orden.trabajoRealizado, orden.quienAtendio), orden.diagnosticoFinal, orden.observacionesSalida, orden.comentarios].map((value) => value?.trim()).filter((value): value is string => Boolean(value)))].join(", ") || "—",
+        resolucion: [...new Set([textoActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? ""), orden.diagnosticoFinal, orden.observacionesSalida, orden.comentarios].map((value) => value?.trim()).filter((value): value is string => Boolean(value)))].join(", ") || "—",
         costo,
         status: orden.estado === "cerrada" ? "CERRADO" : orden.estado === "terminada" ? "PENDIENTE DE CIERRE" : orden.estado === "cancelada" ? "CANCELADO" : orden.estado === "abierta" ? "ABIERTO" : "EN PROCESO",
         ordenId: orden.id,
@@ -625,7 +625,7 @@ export default function TallerBoard({
       const activities = work.length ? work.map((activity) => activity.trabajo) : fallback;
       const notes = [order.comentarios, order.observacionesSalida]
         .map((value) => value?.trim())
-        .filter((value): value is string => Boolean(value) && !activities.includes(value));
+        .filter((value): value is string => typeof value === "string" && value.length > 0 && !activities.includes(value));
       const note = [
         `OS ${formatoFolioTaller(order.folio)} · ingreso ${dateOnly(order.fecha)}`,
         ...notes,
