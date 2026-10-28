@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Download, Fuel, Plus, Search, Wrench } from "lucide-react";
@@ -254,6 +254,8 @@ export default function TallerBoard({
   const [errorDetalleBitacora, setErrorDetalleBitacora] = useState("");
   const [incluirUrea, setIncluirUrea] = useState(true);
   const [cargandoIncidencias, setCargandoIncidencias] = useState(false);
+  const [exportandoBitacora, setExportandoBitacora] = useState(false);
+  const exportandoBitacoraRef = useRef(false);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
 
@@ -509,6 +511,10 @@ export default function TallerBoard({
   ), [incidencias, mesVigente]);
 
   async function exportarBitacora() {
+    if (exportandoBitacoraRef.current) return;
+    exportandoBitacoraRef.current = true;
+    setExportandoBitacora(true);
+    try {
     const ExcelJS = await import("exceljs");
     const response = await fetch("/templates/bitacora-taller-cliente-template.xlsx");
     if (!response.ok) throw new Error("No se pudo cargar la plantilla de Bitácora.");
@@ -766,8 +772,17 @@ export default function TallerBoard({
     const link = document.createElement("a");
     link.href = url;
     link.download = `bitacora-taller-${getNowLocal().fecha}.xlsx`;
+    link.style.display = "none";
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url);
+      link.remove();
+    }, 1000);
+    } finally {
+      exportandoBitacoraRef.current = false;
+      setExportandoBitacora(false);
+    }
   }
 
   function puedeSeleccionarOrden(row: RegistroBitacora) {
@@ -1206,7 +1221,7 @@ export default function TallerBoard({
               <label className="flex items-center gap-2 px-1 text-xs"><input type="checkbox" checked={incluirUrea} onChange={(e) => setIncluirUrea(e.target.checked)} className="h-4 w-4 accent-indigo-600" />Incluir cargas de urea</label>
               <label className="flex items-center gap-2 px-1 text-xs"><input type="checkbox" checked={incluirLlantas} onChange={(e) => setIncluirLlantas(e.target.checked)} className="h-4 w-4 accent-indigo-600" />Incluir llanta dañada</label>
               {canCancelOrders && <button type="button" disabled={pending || !ordenesSeleccionadas.length} onClick={ejecutarCancelacionOrdenes} className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-40">Cancelar</button>}
-              <button type="button" disabled={!registrosBitacoraFiltrados.length} onClick={() => { void exportarBitacora().catch((err) => setError(err instanceof Error ? err.message : "No se pudo generar el Excel.")); }} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[#207783] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download className="h-3.5 w-3.5" />{registrosSeleccionados.length ? `Descargar seleccionados (${registrosSeleccionados.length})` : `Bitácora general Excel (${registrosBitacoraFiltrados.length})`}</button>
+              <button type="button" disabled={exportandoBitacora || !registrosBitacoraFiltrados.length} aria-live="polite" onClick={() => { void exportarBitacora().catch((err) => setError(err instanceof Error ? err.message : "No se pudo generar el Excel.")); }} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[#207783] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download className="h-3.5 w-3.5" />{exportandoBitacora ? "Generando Excel…" : registrosSeleccionados.length ? `Descargar seleccionados (${registrosSeleccionados.length})` : `Bitácora general Excel (${registrosBitacoraFiltrados.length})`}</button>
             </div>
           </div>
 
