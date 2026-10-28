@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict cxrm5BEcXAADW0S4jikWfhkDnAn9zHwWjb7VIdltqHlOgS1AQWnrGbBr7ohhrVl
+\restrict rNb6qHLC05BJbhTJdDBZ1ZXt6BtH4xmTvPapt2PXtLvUgHpyx0tUjp8JCPRAwKG
 
--- Dumped from database version 17.10 (2947584)
+-- Dumped from database version 17.10 (29ad1b7)
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -290,6 +290,89 @@ ALTER SEQUENCE public.fuentes_diesel_id_seq OWNER TO neondb_owner;
 --
 
 ALTER SEQUENCE public.fuentes_diesel_id_seq OWNED BY public.fuentes_diesel.id;
+
+
+--
+-- Name: mantenimientos_eventos; Type: TABLE; Schema: public; Owner: neondb_owner
+--
+
+CREATE TABLE public.mantenimientos_eventos (
+    id integer NOT NULL,
+    unidad_id integer NOT NULL,
+    plan_id integer,
+    tipo_control character varying(10) NOT NULL,
+    fecha_servicio date NOT NULL,
+    lectura_servicio real NOT NULL,
+    descripcion text,
+    notas text,
+    registrado_por_id text,
+    created_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.mantenimientos_eventos OWNER TO neondb_owner;
+
+--
+-- Name: mantenimientos_eventos_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+--
+
+CREATE SEQUENCE public.mantenimientos_eventos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.mantenimientos_eventos_id_seq OWNER TO neondb_owner;
+
+--
+-- Name: mantenimientos_eventos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+--
+
+ALTER SEQUENCE public.mantenimientos_eventos_id_seq OWNED BY public.mantenimientos_eventos.id;
+
+
+--
+-- Name: mantenimientos_planes; Type: TABLE; Schema: public; Owner: neondb_owner
+--
+
+CREATE TABLE public.mantenimientos_planes (
+    id integer NOT NULL,
+    unidad_id integer NOT NULL,
+    tipo_control character varying(10) NOT NULL,
+    intervalo real NOT NULL,
+    umbral_alerta real NOT NULL,
+    activo boolean DEFAULT true NOT NULL,
+    notas text,
+    created_at timestamp without time zone DEFAULT now(),
+    updated_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.mantenimientos_planes OWNER TO neondb_owner;
+
+--
+-- Name: mantenimientos_planes_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+--
+
+CREATE SEQUENCE public.mantenimientos_planes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.mantenimientos_planes_id_seq OWNER TO neondb_owner;
+
+--
+-- Name: mantenimientos_planes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+--
+
+ALTER SEQUENCE public.mantenimientos_planes_id_seq OWNED BY public.mantenimientos_planes.id;
 
 
 --
@@ -878,6 +961,20 @@ ALTER TABLE ONLY public.fuentes_diesel ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: mantenimientos_eventos id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.mantenimientos_eventos ALTER COLUMN id SET DEFAULT nextval('public.mantenimientos_eventos_id_seq'::regclass);
+
+
+--
+-- Name: mantenimientos_planes id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.mantenimientos_planes ALTER COLUMN id SET DEFAULT nextval('public.mantenimientos_planes_id_seq'::regclass);
+
+
+--
 -- Name: obras id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
@@ -1221,6 +1318,37 @@ COPY public.analytics_events (id, session_id, type, element, x_pct, y_pct, value
 253	e7398fdc-64b8-4d88-a920-02bd82da2728	scroll	\N	\N	\N	50	2026-07-23 02:38:47.996255
 254	e7398fdc-64b8-4d88-a920-02bd82da2728	scroll	\N	\N	\N	75	2026-07-23 02:38:52.825654
 255	e7398fdc-64b8-4d88-a920-02bd82da2728	scroll	\N	\N	\N	100	2026-07-23 02:38:55.456333
+256	c0c111d0-947d-4131-b702-ecc0c66c3b3a	scroll	\N	\N	\N	25	2026-07-26 17:03:36.428923
+257	c0c111d0-947d-4131-b702-ecc0c66c3b3a	scroll	\N	\N	\N	50	2026-07-26 17:03:43.110554
+258	2ca0e7e1-1474-4306-98ea-aad78bdc3a27	scroll	\N	\N	\N	25	2026-07-28 04:15:38.665761
+259	2ca0e7e1-1474-4306-98ea-aad78bdc3a27	scroll	\N	\N	\N	50	2026-07-28 04:15:39.593944
+260	2ca0e7e1-1474-4306-98ea-aad78bdc3a27	scroll	\N	\N	\N	75	2026-07-28 04:15:41.333802
+261	5fda9713-5c79-4adc-8f5e-d9983b59b03d	click	Ver servicios	44	29	\N	2026-08-03 22:08:08.242808
+262	5fda9713-5c79-4adc-8f5e-d9983b59b03d	scroll	\N	\N	\N	25	2026-08-03 22:08:08.287389
+263	5fda9713-5c79-4adc-8f5e-d9983b59b03d	scroll	\N	\N	\N	50	2026-08-03 22:08:08.314336
+264	5fda9713-5c79-4adc-8f5e-d9983b59b03d	click	Camionesde Volteo Acarreo de tierra, grava y materiales. Disponibilidad inmediat	58	51	\N	2026-08-03 22:08:12.628315
+265	5fda9713-5c79-4adc-8f5e-d9983b59b03d	click	Camionesde Volteo Acarreo de tierra, grava y materiales. Disponibilidad inmediat	58	51	\N	2026-08-03 22:08:28.17039
+266	5fda9713-5c79-4adc-8f5e-d9983b59b03d	click	Excavación Excavaciones de cimentación, zanjas y terracería con maquinaria de al	73	51	\N	2026-08-03 22:08:29.830235
+267	5fda9713-5c79-4adc-8f5e-d9983b59b03d	click	WB Renta deMaquinaria Retroexcavadoras, cargadores y equipo especializado con o 	41	52	\N	2026-08-03 22:08:30.852002
+268	5fda9713-5c79-4adc-8f5e-d9983b59b03d	click	ConstrucciónComercial Obras comerciales e industriales. Supervisión técnica de i	29	50	\N	2026-08-03 22:08:31.527902
+269	5fda9713-5c79-4adc-8f5e-d9983b59b03d	scroll	\N	\N	\N	75	2026-08-03 22:08:32.64456
+270	5fda9713-5c79-4adc-8f5e-d9983b59b03d	scroll	\N	\N	\N	100	2026-08-03 22:09:05.643854
+271	5fda9713-5c79-4adc-8f5e-d9983b59b03d	click	Servicios	59	1	\N	2026-08-03 22:09:15.422605
+272	deb9b4e9-e861-46ae-8e4a-4fbee130fabc	scroll	\N	\N	\N	25	2026-08-04 18:39:51.926005
+273	deb9b4e9-e861-46ae-8e4a-4fbee130fabc	scroll	\N	\N	\N	50	2026-08-04 18:39:57.996471
+274	deb9b4e9-e861-46ae-8e4a-4fbee130fabc	scroll	\N	\N	\N	75	2026-08-04 18:39:58.385463
+275	a93be810-c712-42f8-8736-0f4745c6d33a	scroll	\N	\N	\N	25	2026-08-06 02:26:48.379902
+276	a93be810-c712-42f8-8736-0f4745c6d33a	scroll	\N	\N	\N	50	2026-08-06 02:27:07.294438
+277	a93be810-c712-42f8-8736-0f4745c6d33a	scroll	\N	\N	\N	75	2026-08-06 02:27:18.181803
+278	a93be810-c712-42f8-8736-0f4745c6d33a	scroll	\N	\N	\N	100	2026-08-06 02:27:24.941297
+279	a93be810-c712-42f8-8736-0f4745c6d33a	click	a	22	87	\N	2026-08-06 02:27:40.331774
+280	711db9fd-4871-4216-97e3-ecdc1b15e1b3	scroll	\N	\N	\N	25	2026-08-06 20:38:10.890226
+281	711db9fd-4871-4216-97e3-ecdc1b15e1b3	scroll	\N	\N	\N	50	2026-08-06 20:38:11.236964
+282	711db9fd-4871-4216-97e3-ecdc1b15e1b3	scroll	\N	\N	\N	75	2026-08-06 20:39:53.776883
+283	711db9fd-4871-4216-97e3-ecdc1b15e1b3	scroll	\N	\N	\N	100	2026-08-06 20:40:09.787204
+284	3d9bc487-d48a-4c55-8e2f-89f68911dab1	scroll	\N	\N	\N	25	2026-08-08 15:05:04.615903
+285	3d9bc487-d48a-4c55-8e2f-89f68911dab1	scroll	\N	\N	\N	50	2026-08-08 15:05:07.762657
+286	3d9bc487-d48a-4c55-8e2f-89f68911dab1	scroll	\N	\N	\N	75	2026-08-08 15:05:10.971067
 \.
 
 
@@ -1374,6 +1502,18 @@ COPY public.analytics_sessions (id, session_id, device_type, browser, os, screen
 143	9975f69f-2428-44bb-8b14-711b653f83f2	desktop	edge	windows	1280	720	https://www.bing.com/	187.161	28	100	f	2026-07-17 03:35:21.679	2026-07-17 03:34:55.536816
 144	d1b62ece-ee04-4e8f-bf25-cff37886e3e2	desktop	chrome	linux	1680	1050	\N	45.174	12	0	f	2026-07-22 19:57:43.422	2026-07-22 19:57:33.771976
 145	e7398fdc-64b8-4d88-a920-02bd82da2728	mobile	safari	ios	440	956	https://l.instagram.com/	187.161	42	103	f	2026-07-23 02:39:00.173	2026-07-23 02:38:19.99448
+146	dcbc7d32-7783-4553-9d09-040cca1b3a70	mobile	opera	android	424	946	\N	200.68	11	0	f	2026-07-23 23:44:26.194	2026-07-23 23:44:15.164231
+147	62d13f13-0fa7-4319-a9af-1ce348be04c2	desktop	chrome	linux	1920	1080	https://www.wbconstruccion.mx/admin	45.174	6	0	t	2026-07-23 23:55:44.791	2026-07-23 23:55:38.475806
+148	7e726116-db32-46d9-9e8c-8ec95950717c	desktop	chrome	windows	1920	1080	\N	3.220	2	0	t	2026-07-24 20:42:08.925	2026-07-24 20:42:07.762092
+149	c0c111d0-947d-4131-b702-ecc0c66c3b3a	mobile	safari	ios	430	932	https://l.instagram.com/	189.218	56	56	f	2026-07-26 17:04:15.43	2026-07-26 17:03:19.44848
+150	2ca0e7e1-1474-4306-98ea-aad78bdc3a27	desktop	edge	windows	1366	768	https://www.bing.com/	189.217	11	89	f	2026-07-28 04:15:45.808	2026-07-28 04:15:36.257183
+151	5fda9713-5c79-4adc-8f5e-d9983b59b03d	desktop	edge	windows	1920	1080	https://www.bing.com/	187.189	4738	100	f	2026-08-03 23:27:00.038	2026-08-03 22:07:56.547679
+152	deb9b4e9-e861-46ae-8e4a-4fbee130fabc	desktop	edge	windows	1536	864	https://www.bing.com/	190.171	152	98	f	2026-08-04 18:42:13.012	2026-08-04 18:39:42.252754
+153	a93be810-c712-42f8-8736-0f4745c6d33a	mobile	chrome	android	385	858	https://www.wbconstruccion.mx/	189.218	96	100	f	2026-08-06 02:28:03.55	2026-08-06 02:26:29.417651
+154	711db9fd-4871-4216-97e3-ecdc1b15e1b3	mobile	chrome	android	393	873	https://www.wbconstruccion.mx/	187.190	369	100	f	2026-08-06 20:44:14.04	2026-08-06 20:38:06.434415
+155	3d9bc487-d48a-4c55-8e2f-89f68911dab1	desktop	edge	windows	1920	1080	https://www.bing.com/	148.243	457	78	f	2026-08-08 15:12:35.458	2026-08-08 15:04:58.885342
+156	23f4add8-016c-4870-8dcf-6f4ab16474d6	desktop	chrome	linux	800	600	\N	216.251	6	0	t	2026-08-08 16:19:05.574	2026-08-08 16:19:00.976589
+157	63310083-03e5-4985-9693-841ea2cac5ed	mobile	other	android	360	800	http://m.facebook.com	173.252	\N	0	t	\N	2026-08-11 18:51:51.571735
 \.
 
 
@@ -1415,6 +1555,24 @@ COPY public.audit_log (id, usuario_id, accion, entidad, entidad_id, datos_json, 
 21	user_3BYiAC79vdFAXS59rbNLZhHcBlT	delete	carga	4213	{"id":4213,"fecha":"2026-07-18","hora":"12:28:00","folio":15577,"periodoId":76,"unidadId":229,"operadorId":269,"obraId":null,"fuenteId":29,"tanqueId":15,"litros":130,"odometroHrs":797427,"cuentaLtInicio":2672828,"cuentaLtFin":2672958,"origen":"patio","tipoDiesel":"normal","quienSuministraId":null,"quienRecibeId":null,"kmEstimado":false,"notas":null,"registradoPorId":"user_3BYiAC79vdFAXS59rbNLZhHcBlT","createdAt":"2026-07-18T20:03:54.531Z","nota":null}	2026-07-18 20:05:58.780628
 22	user_3BYiAC79vdFAXS59rbNLZhHcBlT	delete	carga	4212	{"id":4212,"fecha":"2026-07-18","hora":"12:20:00","folio":15576,"periodoId":76,"unidadId":203,"operadorId":242,"obraId":null,"fuenteId":29,"tanqueId":15,"litros":120,"odometroHrs":135012,"cuentaLtInicio":2672707,"cuentaLtFin":2672827,"origen":"patio","tipoDiesel":"normal","quienSuministraId":null,"quienRecibeId":null,"kmEstimado":false,"notas":"MANTENIMIENTO AYER","registradoPorId":"user_3BYiAC79vdFAXS59rbNLZhHcBlT","createdAt":"2026-07-18T20:03:05.441Z","nota":null}	2026-07-18 20:06:01.476163
 23	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	74:252	{"motivo":"update_carga","cargaId":4142,"cambios":{"fecha":"2026-07-16","hora":"06:55","folio":15901,"litros":100,"odometroHrs":8934,"cuentaLtInicio":956192,"cuentaLtFin":956292,"operadorId":272,"obraId":146,"notas":"FE DE ERRATAS:\\nESTA CARGA ES LA PRIMERA DESPUES DE LAS PRUEBAS DE CARGA Y DESCARGA A TALLER, EL CUENTALITROS DE LA NISSAN QUEDO EN:956315   , NO EN 956192, HAY UNA DIF , CORREGIDA EN LA NOTA 15021 AL CAMION 29"}}	2026-07-22 21:27:48.599921
+24	user_3BYiAC79vdFAXS59rbNLZhHcBlT	delete	carga	4330	{"id":4330,"fecha":"2026-07-24","hora":null,"folio":null,"periodoId":76,"unidadId":252,"operadorId":null,"obraId":162,"fuenteId":31,"tanqueId":null,"litros":1,"odometroHrs":10431,"cuentaLtInicio":null,"cuentaLtFin":null,"origen":"externo","tipoDiesel":"normal","quienSuministraId":null,"quienRecibeId":null,"kmEstimado":false,"notas":"[taller] menos del cuarto","registradoPorId":"user_3BYiAC79vdFAXS59rbNLZhHcBlT","createdAt":"2026-07-25T15:40:50.225Z","nota":null}	2026-07-25 16:34:19.276079
+25	user_3BYiAC79vdFAXS59rbNLZhHcBlT	delete	carga	4328	{"id":4328,"fecha":"2026-07-24","hora":null,"folio":null,"periodoId":76,"unidadId":208,"operadorId":null,"obraId":162,"fuenteId":31,"tanqueId":null,"litros":1,"odometroHrs":1039308,"cuentaLtInicio":null,"cuentaLtFin":null,"origen":"externo","tipoDiesel":"normal","quienSuministraId":null,"quienRecibeId":null,"kmEstimado":false,"notas":"[Externo]","registradoPorId":"user_3BYiAC79vdFAXS59rbNLZhHcBlT","createdAt":"2026-07-25T15:25:27.354Z","nota":null}	2026-07-25 16:35:44.525873
+26	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	76:250	{"motivo":"update_carga","cargaId":4325,"cambios":{"fecha":"2026-07-24","hora":"17:36","folio":14418,"litros":90,"odometroHrs":1,"cuentaLtInicio":2681581,"cuentaLtFin":2681671,"operadorId":253,"obraId":null,"notas":"CA17: 80LT, FOLIO:15030\\nCA31: 60LT FOLLIO:15031\\nCA32: 60LT, FOLIO: 15032"}}	2026-07-27 23:52:58.778259
+27	user_3BYiAC79vdFAXS59rbNLZhHcBlT	delete	carga	4383	{"id":4383,"fecha":"2026-07-27","hora":null,"folio":null,"periodoId":73,"unidadId":250,"operadorId":null,"obraId":160,"fuenteId":31,"tanqueId":null,"litros":185,"odometroHrs":null,"cuentaLtInicio":null,"cuentaLtFin":null,"origen":"externo","tipoDiesel":"normal","quienSuministraId":null,"quienRecibeId":null,"kmEstimado":false,"notas":"[TALLER - HILUX, FOLIO:14445] PARA REPARTIR MARTES 28\\nA ESTA CARGA SE LE AGREGAN 40 LITROS EL LUNES 28/JUL. DANDO UN TOTAL DE 279 LITROS EN LAHILUX PARA REPARTIR EL MARTES28, VER DETALLE EN NOTA 14446","registradoPorId":"user_3BYiAC79vdFAXS59rbNLZhHcBlT","createdAt":"2026-07-28T23:51:38.590Z","nota":null}	2026-07-28 23:53:16.832389
+28	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	76:250	{"motivo":"update_carga","cargaId":4301,"cambios":{"fecha":"2026-07-23","hora":"18:05","folio":14395,"litros":239,"odometroHrs":1,"cuentaLtInicio":2679800,"cuentaLtFin":2680039,"operadorId":253,"obraId":160,"notas":"SE CARGA PARA REPARTIR MAÑANA ENTRE\\nCA01 \\nCA04\\nCA32"}}	2026-07-28 23:55:07.393759
+29	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	76:250	{"motivo":"update_carga","cargaId":4305,"cambios":{"fecha":"2026-07-24","hora":"11:18","folio":14398,"litros":190,"odometroHrs":1,"cuentaLtInicio":2680039,"cuentaLtFin":2680229,"operadorId":253,"obraId":160,"notas":"PC88 90LITROS FOLIO:15029"}}	2026-07-28 23:55:13.47553
+30	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	76:250	{"motivo":"update_carga","cargaId":4305,"cambios":{"fecha":"2026-07-24","hora":"11:18","folio":14398,"litros":190,"odometroHrs":1,"cuentaLtInicio":2680039,"cuentaLtFin":2680229,"operadorId":253,"obraId":160,"notas":"PC88 90LITROS FOLIO:15029"}}	2026-07-28 23:55:17.317397
+31	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	76:250	{"motivo":"update_carga","cargaId":4325,"cambios":{"fecha":"2026-07-24","hora":"17:36","folio":14418,"litros":90,"odometroHrs":1,"cuentaLtInicio":2681581,"cuentaLtFin":2681671,"operadorId":253,"obraId":160,"notas":"CA17: 80LT, FOLIO:15030\\nCA31: 60LT FOLLIO:15031\\nCA32: 60LT, FOLIO: 15032"}}	2026-07-28 23:55:21.487716
+32	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	68:250	{"motivo":"update_carga","cargaId":3554,"cambios":{"fecha":"2026-06-15","hora":"08:09","folio":13828,"litros":60,"odometroHrs":1,"cuentaLtInicio":2618503,"cuentaLtFin":2618563,"operadorId":239,"obraId":160,"notas":"CARGA PARA CAMION QUE SE RECOGE CON REY CANALES - DALTO"}}	2026-07-28 23:55:36.03146
+33	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	74:225	{"motivo":"update_carga","cargaId":4112,"cambios":{"fecha":"2026-07-14","hora":"12:39","folio":15234,"litros":259,"odometroHrs":2809,"cuentaLtInicio":952723,"cuentaLtFin":952982,"operadorId":265,"obraId":183,"notas":"OXXOGAS TICKETS 60109860 Y 60109830\\nAPROX 3/4 DE TANK"}}	2026-07-31 14:07:28.077971
+34	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	73:199	{"motivo":"update_carga","cargaId":4351,"cambios":{"fecha":"2026-07-25","hora":"11:08","folio":144222,"litros":150,"odometroHrs":148352,"cuentaLtInicio":2681772,"cuentaLtFin":2681922,"operadorId":280,"obraId":187,"notas":"ERROR DE NOTA DUPLICADA"}}	2026-08-01 17:11:15.531915
+35	user_3BYiAC79vdFAXS59rbNLZhHcBlT	ajuste_stock	tanques	16	{"antes":93,"despues":0,"notas":"SE VACIA TANQUE PARA EMPEZAR DE CERO , CUENTALITROS 959695, DESPUES DE LA ESPUMA: 959774, QUEDA SECO TOTALMENTE"}	2026-08-03 14:05:16.566262
+36	user_3BYiAC79vdFAXS59rbNLZhHcBlT	ajuste_stock	tanques	16	{"antes":125,"despues":0,"notas":"SE PURGA NISSAN SE DEJA EN CEROS, CUENTALITROS FINAL: "}	2026-08-07 22:38:45.285454
+37	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	78:252	{"motivo":"update_carga","cargaId":4539,"cambios":{"fecha":"2026-08-08","hora":"00:00","folio":12025,"litros":59,"odometroHrs":13159,"cuentaLtInicio":961470,"cuentaLtFin":961529,"operadorId":272,"obraId":145,"notas":"[BOTE PURGA NISSAN] CARGA DE 60 LITROS EN YOGAS, PRODUCTO DE LA PURGA DE NISSAN"}}	2026-08-10 22:52:59.717558
+38	user_3BYiAC79vdFAXS59rbNLZhHcBlT	delete	carga	4539	{"id":4539,"fecha":"2026-08-08","hora":"00:00:00","folio":12025,"periodoId":78,"unidadId":252,"operadorId":272,"obraId":145,"fuenteId":31,"tanqueId":null,"litros":59,"odometroHrs":13159,"cuentaLtInicio":961470,"cuentaLtFin":961529,"origen":"externo","tipoDiesel":"normal","quienSuministraId":null,"quienRecibeId":null,"kmEstimado":false,"notas":"[BOTE PURGA NISSAN] CARGA DE 60 LITROS EN YOGAS, PRODUCTO DE LA PURGA DE NISSAN","registradoPorId":"user_3BYiAC79vdFAXS59rbNLZhHcBlT","createdAt":"2026-08-07T22:53:00.459Z","nota":"error de captura, lo registra como periodo anterior"}	2026-08-10 23:49:17.015085
+39	user_3BYiAC79vdFAXS59rbNLZhHcBlT	recalc_rendimiento	rendimiento	78:252	{"motivo":"delete_carga","cargaId":4539,"periodoId":78,"unidadId":252,"nota":"error de captura, lo registra como periodo anterior"}	2026-08-10 23:49:17.131085
+40	user_3BYiAC79vdFAXS59rbNLZhHcBlT	ajuste_stock	tanques	16	{"antes":30,"despues":59,"notas":"error de dedo en introduccion de cuentalitros corregido (BETO N)"}	2026-08-10 23:56:45.678281
+41	user_3BYiAC79vdFAXS59rbNLZhHcBlT	delete	carga	4613	{"id":4613,"fecha":"2026-08-10","hora":null,"folio":null,"periodoId":80,"unidadId":227,"operadorId":null,"obraId":160,"fuenteId":31,"tanqueId":null,"litros":1,"odometroHrs":459000,"cuentaLtInicio":null,"cuentaLtFin":null,"origen":"externo","tipoDiesel":"normal","quienSuministraId":null,"quienRecibeId":null,"kmEstimado":false,"notas":"[Externo] MANTENIMIENTO","registradoPorId":"user_3BYiAC79vdFAXS59rbNLZhHcBlT","createdAt":"2026-08-11T19:20:45.323Z","nota":null}	2026-08-11 19:22:49.387776
 \.
 
 
@@ -1565,6 +1723,21 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4271	2026-07-22	10:01:00	15019	76	253	259	138	30	16	73	3696	958862	958935	campo	normal	Hora de carga 10.01 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-22 16:32:09.421449	253	259	f
 4142	2026-07-16	06:55:00	15901	74	252	272	146	30	16	100	8934	956192	956292	campo	normal	FE DE ERRATAS:\nESTA CARGA ES LA PRIMERA DESPUES DE LAS PRUEBAS DE CARGA Y DESCARGA A TALLER, EL CUENTALITROS DE LA NISSAN QUEDO EN:956315   , NO EN 956192, HAY UNA DIF , CORREGIDA EN LA NOTA 15021 AL CAMION 29	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-16 15:32:56.96829	253	272	f
 4284	2026-07-22	16:22:00	14379	76	242	252	\N	29	15	100	5290	2.678483e+06	2.678583e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-22 23:40:04.787689	\N	\N	f
+4290	2026-07-23	15:53:00	14384	76	214	257	\N	29	15	120	74189	2.678832e+06	2.678952e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:07:32.324112	\N	\N	f
+4295	2026-07-23	16:47:00	14389	76	229	269	\N	29	15	100	798161	2.679258e+06	2.679358e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:15:14.159441	\N	\N	f
+4297	2026-07-23	17:05:00	14391	76	228	268	\N	29	15	50	13810	2.679449e+06	2.679499e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:16:39.138707	\N	\N	f
+4308	2026-07-24	14:27:00	14401	76	197	240	\N	29	15	1	31898	2.680434e+06	2.680435e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:53:29.762349	\N	\N	f
+4311	2026-07-25	00:00:00	14404	73	215	258	\N	29	15	200	52814	2.680586e+06	2.680786e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:57:08.321645	\N	\N	f
+4333	2026-07-25	00:00:00	144155	73	255	248	\N	29	15	150	6294	2.681321e+06	2.681471e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:20:22.830462	\N	\N	f
+4343	2026-07-24	\N	\N	76	237	\N	145	31	\N	50	373989	\N	\N	externo	normal	[TALER HILUX] HILUX MAGO FOLIO 14398\n\nFOLIO CARGA 15028	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:37:38.939951	\N	\N	f
+4424	2026-07-30	16:05:00	14480	73	226	266	\N	29	15	60	64130	2.690192e+06	2.690252e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 00:44:05.518644	\N	\N	f
+4425	2026-07-30	16:37:00	14481	73	206	281	\N	29	15	60	529095	2.690254e+06	2.690314e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 00:45:06.300196	\N	\N	f
+4426	2026-07-30	16:48:00	14482	73	255	248	\N	29	15	70	7468	2.690314e+06	2.690384e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 00:45:47.547947	\N	\N	f
+4433	2026-07-31	09:30:00	14489	73	203	242	\N	29	15	22	137183	2.690932e+06	2.690954e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 15:38:58.633403	\N	\N	f
+4434	2026-08-01	00:00:00	14490	78	203	242	\N	29	15	270	137183	2.690954e+06	2.691224e+06	patio	normal	CARGA DE TANQUE LLENO POSTFECHADA PARA SABADO, TIENE MOVIMIENTOS DE MAQUINARA POR HACER HOY	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 16:00:01.484961	\N	\N	f
+4435	2026-07-30	13:25:00	15047	73	230	270	185	31	\N	240	4395	\N	\N	externo	normal	[TALLER - HILUX #14476]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 18:27:55.910516	\N	\N	f
+4438	2026-07-31	15:08:00	14491	73	202	244	\N	29	15	20	78880	2.691224e+06	2.691244e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 23:49:46.962164	\N	\N	f
+4439	2026-07-31	15:50:00	14492	73	214	257	\N	29	15	1	75641	2.691244e+06	2.691245e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 23:53:24.965477	\N	\N	f
 2695	2026-04-30	17:24:00	11560	61	233	264	141	30	16	109	\N	988	1097	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-05-02 03:21:24.817824	\N	264	f
 4066	2026-07-11	11:20:00	14586	74	202	244	\N	29	15	100	75366	2.66047e+06	2.66057e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 18:19:05.235388	\N	\N	f
 4068	2026-07-11	12:40:00	14588	74	201	243	\N	29	15	124	21008	2.66067e+06	2.660794e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 18:48:38.973316	\N	\N	t
@@ -1582,6 +1755,36 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4221	2026-07-18	13:02:00	15582	76	228	268	\N	29	15	100	13077	2.67319e+06	2.67329e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-18 20:09:08.080533	\N	\N	f
 4236	2026-07-20	\N	\N	76	233	\N	154	31	\N	40	\N	\N	\N	externo	normal	[TALLER] FOLIO TALLER : 15585 (CARGA 1 DE 3)	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-20 23:26:41.445432	\N	\N	f
 4263	2026-07-21	17:35:00	14365	76	255	248	\N	29	15	100	5574	2.677304e+06	2.677404e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-22 00:10:19.486378	\N	\N	f
+4291	2026-07-23	16:03:00	14385	76	211	254	\N	29	15	30	42354	2.678952e+06	2.678982e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:08:00.475514	\N	\N	f
+4310	2026-07-24	14:50:00	14403	76	215	258	\N	29	15	1	52814	2.680585e+06	2.680586e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:56:36.90948	\N	\N	f
+4322	2026-07-15	00:00:00	14415	77	255	248	\N	29	15	150	6294	2.681321e+06	2.681471e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:03:14.169378	\N	\N	f
+4323	2026-07-24	17:27:00	14416	76	242	252	\N	29	15	10	5557	2.681471e+06	2.681481e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:03:49.069113	\N	\N	f
+4324	2026-07-25	00:00:00	14417	73	242	252	\N	29	15	100	5557	2.681481e+06	2.681581e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:04:21.340199	\N	\N	f
+4334	2026-07-24	\N	\N	76	209	\N	162	31	\N	1	52254	\N	\N	externo	normal	[TALLER]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:23:25.707444	\N	\N	f
+4335	2026-07-24	\N	\N	76	201	\N	162	31	\N	1	22716	\N	\N	externo	normal	[TALLER]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:24:15.75816	\N	\N	f
+4347	2026-07-25	20:30:00	14419	73	259	239	\N	29	15	17	1723	2.681671e+06	2.681688e+06	patio	normal	SALE A DOS PUERTOS, CAMBIO EL HAMM QUE TRAE ABANICO ROTO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:18:39.449242	\N	\N	f
+4348	2026-07-25	21:00:00	14420	73	258	239	\N	29	15	47	-2	2.681688e+06	2.681735e+06	patio	normal	ALAIN SE LLEVA 2 BOTAS, INFO PENDIENTE A QUE EQUIPOS VA COMBUSTIBLE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:19:27.056595	\N	\N	f
+4355	2026-07-25	12:11:00	14426	73	201	243	\N	29	15	200	22793	2.682423e+06	2.682623e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:52:33.746781	\N	\N	f
+4358	2026-07-25	12:44:00	14429	73	203	242	\N	29	15	240	136107	2.682983e+06	2.683223e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 19:04:58.018493	\N	\N	f
+4359	2026-07-25	12:59:00	14430	73	252	272	\N	29	15	260	10597	2.683224e+06	2.683484e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 19:15:15.589958	\N	\N	f
+4360	2026-07-25	13:16:00	14431	73	237	247	\N	29	15	90	374062	2.683524e+06	2.683614e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 19:51:17.974376	\N	\N	f
+4361	2026-07-25	13:25:00	14432	73	208	250	\N	29	15	250	1.039506e+06	2.683614e+06	2.683864e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 20:08:43.427988	\N	\N	f
+4362	2026-07-25	14:10:00	14433	73	204	246	\N	29	15	120	452264	2.683864e+06	2.683984e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 20:50:16.820593	\N	\N	f
+4364	2026-07-25	14:30:00	15600	73	198	241	\N	29	15	200	86642	2.684084e+06	2.684284e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 20:51:37.208796	\N	\N	f
+4366	2026-07-27	09:52:00	14437	73	258	239	\N	29	15	80	-2	2.684484e+06	2.684564e+06	patio	normal	VINO ALAIN POR 80 LITROS EN BOTES PARA REPARTIR EN OBRA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-27 22:00:48.390967	\N	\N	t
+4367	2026-07-27	15:00:00	14438	73	209	251	\N	29	15	100	52767	2.684564e+06	2.684664e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-27 22:09:31.694819	\N	\N	f
+4368	2026-07-27	16:00:00	14439	73	212	282	\N	29	15	100	2245	2.684664e+06	2.684764e+06	patio	normal	KILOMETRAJE 3	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-27 23:42:34.560915	\N	\N	t
+4370	2026-07-27	18:10:00	14442	73	204	246	\N	29	15	160	452499	2.684959e+06	2.685119e+06	patio	normal	2 BOTES DE UREA\nFOLIOS:15954 Y 15955	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 00:45:05.818059	\N	\N	f
+4396	2026-07-28	17:08:00	14454	73	201	243	\N	29	15	150	23302	2.686971e+06	2.687121e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:19:03.187718	\N	\N	f
+4379	2026-07-27	\N	15036	73	197	240	175	31	\N	40	32296	\N	\N	externo	normal	[TALLER - HILUX, FOLIO: 14436] FOLIO: 15036 DE MAGO EN HILUX 14436	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 01:03:26.495664	\N	\N	f
+4378	2026-07-27	\N	15035	73	256	262	179	31	\N	85	7320	\N	\N	externo	normal	[TALLER - HILUX, FOLIO: 14436] FOLIO: 15035 DE MAGO EN HILUX	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 01:02:15.790031	\N	\N	f
+4380	2026-07-28	09:10:00	15039	73	201	243	180	31	\N	80	22911	\N	\N	externo	normal	[TALLER- HILUX, FOLIO :14445]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 18:33:27.9114	\N	\N	f
+4382	2026-07-27	18:59:00	15038	73	241	253	154	31	\N	85	\N	\N	\N	externo	normal	[TALLER - HILUX: 14440] 15038	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 18:50:01.743209	\N	\N	f
+4365	2026-07-25	16:42:00	14436	73	250	253	160	29	15	200	1	2.684284e+06	2.684484e+06	patio	normal	PARA REPARTIR LUNES\nM01: 40LT, FOLIO:15033\nEX01: 30LT, FOLIO: 15034\nEX03: 85LT, FOLIO: 15035\nCA32: 40LT, FOLIO: 15036\nTOTAL:196	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-27 14:16:11.155196	\N	\N	t
+4398	2026-07-28	17:44:00	14458	73	212	282	\N	29	15	100	2245	2.687282e+06	2.687382e+06	patio	normal	KILOMETRAJE REAL 79\nREPARACION DE PERCHA CON SOLDADURA, POSICION #4 DE LLANTA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:20:57.895013	\N	\N	f
+4399	2026-07-28	17:30:00	14456	73	237	247	\N	29	15	100	374474	2.687382e+06	2.687482e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:21:36.71097	\N	\N	f
+4409	2026-07-29	16:25:00	14466	73	252	272	\N	29	15	150	11420	2.688771e+06	2.688921e+06	patio	normal	1 urea	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 23:39:38.574101	\N	\N	f
+4416	2026-07-30	06:55:00	14474	73	198	241	\N	29	15	150	87200	2.689617e+06	2.689767e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-30 22:45:59.91995	\N	\N	f
 2697	2026-05-01	21:29:00	5	61	197	240	\N	30	16	1	11869	1098	1099	campo	normal	NOTA PARA CERRAR SEMANA GPS	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-05-02 03:30:55.633824	\N	240	f
 2698	2026-05-02	07:18:00	11561	60	197	240	\N	30	16	100	11869	1099	1199	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-05-02 13:30:30.772914	253	240	t
 2699	2026-05-02	08:46:00	11562	60	209	251	142	30	16	100	38463	1199	1299	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-05-02 17:06:36.057499	253	251	f
@@ -1744,6 +1947,34 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4240	2026-07-20	16:32:00	15592	76	204	246	\N	29	15	100	451467	2.674084e+06	2.674184e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-20 23:30:28.896815	\N	\N	f
 4244	2026-07-20	17:10:00	15596	76	255	248	\N	29	15	140	5312	2.674546e+06	2.674686e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-20 23:32:32.030307	\N	\N	f
 4265	2026-07-21	11:53:00	15013	76	256	262	179	30	16	109	7288.5	958258	958367	campo	normal	Hora de carga 11.53 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-22 00:12:42.653974	253	262	f
+4292	2026-07-23	16:16:00	14386	76	215	258	\N	29	15	50	52622	2.678982e+06	2.679032e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:08:24.603904	\N	\N	f
+4302	2026-07-23	18:25:00	15023	76	244	256	183	30	16	20	150673	959094	959114	campo	normal	Km 165066	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-24 00:28:38.418345	256	256	t
+4312	2026-07-24	15:03:00	14405	76	227	267	\N	29	15	1	455910	2.680786e+06	2.680787e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:57:51.137346	\N	\N	f
+4314	2026-07-24	15:35:00	14407	76	237	247	\N	29	15	10	374054	2.680917e+06	2.680927e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:58:55.41862	\N	\N	f
+4336	2026-07-24	\N	\N	76	213	\N	162	31	\N	1	1.376716e+06	\N	\N	externo	normal	[TALLER]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:28:56.309866	\N	\N	f
+4338	2026-07-24	\N	\N	76	216	\N	138	31	\N	90	5502	\N	\N	externo	normal	[TALLER HILUX] HILUX FOLIO 14398 ( MAGO )	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:31:48.671136	\N	\N	f
+4303	2026-07-23	10:45:00	15024	76	225	265	183	30	16	200	2856	959114	959314	campo	normal	CARGA DE HILUX ( OLGUIN Y CARLOS BERNAL )	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-24 00:32:53.190976	256	265	f
+4349	2026-07-25	11:08:00	14422	73	199	280	\N	29	15	150	148352	2.681732e+06	2.681882e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:20:57.489136	\N	\N	f
+4356	2026-07-25	12:23:00	14427	73	202	244	\N	29	15	160	77934	2.682623e+06	2.682783e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:52:56.759933	\N	\N	f
+4357	2026-07-25	12:34:00	14428	73	213	256	\N	29	15	200	1.376835e+06	2.682783e+06	2.682983e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:53:29.025233	\N	\N	f
+4363	2026-07-25	14:15:00	14434	73	209	251	\N	29	15	100	52467	2.683984e+06	2.684084e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 20:51:09.207059	\N	\N	f
+4385	2026-07-28	08:01:00	14446	73	250	253	160	29	15	40	1	2.685705e+06	2.685745e+06	patio	normal	DISPERSION MARTES 28:\n(CA21 80LT FOLIO:15039)\n(CA32 100LT FOLIO:15040)\n(EX02 78LT FOLIO:15041)\n(M02 16LT FOLIO:15042)\nTOTAL 274 LT	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:04:02.473534	\N	\N	t
+4369	2026-07-27	17:30:00	14440	73	250	253	160	29	15	196	1	2.684764e+06	2.684835e+06	patio	normal	PARA REPARTIR \n--CA20: 100LT, FOLIO: 15037 DE MAGO EN HILUX\n--PLANTA VERDE: 85LT, FOLIO : 15038 DE MAGO EN HILUX\nTOTAL: 185, REGRESA A TALLER PARA RELLENAR LA NOTA 14445 DE 185LT	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-27 23:43:03.150238	\N	\N	t
+4371	2026-07-27	18:15:00	14443	73	206	281	\N	29	15	200	528477	2.68512e+06	2.68532e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 00:46:28.104507	\N	\N	f
+3554	2026-06-15	08:09:00	13828	68	250	239	160	29	15	60	1	2.618503e+06	2.618563e+06	patio	normal	CARGA PARA CAMION QUE SE RECOGE CON REY CANALES - DALTO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:05:35.824103	\N	\N	f
+4373	2026-07-25	\N	\N	73	209	251	145	31	\N	80	52271	\N	\N	externo	normal	[TALLER-HILUX FOLIO: 14418] FOLIO: 15030 DE MAGO EN HILUX	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 00:52:01.474903	\N	\N	f
+4381	2026-07-27	18:27:00	15037	73	242	252	163	31	\N	100	5944	\N	\N	externo	normal	[TALLER - HILUX, FOLIO: 14440] FOLIO MAGO: 15037	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 18:41:23.479929	\N	\N	f
+4394	2026-07-28	16:48:00	14452	73	209	251	\N	29	15	100	52943	2.686671e+06	2.686771e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:17:02.040636	\N	\N	f
+4384	2026-07-27	19:20:00	14445	73	250	253	160	29	15	185	1	2.68552e+06	2.685705e+06	patio	normal	PARA REPARTIR MARTES 28\nA ESTA CARGA SE LE ANEXA LA CARGA DE 40 LITROS NOTA 14446,((TOTAL 279 EN HILUX))  VER DETALLE DE CARGAS EN FOLIO 14446	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 23:59:50.367632	\N	\N	t
+4401	2026-07-28	18:16:00	14459	73	250	253	160	29	15	236	1	2.687683e+06	2.687919e+06	patio	normal	PARA DISPERSION DE MIERCOLES 29\nEX14 238 LT, FOLIO: 15043 DE MAGO EN HILUX	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:24:51.456006	\N	\N	t
+4402	2026-07-29	08:45:00	15043	73	225	265	183	31	\N	238	2883	\N	\N	externo	normal	[TALLER - HILUX , FOLIO: 14459]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 22:33:31.816771	\N	\N	f
+4403	2026-07-29	20:25:00	14460	73	260	239	\N	29	15	30	\N	2.687919e+06	2.687949e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 22:38:10.236211	\N	\N	f
+4407	2026-07-29	15:56:00	14464	73	228	254	\N	29	15	150	14537	2.68852e+06	2.68867e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 22:43:44.634567	\N	\N	f
+4410	2026-07-29	16:36:00	14468	73	209	251	\N	29	15	90	53115	2.688926e+06	2.689016e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 23:40:51.829326	\N	\N	f
+4411	2026-07-29	16:47:00	14469	73	237	247	\N	29	15	70	374630	2.689016e+06	2.689086e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 23:49:48.50698	\N	\N	f
+4412	2026-07-29	17:00:00	14470	73	242	252	\N	29	15	70	6444	2.689086e+06	2.689156e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 23:50:12.276623	\N	\N	f
+4413	2026-07-29	17:09:00	14471	73	202	244	\N	29	15	120	78460	2.689157e+06	2.689277e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 23:50:38.886718	\N	\N	f
+4415	2026-07-29	17:37:00	14473	73	204	246	\N	29	15	140	452950	2.689477e+06	2.689617e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 23:53:17.032349	\N	\N	f
 2848	2026-05-11	14:38:00	11818	63	200	268	143	30	16	70	641500	2.559197e+06	2.559267e+06	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-05-11 20:39:54.535926	253	268	f
 2849	2026-05-11	14:39:00	11819	63	226	266	143	30	16	100	49375	2.559267e+06	2.559367e+06	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-05-11 20:41:09.634428	253	266	f
 2851	2026-05-11	16:46:00	11821	63	216	259	138	30	16	54	5222	2.559467e+06	2.559521e+06	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-05-11 22:48:07.791392	253	259	f
@@ -1984,6 +2215,46 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4153	2026-07-16	16:02:00	14234	74	229	269	\N	29	15	70	797141	2.669093e+06	2.669163e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-17 16:20:15.474927	\N	\N	f
 4158	2026-07-16	16:54:00	14239	74	227	267	\N	29	15	80	454367	2.669504e+06	2.669584e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-17 16:59:35.503531	\N	\N	f
 4241	2026-07-20	16:41:00	15593	76	227	267	\N	29	15	100	455040	2.674185e+06	2.674285e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-20 23:30:54.142227	\N	\N	f
+4299	2026-07-23	17:20:00	14393	76	255	248	\N	29	15	100	6065	2.67958e+06	2.67968e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:17:49.270134	\N	\N	f
+4300	2026-07-23	17:29:00	14394	76	206	281	\N	29	15	120	527773	2.67968e+06	2.6798e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:18:14.578992	\N	\N	f
+4315	2026-07-24	15:39:00	14408	76	206	281	\N	29	15	1	527962	2.680927e+06	2.680928e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:59:24.47198	\N	\N	f
+4319	2026-07-24	16:17:00	14412	76	202	244	\N	29	15	1	77801	2.681269e+06	2.68127e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:01:41.414751	\N	\N	f
+4320	2026-07-25	00:00:00	14413	73	202	244	\N	29	15	50	77801	2.68127e+06	2.68132e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:02:11.964626	\N	\N	f
+4337	2026-07-24	\N	\N	76	199	\N	162	31	\N	1	148304	\N	\N	externo	normal	[TALLER]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:30:00.454768	\N	\N	f
+4340	2026-07-24	\N	\N	76	252	\N	162	31	\N	1	10431	\N	\N	externo	normal	[TALLER]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:34:33.200054	\N	\N	f
+4350	2026-07-25	10:00:00	14421	73	256	239	\N	29	15	38	7288.5	2.681735e+06	2.681773e+06	patio	normal	SE MANDAN 2 YOGAS EN F350 CON RODILLO DYNAPAC	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:29:21.581683	\N	\N	f
+4372	2026-07-27	18:30:00	14444	73	255	248	\N	29	15	200	6740	2.68532e+06	2.68552e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 00:47:00.394063	\N	\N	f
+4502	2026-08-04	16:53:00	14644	78	229	269	\N	29	15	200	798646	2.69799e+06	2.69819e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 00:04:39.245866	\N	\N	f
+4376	2026-07-27	\N	15033	73	238	278	177	31	\N	40	5743	\N	\N	externo	normal	[TALLER - HILUX, FOLIO:14436] FOLIO: 15033 DE MAGO EN HILUX	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 00:59:43.799988	\N	\N	f
+4325	2026-07-24	17:36:00	14418	76	250	253	160	29	15	90	1	2.681581e+06	2.681671e+06	patio	normal	CA17: 80LT, FOLIO:15030\nCA31: 60LT FOLLIO:15031\nCA32: 60LT, FOLIO: 15032	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:04:50.172669	\N	\N	t
+4386	2026-07-28	11:04:00	15040	73	197	240	179	31	\N	100	32448	\N	\N	externo	normal	[TALLER - HILUX, FOLIO:14445]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:08:23.521883	\N	\N	f
+4393	2026-07-28	16:34:00	14451	73	199	280	\N	29	15	180	148976	2.686491e+06	2.686671e+06	patio	normal	1 UREA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:16:16.057229	\N	\N	f
+4405	2026-07-29	13:45:00	14462	73	203	242	\N	29	15	180	136782	2.68819e+06	2.68837e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 22:42:49.057553	\N	\N	f
+4414	2026-07-29	17:13:00	14472	73	212	282	\N	29	15	180	2245	2.689277e+06	2.689457e+06	patio	normal	km reales 180	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 23:51:46.745171	\N	\N	f
+4417	2026-07-30	08:18:00	14475	73	233	239	\N	29	15	40	1688	2.689767e+06	2.689807e+06	patio	normal	PASO AQR ALAIN	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-30 22:48:27.550088	\N	\N	f
+4427	2026-07-30	16:45:00	14483	73	202	244	\N	29	15	50	78670	2.690384e+06	2.690434e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 00:46:30.329103	\N	\N	f
+4436	2026-07-30	10:48:00	15046	73	238	278	177	31	\N	30	5763	\N	\N	externo	normal	[TALLER - HILUX #14477]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 18:29:10.77821	\N	\N	f
+4440	2026-08-01	00:00:00	14493	78	214	257	\N	29	15	200	75641	2.691245e+06	2.691445e+06	patio	normal	CARGA POSTFECHADA A SABADO ,NIVEL BAJO, CAMION NUEVO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 23:56:36.749131	\N	\N	f
+4442	2026-08-01	00:00:00	14495	78	252	272	\N	29	15	300	11862	2.691545e+06	2.691845e+06	patio	normal	1 BOTE DE UREA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:16:41.36248	\N	\N	f
+4448	2026-08-01	00:00:00	14601	78	215	258	\N	29	15	200	53983	2.692156e+06	2.692356e+06	patio	normal	CARGA POSTFECHADA P SABADO, CAMION NUEVO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:31:25.179259	\N	\N	f
+4452	2026-08-01	00:00:00	14605	78	228	254	\N	29	15	150	14854	2.69251e+06	2.69266e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:34:19.999144	\N	\N	f
+4453	2026-07-31	17:42:00	14606	73	237	247	\N	29	15	10	374988	2.692661e+06	2.692671e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:35:00.029349	\N	\N	f
+4459	2026-08-01	00:00:00	14611	78	208	250	\N	29	15	50	1.040469e+06	2.692987e+06	2.693037e+06	patio	normal	SE MANDARON BOTES, 60 LITROS PERO SE CARGARON 50	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:58:02.460488	\N	\N	f
+4461	2026-08-01	00:00:00	14613	78	209	251	\N	29	15	85	53588	2.693048e+06	2.693133e+06	patio	normal	CARGA POSTFECHADA SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:59:47.942615	\N	\N	f
+4468	2026-07-31	\N	\N	73	226	\N	162	31	\N	1	64293	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 15:49:37.181375	\N	\N	f
+4471	2026-07-31	\N	\N	73	252	\N	162	31	\N	1	11862	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 16:03:05.608782	\N	\N	f
+4472	2026-07-31	\N	\N	73	227	\N	162	31	\N	1	457149	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 16:04:02.163639	\N	\N	f
+4351	2026-07-25	11:08:00	144222	73	199	280	187	29	15	150	148352	2.681772e+06	2.681922e+06	patio	normal	ERROR DE NOTA DUPLICADA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:31:14.979922	\N	\N	f
+4493	2026-08-03	17:44:00	14636	78	228	254	\N	29	15	80	15213	2.696439e+06	2.696519e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:26:51.746612	\N	\N	f
+4512	2026-08-05	16:00:00	146511	78	227	267	\N	29	15	220	457965	2.699601e+06	2.699721e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 23:56:04.515058	\N	\N	f
+4515	2026-08-05	16:58:00	14654	78	202	244	\N	29	15	88	79758	2.700042e+06	2.70013e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 00:04:28.794759	\N	\N	f
+4523	2026-08-06	15:00:00	14661	78	214	257	\N	29	15	60	76460	2.700811e+06	2.700871e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 21:27:50.581474	\N	\N	f
+4536	2026-08-07	06:23:00	12022	78	255	248	174	30	16	65	9109	961315	961380	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 19:41:08.230589	\N	248	f
+4542	2026-08-08	00:00:00	14672	80	197	240	\N	29	15	281	34101	2.701733e+06	2.702014e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 23:41:56.380365	\N	\N	f
+4544	2026-08-08	00:00:00	14674	80	199	280	\N	29	15	110	150900	2.702019e+06	2.702129e+06	patio	normal	CARGA POSTFECHADA SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 23:45:05.977729	\N	\N	f
+4546	2026-08-08	00:00:00	14676	80	214	257	\N	29	15	100	76701	2.702127e+06	2.702227e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 23:46:02.171949	\N	\N	f
+4551	2026-08-07	16:16:00	14681	78	212	282	\N	29	15	1	893	2.70243e+06	2.702431e+06	patio	normal	HUBODOMETRO FALLANDO, EN REALIDAD TRAE 1270 KMS EN GPS	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:02:09.008641	\N	\N	f
+4553	2026-08-07	16:36:00	14683	78	213	256	\N	29	15	1	1.378139e+06	2.70253e+06	2.702531e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:03:14.007599	\N	\N	f
 3077	2026-05-22	\N	\N	64	208	\N	\N	31	\N	1	1.030188e+06	\N	\N	externo	normal	[Externo] NOTA PARA CORTE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-05-23 17:38:01.0717	\N	\N	f
 3078	2026-05-23	13:03:00	11655	65	206	248	145	30	16	50	516137	921493	921543	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-05-23 19:06:30.607447	253	248	f
 3079	2026-05-23	13:06:00	11656	65	228	268	145	30	16	50	2956	921543	921593	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-05-23 19:08:17.950057	253	268	f
@@ -2134,6 +2405,46 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4120	2026-07-15	16:05:00	14212	74	215	258	\N	29	15	50	51480	2.663943e+06	2.663993e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-16 01:07:17.059862	\N	\N	f
 4159	2026-07-16	17:10:00	14240	74	204	246	\N	29	15	50	450981	2.669585e+06	2.669635e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-17 17:00:34.148564	\N	\N	f
 4246	2026-07-20	17:30:00	15598	76	213	256	\N	29	15	100	1.376429e+06	2.674806e+06	2.674906e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-20 23:58:58.509068	\N	\N	f
+4304	2026-07-23	18:32:00	15025	76	218	274	177	30	16	23	1485.3	959314	959337	campo	normal	Horometro 8473.1 hora de carga 11.35 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-24 00:35:42.325852	256	274	f
+4341	2026-07-24	\N	\N	76	208	\N	145	31	\N	80	1.039161e+06	\N	\N	externo	normal	[TALLER HILUX] HILUX MAGO FOLIO 14398\n\nFOLIO CARGA 15027	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:36:35.373212	\N	\N	f
+4352	2026-07-25	11:22:00	14423	73	226	266	\N	29	15	240	63061	2.681922e+06	2.682162e+06	patio	normal	CASI LLENO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:32:16.924179	\N	\N	f
+4353	2026-07-25	11:33:00	14424	73	214	257	\N	29	15	200	74438	2.682162e+06	2.682362e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:32:46.539241	\N	\N	f
+4374	2026-07-25	\N	\N	73	208	250	146	31	\N	60	1.03932e+06	\N	\N	externo	normal	[TALLER-HILUX FOLIO: 14418] FOLIO: 15031 DE MAGO EN HILUX	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 00:53:18.718948	\N	\N	f
+4387	2026-07-28	13:44:00	15042	73	253	259	138	31	\N	16	3710	\N	\N	externo	normal	[TALLER - HILUX, FOLIO: 15042]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:09:42.164329	\N	\N	f
+4388	2026-07-28	13:35:00	15041	73	216	259	138	31	\N	78	5515	\N	\N	externo	normal	[TALLER- HILUX, FOLIO: 15041]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:10:43.152634	\N	\N	f
+4406	2026-07-29	14:40:00	14463	73	208	250	\N	29	15	150	1.040116e+06	2.68837e+06	2.68852e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 22:43:13.765752	\N	\N	f
+4404	2026-07-29	23:35:00	14461	73	250	253	160	29	15	240	1	2.68795e+06	2.68819e+06	patio	normal	PARA REPARTIR SEGUNDA MITAD D MIERCOLES 29\n(EX03: 95LT, FOLIO:15044) \n(CA05: 100LT, FOLIO:15045)	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 22:41:36.000074	\N	\N	t
+4422	2026-07-30	12:00:00	14478	73	254	239	\N	29	15	40	476767	2.690032e+06	2.690072e+06	patio	normal	40 LITROS PARA CA05 DE ALLENDE, REGRESA A TALLER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-30 22:55:28.989101	\N	\N	t
+4428	2026-07-30	17:02:00	14484	73	227	267	\N	29	15	150	456994	2.690435e+06	2.690585e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 00:47:19.242609	\N	\N	f
+4429	2026-07-30	17:14:00	14485	73	237	247	\N	29	15	45	374777	2.690585e+06	2.69063e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 00:47:45.768258	\N	\N	f
+4420	2026-07-30	08:45:00	14476	73	250	253	\N	29	15	195	1	2.689807e+06	2.690002e+06	patio	normal	PARA REPARTIR JUEVES 30 LA SEGUNDA MITAD DEL DIA:\nEX05 PC200 - 240 LT. RODRIGO, FOLIO: 15047\nDAGS MIGUEL ALEMAN	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-30 22:54:09.040402	\N	\N	t
+4503	2026-08-04	17:06:00	14645	78	242	252	\N	29	15	130	7455	2.698191e+06	2.698321e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 00:06:30.482365	\N	\N	f
+4506	2026-08-05	06:11:00	12014	78	252	272	145	30	16	200	12596	960132	960332	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 17:35:38.978047	\N	272	f
+4441	2026-08-01	00:00:00	14494	78	211	256	\N	29	15	100	42824	2.691445e+06	2.691545e+06	patio	normal	CARGA POSTFECHADA A SABADO, RECIEN REPARADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 23:59:18.44156	\N	\N	f
+4443	2026-07-31	16:35:00	14496	73	242	252	\N	29	15	10	6897	2.691846e+06	2.691856e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:18:10.676896	\N	\N	f
+4445	2026-07-31	16:44:00	14498	73	204	246	\N	29	15	20	453273	2.691956e+06	2.691976e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:23:33.609931	\N	\N	f
+4450	2026-08-01	00:00:00	14603	78	206	281	\N	29	15	150	529238	2.692358e+06	2.692508e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:32:54.935676	\N	\N	f
+4451	2026-07-31	17:30:00	14604	73	228	254	\N	29	15	1	14854	2.692509e+06	2.69251e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:33:46.023606	\N	\N	f
+4456	2026-07-31	18:07:00	14609	73	255	248	\N	29	15	30	7744	2.692806e+06	2.692836e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:39:49.51589	\N	\N	f
+4457	2026-08-01	00:00:00	14610	78	255	248	\N	29	15	150	7744	2.692837e+06	2.692987e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:42:18.273771	\N	\N	f
+4460	2026-07-31	18:20:00	14612	73	209	251	\N	29	15	1	53588	2.693047e+06	2.693048e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:59:20.062136	\N	\N	f
+4444	2026-08-01	00:00:00	14497	78	242	252	\N	29	15	100	6897	2.691856e+06	2.691954e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:18:42.659299	\N	\N	f
+4507	2026-08-05	08:05:00	12015	78	203	242	163	30	16	200	137823	960332	960532	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 17:36:23.624816	\N	242	f
+4437	2026-07-31	12:20:00	\N	73	250	253	186	31	\N	238	\N	\N	\N	externo	normal	[OXXOGAS - 193870080] PARA REPARTIR VIERNES 31 (MONTO $6430.86) \n[[MINI01: 30LT, FOLIO:15046]]\n[[EX05: 240LT, FOLIO: 15047]]\nTOTAL :270 LITROS, TANQUE VACIO\n	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 18:31:45.2925	\N	\N	f
+4474	2026-07-31	\N	\N	73	213	239	162	31	\N	1	1.377659e+06	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 16:08:40.884394	\N	\N	f
+4509	2026-08-05	17:32:00	12017	78	256	262	\N	30	16	64	7378	960712	960776	campo	normal	mantenimiento reciente 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 23:52:19.280246	\N	262	f
+4513	2026-08-05	16:39:00	14652	78	242	252	\N	29	15	120	7644	2.699821e+06	2.699941e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 23:56:32.483169	\N	\N	f
+4517	2026-08-05	17:28:00	14656	78	204	246	\N	29	15	100	453935	2.70028e+06	2.70038e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 00:05:30.592084	\N	\N	f
+4519	2026-08-06	19:03:00	12018	78	197	240	146	30	16	100	33748	960776	960876	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 18:55:40.615494	\N	240	f
+4518	2026-08-05	17:36:00	14657	78	261	254	\N	29	15	120	357031	2.70038e+06	2.7005e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 00:07:00.855467	\N	\N	f
+4520	2026-08-03	\N	\N	78	233	\N	154	31	\N	40	1791	\N	\N	externo	normal	[14629 -MARAVILLAS ALAIN] NOTA 14629 DE MARAVILLAS, DE LA CARGA DE 109 LITROS	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 21:20:09.956098	\N	\N	f
+4524	2026-08-06	15:05:00	14662	78	215	258	\N	29	15	50	55155	2.700871e+06	2.700921e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 21:29:42.663003	\N	\N	f
+4525	2026-08-06	15:12:00	14663	78	226	266	\N	29	15	100	65417	2.700921e+06	2.701021e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 21:30:06.064299	\N	\N	f
+4527	2026-08-06	16:33:00	14665	78	242	252	\N	29	15	80	7804	2.701121e+06	2.701201e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 23:18:50.721493	\N	\N	f
+4528	2026-08-06	17:34:00	14666	78	229	269	\N	29	15	100	799064	2.701202e+06	2.701302e+06	patio	normal	RELLENO DE ACEITE DE ENGINE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 00:04:22.014983	\N	\N	f
+4530	2026-08-06	14:04:00	12019	78	238	278	177	30	16	75	5794	960876	960951	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 00:22:15.980548	\N	278	f
+4533	2026-08-06	18:15:00	14668	78	261	254	\N	29	15	100	357245	2.701402e+06	2.701502e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 00:38:03.995798	\N	\N	f
+4534	2026-08-06	18:24:00	14669	78	209	251	\N	29	15	130	54609	2.701502e+06	2.701632e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 00:38:32.010565	\N	\N	f
 3222	2026-05-29	\N	\N	65	198	241	162	31	\N	1	79879	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-05-30 03:45:28.344583	\N	\N	f
 3224	2026-05-30	12:04:00	118505	66	211	254	160	30	16	100	34509	926336	926436	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-05-30 18:06:53.056239	253	254	f
 3225	2026-05-30	12:06:00	118506	66	212	255	145	30	16	100	46855	926436	926536	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-05-30 18:08:17.109588	253	255	f
@@ -2241,6 +2552,43 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4095	2026-07-14	16:21:00	15232	74	209	251	145	30	16	37	50447	952573	952610	campo	normal	En carga fisica se csrgo 50 litros	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-14 22:27:08.656357	253	251	f
 4122	2026-07-15	16:22:00	14213	74	228	268	\N	29	15	100	12461	2.663993e+06	2.664093e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-16 01:09:59.809904	\N	\N	f
 4160	2026-07-16	17:20:00	14241	74	199	280	\N	29	15	110	146635	2.669635e+06	2.669745e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-17 17:01:31.257437	\N	\N	f
+4342	2026-07-24	\N	\N	76	208	\N	162	31	\N	1	1.039308e+06	\N	\N	externo	normal	[TALLER]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:36:54.752335	\N	\N	f
+4354	2026-07-25	11:48:00	14425	73	242	252	\N	29	15	60	5679	2.682362e+06	2.682422e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 18:33:10.318068	\N	\N	f
+4375	2026-07-25	\N	\N	73	252	272	146	31	\N	60	10441	\N	\N	externo	normal	[TALLER-HILUX FOLIO: 14418] FOLIO: 15032  DE MAGO EN HILUX	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 00:55:38.521206	\N	\N	f
+4389	2026-07-28	15:30:00	14447	73	227	267	\N	29	15	200	456529	2.685745e+06	2.685945e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:12:41.058049	\N	\N	f
+4395	2026-07-28	17:00:00	14453	73	214	257	\N	29	15	200	74959	2.686771e+06	2.686971e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:17:26.875146	\N	\N	f
+4408	2026-07-29	16:15:00	14465	73	206	281	\N	29	15	100	528875	2.68867e+06	2.68877e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 22:44:07.884855	\N	\N	f
+4418	2026-07-29	17:02:00	15044	73	256	262	179	31	\N	95	7339	\N	\N	externo	normal	[TELLER-HILUX: 14461]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-30 22:51:52.392323	\N	\N	f
+4430	2026-07-30	17:20:00	14486	73	209	251	\N	29	15	80	53321	2.69063e+06	2.69071e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 00:48:25.369794	\N	\N	f
+4446	2026-08-01	00:00:00	14499	78	204	246	\N	29	15	140	453273	2.691976e+06	2.692116e+06	patio	normal	CARGA POSTFECHADA 	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:28:04.34502	\N	\N	f
+4454	2026-07-31	17:48:00	14607	73	199	280	\N	29	15	10	149717	2.692671e+06	2.692681e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:36:15.730682	\N	\N	f
+4458	2026-07-31	\N	\N	73	208	\N	162	31	\N	1	1.040469e+06	\N	\N	externo	normal	[CORTE]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:56:10.272671	\N	\N	f
+4462	2026-08-01	08:30:00	14614	78	202	244	\N	29	15	125	78880	2.693133e+06	2.693258e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 15:00:14.579647	\N	\N	f
+4473	2026-07-31	\N	\N	73	201	\N	162	31	\N	1	24068	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 16:07:10.545691	\N	\N	f
+4508	2026-08-05	11:08:00	159143	78	226	266	157	30	16	180	65056	960532	960712	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 17:37:03.816605	\N	266	f
+4463	2026-07-31	17:37:00	\N	79	250	253	186	31	\N	161	\N	\N	\N	externo	normal	[OXXOGAS- 5477630]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 15:35:48.223341	\N	\N	f
+4475	2026-08-01	11:57:00	14615	78	201	243	\N	29	15	200	24207	2.693258e+06	2.693458e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 18:20:28.326778	\N	\N	f
+4477	2026-08-01	12:40:00	14617	78	226	266	\N	29	15	250	64480	2.693678e+06	2.693928e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 19:51:34.879773	\N	\N	f
+4481	2026-08-01	14:01:00	14621	78	212	282	\N	29	15	150	434	2.694279e+06	2.694429e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 20:14:23.376771	\N	\N	f
+4482	2026-08-01	14:10:00	14622	78	228	254	\N	29	15	50	15045	2.69443e+06	2.69448e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 20:34:49.204066	\N	\N	f
+4483	2026-08-01	15:14:00	14623	78	227	267	\N	29	15	175	457332	2.69448e+06	2.694655e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-03 13:51:27.853173	\N	\N	f
+4484	2026-08-01	16:20:00	14625	78	209	251	\N	29	15	324	53884	2.694655e+06	2.694979e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-03 14:03:30.478683	\N	\N	f
+4485	2026-08-03	10:00:00	14628	78	218	239	\N	29	15	33	8467	2.6954e+06	2.695433e+06	patio	normal	SALE A LOS PUERTOS CON PELUCAS	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 14:48:06.153738	\N	\N	f
+4487	2026-08-03	14:40:00	14630	78	208	250	\N	29	15	250	1.04055e+06	2.695544e+06	2.695794e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:03:05.840248	\N	\N	f
+4488	2026-08-03	16:35:00	14631	78	214	257	\N	29	15	100	75909	2.695794e+06	2.695894e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:23:56.087715	\N	\N	f
+4495	2026-08-03	00:42:00	12012	78	225	265	183	30	16	291	2908	959774	960065	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:51:41.623808	\N	265	f
+4496	2026-08-03	13:41:00	12013	78	238	278	177	30	16	67	5775	960065	960132	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:52:35.137638	\N	278	f
+4497	2026-08-03	18:01:00	14638	78	255	248	\N	29	15	220	8244	2.696619e+06	2.696839e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 16:22:16.661302	\N	\N	f
+4498	2026-08-04	15:25:00	14640	78	201	243	\N	29	15	150	24500	2.69744e+06	2.69759e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 22:35:26.482373	\N	\N	f
+4500	2026-08-04	16:28:00	14642	78	202	244	\N	29	15	100	79561	2.69774e+06	2.69784e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 00:01:26.368073	\N	\N	f
+4505	2026-08-04	17:29:00	14647	78	213	256	\N	29	15	200	1.377659e+06	2.698522e+06	2.698722e+06	patio	normal	sale de reparacion de lagarto, soldadura	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 00:09:29.056784	\N	\N	f
+4510	2026-08-05	15:40:00	14649	78	214	257	\N	29	15	100	76271	2.699321e+06	2.699421e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 23:53:47.64832	\N	\N	f
+4514	2026-08-05	16:49:00	14653	78	237	247	\N	29	15	100	375814	2.699941e+06	2.700042e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 23:56:58.385325	\N	\N	f
+4521	2026-08-06	09:00:00	14658	78	233	264	\N	29	15	60	1809	2.7005e+06	2.70056e+06	patio	normal	LLEVO ALAIN BOTES	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 21:21:19.128691	\N	\N	f
+4526	2026-08-06	15:28:00	14664	78	198	281	\N	29	15	100	88315	2.701021e+06	2.701121e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 21:37:29.734125	\N	\N	f
+4529	2026-08-06	17:47:00	14667	78	212	282	\N	29	15	100	802	2.701302e+06	2.701402e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 00:04:41.788532	\N	\N	f
+4531	2026-08-06	15:58:00	12020	78	225	265	183	30	16	258	2929	960951	961209	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 00:22:53.851076	\N	265	f
+4537	2026-08-07	07:08:00	12023	78	199	280	145	30	16	90	150715	961380	961470	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 20:00:34.292669	\N	280	t
 3320	2026-06-04	17:13:00	13665	66	214	257	\N	29	15	70	66803	2.599922e+06	2.599992e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-05 00:24:05.59196	\N	\N	f
 3322	2026-06-04	17:36:00	13667	66	242	252	\N	29	15	60	46117	2.600072e+06	2.600132e+06	patio	normal	Kilómetros reales 880	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-05 00:26:02.469257	\N	\N	f
 3326	2026-06-04	18:15:00	13671	66	202	244	\N	29	15	50	69386	2.600433e+06	2.600483e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-05 00:49:46.662622	\N	\N	f
@@ -2341,10 +2689,44 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4123	2026-07-15	16:28:00	14214	74	211	254	\N	29	15	100	41201	2.664093e+06	2.664193e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-16 01:10:52.709369	\N	\N	f
 4124	2026-07-15	16:47:00	14216	74	212	255	\N	29	15	100	2245	2.664193e+06	2.664293e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-16 01:11:25.687517	\N	\N	f
 4128	2026-07-15	17:26:00	14219	74	213	256	\N	29	15	100	1.375821e+06	2.664514e+06	2.664614e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-16 01:13:02.800907	\N	\N	f
+4538	2026-08-07	12:00:00	\N	78	262	\N	160	31	\N	60	961470	\N	\N	externo	normal	[NISSAN PURGA] CUENTA LITROS INICIO 961470, TERMINO 961529, DESCARGA 60 LITROS  QUE SE LE VAN A CARGAR AL BENITO HOY EN PEDRERA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 22:35:05.428125	\N	\N	f
 4132	2026-07-15	13:48:00	15244	74	217	259	138	30	16	21	1055	2.664514e+06	2.664535e+06	campo	normal	Hora de carga 1.48 pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-16 01:29:29.616618	253	259	f
 4125	2026-07-15	11:28:00	15240	74	224	271	181	30	16	100	3932	2.664279e+06	2.664379e+06	campo	normal	Hora de carga 11.28 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-16 01:11:25.757529	253	271	f
 4161	2026-07-16	17:31:00	14242	74	228	268	\N	29	15	50	12714	2.669746e+06	2.669796e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-17 17:01:59.337835	\N	\N	f
 4163	2026-07-16	18:02:00	14244	74	232	247	\N	29	15	100	486356	2.669866e+06	2.669966e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-17 17:03:31.854646	\N	\N	f
+4344	2026-07-24	\N	\N	76	229	\N	162	31	\N	1	798289	\N	\N	externo	normal	[TALLER]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:44:46.136847	\N	\N	f
+4377	2026-07-27	\N	15034	73	218	274	177	31	\N	30	8467	\N	\N	externo	normal	[TALLER - HILUX, FOLIO: 14436] FOLIO: 15034 DE MAGO EN HILUX 14436	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-28 01:00:41.963091	\N	\N	f
+4390	2026-07-28	15:47:00	14448	73	226	266	\N	29	15	200	63648	2.685946e+06	2.686146e+06	patio	normal	1 UREA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:14:14.673164	\N	\N	f
+4391	2026-07-28	16:04:00	14449	73	242	252	\N	29	15	144	6192	2.686146e+06	2.68629e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:14:43.309591	\N	\N	f
+4392	2026-07-28	16:14:00	14450	73	215	258	\N	29	15	200	53497	2.68629e+06	2.68649e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:15:46.066607	\N	\N	f
+4400	2026-07-28	17:37:00	14457	73	213	256	\N	29	15	200	1.377293e+06	2.687483e+06	2.687683e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:22:08.727022	\N	\N	f
+4419	2026-07-30	\N	15045	73	255	248	145	31	\N	100	7269	\N	\N	externo	normal	[TALLER-HILUX: 14461]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-30 22:52:52.506311	\N	\N	f
+4431	2026-07-30	17:33:00	14487	73	199	280	\N	29	15	120	149526	2.690711e+06	2.690831e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 00:48:51.005768	\N	\N	f
+4447	2026-07-31	16:52:00	14500	73	215	258	\N	29	15	40	53983	2.692116e+06	2.692156e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:30:37.221046	\N	\N	f
+4464	2026-07-31	13:50:00	15048	73	252	272	\N	31	\N	30	11809	\N	\N	externo	normal	[TALLER - HILUX]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 15:37:10.699766	\N	\N	f
+4469	2026-07-31	\N	\N	73	198	\N	162	31	\N	1	87500	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 15:50:40.290505	\N	\N	f
+4476	2026-08-01	12:02:00	14616	78	197	240	\N	29	15	220	33233	2.693458e+06	2.693678e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 18:21:26.479678	\N	\N	f
+4478	2026-08-01	13:29:00	14618	78	229	269	\N	29	15	150	798290	2.693928e+06	2.694078e+06	patio	normal	SALE DE TALLER, LO RECOGE SU CHOFER LUIS MEDINA QUE REGRESO DE VACACIONES	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 19:52:38.0937	\N	\N	f
+4486	2026-08-03	00:22:00	14629	78	258	239	\N	29	15	109	-2	2.695436e+06	2.695545e+06	patio	normal	ARQ ALAIN LLEVA PARA DISPERSION EN OBRA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 14:48:54.890204	\N	\N	f
+4489	2026-08-03	16:45:00	14632	78	211	256	\N	29	15	100	43126	2.695894e+06	2.695994e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:25:02.222741	\N	\N	f
+4494	2026-08-03	17:57:00	14637	78	237	247	\N	29	15	100	375374	2.696519e+06	2.696619e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:29:55.295494	\N	\N	f
+4499	2026-08-04	16:12:00	14641	78	212	282	\N	29	15	150	608	2.69759e+06	2.69774e+06	patio	normal	RELLENA ACEITE DE MOTOR, SE REVISA NIVEL DE ACEITE EN DIFERENCIAL DELANTERO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 22:36:42.35916	\N	\N	f
+4501	2026-08-04	16:40:00	14643	78	198	281	\N	29	15	150	87887	2.69784e+06	2.69799e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 00:01:56.968327	\N	\N	f
+4504	2026-08-04	17:20:00	14646	78	215	258	\N	29	15	200	54721	2.698321e+06	2.698521e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 00:07:40.582291	\N	\N	f
+4511	2026-08-05	15:47:00	14651	78	199	280	\N	29	15	180	150320	2.699421e+06	2.699601e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-05 23:54:13.492408	\N	\N	f
+4516	2026-08-05	17:17:00	14655	78	255	248	\N	29	15	150	8810	2.70013e+06	2.70028e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 00:05:02.911158	\N	\N	f
+4522	2026-08-06	14:50:00	14660	78	202	244	\N	29	15	50	79988	2.70076e+06	2.70081e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-06 21:27:14.349209	\N	\N	f
+4532	2026-08-06	18:20:00	12021	78	240	274	\N	30	16	105	11319	961209	961314	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 00:23:43.284456	\N	274	f
+4535	2026-08-07	11:59:00	\N	78	262	\N	160	31	\N	20	961529	\N	\N	externo	normal	[NISSAN PURGA DE ESPUMA] CUENTALITROS INICIO DE PURGA 961529  , CUENTALITROS DESPUES DE SACAR TODA LA ESPUMA 961618 , SE LLENO BOTE DE 20 LITROS	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 19:37:57.296982	\N	\N	f
+4541	2026-08-07	12:38:00	14671	78	197	240	\N	29	15	1	33879	2.701732e+06	2.701733e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 23:40:49.187147	\N	\N	f
+4540	2026-08-07	14:00:00	12026	78	203	242	146	30	16	20	138469	961618	961638	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 22:59:59.392898	\N	242	f
+4543	2026-08-07	15:30:00	14673	78	199	280	\N	29	15	5	150900	2.702014e+06	2.702019e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 23:44:33.040014	\N	\N	f
+4545	2026-08-07	15:44:00	14675	78	214	257	\N	29	15	1	76701	2.702126e+06	2.702127e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 23:45:36.990608	\N	\N	f
+4547	2026-08-07	15:59:00	14677	78	201	243	\N	29	15	1	24921	2.702228e+06	2.702229e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 23:46:44.343007	\N	\N	f
+4548	2026-08-08	00:00:00	14678	80	201	243	\N	29	15	100	24921	2.702229e+06	2.702329e+06	patio	normal	CARGA POSTFECHADA SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 23:47:06.400952	\N	\N	f
+4549	2026-08-07	16:05:00	14679	78	202	244	\N	29	15	1	80232	2.702329e+06	2.70233e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-07 23:48:46.497707	\N	\N	f
+4550	2026-08-08	00:00:00	14680	80	202	244	\N	29	15	100	80232	2.70233e+06	2.70243e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:01:32.86517	\N	\N	f
+4552	2026-08-08	00:00:00	14682	80	212	282	\N	29	15	100	893	2.702431e+06	2.702531e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:02:36.58629	\N	\N	f
 3421	2026-06-09	16:12:00	13737	67	213	256	\N	29	15	100	1.370493e+06	2.606846e+06	2.606946e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-09 23:11:14.899782	\N	\N	f
 3422	2026-06-09	16:40:00	13739	67	232	267	\N	29	15	100	480822	2.606946e+06	2.607046e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:13:49.892727	\N	\N	f
 3423	2026-06-09	16:50:00	13740	67	211	254	\N	29	15	100	36132	2.607047e+06	2.607147e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-10 00:14:35.700924	\N	\N	f
@@ -2523,12 +2905,22 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4276	2026-07-22	15:01:00	14370	76	227	267	\N	29	15	100	455516	2.677756e+06	2.677856e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-22 21:41:36.319131	\N	\N	f
 4279	2026-07-22	15:28:00	14374	76	199	280	\N	29	15	75	147858	2.678007e+06	2.678082e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-22 23:37:35.76558	\N	\N	f
 4286	2026-07-23	07:32:00	15022	76	197	240	146	30	16	50	31663	959044	959094	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-23 13:33:47.131676	253	240	f
+4345	2026-07-23	\N	\N	76	220	\N	154	31	\N	20	\N	\N	\N	externo	normal	[TALLER] ALAIN EN BOTES, FOLIO TALLER: 14381	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:47:01.664996	\N	\N	f
+4397	2026-07-28	17:19:00	14455	73	197	240	\N	29	15	160	32558	2.687122e+06	2.687282e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-29 00:19:55.587227	\N	\N	f
+4432	2026-07-30	17:46:00	14488	73	242	252	\N	29	15	100	6731	2.690831e+06	2.690931e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 00:49:15.710782	\N	\N	f
+4421	2026-07-30	08:52:00	14477	73	250	253	177	29	15	30	1	2.690002e+06	2.690032e+06	patio	normal	LITROS EXTRA P MAQUINAS\nMINI01 - 30LT, FLACO EN ARBOLEDAS, FOLIO: 15046	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-30 22:54:43.155594	\N	\N	t
+4449	2026-07-31	17:10:00	14602	73	206	281	\N	29	15	1	529238	2.692357e+06	2.692358e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:32:29.996744	\N	\N	f
+4465	2026-07-31	14:59:00	15049	73	240	253	178	31	\N	120	11296	\N	\N	externo	normal	[TALLER- HILUX]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 15:37:56.172679	\N	\N	f
+4479	2026-08-01	13:40:00	14619	78	242	252	\N	29	15	100	7064	2.694079e+06	2.694179e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 19:53:24.583021	\N	\N	f
+4470	2026-07-31	\N	\N	73	212	282	162	31	\N	1	365	\N	\N	externo	normal	[CORTE] SE REAJUSTA KILOMETRAJE POR HUBODOMETRO NUEVO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 15:53:52.392496	\N	\N	f
+4467	2026-08-01	06:37:00	15050	78	197	240	163	31	\N	80	33136	\N	\N	externo	normal	[TALLER- HILUX]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 15:42:30.151254	\N	\N	f
+4490	2026-08-03	16:56:00	14633	78	202	244	\N	29	15	100	79261	2.695995e+06	2.696095e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:25:30.532609	\N	\N	f
+4492	2026-08-03	17:30:00	14635	78	204	246	\N	29	15	193	453570	2.696245e+06	2.696438e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:26:22.896153	\N	\N	f
 3523	2026-06-09	11:10:00	13733	67	250	239	\N	29	15	100	1	2.606576e+06	2.606676e+06	patio	normal	SE CARGA HILUX, REPARTE 50 A CA27 Y 50 A CA21	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:32:16.840252	\N	\N	t
 3524	2026-06-09	\N	\N	67	201	\N	145	31	\N	50	15689	\N	\N	externo	normal	[Externo] 50 LITROS DE HILUX, FOLIO 13733	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:35:03.138537	\N	\N	f
 3527	2026-06-12	\N	\N	67	252	\N	162	31	\N	1	3323	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:42:55.401585	\N	\N	f
 3528	2026-06-12	\N	\N	67	197	\N	162	31	\N	1	25871	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:43:31.565984	\N	\N	f
 4111	2026-07-14	12:00:00	15233	74	252	272	145	30	16	100	8498	952623	952723	campo	normal	OXXOGAS TICKETS 60109860 Y 60109830	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-15 00:54:04.261882	\N	272	f
-4112	2026-07-14	12:39:00	15234	74	225	265	\N	30	16	259	2809	952723	952982	campo	normal	OXXOGAS TICKETS 60109860 Y 60109830\nAPROX 3/4 DE TANK	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-15 00:55:14.6873	\N	265	f
 4108	2026-07-14	\N	\N	74	255	248	159	31	\N	100	4051	\N	\N	externo	normal	[OXXOGAS] TICKET:380410530	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-15 00:24:47.093616	\N	\N	f
 4107	2026-07-14	\N	\N	74	209	251	159	31	\N	100	50538	\N	\N	externo	normal	[OXXOGAS] TICKET: 380410720	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-15 00:17:14.525778	\N	\N	f
 4103	2026-07-14	\N	\N	74	226	266	159	31	\N	100	61150	\N	\N	externo	normal	[OXXOGAS] TICKET: 380409970	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-15 00:12:36.286159	\N	\N	f
@@ -2554,6 +2946,22 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4269	2026-07-22	07:32:00	15017	76	197	240	164	30	16	100	31540	958667	958767	campo	normal	Hora de carga 7.33 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-22 16:27:29.107741	253	240	t
 4277	2026-07-22	15:10:00	14371	76	215	258	\N	29	15	80	52447	2.677856e+06	2.677936e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-22 21:42:02.053452	\N	\N	f
 4280	2026-07-22	15:40:00	14375	76	202	244	\N	29	15	100	77445	2.678082e+06	2.678182e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-22 23:38:26.909728	\N	\N	f
+4288	2026-07-23	14:04:00	14382	76	203	242	\N	29	15	50	135756	2.678712e+06	2.678762e+06	patio	normal	BALATAS\nMATRACA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:02:37.015042	\N	\N	f
+4313	2026-07-25	00:00:00	14406	73	227	267	\N	29	15	130	455910	2.680787e+06	2.680917e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:58:26.411464	\N	\N	f
+4326	2026-07-24	\N	\N	76	203	\N	162	31	\N	1	135948	\N	\N	externo	normal	[Externo] un cuarto	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 15:23:57.321823	\N	\N	f
+4329	2026-07-24	\N	\N	76	214	\N	162	31	\N	1	74322	\N	\N	externo	normal	[Taller]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 15:40:14.286319	\N	\N	f
+4332	2026-07-24	\N	\N	76	198	\N	162	31	\N	1	86642	\N	\N	externo	normal	[taller] inactivo unos dias	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:09:19.345242	\N	\N	f
+4339	2026-07-24	\N	\N	76	252	\N	145	31	\N	60	10265	\N	\N	externo	normal	[TALLER HILUX] HILUX MAGO FOLIO 14398\nFOLIO CARGA 15026	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:34:02.830949	\N	\N	f
+4287	2026-07-23	12:00:00	14381	76	258	239	\N	29	15	63	-2	2.678649e+06	2.678712e+06	patio	normal	20 PLANTA AZUL\n40 PLANTA VERDE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:01:37.770618	\N	\N	f
+4346	2026-07-23	\N	\N	76	241	\N	154	31	\N	40	\N	\N	\N	externo	normal	[TALLER] ALAIN VINO POR BOTES, FOLIO CARGA TALLER: 14381	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 16:48:01.141261	\N	\N	f
+4301	2026-07-23	18:05:00	14395	76	250	253	160	29	15	239	1	2.6798e+06	2.680039e+06	patio	normal	SE CARGA PARA REPARTIR MAÑANA ENTRE\nCA01 \nCA04\nCA32	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:19:23.049848	\N	\N	t
+4305	2026-07-24	11:18:00	14398	76	250	253	160	29	15	190	1	2.680039e+06	2.680229e+06	patio	normal	PC88 90LITROS FOLIO:15029	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:50:35.670266	\N	\N	t
+4423	2026-07-30	14:25:00	14479	73	201	243	\N	29	15	120	23780	2.690072e+06	2.690192e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-30 22:55:50.155285	\N	\N	f
+4112	2026-07-14	12:39:00	15234	74	225	265	183	30	16	259	2809	952723	952982	campo	normal	OXXOGAS TICKETS 60109860 Y 60109830\nAPROX 3/4 DE TANK	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-15 00:55:14.6873	\N	265	f
+4455	2026-08-01	00:00:00	14608	78	199	280	\N	29	15	125	149717	2.692681e+06	2.692806e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 14:36:48.598319	\N	\N	f
+4466	2026-07-31	\N	\N	73	197	\N	162	31	\N	1	33136	\N	\N	externo	normal	[CORTE]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 15:42:09.079766	\N	\N	f
+4480	2026-08-01	13:50:00	14620	78	237	247	\N	29	15	100	375155	2.694179e+06	2.694279e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 20:03:44.957856	\N	\N	f
+4491	2026-08-03	17:14:00	14634	78	198	281	\N	29	15	150	87629	2.696095e+06	2.696245e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-04 15:25:56.102986	\N	\N	f
 3525	2026-06-09	\N	\N	67	204	\N	145	31	\N	50	444531	\N	\N	externo	normal	[Externo] SURTE HILUX 50 FOLIO: 13733	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:35:36.528947	\N	\N	f
 3526	2026-06-12	\N	\N	67	203	\N	162	31	\N	1	129896	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:42:20.914535	\N	\N	f
 3529	2026-06-12	\N	\N	67	198	\N	162	31	\N	1	81893	\N	\N	externo	normal	[CORTE KMS]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-13 16:44:24.479304	\N	\N	f
@@ -2580,7 +2988,6 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 3550	2026-06-15	12:38:00	15367	68	226	266	145	30	16	120	55902	936995	937115	campo	normal	\N	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-15 18:40:38.426401	253	266	f
 3552	2026-06-15	17:09:00	15369	68	197	240	145	30	16	120	26137	937215	937335	campo	normal	Hora de carga 12:24pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-15 23:12:26.332089	253	240	f
 3551	2026-06-15	17:05:00	15368	68	201	243	145	30	16	100	16689	937115	937215	campo	normal	Km16912 12:15 pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-06-15 23:09:38.739796	253	243	t
-3554	2026-06-15	08:09:00	13828	68	250	239	\N	29	15	60	1	2.618503e+06	2.618563e+06	patio	normal	CARGA PARA CAMION QUE SE RECOGE CON REY CANALES - DALTO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:05:35.824103	\N	\N	f
 3555	2026-06-15	10:31:00	13829	68	242	252	\N	29	15	100	46120	2.618563e+06	2.618663e+06	patio	normal	KMS REALES 2662	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:06:04.988107	\N	\N	f
 3556	2026-06-15	15:12:00	13851	68	199	280	\N	29	15	110	140184	2.618665e+06	2.618775e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:08:44.780099	\N	\N	f
 3557	2026-06-15	15:26:00	13852	68	211	254	\N	29	15	110	36847	2.618775e+06	2.618885e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-16 00:10:56.098091	\N	\N	f
@@ -3107,6 +3514,7 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4219	2026-07-18	12:38:00	15580	76	202	244	\N	29	15	100	76640	2.673039e+06	2.673139e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-18 20:08:15.464679	\N	\N	f
 4220	2026-07-18	12:53:00	15581	76	227	267	\N	29	15	50	454782	2.673139e+06	2.673189e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-18 20:08:40.865647	\N	\N	f
 4232	2026-07-20	16:09:00	15590	76	228	268	\N	29	15	60	13288	2.673924e+06	2.673984e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-20 23:18:34.180789	\N	\N	f
+4298	2026-07-23	17:10:00	14392	76	227	267	\N	29	15	80	455714	2.679499e+06	2.679579e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:17:24.482051	\N	\N	f
 4229	2026-07-20	13:50:00	15588	76	229	269	\N	29	15	50	797570	2.673753e+06	2.673803e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-20 23:17:35.537646	\N	\N	f
 4230	2026-07-20	13:18:00	15007	76	209	251	157	30	16	120	51356	957690	957810	campo	normal	Hora de carga 1.18 pm	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-20 23:18:10.411637	253	251	f
 4250	2026-07-21	15:06:00	14353	76	226	266	\N	29	15	100	62380	2.676239e+06	2.676339e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-22 00:03:10.565409	\N	\N	f
@@ -3115,6 +3523,91 @@ COPY public.cargas (id, fecha, hora, folio, periodo_id, unidad_id, operador_id, 
 4270	2026-07-22	09:54:00	15018	76	216	259	138	30	16	95	5487	958767	958862	campo	normal	Hora de carga 9.54 am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-22 16:29:22.264222	253	259	f
 4256	2026-07-21	10:16:00	15012	76	218	274	177	30	16	25	1485.3	958233	958258	campo	normal	Hora de carga 10.16.am	user_3D371BhUPGwBX31tK2moNUvyel3	2026-07-22 00:06:14.723176	253	274	f
 4283	2026-07-22	16:12:00	14378	76	229	269	\N	29	15	100	797977	2.678383e+06	2.678483e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-22 23:39:45.291965	\N	\N	f
+4289	2026-07-23	15:45:00	14383	76	226	266	\N	29	15	70	62832	2.678762e+06	2.678832e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:06:37.36361	\N	\N	f
+4293	2026-07-23	16:22:00	14387	76	204	246	\N	29	15	100	452102	2.679032e+06	2.679132e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:09:35.338521	\N	\N	f
+4294	2026-07-23	16:33:00	14388	76	209	251	\N	29	15	125	52066	2.679133e+06	2.679258e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:10:09.881227	\N	\N	f
+4296	2026-07-23	16:55:00	14390	76	201	243	\N	29	15	90	22522	2.679358e+06	2.679448e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:15:38.702323	\N	\N	f
+4307	2026-07-24	14:20:00	14400	76	211	254	\N	29	15	1	42467	2.680433e+06	2.680434e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:52:54.843102	\N	\N	f
+4309	2026-07-25	00:00:00	14402	73	211	254	\N	29	15	150	42467	2.680435e+06	2.680585e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:54:20.56857	\N	\N	f
+4306	2026-07-25	00:00:00	14399	73	197	240	\N	29	15	200	31898	2.680233e+06	2.680433e+06	patio	normal	CARGA POSTFECHADA P SABADO, NIVEL MUY BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 00:52:21.592357	\N	\N	f
+4316	2026-07-25	00:00:00	14409	73	206	281	\N	29	15	150	527962	2.680928e+06	2.681078e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:00:05.141613	\N	\N	f
+4317	2026-07-24	15:52:00	14410	76	228	268	\N	29	15	1	13951	2.681078e+06	2.681079e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:00:36.990673	\N	\N	f
+4318	2026-07-25	00:00:00	14411	73	228	268	\N	29	15	190	13951	2.681079e+06	2.681269e+06	patio	normal	CARGA POSTFECHADA PARA SABADO, NIVEL BAJO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:01:04.004869	\N	\N	f
+4321	2026-07-24	17:02:00	14414	76	255	248	\N	29	15	1	6294	2.68132e+06	2.681321e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 01:02:49.96557	\N	\N	f
+4327	2026-07-24	\N	\N	76	226	\N	162	31	\N	1	62970	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 15:24:39.995257	\N	\N	f
+4331	2026-07-24	\N	\N	76	204	\N	162	31	\N	1	452264	\N	\N	externo	normal	[taller]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 15:42:25.216918	\N	\N	f
+4554	2026-08-08	12:00:00	14684	80	213	256	\N	29	15	200	1.378139e+06	2.702531e+06	2.702731e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:03:43.890859	\N	\N	f
+4555	2026-08-07	16:50:00	14685	78	237	247	\N	29	15	1	376283	2.702731e+06	2.702732e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:04:21.244723	\N	\N	f
+4558	2026-08-08	00:00:00	14688	80	226	266	\N	29	15	250	65694	2.702832e+06	2.703082e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:06:52.560466	\N	\N	f
+4559	2026-08-07	17:16:00	14689	78	215	258	\N	29	15	50	55432	2.703082e+06	2.703132e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:07:46.077446	\N	\N	f
+4562	2026-08-08	00:00:00	14692	80	229	269	\N	29	15	200	799297	2.703362e+06	2.703562e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:09:43.456213	\N	\N	f
+4563	2026-08-07	17:42:00	14693	78	198	281	\N	29	15	1	88566	2.703562e+06	2.703563e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:10:09.10006	\N	\N	f
+4556	2026-08-08	12:00:00	14686	80	237	247	\N	29	15	100	376283	2.702731e+06	2.702831e+06	patio	normal	CARGA POSTFECHADAP SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:05:03.493749	\N	\N	f
+4557	2026-08-07	17:03:00	14687	78	226	266	\N	29	15	1	65694	2.702831e+06	2.702832e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:05:29.262399	\N	\N	f
+4564	2026-08-08	00:00:00	14694	80	198	281	\N	29	15	80	88566	2.703563e+06	2.703643e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:10:40.825917	\N	\N	f
+4560	2026-08-08	00:00:00	14690	80	215	258	\N	29	15	225	55432	2.703132e+06	2.703357e+06	patio	normal	CARGA POSTFECHADA P SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:08:16.352852	\N	\N	f
+4565	2026-08-07	\N	\N	78	197	\N	162	31	\N	1	34101	\N	\N	externo	normal	[CORTE]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:11:49.570934	\N	\N	f
+4561	2026-08-07	17:30:00	14691	78	229	269	\N	29	15	5	799297	2.703357e+06	2.703362e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 00:09:15.712368	\N	\N	f
+4566	2026-08-07	18:38:00	14695	78	255	248	\N	29	15	25	9393	2.703643e+06	2.703668e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 01:22:03.305959	\N	\N	f
+4567	2026-08-08	00:00:00	14696	80	255	248	\N	29	15	160	9393	2.703667e+06	2.703827e+06	patio	normal	CARGA POSTFECHADA SABADO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 01:22:57.978627	\N	\N	f
+4568	2026-08-07	\N	\N	78	252	\N	162	31	\N	1	13217	\N	\N	externo	normal	[CORTE]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 14:14:13.890267	\N	\N	f
+4596	2026-08-10	10:59:00	12035	80	256	262	179	30	16	88	7401	962170	962258	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-10 23:51:05.013854	\N	262	f
+4569	2026-08-07	\N	\N	78	227	\N	162	31	\N	1	458469	\N	\N	externo	normal	[CORTE]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 14:25:42.53753	\N	\N	f
+4570	2026-08-07	\N	\N	78	261	\N	162	31	\N	1	357495	\N	\N	externo	normal	[Externo]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 14:48:00.674763	\N	\N	f
+4571	2026-08-07	\N	\N	78	209	\N	162	31	\N	1	54858	\N	\N	externo	normal	[CORTE]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 14:56:40.390373	\N	\N	f
+4597	2026-08-10	11:05:00	12036	80	218	262	179	30	16	27	8467	962259	962286	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-10 23:52:02.840434	\N	262	f
+4572	2026-08-07	17:00:00	12029	78	242	252	145	31	\N	10	8030	961718	961728	externo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 14:59:25.144433	\N	\N	f
+4574	2026-08-08	00:00:00	12028	80	204	246	145	30	16	30	454385	961688	961718	campo	normal	CARGA POSTFECHADA PARA SABADO, PIPA EN TALLER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 15:34:18.011044	\N	246	f
+4577	2026-08-08	06:14:00	12032	80	252	272	146	30	16	41	13229	961928	961969	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 15:39:50.516882	\N	272	f
+4576	2026-08-08	06:57:00	12031	80	209	251	146	30	16	100	54889	961828	961928	campo	normal	CARGA POSTFECHADA P SABADO, PIPA EN TALLER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 15:38:14.542369	\N	251	f
+4598	2026-08-10	23:21:00	12037	80	260	259	179	30	16	15	\N	962286	962301	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-10 23:54:09.688637	\N	259	f
+4575	2026-08-08	06:40:00	12030	80	242	252	146	30	16	100	8059	961728	961828	campo	normal	CARGA POSTFECHADA P SABADO, PIPA EN TALLER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 15:36:49.144237	\N	252	f
+4578	2026-08-08	07:03:00	12033	80	203	242	146	30	16	100	138533	961970	962070	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 15:57:58.115318	\N	242	f
+4579	2026-08-07	\N	\N	78	228	\N	162	31	\N	1	15267	\N	\N	externo	normal	[CORTE] CAMION EN TALLER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 16:02:10.84515	\N	\N	f
+4573	2026-08-07	16:30:00	12027	78	204	246	145	30	16	50	454385	961638	961688	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 15:33:11.425702	\N	\N	f
+4580	2026-08-07	\N	\N	78	203	\N	162	31	\N	1	138520	\N	\N	externo	normal	[CORTE]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 16:04:18.154876	\N	\N	f
+4581	2026-08-03	\N	\N	78	241	\N	154	31	\N	69	\N	\N	\N	externo	normal	[TALLER - ALAIN] FOLIO 14629 ALAIN PASA POR BOTES A TALLER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 16:08:53.84298	\N	\N	f
+4582	2026-08-07	\N	\N	78	211	\N	162	31	\N	1	43343	\N	\N	externo	normal	[taller]	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 16:43:33.099371	\N	\N	f
+4583	2026-08-08	10:50:00	14698	80	203	242	\N	29	15	245	138614	2.704487e+06	2.704732e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 17:25:51.74139	\N	\N	f
+4585	2026-08-08	11:42:00	14700	80	204	246	\N	29	15	200	454541	2.704932e+06	2.705132e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 19:04:46.800629	\N	\N	f
+4586	2026-08-08	12:02:00	14701	80	242	252	\N	29	15	90	8204	2.705132e+06	2.705222e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 19:07:03.31084	\N	\N	f
+4587	2026-08-08	12:13:00	14702	80	202	244	\N	29	15	89	80432	2.705222e+06	2.705311e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 19:07:28.701467	\N	\N	f
+4588	2026-08-08	12:55:00	14704	80	201	243	\N	29	15	150	25091	2.705312e+06	2.705462e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 19:08:41.914009	\N	\N	f
+4589	2026-08-08	13:04:00	14705	80	211	254	\N	29	15	150	43343	2.705462e+06	2.705612e+06	patio	normal	SALE DE TALLER	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 19:53:01.400548	\N	\N	f
+4590	2026-08-08	13:17:00	14706	80	212	282	\N	29	15	100	893	2.705612e+06	2.705712e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 19:53:48.547369	\N	\N	f
+4591	2026-08-08	13:28:00	14707	80	198	281	\N	29	15	100	88752	2.705712e+06	2.705812e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 19:54:15.100891	\N	\N	f
+4592	2026-08-08	14:20:00	14708	80	227	267	\N	29	15	220	458693	2.705813e+06	2.706033e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 21:05:29.302173	\N	\N	f
+4593	2026-08-08	14:37:00	14709	80	209	251	\N	29	15	330	55109	2.706033e+06	2.706363e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 21:05:58.994882	\N	\N	f
+4604	2026-08-10	15:38:00	14712	80	202	244	\N	29	15	77	80571	2.706445e+06	2.706522e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:05:45.724054	\N	\N	f
+4595	2026-08-08	12:43:00	12034	80	227	267	151	30	16	100	458693	962070	962170	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-10 23:45:15.335998	\N	267	f
+4599	2026-08-10	14:24:00	12038	80	233	264	154	30	16	59	1827	962301	962360	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-10 23:57:28.880265	\N	264	f
+4584	2026-08-08	12:25:00	14699	80	252	272	\N	29	15	200	13350	2.704732e+06	2.704932e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 19:04:07.022708	\N	\N	f
+4594	2026-08-08	15:42:00	12025	80	252	272	145	30	16	59	13350	961470	961529	campo	normal	[BOTE PURGA NISSAN] CARGA DE 60 LITROS EN YOGAS, PRODUCTO DE LA PURGA DE NISSAN	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-10 23:43:46.831488	\N	272	f
+4600	2026-08-10	11:40:00	14710	80	258	239	\N	29	15	32	-2	2.706363e+06	2.706395e+06	patio	normal	SE LLENAN 32 LITROS EN YOGA, ME LLEVO YOGA Y MEDIA DE DIESEL REMANENTE DE PURGAS DE NISSAN,  (YOGA Y MEDIA)\nSON 20 PARA LA R04 HRS: 1284, RESTO PLANTA VERDE (42L)	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-10 23:59:40.899514	\N	\N	t
+4601	2026-08-10	12:30:00	\N	80	233	\N	154	31	\N	20	1824	\N	\N	externo	normal	[TALLER, FOLIO: 14710] SE AGREGAN 20 LITROS A LA MAQUINA, DE LOS 32 SURTIDOS, RESTO PLANTA VERDE	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:01:35.547519	\N	\N	f
+4603	2026-08-10	15:26:00	14711	80	242	252	\N	29	15	50	8382	2.706394e+06	2.706444e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:05:17.630631	\N	\N	f
+4605	2026-08-10	15:52:00	14714	80	211	254	\N	29	15	100	43566	2.706522e+06	2.706622e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:06:19.041484	\N	\N	f
+4606	2026-08-10	16:06:00	14715	80	237	247	\N	29	15	100	376497	2.706622e+06	2.706722e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:06:41.561707	\N	\N	f
+4602	2026-08-10	\N	\N	80	241	\N	154	31	\N	42	\N	\N	\N	externo	normal	[TALLER FOLIO  14710] 12 DE 32 LITROS DE LA NOTA 14710  + 30 LITROS PRODUCTO DE LA PURGA EN NISSAN EL DIA 07 DE AGOSTO (YOGA Y MEDIA )	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:03:56.653975	\N	\N	f
+4607	2026-08-10	16:55:00	14716	80	229	269	\N	29	15	200	799641	2.706722e+06	2.706922e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:07:58.43087	\N	\N	f
+4608	2026-08-10	17:06:00	14717	80	199	280	\N	29	15	150	151236	2.706922e+06	2.707072e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:09:29.045488	\N	\N	f
+4609	2026-08-10	17:22:00	14718	80	198	241	\N	29	15	150	88940	2.707072e+06	2.707222e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:09:54.19632	\N	\N	f
+4610	2026-08-10	18:00:00	14719	80	255	248	\N	29	15	200	9804	2.707222e+06	2.707422e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:26:32.63979	\N	\N	f
+4611	2026-08-10	18:13:00	14720	80	206	281	\N	29	15	200	529707	2.707422e+06	2.707622e+06	patio	normal	RECIEN REPARADO LAGARTOS  F R23859 REYNA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 00:27:16.950338	\N	\N	f
+4612	2026-08-10	18:36:00	14721	80	212	282	\N	29	15	50	893	2.707622e+06	2.707672e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 01:08:25.746216	\N	\N	f
+4614	2026-08-10	\N	\N	80	227	\N	160	31	\N	1	459000	\N	\N	externo	normal	[MANTENIMIENTO] NOTA PARA REGISTRAR MANTENIMIENTO	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 19:22:37.859589	\N	\N	f
+4615	2026-08-11	07:36:00	12039	80	201	243	146	30	16	60	25298	962360	962420	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:08:57.69441	\N	243	f
+4616	2026-08-11	14:07:00	12040	80	240	274	188	30	16	134	11343	962420	962554	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:09:52.983645	\N	274	f
+4617	2026-08-11	14:24:00	14723	80	215	258	\N	29	15	180	55934	2.708073e+06	2.708253e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:11:13.766885	\N	\N	f
+4618	2026-08-11	15:46:00	14725	80	202	244	\N	29	15	50	80868	2.708252e+06	2.708302e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:11:44.68658	\N	\N	f
+4619	2026-08-11	16:07:00	14726	80	261	252	\N	29	15	100	357622	2.708302e+06	2.708402e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:12:09.933567	\N	\N	f
+4620	2026-08-11	17:48:00	14728	80	212	282	\N	29	15	100	893	2.708802e+06	2.708902e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:17:00.208592	\N	\N	f
+4621	2026-08-11	18:00:00	14729	80	201	243	\N	29	15	150	25309	2.708902e+06	2.709052e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:18:47.54214	\N	\N	f
+4622	2026-08-11	18:17:00	14730	80	209	251	\N	29	15	20	55567	2.709053e+06	2.709073e+06	patio	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:19:22.497468	\N	\N	f
+4623	2026-08-11	17:10:00	12041	80	226	266	136	30	16	180	66369	962554	962734	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:37:05.224738	\N	266	f
+4624	2026-08-11	17:20:00	12042	80	213	256	136	30	16	200	1.378551e+06	962734	962934	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:38:13.07524	\N	256	f
+4625	2026-08-11	18:40:00	12043	80	227	267	136	30	16	100	459078	962934	963034	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:40:57.730868	\N	267	f
+4626	2026-08-11	17:45:00	12044	80	204	246	136	30	16	115	454965	963034	963149	campo	normal	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-12 00:43:07.53299	\N	246	f
 \.
 
 
@@ -3141,6 +3634,35 @@ COPY public.fuentes_diesel (id, nombre, tipo, descripcion, activo) FROM stdin;
 30	NISSAN	nissan	Camión NISSAN distribución en campo	t
 31	Amigo	externo	Préstamo diesel fuente externa (verde)	t
 32	OxxoGas	externo	Carga en OxxoGas (rojo)	t
+\.
+
+
+--
+-- Data for Name: mantenimientos_eventos; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+--
+
+COPY public.mantenimientos_eventos (id, unidad_id, plan_id, tipo_control, fecha_servicio, lectura_servicio, descripcion, notas, registrado_por_id, created_at) FROM stdin;
+1	203	\N	km	2026-07-17	134925	20000	SIN CAMBIO DE FILTRO DE AIRE EN AGENCIA	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-24 00:13:08.640221
+2	202	2	km	2026-07-29	78460	MANTENIMIENTO PREVENTIVO 20,000KMS	COMPRADO EN NG DIESEL A28494	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 17:31:43.714082
+3	204	\N	km	2026-05-25	441420	MANTENIMIENTO PREVENTIVO  20,000 KM	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-31 19:38:55.504127
+4	215	\N	km	2026-07-31	53964	MTO PREV.	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 19:47:58.417091
+5	238	\N	hrs	2026-03-01	5620	Mantenimiento de las 5000 horas	cambio de aceite hidraulico por completo	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 14:56:27.485821
+6	253	\N	hrs	2026-04-12	3620	MANTENIMIENTO	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 16:38:15.915539
+7	227	\N	km	2026-08-10	459000	\N	\N	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-11 19:19:31.353838
+\.
+
+
+--
+-- Data for Name: mantenimientos_planes; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+--
+
+COPY public.mantenimientos_planes (id, unidad_id, tipo_control, intervalo, umbral_alerta, activo, notas, created_at, updated_at) FROM stdin;
+1	203	km	20000	1000	t	\N	2026-07-24 00:14:05.223196	2026-07-28 00:42:33.835
+2	202	km	20000	1000	t	MANTENIMENTO PREVENTIVO 20,000KMS	2026-07-31 17:30:08.322861	2026-07-31 17:31:58.909
+3	204	km	20000	1000	t	\N	2026-07-31 19:39:38.439097	2026-07-31 19:39:38.439097
+4	215	km	20000	1000	t	\N	2026-08-01 19:48:06.574382	2026-08-01 19:48:06.574382
+5	238	hrs	250	40	t	\N	2026-08-11 14:57:04.964396	2026-08-11 14:57:04.964396
+6	227	km	20000	1000	t	\N	2026-08-11 19:19:52.531385	2026-08-11 19:22:59.698
 \.
 
 
@@ -3197,6 +3719,10 @@ COPY public.obras (id, nombre, cliente, activo, fecha_inicio, fecha_fin, notas, 
 182	Pharo mitras	\N	t	\N	\N	\N	2026-07-17 12:15:40.146342
 183	Santuatio	\N	t	\N	\N	\N	2026-07-17 23:22:14.476854
 184	Domicilio de beni	\N	t	\N	\N	\N	2026-07-18 17:45:26.682504
+185	MIGUEL ALEMAN	DAGS	t	2026-07-29	\N	\N	2026-07-31 18:25:35.605734
+186	OXXOGAS  (VARIOS)	\N	t	\N	\N	\N	2026-07-31 18:32:48.428144
+187	NOTA DUPLIACADA (ERROR)	\N	t	\N	\N	\N	2026-08-01 17:10:41.255997
+188	ZUAZUA	\N	t	\N	\N	\N	2026-08-12 00:09:43.501721
 \.
 
 
@@ -3220,31 +3746,32 @@ COPY public.operadores (id, nombre, tipo, telefono, activo, created_at) FROM std
 254	Eric	chofer	\N	t	2026-04-25 00:21:54.759065
 255	Francisco	chofer	\N	t	2026-04-25 00:21:54.759065
 256	Juan Olguin	chofer	\N	t	2026-04-25 00:21:54.759065
-257	Luis G	chofer	\N	t	2026-04-25 00:21:54.759065
 258	Victor Marcial	chofer	\N	t	2026-04-25 00:21:54.759065
-259	Gustavo	chofer	\N	t	2026-04-25 00:21:54.759065
 260	Arq Cuellar	chofer	\N	t	2026-04-25 00:21:54.759065
-262	Javier	chofer	\N	t	2026-04-25 00:21:54.759065
 266	Christopher	chofer	\N	t	2026-04-25 00:21:54.759065
 267	Bernabe	chofer	\N	t	2026-04-25 00:21:54.759065
-268	Ivan Niño	chofer	\N	t	2026-04-25 00:21:54.759065
 269	Luis Medina	chofer	\N	t	2026-04-25 00:21:54.759065
 272	Benito arroyo	chofer	\N	t	2026-04-25 00:21:54.759065
-273	Fancisco	chofer	\N	t	2026-04-25 00:21:54.759065
-274	Manuel	chofer	\N	t	2026-04-25 00:21:54.759065
-276	Angel	chofer	\N	t	2026-04-29 14:59:38.98286
 271	Carlos Marcial	maquinista	\N	t	2026-04-25 00:21:54.759065
-263	Otoniel	maquinista	\N	t	2026-04-25 00:21:54.759065
 270	Rodrigo	maquinista	\N	t	2026-04-25 00:21:54.759065
-265	Tobias	maquinista	\N	t	2026-04-25 00:21:54.759065
 264	Yoshua	maquinista	\N	t	2026-04-25 00:21:54.759065
 249	Antonio Torres	chofer	\N	f	2026-04-25 00:21:54.759065
 278	Luis Flaco	maquinista	\N	t	2026-05-08 18:57:07.133239
-277	Arq Cordero	chofer	\N	t	2026-04-29 20:34:30.125641
-279	Brayan	chofer	\N	t	2026-06-08 23:12:10.271804
 280	Laines	chofer	\N	t	2026-06-09 23:01:40.194389
 250	Jose Ines Arroyo	chofer	\N	t	2026-04-25 00:21:54.759065
 281	Raul Govea	chofer	8116127570	t	2026-07-07 00:08:44.754214
+282	Orlando Garza	chofer	8120737718	t	2026-07-27 23:09:13.870477
+268	Ivan Niño	chofer	\N	f	2026-04-25 00:21:54.759065
+277	Arq Cordero	chofer	\N	f	2026-04-29 20:34:30.125641
+276	Angel	chofer	\N	f	2026-04-29 14:59:38.98286
+279	Brayan	chofer	\N	f	2026-06-08 23:12:10.271804
+273	Fancisco	chofer	\N	f	2026-04-25 00:21:54.759065
+262	Javier Lopez	maquinista	\N	t	2026-04-25 00:21:54.759065
+257	Luis Gonzalez	chofer	\N	t	2026-04-25 00:21:54.759065
+274	Manuel Izaguirre	maquinista	\N	t	2026-04-25 00:21:54.759065
+263	Otoniel	maquinista	\N	f	2026-04-25 00:21:54.759065
+265	Tobias	maquinista	\N	t	2026-04-25 00:21:54.759065
+259	Gustavo Geronimo	maquinista	\N	t	2026-04-25 00:21:54.759065
 \.
 
 
@@ -3297,12 +3824,16 @@ COPY public.periodos (id, nombre, fecha_inicio, fecha_fin, cerrado, cerrado_por_
 68	13 de junio al 19 de junio de 2026	2026-06-13	2026-06-19	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-20 17:24:15.18	2026-06-13 00:10:11.906579
 70	13 de junio al 19 de junio de 2026	2026-06-13	2026-06-19	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 17:45:25.6	2026-06-20 17:54:12.244122
 69	20 de junio al 26 de junio de 2026	2026-06-20	2026-06-26	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-06-27 17:45:35.499	2026-06-20 00:04:31.196753
-73	25 de julio al 31 de julio de 2026	2026-07-25	2026-07-31	f	\N	\N	2026-07-04 16:45:13.141618
 71	27 de junio al 3 de julio de 2026	2026-06-27	2026-07-03	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-04 18:15:44.311	2026-06-27 00:19:32.142748
 72	4 de julio al 10 de julio de 2026	2026-07-04	2026-07-10	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-11 16:27:44.262	2026-07-04 00:57:43.762721
 75	4 de julio al 10 de julio de 2026	2026-07-04	2026-07-10	f	\N	\N	2026-07-11 16:29:50.587166
-76	18 de julio al 24 de julio de 2026	2026-07-18	2026-07-24	f	\N	\N	2026-07-17 22:45:18.837334
 74	11 de julio al 17 de julio de 2026	2026-07-11	2026-07-17	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-18 17:38:23.359	2026-07-11 00:33:06.30846
+77	11 de julio al 17 de julio de 2026	2026-07-11	2026-07-17	f	\N	\N	2026-07-25 01:03:14.120641
+76	18 de julio al 24 de julio de 2026	2026-07-18	2026-07-24	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-07-25 17:01:57.146	2026-07-17 22:45:18.837334
+79	29 de agosto al 4 de septiembre de 2026	2026-08-29	2026-09-04	f	\N	\N	2026-08-01 15:35:48.160079
+73	25 de julio al 31 de julio de 2026	2026-07-25	2026-07-31	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-01 16:14:08.523	2026-07-04 16:45:13.141618
+80	8 de agosto al 14 de agosto de 2026	2026-08-08	2026-08-14	f	\N	\N	2026-08-07 23:41:56.338568
+78	1 de agosto al 7 de agosto de 2026	2026-08-01	2026-08-07	t	user_3BYiAC79vdFAXS59rbNLZhHcBlT	2026-08-08 16:45:10.249	2026-07-31 16:00:01.344967
 \.
 
 
@@ -3320,6 +3851,9 @@ COPY public.recargas_tanque (id, fecha, litros, proveedor, folio_factura, precio
 39	2026-07-14	20000	2 Aguilas (PEMEX)	Factura: MT45034	26.21	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-07-15 00:35:52.37779	2.6627e+06
 40	2026-07-15	1148	NISSAN03	RETORNO DE TEST 1 A NISSAN , FOLIO: 14226	\N	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-07-16 14:58:40.906639	2.668716e+06
 41	2026-07-15	1151	NISSAN03	RETORNO DE TEST 2 A NISSAN , FOLIO: 14227	\N	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-07-16 14:59:06.564839	2.668716e+06
+42	2026-07-25	40	TALLER	SE RETORNAN 2 BOTES CON DIESEL, REMANENTES DE LAS PRUEBAS A MARGARITO ( PURGA DE NISSAN )	\N	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-07-25 17:38:47.419081	2.681671e+06
+43	2026-07-27	20000	2 Aguilas (PEMEX)	MT 45526	26.2	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-07-27 23:45:46.235752	2.68496e+06
+44	2026-08-07	10000	GYBSA	172868 / 172866	25.92	15	user_3BYiAC79vdFAXS59rbNLZhHcBlT	\N	2026-08-08 01:15:13.868579	2.703643e+06
 \.
 
 
@@ -3608,7 +4142,6 @@ COPY public.rendimientos (id, periodo_id, unidad_id, operador_id, odometro_inici
 551	68	234	\N	3726	3759.1	33.1	259	7.8247733	\N	\N	\N	\N	2026-06-20 17:24:15.165323
 552	68	218	\N	1437	1453.3	16.3	41	2.5153375	\N	\N	\N	\N	2026-06-20 17:24:15.165323
 553	68	224	\N	3873	3894	21	100	4.7619047	\N	\N	\N	\N	2026-06-20 17:24:15.165323
-554	68	250	\N	1	1	\N	122	\N	\N	\N	\N	\N	2026-06-20 17:24:15.165323
 555	68	248	\N	562926	562966	40	100	0.4	\N	\N	\N	\N	2026-06-20 17:24:15.165323
 556	68	225	\N	2715.3	2743.5	28.2	271	9.609929	\N	\N	\N	\N	2026-06-20 17:24:15.165323
 557	68	207	\N	485591	485761	170	100	1.7	4	-2.3	f	\N	2026-06-20 17:24:15.165323
@@ -3742,7 +4275,6 @@ COPY public.rendimientos (id, periodo_id, unidad_id, operador_id, odometro_inici
 692	74	212	\N	2245	2245	\N	400	\N	2.97	\N	\N	\N	2026-07-18 17:38:23.349951
 693	74	244	\N	150673	150673	\N	21	\N	\N	\N	\N	\N	2026-07-18 17:38:23.349951
 694	74	217	\N	1048.1	1055	6.9	21	3.0434783	\N	\N	\N	\N	2026-07-18 17:38:23.349951
-695	74	225	\N	2771.5	2833.6	62.1	596	9.597424	\N	\N	\N	\N	2026-07-18 17:38:23.349951
 696	74	218	\N	1485.3	1485.3	\N	35	\N	\N	\N	\N	\N	2026-07-18 17:38:23.349951
 697	74	238	\N	5658	5698	40	50	1.25	\N	\N	\N	\N	2026-07-18 17:38:23.349951
 698	74	242	\N	4420	4632	212	60	3.5333333	2.3	1.2333333	f	\N	2026-07-18 17:38:23.349951
@@ -3750,6 +4282,113 @@ COPY public.rendimientos (id, periodo_id, unidad_id, operador_id, odometro_inici
 700	74	220	\N	19051	19051	\N	121	\N	\N	\N	\N	\N	2026-07-18 17:38:23.349951
 701	74	233	\N	1688	1688	\N	112	\N	\N	\N	\N	\N	2026-07-18 17:38:23.349951
 702	74	252	\N	8498	9417	919	321	2.8629284	2.65	0.21292835	f	\N	2026-07-22 21:27:48.56812
+703	76	255	\N	4907	6294	1387	531	2.6120527	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+704	76	252	\N	9417	10431	1014	431	2.3526683	2.65	-0.29733178	f	\N	2026-07-25 17:01:57.120815
+705	76	206	\N	526615	527962	1347	541	2.4898336	2.8	-0.31016636	f	\N	2026-07-25 17:01:57.120815
+706	76	211	\N	41560	42467	907	431	2.1044083	2.17	-0.06559165	t	\N	2026-07-25 17:01:57.120815
+707	76	220	\N	19051	\N	\N	40	\N	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+708	76	209	\N	51154	52254	1100	546	2.014652	2.46	-0.445348	f	\N	2026-07-25 17:01:57.120815
+709	76	253	\N	3661.2	3696	34.8	73	2.097701	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+710	76	242	\N	4632	5557	925	410	2.2560976	2.3	-0.043902438	t	\N	2026-07-25 17:01:57.120815
+711	76	214	\N	73342	74322	980	371	2.6415095	3.26	-0.6184906	f	\N	2026-07-25 17:01:57.120815
+712	76	229	\N	797297	798289	992	481	2.06237	2.26	-0.19762994	f	\N	2026-07-25 17:01:57.120815
+713	76	228	\N	12932	13951	1019	411	2.4793186	3	-0.52068126	f	\N	2026-07-25 17:01:57.120815
+714	76	197	\N	30990	31898	908	371	2.4474394	2.61	-0.16256064	f	\N	2026-07-25 17:01:57.120815
+715	76	237	\N	372931	374054	1123	247	4.546559	4.8	-0.2534413	f	\N	2026-07-25 17:01:57.120815
+716	76	233	\N	1688	\N	\N	40	\N	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+717	76	215	\N	51940	52814	874	331	2.6404834	2.64	0.0004833837	t	\N	2026-07-25 17:01:57.120815
+718	76	201	\N	21891	22716	825	371	2.2237196	2.56	-0.33628032	f	\N	2026-07-25 17:01:57.120815
+719	76	204	\N	451147	452264	1117	421	2.6532066	2.41	0.24320665	f	\N	2026-07-25 17:01:57.120815
+720	76	256	\N	7250	7288.5	38.5	109	2.831169	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+721	76	244	\N	150673	150673	\N	20	\N	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+722	76	227	\N	454590	455910	1320	531	2.4858756	2.48	0.005875706	t	\N	2026-07-25 17:01:57.120815
+723	76	213	\N	1.376152e+06	1.376716e+06	564	301	1.8737541	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+724	76	216	\N	5470	5502	32	185	5.78125	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+725	76	225	\N	2833.6	2856	22.4	200	8.928572	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+726	76	202	\N	76487	77801	1314	371	3.541779	2.32	1.221779	f	\N	2026-07-25 17:01:57.120815
+727	76	199	\N	146917	148304	1387	446	3.1098654	3.19	-0.080134526	t	\N	2026-07-25 17:01:57.120815
+728	76	218	\N	1485.3	1485.3	\N	87	\N	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+729	76	208	\N	1.038456e+06	1.039308e+06	852	381	2.2362204	2.47	-0.23377953	f	\N	2026-07-25 17:01:57.120815
+730	76	226	\N	61840	62970	1130	481	2.3492723	2.84	-0.49072766	f	\N	2026-07-25 17:01:57.120815
+731	76	198	\N	86141	86642	501	251	1.9960159	3.21	-1.213984	f	\N	2026-07-25 17:01:57.120815
+732	76	258	\N	\N	\N	\N	199	\N	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+733	76	238	\N	5698	5721.7	23.7	73	3.0801687	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+734	76	203	\N	134952	135948	996	371	2.684636	2.95	-0.26536387	f	\N	2026-07-25 17:01:57.120815
+735	76	241	\N	19345	\N	\N	116	\N	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+736	76	217	\N	1055	1059.7	4.7	9	1.9148936	\N	\N	\N	\N	2026-07-25 17:01:57.120815
+742	76	250	\N	1	1	\N	519	\N	\N	\N	\N	\N	2026-07-28 23:55:21.481443
+743	68	250	\N	1	1	\N	122	\N	\N	\N	\N	\N	2026-07-28 23:55:36.024857
+744	74	225	\N	2809	2833.6	24.6	596	24.227642	\N	\N	\N	\N	2026-07-31 14:07:28.053199
+745	73	215	\N	52814	53983	1169	440	2.6568182	2.64	0.016818183	t	\N	2026-08-01 16:14:08.513747
+746	73	255	\N	6294	7744	1450	550	2.6363637	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+747	73	226	\N	62970	64293	1323	501	2.6407185	2.84	-0.19928144	f	\N	2026-08-01 16:14:08.513747
+748	73	206	\N	527962	529238	1276	511	2.4970646	2.8	-0.30293542	f	\N	2026-08-01 16:14:08.513747
+749	73	203	\N	135948	137183	1235	442	2.7941177	2.95	-0.15588236	f	\N	2026-08-01 16:14:08.513747
+750	73	230	\N	4373	4395	22	240	10.909091	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+751	73	202	\N	77801	78880	1079	400	2.6975	2.32	0.3775	f	\N	2026-08-01 16:14:08.513747
+752	73	214	\N	74322	75641	1319	401	3.2892768	3.26	0.029276809	t	\N	2026-08-01 16:14:08.513747
+753	73	242	\N	5557	6897	1340	584	2.2945206	2.3	-0.005479452	t	\N	2026-08-01 16:14:08.513747
+754	73	259	\N	1723	1723	\N	17	\N	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+755	73	258	\N	-2	\N	\N	127	\N	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+756	73	201	\N	22716	24068	1352	551	2.4537206	2.56	-0.10627949	t	\N	2026-08-01 16:14:08.513747
+757	73	252	\N	10431	11862	1431	502	2.8505976	2.65	0.20059761	f	\N	2026-08-01 16:14:08.513747
+758	73	237	\N	374054	374988	934	315	2.9650793	4.8	-1.8349206	f	\N	2026-08-01 16:14:08.513747
+759	73	208	\N	1.039308e+06	1.040469e+06	1161	461	2.518438	2.47	0.048438177	t	\N	2026-08-01 16:14:08.513747
+760	73	204	\N	452264	453273	1009	440	2.293182	2.41	-0.11681818	t	\N	2026-08-01 16:14:08.513747
+761	73	198	\N	86642	87500	858	351	2.4444444	3.21	-0.76555556	f	\N	2026-08-01 16:14:08.513747
+762	73	209	\N	52254	53588	1334	551	2.4210527	2.46	-0.03894737	t	\N	2026-08-01 16:14:08.513747
+763	73	212	\N	2245	2245	\N	381	\N	2.97	\N	\N	\N	2026-08-01 16:14:08.513747
+764	73	197	\N	31898	33136	1238	501	2.471058	2.61	-0.13894212	f	\N	2026-08-01 16:14:08.513747
+765	73	256	\N	7288.5	7339	50.5	218	4.3168316	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+766	73	241	\N	19345	\N	\N	85	\N	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+767	73	250	\N	1	1	\N	1560	\N	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+769	73	213	\N	1.376716e+06	1.377659e+06	943	401	2.351621	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+770	73	225	\N	2856	2883	27	238	8.814815	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+771	73	260	\N	\N	\N	\N	30	\N	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+772	73	228	\N	13951	14854	903	341	2.648094	3	-0.35190615	f	\N	2026-08-01 16:14:08.513747
+773	73	238	\N	5721.7	5763	41.3	70	1.6949153	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+774	73	233	\N	1688	1688	\N	40	\N	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+775	73	227	\N	455910	457149	1239	481	2.5758836	2.48	0.09588358	t	\N	2026-08-01 16:14:08.513747
+776	73	253	\N	3696	3710	14	16	1.1428572	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+777	73	216	\N	5502	5515	13	78	6	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+778	73	254	\N	476767	476767	\N	40	\N	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+779	73	218	\N	1485.3	8467	6981.7	30	0.0042969477	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+780	73	240	\N	11266	11296	30	120	4	\N	\N	\N	\N	2026-08-01 16:14:08.513747
+781	73	211	\N	42467	42467	\N	150	\N	2.17	\N	\N	\N	2026-08-01 16:14:08.513747
+782	73	199	\N	148352	149717	1365	610	2.237705	3.19	-0.95229506	f	\N	2026-08-01 17:11:15.516552
+783	78	203	\N	137183	138520	1337	491	2.7230144	2.95	-0.22698574	f	\N	2026-08-08 16:45:10.240813
+784	78	229	\N	798289	799297	1008	455	2.2153847	2.26	-0.044615384	t	\N	2026-08-08 16:45:10.240813
+785	78	214	\N	75641	76701	1060	461	2.2993493	3.26	-0.96065074	f	\N	2026-08-08 16:45:10.240813
+787	78	215	\N	53983	55432	1449	500	2.898	2.64	0.258	f	\N	2026-08-08 16:45:10.240813
+788	78	228	\N	14854	15267	413	281	1.4697509	3	-1.5302491	f	\N	2026-08-08 16:45:10.240813
+789	78	208	\N	1.040469e+06	1.04055e+06	81	300	0.27	2.47	-2.2	f	\N	2026-08-08 16:45:10.240813
+790	78	209	\N	53588	54858	1270	540	2.351852	2.46	-0.10814815	t	\N	2026-08-08 16:45:10.240813
+791	78	227	\N	457149	458469	1320	396	3.3333333	2.48	0.85333335	f	\N	2026-08-08 16:45:10.240813
+792	78	202	\N	78880	80232	1352	464	2.913793	2.32	0.5937931	f	\N	2026-08-08 16:45:10.240813
+793	78	255	\N	7744	9393	1649	610	2.7032788	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+794	78	212	\N	2245	893	\N	401	\N	2.97	\N	\N	\N	2026-08-08 16:45:10.240813
+795	78	213	\N	1.377659e+06	1.378139e+06	480	201	2.3880596	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+796	78	242	\N	6897	8030	1133	540	2.098148	2.3	-0.20185184	f	\N	2026-08-08 16:45:10.240813
+797	78	211	\N	42467	43343	876	201	4.358209	2.17	2.188209	f	\N	2026-08-08 16:45:10.240813
+798	78	206	\N	529238	529238	\N	150	\N	2.8	\N	\N	\N	2026-08-08 16:45:10.240813
+799	78	256	\N	7339	7378	39	64	1.6410257	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+800	78	204	\N	453273	454385	1112	483	2.3022773	2.41	-0.107722566	t	\N	2026-08-08 16:45:10.240813
+801	78	197	\N	33136	34101	965	402	2.4004974	2.61	-0.20950249	f	\N	2026-08-08 16:45:10.240813
+802	78	261	\N	357031	357495	464	221	2.0995476	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+803	78	233	\N	1688	1809	121	100	0.8264463	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+804	78	226	\N	64293	65694	1401	531	2.6384182	2.84	-0.20158193	f	\N	2026-08-08 16:45:10.240813
+805	78	238	\N	5763	5794	31	142	4.580645	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+806	78	201	\N	24068	24921	853	351	2.4301994	2.56	-0.12980057	f	\N	2026-08-08 16:45:10.240813
+807	78	218	\N	8467	8467	\N	33	\N	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+808	78	225	\N	2883	2929	46	549	11.934783	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+809	78	237	\N	374988	376283	1295	301	4.3023257	4.8	-0.4976744	f	\N	2026-08-08 16:45:10.240813
+810	78	198	\N	87500	88566	1066	401	2.658354	3.21	-0.5516459	f	\N	2026-08-08 16:45:10.240813
+811	78	199	\N	149717	150900	1183	400	2.9575	3.19	-0.2325	f	\N	2026-08-08 16:45:10.240813
+812	78	262	\N	961470	961529	59	80	1.3559322	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+813	78	258	\N	-2	\N	\N	109	\N	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+814	78	240	\N	11296	11319	23	105	4.5652175	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+815	78	241	\N	19345	\N	\N	69	\N	\N	\N	\N	\N	2026-08-08 16:45:10.240813
+817	78	252	\N	11862	13217	1355	501	2.7045908	2.65	0.054590818	t	\N	2026-08-10 23:49:17.117507
 \.
 
 
@@ -3775,8 +4414,8 @@ admin	Administrador	["dashboard","settings","cargas.historial","cargas.nueva_pat
 --
 
 COPY public.tanques (id, nombre, capacidad_max, litros_actuales, cuentalitros_actual, ajuste_porcentaje, ultima_actualizacion) FROM stdin;
-15	Taller	21001	6398	2.678649e+06	2	2026-07-22 23:58:42.873
-16	NISSAN	1150	336	959094	2	2026-07-23 13:33:47.157
+15	Taller	21001	5248	2.709773e+06	2	2026-08-12 00:53:08.215
+16	NISSAN	1150	712	963149	2	2026-08-12 00:53:08.215
 \.
 
 
@@ -3848,6 +4487,15 @@ COPY public.transferencias_tanque (id, fecha, litros, tanque_origen_id, tanque_d
 90	2026-07-17	914	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS: 957204 -  956315 = 889... REMAN: 262\n	2026-07-18 17:03:57.389809	15571	2.671322e+06	2.672236e+06
 91	2026-07-20	1101	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTA LITROS: 958286, REMAN: 70	2026-07-21 14:00:04.709369	15599	2.674907e+06	2.676008e+06
 92	2026-07-22	120	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	reman real 216  ( teorico 266 ) 	2026-07-22 21:36:39.050089	14369	267635	267755
+93	2026-08-03	420	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS: 959774	2026-08-03 14:05:53.897878	14627	2.694979e+06	2.695399e+06
+94	2026-08-04	600	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS 960132	2026-08-04 16:29:11.129778	14639	2.69684e+06	2.69744e+06
+95	2026-08-05	600	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	cuentalitros 960212	2026-08-05 23:50:35.188621	14648	2.698724e+06	2.699324e+06
+96	2026-08-06	200	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTA LITROS: 960876 , LLEVA PARA DISPERSION PARA EX14, EX08, M01 EL DIA DE HOY Y PARA CAMIONES MAÑANA VIERNES 7	2026-08-06 21:23:36.362468	14659	2.70056e+06	2.70076e+06
+97	2026-08-07	100	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTA LITROS 961618 RECIEN PURGADO, TRAE 100 EXACTOS	2026-08-07 22:39:19.598893	14670	2.701632e+06	2.701732e+06
+98	2026-08-07	660	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS 961638	2026-08-08 01:23:23.761605	14697	2.703827e+06	2.704487e+06
+99	2026-08-10	401	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS 962360, TOTAL 400 LT + ESPUMA	2026-08-11 01:09:01.221463	14722	2.707672e+06	2.708073e+06
+100	2026-08-11	400	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTA LITROS ACTUAL: 962554, CUENTALITROS ANTERIOR 962360 = 159LT SURTIDOR	2026-08-12 00:15:53.412824	14727	2.708402e+06	2.708802e+06
+101	2026-08-11	700	15	16	user_3BYiAC79vdFAXS59rbNLZhHcBlT	CUENTALITROS ANTERIOR: 962554, CL ACTUAL:963150 : 595 LITROS SURTIDOS (CA34:200l)(CA08:180L)(CA07:100L)(CA27:115L)	2026-08-12 00:53:08.227285	14731	2.709073e+06	2.709773e+06
 \.
 
 
@@ -3858,63 +4506,67 @@ COPY public.transferencias_tanque (id, fecha, litros, tanque_origen_id, tanque_d
 COPY public.unidades (id, codigo, nombre, tipo, modelo, operador_default_id, capacidad_tanque, odometro_actual, rendimiento_referencia, activo, notas, created_at) FROM stdin;
 222	R03-JCB3X	R03-JCB3X	maquina	\N	\N	\N	0	\N	t	\N	2026-04-25 00:21:54.725736
 235	EX12-JD50D	EX12-JD50D	maquina	\N	\N	\N	0	\N	t	\N	2026-04-25 00:21:54.725736
-233	R04-NHB80C	R04-NHB80C	maquina	\N	\N	\N	1688	\N	t	\N	2026-04-25 00:21:54.725736
-255	CA05-14M3	PJ6420C - 2026 KENWORTH T480	camion	VIN: 3BK5LJ0X2TF402887	\N	380	5798	\N	t	\N	2026-06-25 23:53:23.433999
-197	CA32-14M3	CA32	camion	\N	\N	660	31663	2.61	t	\N	2026-04-25 00:21:54.725736
-216	EX02-PC88	EX02-PC88	maquina	\N	\N	\N	5487	\N	t	\N	2026-04-25 00:21:54.725736
+197	CA32-14M3	CA32	camion	\N	\N	660	34101	2.61	t	\N	2026-04-25 00:21:54.725736
+214	CA28-14M3	CA28	camion	\N	\N	550	76701	3.26	t	\N	2026-04-25 00:21:54.725736
 219	M03-KOM1020	M03-KOM1020	maquina	\N	\N	\N	2769	\N	t	\N	2026-04-25 00:21:54.725736
 247	EX10 - CAT312	Excavadora	maquina	329D	\N	\N	7868	\N	t	\N	2026-05-16 00:21:33.48405
 210	NISSAN 03	NISSAN 03	nissan	\N	\N	\N	901915	\N	f	\N	2026-04-25 00:21:54.725736
-250	US01	HILUX	otro	TOYOTA	\N	\N	1	\N	t	\N	2026-05-28 20:12:41.388817
-253	M02	MINI02	maquina	236D SKID	\N	\N	3696	\N	t	\N	2026-06-05 19:36:25.67593
-199	CA31-14M3	CA31	camion	\N	\N	550	147858	3.19	t	\N	2026-04-25 00:21:54.725736
+230	EX05-PC200	EX05-PC200	maquina	\N	\N	\N	4395	\N	t	\N	2026-04-25 00:21:54.725736
+229	CA26-14M3	PZ4040B	camion	INTERNATIONAL PROSTAR 2010 VIN: 3HSCUAPR5AN178353	\N	550	799641	2.26	t	\N	2026-04-25 00:21:54.725736
+242	CA20-14M3	\N	camion	\N	\N	\N	8382	2.3	t	\N	2026-05-07 22:59:35.188763
 207	CA12-14M3	PV5173B - 2018 FREIGHTLINER M2	camion	VIN: 3ALHCYDJXJDJT8699	\N	550	486118	4	t	\N	2026-04-25 00:21:54.725736
 245	CA02-7M3	RA8157A - 2005 FREIGHTLINER M2	camion	VIN: 1FUBCYDJ35HU16983	\N	350	564281	5.03	t	\N	2026-05-13 00:45:11.199167
 221	R02-KOMWB140	R02-KOMWB140	maquina	\N	\N	\N	6902	\N	t	\N	2026-04-25 00:21:54.725736
 249	HAMM PATA	Rodillo para grande	maquina	Hamm	\N	\N	0	\N	t	\N	2026-05-26 22:13:59.1088
-230	EX05-PC200	EX05-PC200	maquina	\N	\N	\N	4373	\N	t	\N	2026-04-25 00:21:54.725736
+212	CA15-14M3	RC4095A - 2006 INTERNATIONAL 8600	camion	[ CATERPILLAR ] VIN: 1HSHWSBN76J248567	\N	550	893	2.97	t	\N	2026-04-25 00:21:54.725736
 241	PLANTA VERDE	GENERADOR ELECTRICO	otro	\N	\N	\N	19345	\N	t	\N	2026-05-07 20:37:09.891019
-254	CAMION	CAMION EN VENTA	camion	COMODIN	\N	\N	476767	\N	t	\N	2026-06-05 19:42:41.278249
+225	EX14-PC200	EX14-PC200	maquina	\N	\N	\N	2929	\N	t	\N	2026-04-25 00:21:54.725736
 232	CA13-14M3	PL0608A - 2019 FREIGHTLINER M2	camion	VIN: 3ALHCYDJ9KDKR8266	\N	550	486356	3.78	t	\N	2026-04-25 00:21:54.725736
 224	EX09-PC130	EX09-PC130	maquina	\N	\N	\N	3932	\N	t	\N	2026-04-25 00:21:54.725736
-244	NISSAN 03...	Mago	otro	\N	\N	\N	150673	\N	t	\N	2026-05-09 15:14:15.297908
+226	CA08-14M3	RK1054B - 2026 KENWORTH T480	camion	VIN: 3BK5LJ0X6TF402438	\N	550	66369	2.84	t	\N	2026-04-25 00:21:54.725736
+253	M02-236D	M02-236D	maquina	236D SKID	\N	\N	3710	\N	t	\N	2026-06-05 19:36:25.67593
 217	RODILLO BOMAG	RODILLO BOMAG	maquina	\N	\N	\N	1059.7	\N	t	\N	2026-04-25 00:21:54.725736
 257	TANQUE TALLER	TANQUE DE 20,000	otro	ESATACIONARIO	\N	20000	0	\N	t	\N	2026-07-16 14:35:15.721438
 248	CA10-14M3	CA10-14M3	camion	\N	\N	\N	562966	\N	t	\N	2026-05-16 18:52:31.858443
 239	R05-CAT416F	CAT 416 F	maquina	CAT 416F RETRO	\N	\N	29982	\N	t	\N	2026-04-30 21:25:11.714929
-240	EX08	Excavadora	maquina	EX08-CAT307D	\N	\N	11266	\N	t	\N	2026-05-06 18:18:52.045085
+240	EX08	Excavadora	maquina	EX08-CAT307D	\N	\N	11343	\N	t	\N	2026-05-06 18:18:52.045085
+252	CA04-14M3	PJ9061C - 2026 KENWORTH T480	camion	VIN: 3BK5LJ0X0TF402757	\N	380	13350	2.65	t	\N	2026-06-01 14:05:33.069432
 205	CA33-14M3	CA33	camion	\N	\N	600	24469	2.7	t	\N	2026-04-25 00:21:54.725736
-208	CA19-14M3	CA19	camion	\N	\N	550	1.03896e+06	2.47	t	\N	2026-04-25 00:21:54.725736
-226	CA08-14M3	RK1054B - 2026 KENWORTH T480	camion	VIN: 3BK5LJ0X6TF402438	\N	550	62602	2.84	t	\N	2026-04-25 00:21:54.725736
-225	EX14-PC200	EX14-PC200	maquina	\N	\N	\N	2833.6	\N	t	\N	2026-04-25 00:21:54.725736
+203	CA30-14M3	CA30	camion	\N	\N	550	138614	2.95	t	\N	2026-04-25 00:21:54.725736
+201	CA21-14M3	CA21	camion	\N	\N	550	25309	2.56	t	\N	2026-04-25 00:21:54.725736
+228	CA25-14M3	CA25	camion	\N	\N	550	15267	3	t	\N	2026-04-25 00:21:54.725736
 196	EX07-308D	EX07-308D	maquina	\N	\N	\N	11266.3	\N	t	\N	2026-04-25 00:21:54.725736
 234	EX13-PC210	EX13-PC210	maquina	\N	\N	\N	3830.1	\N	t	\N	2026-04-25 00:21:54.725736
-202	CA22-14M3	CA22-14M3	camion	\N	\N	600	77445	2.32	t	\N	2026-04-25 00:21:54.725736
-206	CA18-14M3	RF8753B - 2007 INTERNATIONAL	camion	VIN: 1HSHXSBR97J412127	\N	550	527485	2.8	t	\N	2026-04-25 00:21:54.725736
-218	EX01-JD35G	EX01-JD35G	maquina	\N	\N	\N	1485.3	\N	t	\N	2026-04-25 00:21:54.725736
-258	MARAVILLAS	ARQ ALAIN - MARAVILLAS	otro	\N	\N	\N	0	\N	t	\N	2026-07-20 23:13:14.345582
+211	CA16-14M3	RH2190B - 2007 INTERNATIONAL	camion	[ CUMMINS ]  VIN: 1HSHWAHN47J480725	\N	550	43566	2.17	t	\N	2026-04-25 00:21:54.725736
+244	NISSAN 03...	Mago	otro	\N	\N	\N	150673	\N	t	\N	2026-05-09 15:14:15.297908
+208	CA19-14M3	CA19	camion	\N	\N	550	1.04055e+06	2.47	t	\N	2026-04-25 00:21:54.725736
 251	RODILLO CAT	RV06	maquina	CATERPILLAR	\N	\N	0	\N	t	\N	2026-06-01 13:54:28.629377
-238	M01-CAT262D3	M01-CAT262D3	maquina	262D3	\N	\N	5721.7	\N	t	\N	2026-04-28 19:30:37.015141
-212	CA15-14M3	RC4095A - 2006 INTERNATIONAL 8600	camion	[ CATERPILLAR ] VIN: 1HSHWSBN76J248567	\N	550	2245	2.97	t	\N	2026-04-25 00:21:54.725736
+262	PURGA NISSAN	BOTE PARA PURGAR NISSAN	otro	\N	\N	\N	961470	\N	t	\N	2026-08-07 19:18:52.919679
+209	CA17-14M3	RH2191B - 2007 INTERNATIONAL	camion	VIN:1HSHWAHN17J451280,  MTO:	\N	550	55567	2.46	t	\N	2026-04-25 00:21:54.725736
+199	CA31-14M3	CA31	camion	\N	\N	550	151236	3.19	t	\N	2026-04-25 00:21:54.725736
 236	RODILLO HAMM	HAMM 02	maquina	\N	\N	\N	1355	\N	t	\N	2026-04-27 22:56:09.65564
 200	CA23-14M3	CA23-14M3	camion	\N	\N	\N	644798	\N	t	\N	2026-04-25 00:21:54.725736
-209	CA17-14M3	RH2191B - 2007 INTERNATIONAL	camion	VIN:1HSHWAHN17J451280,  MTO:	\N	550	51862	2.46	t	\N	2026-04-25 00:21:54.725736
-201	CA21-14M3	CA21	camion	\N	\N	550	22198	2.56	t	\N	2026-04-25 00:21:54.725736
+256	EX-03	CAT 308E	maquina	CATERPILLAR	\N	\N	7401	\N	t	\N	2026-07-01 01:49:11.456938
+215	CA06-14M3	RH8840B - 2026 KENWORTH T480	camion	VIN: 3BK5LJ0X3TF402168	\N	550	55934	2.64	t	\N	2026-04-25 00:21:54.725736
 220	PLANTA AZUL	PLANTA AZUL	otro	\N	\N	\N	19051	\N	t	\N	2026-04-25 00:21:54.725736
-228	CA25-14M3	CA25	camion	\N	\N	550	13483	3	t	\N	2026-04-25 00:21:54.725736
-229	CA26-14M3	PZ4040B	camion	INTERNATIONAL PROSTAR 2010 VIN: 3HSCUAPR5AN178353	\N	550	797977	2.26	t	\N	2026-04-25 00:21:54.725736
-213	CA34-14M3	CA34	camion	\N	\N	\N	1.376546e+06	\N	t	\N	2026-04-25 00:21:54.725736
-214	CA28-14M3	CA28	camion	\N	\N	550	73807	3.26	t	\N	2026-04-25 00:21:54.725736
-204	CA27-14M3	CA27	camion	\N	\N	550	451689	2.41	t	\N	2026-04-25 00:21:54.725736
-242	CA20-14M3	\N	camion	\N	\N	\N	5290	2.3	t	\N	2026-05-07 22:59:35.188763
-256	EX-03	CAT 308E	maquina	CATERPILLAR	\N	\N	7288.5	\N	t	\N	2026-07-01 01:49:11.456938
-198	CA29-14M3	CA29	camion	\N	\N	550	86538	3.21	t	\N	2026-04-25 00:21:54.725736
-252	CA04-14M3	PJ9061C - 2026 KENWORTH T480	camion	VIN: 3BK5LJ0X0TF402757	\N	380	9950	2.65	t	\N	2026-06-01 14:05:33.069432
-203	CA30-14M3	CA30	camion	\N	\N	550	135474	2.95	t	\N	2026-04-25 00:21:54.725736
-211	CA16-14M3	RH2190B - 2007 INTERNATIONAL	camion	[ CUMMINS ]  VIN: 1HSHWAHN47J480725	\N	550	42184	2.17	t	\N	2026-04-25 00:21:54.725736
-227	CA07-14M3	PM1846A - 2020 KENWORTH T370	camion	VIN: 3BKHLN9X3LF318701	\N	550	455516	2.48	t	\N	2026-04-25 00:21:54.725736
-215	CA06-14M3	RH8840B - 2026 KENWORTH T480	camion	VIN: 3BK5LJ0X3TF402168	\N	550	52447	2.64	t	\N	2026-04-25 00:21:54.725736
-237	CA01-7M3	PR4832B -  2017 FREIGHTLINER M2	camion	VIN: 3ALACYCS9HDHX9531	\N	\N	373752	4.8	t	\N	2026-04-28 00:32:08.529877
+260	RODILLO PATITA	PATITA DE CABRA	maquina	Ingersoll Rand	\N	\N	0	\N	t	\N	2026-07-29 22:36:45.909782
+206	CA18-14M3	RF8753B - 2007 INTERNATIONAL	camion	VIN: 1HSHXSBR97J412127	\N	550	529707	2.8	t	\N	2026-04-25 00:21:54.725736
+198	CA29-14M3	CA29	camion	\N	\N	550	88940	3.21	t	\N	2026-04-25 00:21:54.725736
+255	CA05-14M3	PJ6420C - 2026 KENWORTH T480	camion	VIN: 3BK5LJ0X2TF402887	\N	380	9804	\N	t	\N	2026-06-25 23:53:23.433999
+213	CA34-14M3	CA34	camion	\N	\N	\N	1.378551e+06	\N	t	\N	2026-04-25 00:21:54.725736
+218	EX01-JD35G	EX01-JD35G	maquina	\N	\N	\N	8467	\N	t	\N	2026-04-25 00:21:54.725736
+259	RODILLO DYNAPAC	\N	camion	DYNAPAC	\N	\N	1723	\N	t	\N	2026-07-25 18:17:54.489552
+227	CA07-14M3	PM1846A - 2020 KENWORTH T370	camion	VIN: 3BKHLN9X3LF318701	\N	550	459078	2.48	t	\N	2026-04-25 00:21:54.725736
+238	M01-CAT262D3	M01-CAT262D3	maquina	262D3	\N	\N	5794	\N	t	\N	2026-04-28 19:30:37.015141
+202	CA22-14M3	CA22-14M3	camion	\N	\N	600	80868	2.32	t	\N	2026-04-25 00:21:54.725736
+250	US01	HILUX	otro	TOYOTA	\N	\N	1	\N	t	\N	2026-05-28 20:12:41.388817
+216	EX02-PC88	EX02-PC88	maquina	\N	\N	\N	5515	\N	t	\N	2026-04-25 00:21:54.725736
+254	CAMION	CAMION EN VENTA	camion	COMODIN	\N	\N	476767	\N	t	\N	2026-06-05 19:42:41.278249
+237	CA01-7M3	PR4832B -  2017 FREIGHTLINER M2	camion	VIN: 3ALACYCS9HDHX9531	\N	\N	376497	4.8	t	\N	2026-04-28 00:32:08.529877
+204	CA27-14M3	CA27	camion	\N	\N	550	454965	2.41	t	\N	2026-04-25 00:21:54.725736
+258	MARAVILLAS	ARQ ALAIN - MARAVILLAS	otro	\N	\N	\N	-2	\N	t	\N	2026-07-20 23:13:14.345582
+261	CA03-703	FREIGHTLINER M2	camion	VIN:  1FUBCYBS49HAJ6547	\N	\N	357622	\N	t	\N	2026-08-06 00:06:40.972671
+233	R04-NHB80C	R04-NHB80C	maquina	\N	\N	\N	1824	\N	t	\N	2026-04-25 00:21:54.725736
 \.
 
 
@@ -3923,6 +4575,7 @@ COPY public.unidades (id, codigo, nombre, tipo, modelo, operador_default_id, cap
 --
 
 COPY public.users (id, email, name, role, phone, activo, created_at) FROM stdin;
+user_3HjUIHNOoQDh6MvdAE2vcs631ko	pixelbit.servicios@gmail.com	pixel bit	despachador	\N	t	2026-08-10 16:54:52.340539
 user_3BYiAC79vdFAXS59rbNLZhHcBlT	wbtaller.beto@gmail.com	Taller WB	admin	\N	t	2026-03-28 04:31:01.337097
 user_3CuKdzXmgI1d8WYDYqbM6RYBVL6	wendyvnx7@gmail.com	wendy velazquez	gerente	\N	t	2026-04-26 19:01:46.577264
 user_3D5zJyrz4A8zPMIqhkvt1uDAgmC	wb.construccion@gmail.com	breth velazquez	gerente	\N	t	2026-04-30 22:04:13.58751
@@ -3936,14 +4589,14 @@ user_3BXtpPbcUovwctUl9VhGAcpY72V	poxelbit@gmail.com	Poxel Bit	admin	\N	t	2026-03
 -- Name: analytics_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.analytics_events_id_seq', 255, true);
+SELECT pg_catalog.setval('public.analytics_events_id_seq', 286, true);
 
 
 --
 -- Name: analytics_sessions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.analytics_sessions_id_seq', 145, true);
+SELECT pg_catalog.setval('public.analytics_sessions_id_seq', 157, true);
 
 
 --
@@ -3957,14 +4610,14 @@ SELECT pg_catalog.setval('public.archivos_id_seq', 14, true);
 -- Name: audit_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.audit_log_id_seq', 23, true);
+SELECT pg_catalog.setval('public.audit_log_id_seq', 41, true);
 
 
 --
 -- Name: cargas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.cargas_id_seq', 4286, true);
+SELECT pg_catalog.setval('public.cargas_id_seq', 4626, true);
 
 
 --
@@ -3975,17 +4628,31 @@ SELECT pg_catalog.setval('public.fuentes_diesel_id_seq', 32, true);
 
 
 --
+-- Name: mantenimientos_eventos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
+--
+
+SELECT pg_catalog.setval('public.mantenimientos_eventos_id_seq', 7, true);
+
+
+--
+-- Name: mantenimientos_planes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
+--
+
+SELECT pg_catalog.setval('public.mantenimientos_planes_id_seq', 6, true);
+
+
+--
 -- Name: obras_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.obras_id_seq', 184, true);
+SELECT pg_catalog.setval('public.obras_id_seq', 188, true);
 
 
 --
 -- Name: operadores_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.operadores_id_seq', 281, true);
+SELECT pg_catalog.setval('public.operadores_id_seq', 282, true);
 
 
 --
@@ -4020,21 +4687,21 @@ SELECT pg_catalog.setval('public.pb_tickets_id_seq', 1, true);
 -- Name: periodos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.periodos_id_seq', 76, true);
+SELECT pg_catalog.setval('public.periodos_id_seq', 80, true);
 
 
 --
 -- Name: recargas_tanque_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.recargas_tanque_id_seq', 41, true);
+SELECT pg_catalog.setval('public.recargas_tanque_id_seq', 44, true);
 
 
 --
 -- Name: rendimientos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rendimientos_id_seq', 702, true);
+SELECT pg_catalog.setval('public.rendimientos_id_seq', 817, true);
 
 
 --
@@ -4048,14 +4715,14 @@ SELECT pg_catalog.setval('public.tanques_id_seq', 16, true);
 -- Name: transferencias_tanque_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.transferencias_tanque_id_seq', 92, true);
+SELECT pg_catalog.setval('public.transferencias_tanque_id_seq', 101, true);
 
 
 --
 -- Name: unidades_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.unidades_id_seq', 258, true);
+SELECT pg_catalog.setval('public.unidades_id_seq', 262, true);
 
 
 --
@@ -4128,6 +4795,22 @@ ALTER TABLE ONLY public.configuracion
 
 ALTER TABLE ONLY public.fuentes_diesel
     ADD CONSTRAINT fuentes_diesel_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mantenimientos_eventos mantenimientos_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.mantenimientos_eventos
+    ADD CONSTRAINT mantenimientos_eventos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mantenimientos_planes mantenimientos_planes_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.mantenimientos_planes
+    ADD CONSTRAINT mantenimientos_planes_pkey PRIMARY KEY (id);
 
 
 --
@@ -4251,6 +4934,37 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: mantenimientos_planes_unidad_tipo_unique; Type: INDEX; Schema: public; Owner: neondb_owner
+--
+
+CREATE UNIQUE INDEX mantenimientos_planes_unidad_tipo_unique ON public.mantenimientos_planes USING btree (unidad_id, tipo_control);
+
+
+--
+-- Name: mantenimientos_eventos mantenimientos_eventos_plan_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.mantenimientos_eventos
+    ADD CONSTRAINT mantenimientos_eventos_plan_id_fk FOREIGN KEY (plan_id) REFERENCES public.mantenimientos_planes(id) ON DELETE SET NULL;
+
+
+--
+-- Name: mantenimientos_eventos mantenimientos_eventos_unidad_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.mantenimientos_eventos
+    ADD CONSTRAINT mantenimientos_eventos_unidad_id_fk FOREIGN KEY (unidad_id) REFERENCES public.unidades(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mantenimientos_planes mantenimientos_planes_unidad_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.mantenimientos_planes
+    ADD CONSTRAINT mantenimientos_planes_unidad_id_fk FOREIGN KEY (unidad_id) REFERENCES public.unidades(id) ON DELETE CASCADE;
+
+
+--
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: cloud_admin
 --
 
@@ -4268,5 +4982,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABL
 -- PostgreSQL database dump complete
 --
 
-\unrestrict cxrm5BEcXAADW0S4jikWfhkDnAn9zHwWjb7VIdltqHlOgS1AQWnrGbBr7ohhrVl
+\unrestrict rNb6qHLC05BJbhTJdDBZ1ZXt6BtH4xmTvPapt2PXtLvUgHpyx0tUjp8JCPRAwKG
 

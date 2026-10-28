@@ -30,6 +30,8 @@ import type {
   getResumenMantenimientoUnidad,
 } from "@/app/actions/mantenimiento";
 import UnidadMantenimientoTab from "@/components/catalogo/UnidadMantenimientoTab";
+import UnidadBitacoraTab from "@/components/taller/UnidadBitacoraTab";
+import type { getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
 
 type Carga     = Awaited<ReturnType<typeof getCatalogoCargas>>[number];
 type RendItem  = Awaited<ReturnType<typeof getRendimientosUnidad>>[number];
@@ -37,8 +39,10 @@ type FotoItem  = Awaited<ReturnType<typeof getArchivosUnidad>>[number];
 type AuditItem = Awaited<ReturnType<typeof getAuditLogCargasUnidad>>[number];
 type MantenimientoResumen = Awaited<ReturnType<typeof getResumenMantenimientoUnidad>>;
 type MantenimientoEvento = Awaited<ReturnType<typeof getEventosMantenimientoUnidad>>[number];
+type TallerIncidencia = Awaited<ReturnType<typeof getIncidenciasTaller>>[number];
+type TallerUrea = Awaited<ReturnType<typeof getUreaTaller>>[number];
 
-type Tab          = "cargas" | "rendimiento" | "mantenimiento" | "fotos" | "cambios";
+type Tab          = "cargas" | "rendimiento" | "mantenimiento" | "bitacora" | "fotos" | "cambios";
 type SortCol      = "fecha" | "folio" | "litros" | "odometro";
 type FiltroOrigen = "todos" | "patio" | "campo" | "externo";
 
@@ -52,6 +56,12 @@ function fmtFechaCorta(fecha: string) {
   return `${d}/${m}/${y.slice(2)}`;
 }
 
+function formatFolioCarga(c: Pick<Carga, "folio" | "folioSerieCodigo" | "origen">) {
+  if (c.folio == null) return "—";
+  const origen = c.origen === "campo" ? "C" : c.origen === "externo" ? "E" : "P";
+  return `${origen}-${c.folioSerieCodigo ? `${c.folioSerieCodigo}-` : ""}${c.folio}`;
+}
+
 function SortIcon({ col, current, dir }: { col: SortCol; current: SortCol; dir: "asc" | "desc" }) {
   if (col !== current) return <ArrowUpDown className="w-3 h-3 opacity-30 inline ml-1" />;
   return dir === "asc"
@@ -61,6 +71,7 @@ function SortIcon({ col, current, dir }: { col: SortCol; current: SortCol; dir: 
 
 export default function CatalogoDetalleClient({
   tipo,
+  initialTab,
   unidadId,
   unidadTipo,
   cargas: cargasInit,
@@ -76,8 +87,12 @@ export default function CatalogoDetalleClient({
   odometroActual = null,
   odometroOffset = 0,
   odometroResets = [],
+  ordenesTaller = [],
+  incidenciasTaller = [],
+  ureaTaller = [],
 }: {
   tipo: "unidad" | "operador" | "obra";
+  initialTab?: Tab;
   unidadId?: number;
   unidadTipo?: string;
   cargas: Carga[];
@@ -93,10 +108,29 @@ export default function CatalogoDetalleClient({
   odometroActual?: number | null;
   odometroOffset?: number | null;
   odometroResets?: { id: number; fecha: string; lecturaAnterior: number; lecturaNueva: number; notas: string | null }[];
+  ordenesTaller?: {
+    id: number;
+    folio: number | null;
+    fecha: string;
+    createdAt: string | null;
+    kmHrs: number | null;
+    motivo: string | null;
+    categoria: string | null;
+    estado: string;
+    quienAtendio: string | null;
+    trabajoRealizado: string | null;
+    comentarios: string | null;
+    proveedorExterno: string | null;
+    operador: { nombre: string } | null;
+    refacciones: { precio: number | null; cantidad: number | null; iva: boolean }[];
+    checklist: { clave: string; fotos: string | null }[];
+  }[];
+  incidenciasTaller?: TallerIncidencia[];
+  ureaTaller?: TallerUrea[];
 }) {
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<Tab>("cargas");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab ?? "cargas");
 
   // Cargas locales para actualizaciones optimistas
   const [localCargas, setLocalCargas] = useState<Carga[]>(cargasInit);
@@ -173,6 +207,7 @@ export default function CatalogoDetalleClient({
       const q = busqueda.toLowerCase();
       r = r.filter((c) =>
         (c.folio != null ? String(c.folio) : "").includes(q) ||
+        (c.folioSerieCodigo ?? "").toLowerCase().includes(q) ||
         (c.operadorNombre ?? "").toLowerCase().includes(q) ||
         (c.obraNombre ?? "").toLowerCase().includes(q) ||
         (c.unidadCodigo ?? "").toLowerCase().includes(q) ||
@@ -351,6 +386,7 @@ export default function CatalogoDetalleClient({
         { key: "cargas" as Tab,      label: "Cargas" },
         { key: "rendimiento" as Tab, label: "Rendimiento" },
         { key: "mantenimiento" as Tab, label: "Mantenimiento" },
+        { key: "bitacora" as Tab, label: `Incidencias${ordenesTaller.length ? ` (${ordenesTaller.length})` : ""}` },
         { key: "fotos" as Tab,       label: `Fotos${fotos && fotos.length > 0 ? ` (${fotos.length})` : ""}` },
         { key: "cambios" as Tab,     label: `Cambios${audits && audits.length > 0 ? ` (${audits.length})` : ""}` },
       ]
@@ -561,7 +597,7 @@ export default function CatalogoDetalleClient({
                       <p className="font-mono text-sm" style={{ color: "var(--fg)" }}>
                         {fmtFechaCorta(c.fecha)}
                         <span className="ml-2" style={{ color: "var(--fg-muted)" }}>
-                          {c.folio != null ? `#${c.folio}` : "—"}
+                          {formatFolioCarga(c)}
                         </span>
                       </p>
                       <p className="text-[11px] truncate mt-0.5" style={{ color: "var(--fg-muted)" }}>
@@ -659,7 +695,7 @@ export default function CatalogoDetalleClient({
                           )}
                         </TableCell>
                         <TableCell className="font-mono whitespace-nowrap" style={{ color: "var(--fg-muted)" }}>
-                          {c.folio != null ? `#${c.folio}` : "—"}
+                          {formatFolioCarga(c)}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -817,6 +853,10 @@ export default function CatalogoDetalleClient({
       )}
 
       {/* ── Tab Mantenimiento ─────────────────────────────── */}
+      {activeTab === "bitacora" && tipo === "unidad" && unidadId && (
+        <UnidadBitacoraTab unidadId={unidadId} ordenes={ordenesTaller} incidencias={incidenciasTaller} urea={ureaTaller} canOpen={canEdit} />
+      )}
+
       {activeTab === "mantenimiento" && tipo === "unidad" && unidadId && (
         <UnidadMantenimientoTab
           unidadId={unidadId}
@@ -964,7 +1004,7 @@ export default function CatalogoDetalleClient({
                   <option value="">Selecciona folio / fecha</option>
                   {localCargas.slice(0, 40).map((c) => (
                     <option key={c.id} value={String(c.id)}>
-                      {c.fecha}{c.folio != null ? ` · #${c.folio}` : ""} · {c.origen} · {c.litros.toLocaleString("es-MX")} L
+                      {c.fecha}{c.folio != null ? ` · ${formatFolioCarga(c)}` : ""} · {c.origen} · {c.litros.toLocaleString("es-MX")} L
                     </option>
                   ))}
                 </Select>
@@ -1100,7 +1140,7 @@ export default function CatalogoDetalleClient({
       <Dialog open={!!editCarga} onOpenChange={(v) => { if (!v) setEditCarga(null); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar carga #{editCarga?.folio ?? editCarga?.id}</DialogTitle>
+            <DialogTitle>{editCarga ? `Editar carga ${formatFolioCarga(editCarga)}` : "Editar carga"}</DialogTitle>
           </DialogHeader>
           {editCarga && (
             <div className="rounded-xl border p-3 grid grid-cols-2 gap-3 text-xs"

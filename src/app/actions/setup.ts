@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
   tanques, fuentesDiesel, unidades, operadores,
-  periodos, cargas, recargasTanque, auditLog, configuracion,
+  periodos, cargas, recargasTanque, auditLog, configuracion, folioSeries,
 } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { requireAdmin, requireManageRole } from "@/lib/authz";
+import { getDefaultFolioSerieId } from "@/lib/folios";
 import {
   DEFAULTS_ALERTA_MANTENIMIENTO,
   DEFAULTS_MANTENIMIENTO_TIPO,
@@ -67,6 +68,8 @@ export async function getFolioBase(): Promise<number> {
 
 export async function setFolioBase(folio: number) {
   await requireAdmin();
+  const serieId = await getDefaultFolioSerieId("patio");
+  await db.update(folioSeries).set({ folioBase: folio }).where(eq(folioSeries.id, serieId));
   await db
     .insert(configuracion)
     .values({ clave: "folio_base", valor: String(folio) })
@@ -77,6 +80,8 @@ export async function setFolioBase(folio: number) {
 
 export async function setFolioBaseCampo(folio: number) {
   await requireAdmin();
+  const serieId = await getDefaultFolioSerieId("campo");
+  await db.update(folioSeries).set({ folioBase: folio }).where(eq(folioSeries.id, serieId));
   await db
     .insert(configuracion)
     .values({ clave: "folio_base_campo", valor: String(folio) })
@@ -576,6 +581,10 @@ export async function seedDatosPrueba() {
   const maquinas = todasUnidades.filter((u) => u.tipo === "maquina").slice(0, 5);
 
   const cargasVals: typeof cargas.$inferInsert[] = [];
+  const [seriePatioId, serieCampoId] = await Promise.all([
+    getDefaultFolioSerieId("patio"),
+    getDefaultFolioSerieId("campo"),
+  ]);
 
   // Cargas patio — últimos 14 días
   for (let d = 13; d >= 0; d--) {
@@ -589,6 +598,7 @@ export async function seedDatosPrueba() {
         fecha: fechaStr,
         periodoId,
         unidadId: u.id,
+        folioSerieId: seriePatioId,
         operadorId: opIds[i % opIds.length],
         litros,
         origen: "patio",
@@ -610,6 +620,7 @@ export async function seedDatosPrueba() {
         fecha: fechaStr,
         periodoId,
         unidadId: u.id,
+        folioSerieId: serieCampoId,
         operadorId: opIds[d % opIds.length],
         litros,
         origen: "campo",

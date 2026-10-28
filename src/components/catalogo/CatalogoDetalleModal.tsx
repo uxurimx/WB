@@ -38,6 +38,12 @@ function fmtNum(n: number | null, d = 1) {
   return n.toLocaleString("es-MX", { minimumFractionDigits: d, maximumFractionDigits: d });
 }
 
+function formatFolioCarga(c: Pick<CargaReciente, "folio" | "folioSerieCodigo" | "origen">) {
+  if (c.folio == null) return "—";
+  const origen = c.origen === "campo" ? "C" : c.origen === "externo" ? "E" : "P";
+  return `${origen}-${c.folioSerieCodigo ? `${c.folioSerieCodigo}-` : ""}${c.folio}`;
+}
+
 export default function CatalogoDetalleModal({
   tipo,
   id,
@@ -327,7 +333,7 @@ export default function CatalogoDetalleModal({
                               )}
                             </td>
                             <td className="px-3 py-2 font-mono whitespace-nowrap" style={{ color: "var(--fg-muted)" }}>
-                              {c.folio != null ? `#${c.folio}` : "—"}
+                              {formatFolioCarga(c)}
                             </td>
                             {tipo !== "unidad" && (
                               <td className="px-3 py-2 font-mono font-bold whitespace-nowrap" style={{ color: "var(--fg)" }}>
@@ -624,7 +630,7 @@ export default function CatalogoDetalleModal({
       <Dialog open={!!editCarga} onOpenChange={(open) => { if (!open) setEditCarga(null); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar carga #{editCarga?.folio ?? editCarga?.id}</DialogTitle>
+            <DialogTitle>{editCarga ? `Editar carga ${formatFolioCarga(editCarga)}` : "Editar carga"}</DialogTitle>
           </DialogHeader>
 
           {editCarga && (

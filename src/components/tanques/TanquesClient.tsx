@@ -213,7 +213,7 @@ function TimelineRow({ ev }: { ev: EventoTimeline }) {
           )}
           {ev.folio && (
             <span className="text-xs font-mono" style={{ color: "var(--fg-muted)" }}>
-              Folio #{ev.folio}
+              Folio T-{ev.folioSerieCodigo ? `${ev.folioSerieCodigo}-` : ""}{ev.folio}
             </span>
           )}
           {ev.precioLitro && (

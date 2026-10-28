@@ -72,12 +72,13 @@ export async function GET(
 
   // ── Sheet 2: Cargas ───────────────────────────────────────
   const cargasHeaders = [
-    "Folio", "Fecha", "Hora", "Unidad", "Operador", "Obra",
+    "Folio", "Referencia", "Fecha", "Hora", "Unidad", "Operador", "Obra",
     "Litros", "Origen", "Tipo Diesel", "Odómetro / Hrs", "Notas",
   ];
 
   const cargasRows = cargasData.map((c) => [
     c.folio ?? "",
+    c.folio == null ? "" : `${c.origen === "campo" ? "C" : c.origen === "externo" ? "E" : "P"}-${c.folioSerie?.codigo ? `${c.folioSerie.codigo}-` : ""}${c.folio}`,
     c.fecha,
     c.hora ? c.hora.slice(0, 5) : "",
     c.unidad?.codigo ?? `#${c.unidadId}`,
@@ -92,7 +93,7 @@ export async function GET(
 
   const wsCargas = XLSX.utils.aoa_to_sheet([cargasHeaders, ...cargasRows]);
   wsCargas["!cols"] = [
-    { wch: 8 }, { wch: 12 }, { wch: 7 }, { wch: 10 },
+    { wch: 8 }, { wch: 24 }, { wch: 12 }, { wch: 7 }, { wch: 10 },
     { wch: 20 }, { wch: 20 }, { wch: 9 }, { wch: 8 },
     { wch: 12 }, { wch: 14 }, { wch: 25 },
   ];

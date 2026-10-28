@@ -25,14 +25,14 @@ function isIosSafari(): boolean {
 
 export default function InstallPwa() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(isStandalone);
-  const [iosHint] = useState(isIosSafari);
-  const [dismissed, setDismissed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem("pwa-install-dismissed") === "1";
-  });
+  const [installed, setInstalled] = useState(false);
+  const [iosHint, setIosHint] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
+    setInstalled(isStandalone());
+    setIosHint(isIosSafari());
+    setDismissed(sessionStorage.getItem("pwa-install-dismissed") === "1");
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);

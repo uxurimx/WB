@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import {
   Fuel, LayoutDashboard, Settings, ChevronRight, ChevronDown,
   PlusCircle, ClipboardList, Truck, Users, HardHat, Menu, X,
-  Wrench, Calendar, Shield, TicketCheck, Megaphone, Blocks, BarChart2, Gauge,
+  Wrench, Calendar, Shield, TicketCheck, Megaphone, Blocks, BarChart2, Gauge, Bot,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { siteConfig } from "@/config/site";
@@ -18,7 +18,7 @@ import { ROLE_NAV_PERMISSIONS, type NavPermission } from "@/lib/permissions";
 
 type NavItemDef = { name: string; href: string; icon: React.ComponentType<{ className?: string }>; badge?: number };
 
-function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedades = 0) {
+function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedades = 0, devAgentEnabled = false) {
   const has = (p: NavPermission) => permisos.includes(p);
 
   const cargasItems: NavItemDef[] = [
@@ -52,6 +52,15 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedade
       collapsible: false,
       items: cargasItems,
     }] : []),
+    ...(has("taller") ? [{
+      label: "Taller",
+      collapsible: false,
+      items: [
+        { name: "Tablero general", href: "/taller", icon: LayoutDashboard },
+        { name: "Órdenes de servicio", href: "/taller/ordenes", icon: Wrench },
+        ...(has("taller.bitacora") ? [{ name: "Bitácora", href: "/taller/bitacora", icon: ClipboardList }] : []),
+      ],
+    }] : []),
     ...(catalogoItems.length ? [{
       label: "Catálogos",
       collapsible: true,
@@ -71,13 +80,18 @@ function getNavSections(permisos: NavPermission[], pbOpenTickets = 0, pbNovedade
       collapsible: true,
       items: sistemaItems,
     }] : []),
-    ...(has("poxelbit") ? [{
+    ...((has("poxelbit") || devAgentEnabled) ? [{
       label: "PoxelBit",
       collapsible: true,
       items: [
-        { name: "Portal",    href: "/poxelbit",           icon: Blocks      },
-        { name: "Tickets",   href: "/poxelbit/tickets",   icon: TicketCheck, badge: pbOpenTickets },
-        { name: "Novedades", href: "/poxelbit/novedades", icon: Megaphone,   badge: pbNovedades   },
+        ...(has("poxelbit") ? [
+          { name: "Portal",    href: "/poxelbit",           icon: Blocks      },
+          { name: "Tickets",   href: "/poxelbit/tickets",   icon: TicketCheck, badge: pbOpenTickets },
+          { name: "Novedades", href: "/poxelbit/novedades", icon: Megaphone,   badge: pbNovedades   },
+        ] : []),
+        ...(devAgentEnabled
+          ? [{ name: "Agente Dev", href: "/poxelbit/dev", icon: Bot }]
+          : []),
       ],
     }] : []),
   ];
@@ -91,7 +105,12 @@ function NavItem({
   onNavigate,
 }: NavItemDef & { onNavigate?: () => void }) {
   const pathname  = usePathname();
-  const isActive  = pathname === href || (href !== "/overview" && pathname.startsWith(href));
+  const isOrdenDetalle = /^\/taller\/\d+(?:\/|$)/.test(pathname);
+  const isActive  = href === "/taller"
+    ? pathname === "/taller"
+    : href === "/taller/ordenes"
+      ? pathname === href || isOrdenDetalle
+      : pathname === href || (href !== "/overview" && pathname.startsWith(href));
 
   return (
     <Link
@@ -127,7 +146,7 @@ function NavItem({
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const role     = user?.publicMetadata?.role as string | undefined;
   const pathname = usePathname();
 
@@ -136,6 +155,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
   const [pbOpenTickets, setPbOpenTickets] = useState(0);
   const [pbNovedades, setPbNovedades]     = useState(0);
+  const [devAgentEnabled, setDevAgentEnabled] = useState(false);
 
   useEffect(() => {
     fetch("/api/me/perms")
@@ -156,7 +176,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       .catch(() => {});
   }, [permisos]);
 
-  const navSections = getNavSections(permisos, pbOpenTickets, pbNovedades);
+  useEffect(() => {
+    if (!isLoaded) return;
+    fetch("/api/poxelbit/dev-agent/config")
+      .then((r) => r.json())
+      .then((data) => setDevAgentEnabled(data.enabled === true))
+      .catch(() => setDevAgentEnabled(false));
+  }, [isLoaded, user?.id]);
+
+  const navSections = getNavSections(permisos, pbOpenTickets, pbNovedades, devAgentEnabled);
 
   // Sección abierta solo si la ruta activa está dentro de ella
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
@@ -189,7 +217,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       
       <div className="flex items-center gap-3 px-2 mb-8 mt-2">
         <Link href="/overview">
-          <img src="logo.png" alt="" />
+          <img src="/logo.png" alt="WB Construcción" className="h-10 w-auto" />
         </Link>
         {/* <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
           <Fuel className="text-indigo-500 w-5 h-5" />

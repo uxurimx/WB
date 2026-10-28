@@ -29,12 +29,17 @@ function showLocal(title: string, body: string, tag: string, url: string) {
 }
 
 export default function AlertNotifications() {
-  const [status, setStatus] = useState<"denied" | "on" | "off">(() => {
-    if (typeof Notification === "undefined") return "off";
-    if (Notification.permission === "granted") return "on";
-    if (Notification.permission === "denied") return "denied";
-    return "off";
-  });
+  const [status, setStatus] = useState<"denied" | "on" | "off" | "idle">("idle");
+
+  useEffect(() => {
+    if (typeof Notification === "undefined") {
+      setStatus("off");
+      return;
+    }
+    if (Notification.permission === "granted") setStatus("on");
+    else if (Notification.permission === "denied") setStatus("denied");
+    else setStatus("off");
+  }, []);
   const pusherRef = useRef<InstanceType<typeof import("pusher-js").default> | null>(null);
 
   useEffect(() => {
@@ -97,7 +102,7 @@ export default function AlertNotifications() {
     }
   }
 
-  if (status === "on") return null;
+  if (status === "idle" || status === "on") return null;
   if (status === "denied") {
     return (
       <p className="text-[10px] leading-snug px-1" style={{ color: "var(--fg-muted)" }}>

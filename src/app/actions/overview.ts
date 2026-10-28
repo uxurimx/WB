@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { tanques, cargas, periodos, configuracion, pbTickets, recargasTanque, transferenciasTanque, obras } from "@/db/schema";
+import { tanques, cargas, periodos, configuracion, pbTickets, recargasTanque, transferenciasTanque, folioSeries, obras } from "@/db/schema";
 import { eq, desc, and, gte, lte, sql, isNotNull } from "drizzle-orm";
 import {
   type AlertaRendimiento,
@@ -28,7 +28,7 @@ export async function getOverviewStats() {
       db.select().from(tanques),
       db.select({ litros: cargas.litros }).from(cargas).where(eq(cargas.fecha, hoy)),
       db.query.cargas.findMany({
-        with: { unidad: true, operador: true },
+        with: { unidad: true, operador: true, folioSerie: { columns: { codigo: true } } },
         orderBy: [desc(cargas.fecha), desc(cargas.createdAt)],
         limit: 12,
       }),
@@ -62,12 +62,15 @@ export async function getOverviewStats() {
       db.select({
         id: transferenciasTanque.id,
         folio: transferenciasTanque.folio,
+        folioSerieCodigo: folioSeries.codigo,
         fecha: transferenciasTanque.fecha,
         litros: transferenciasTanque.litros,
         tanqueOrigenId: transferenciasTanque.tanqueOrigenId,
         tanqueDestinoId: transferenciasTanque.tanqueDestinoId,
         createdAt: transferenciasTanque.createdAt,
-      }).from(transferenciasTanque).orderBy(desc(transferenciasTanque.createdAt)).limit(6),
+      }).from(transferenciasTanque)
+        .leftJoin(folioSeries, eq(transferenciasTanque.folioSerieId, folioSeries.id))
+        .orderBy(desc(transferenciasTanque.createdAt)).limit(6),
       getAlertasMantenimientoOverview(),
     ]);
 
@@ -268,6 +271,7 @@ export async function getOverviewStats() {
       fecha: c.fecha,
       hora: c.hora,
       folio: c.folio,
+      folioSerieCodigo: c.folioSerie?.codigo ?? null,
       litros: c.litros,
       origen: c.origen,
       tipoDiesel: c.tipoDiesel,
@@ -304,6 +308,7 @@ export async function getOverviewStats() {
       fecha: t.fecha,
       litros: t.litros,
       folio: t.folio,
+      folioSerieCodigo: t.folioSerieCodigo,
       origenNombre: tanqueNombres[t.tanqueOrigenId] ?? "Origen",
       destinoNombre: tanqueNombres[t.tanqueDestinoId] ?? "Destino",
       createdAt: t.createdAt?.toISOString() ?? null,

@@ -53,7 +53,7 @@ export default async function AdminPage() {
       {/* Tabs */}
       <AdminTabsClient
         usuariosTab={
-          <UsuariosTable initialUsuarios={usuariosList} currentUserId={userId} />
+          <UsuariosTable initialUsuarios={usuariosList} roles={rolesList.map(({ id, label }) => ({ id, label }))} currentUserId={userId} />
         }
         rolesTab={
           <RolesTab

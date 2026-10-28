@@ -9,6 +9,7 @@ import {
   serial,
   date,
   time,
+  check,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
@@ -93,6 +94,22 @@ export const odometroResets = pgTable("odometro_resets", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Bloques físicos de folios. Cada origen puede tener varios bloques disponibles
+// y uno predeterminado para asignación automática.
+export const folioSeries = pgTable("folio_series", {
+  id: serial("id").primaryKey(),
+  origen: varchar("origen", { length: 10 }).notNull(),
+  codigo: varchar("codigo", { length: 20 }).notNull(),
+  nombre: varchar("nombre", { length: 80 }).notNull(),
+  folioMin: integer("folio_min").notNull().default(0),
+  folioMax: integer("folio_max").notNull().default(0),
+  folioBase: integer("folio_base").notNull().default(1),
+  activa: boolean("activa").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("folio_series_origen_codigo_unique").on(table.origen, table.codigo),
+]);
+
 export const mantenimientosEventos = pgTable("mantenimientos_eventos", {
   id: serial("id").primaryKey(),
   unidadId: integer("unidad_id").notNull(),
@@ -103,6 +120,127 @@ export const mantenimientosEventos = pgTable("mantenimientos_eventos", {
   lecturaServicio: real("lectura_servicio").notNull(),
   descripcion: text("descripcion"),
   notas: text("notas"),
+  registradoPorId: text("registrado_por_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TALLER — órdenes de servicio (bitácora)
+// ─────────────────────────────────────────────────────────────────────────────
+export const ordenesTaller = pgTable("ordenes_taller", {
+  id: serial("id").primaryKey(),
+  folio: integer("folio").notNull().default(sql`nextval('taller_folio_seq')`),
+  unidadId: integer("unidad_id").notNull(),
+  incidenciaId: integer("incidencia_id"),
+  operadorId: integer("operador_id"),
+  fecha: date("fecha").notNull(),
+  kmHrs: real("km_hrs"),
+  motivo: text("motivo"),
+  categoria: varchar("categoria", { length: 30 }).notNull().default("correctivo"),
+  estado: varchar("estado", { length: 20 }).notNull().default("abierta"),
+  esPreventivo: boolean("es_preventivo").notNull().default(false),
+  tipoControlPreventivo: varchar("tipo_control_preventivo", { length: 10 }),
+  eventoMantenimientoId: integer("evento_mantenimiento_id"),
+  quienRecibio: text("quien_recibio"),
+  quienAtendio: text("quien_atendio"),
+  mecanicos: text("mecanicos"),
+  mecanicoOtro: text("mecanico_otro"),
+  proveedorExterno: text("proveedor_externo"),
+  comentarios: text("comentarios"),
+  diagnosticoFinal: text("diagnostico_final"),
+  trabajoRealizado: text("trabajo_realizado"),
+  observacionesSalida: text("observaciones_salida"),
+  quienEntrega: text("quien_entrega"),
+  fechaSalida: timestamp("fecha_salida"),
+  fotosIngreso: text("fotos_ingreso"),
+  fotosSalida: text("fotos_salida"),
+  proximoMto: text("proximo_mto"),
+  abiertoPorId: text("abierto_por_id"),
+  actualizadoPorId: text("actualizado_por_id"),
+  cerradoPorId: text("cerrado_por_id"),
+  cerradoAt: timestamp("cerrado_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("ordenes_taller_folio_unique").on(table.folio),
+  uniqueIndex("ordenes_taller_incidencia_id_unique")
+    .on(table.incidenciaId)
+    .where(sql`${table.incidenciaId} IS NOT NULL`),
+]);
+
+export const ordenTallerLog = pgTable("orden_taller_log", {
+  id: serial("id").primaryKey(),
+  ordenId: integer("orden_id").notNull(),
+  usuarioId: text("usuario_id").notNull(),
+  accion: varchar("accion", { length: 30 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const ordenChecklist = pgTable("orden_checklist", {
+  id: serial("id").primaryKey(),
+  ordenId: integer("orden_id").notNull(),
+  clave: varchar("clave", { length: 40 }).notNull(),
+  ok: boolean("ok"),
+  respuesta: varchar("respuesta", { length: 2 }),
+  nota: text("nota"),
+  fotos: text("fotos"),
+});
+
+export const ordenRefacciones = pgTable("orden_refacciones", {
+  id: serial("id").primaryKey(),
+  ordenId: integer("orden_id").notNull(),
+  descripcion: text("descripcion").notNull(),
+  cantidad: real("cantidad").default(1),
+  cajas: real("cajas"),
+  unidadMedida: varchar("unidad_medida", { length: 20 }).notNull().default("pz"),
+  precio: real("precio"),
+  iva: boolean("iva").notNull().default(true),
+  origen: varchar("origen", { length: 30 }).notNull().default("Comprado"),
+  proveedor: text("proveedor"),
+  folioFactura: text("folio_factura"),
+});
+
+export const incidenciasTaller = pgTable("incidencias_taller", {
+  id: serial("id").primaryKey(),
+  folio: integer("folio"),
+  unidadId: integer("unidad_id").notNull(),
+  operadorId: integer("operador_id"),
+  reportadaPorId: text("reportada_por_id"),
+  fecha: date("fecha").notNull(),
+  categoria: varchar("categoria", { length: 30 }).notNull().default("otro"),
+  prioridad: varchar("prioridad", { length: 12 }).notNull().default("media"),
+  fallas: text("fallas"), // JSON de fallas seleccionadas
+  descripcion: text("descripcion").notNull(),
+  ubicacion: text("ubicacion"),
+  observaciones: text("observaciones"),
+  estado: varchar("estado", { length: 20 }).notNull().default("abierta"),
+  ordenId: integer("orden_id"),
+  resolucion: text("resolucion"),
+  creadoPorId: text("creado_por_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("incidencias_taller_folio_unique").on(table.folio),
+]);
+
+export const tallerEventos = pgTable("taller_eventos", {
+  id: serial("id").primaryKey(),
+  unidadId: integer("unidad_id").notNull(),
+  incidenciaId: integer("incidencia_id"),
+  ordenId: integer("orden_id"),
+  tipo: varchar("tipo", { length: 40 }).notNull(),
+  detalle: text("detalle"),
+  usuarioId: text("usuario_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const tallerUrea = pgTable("taller_urea", {
+  id: serial("id").primaryKey(),
+  unidadId: integer("unidad_id").notNull().references(() => unidades.id),
+  operadorId: integer("operador_id").references(() => operadores.id),
+  fecha: date("fecha").notNull(),
+  litros: real("litros").notNull(),
+  observaciones: text("observaciones"),
   registradoPorId: text("registrado_por_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -178,6 +316,7 @@ export const cargas = pgTable("cargas", {
   fecha: date("fecha").notNull(),
   hora: time("hora"),
   folio: integer("folio"),
+  folioSerieId: integer("folio_serie_id").references(() => folioSeries.id),
   periodoId: integer("periodo_id"),
   unidadId: integer("unidad_id").notNull(),
   operadorId: integer("operador_id"),
@@ -201,10 +340,15 @@ export const cargas = pgTable("cargas", {
   registradoPorId: text("registrado_por_id"), // Clerk user ID
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
-  // Folio único por origen (patio y campo son secuencias separadas). NULLs permitidos.
-  uniqueIndex("cargas_folio_origen_unique")
+  // Los folios físicos Patio/Campo requieren serie; los externos conservan
+  // su folio de proveedor sin pertenecer a esos bloques.
+  check("cargas_folio_serie_required", sql`${table.origen} = 'externo' OR ${table.folioSerieId} IS NOT NULL`),
+  uniqueIndex("cargas_folio_origen_serie_unique")
+    .on(table.folio, table.origen, table.folioSerieId)
+    .where(sql`${table.folio} IS NOT NULL AND ${table.folioSerieId} IS NOT NULL`),
+  uniqueIndex("cargas_folio_origen_without_serie_unique")
     .on(table.folio, table.origen)
-    .where(sql`${table.folio} IS NOT NULL`),
+    .where(sql`${table.folio} IS NOT NULL AND ${table.folioSerieId} IS NULL`),
 ]);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -230,6 +374,7 @@ export const recargasTanque = pgTable("recargas_tanque", {
 export const transferenciasTanque = pgTable("transferencias_tanque", {
   id: serial("id").primaryKey(),
   folio: integer("folio"),
+  folioSerieId: integer("folio_serie_id").notNull().references(() => folioSeries.id),
   fecha: date("fecha").notNull(),
   litros: real("litros").notNull(),
   tanqueOrigenId: integer("tanque_origen_id").notNull(),
@@ -239,7 +384,11 @@ export const transferenciasTanque = pgTable("transferencias_tanque", {
   registradoPorId: text("registrado_por_id"),
   notas: text("notas"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  uniqueIndex("transferencias_folio_serie_unique")
+    .on(table.folioSerieId, table.folio)
+    .where(sql`${table.folio} IS NOT NULL`),
+]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RENDIMIENTOS — calculados al cerrar cada periodo
@@ -445,6 +594,76 @@ export const unidadesRelations = relations(unidades, ({ one, many }) => ({
   mantenimientosPlanes: many(mantenimientosPlanes),
   mantenimientosEventos: many(mantenimientosEventos),
   odometroResets: many(odometroResets),
+  ordenesTaller: many(ordenesTaller),
+  incidenciasTaller: many(incidenciasTaller),
+  tallerEventos: many(tallerEventos),
+  ureaTaller: many(tallerUrea),
+}));
+
+export const ordenesTallerRelations = relations(ordenesTaller, ({ one, many }) => ({
+  unidad: one(unidades, {
+    fields: [ordenesTaller.unidadId],
+    references: [unidades.id],
+  }),
+  operador: one(operadores, {
+    fields: [ordenesTaller.operadorId],
+    references: [operadores.id],
+  }),
+  eventos: many(tallerEventos),
+  checklist: many(ordenChecklist),
+  refacciones: many(ordenRefacciones),
+}));
+
+export const incidenciasTallerRelations = relations(incidenciasTaller, ({ one, many }) => ({
+  unidad: one(unidades, {
+    fields: [incidenciasTaller.unidadId],
+    references: [unidades.id],
+  }),
+  operador: one(operadores, {
+    fields: [incidenciasTaller.operadorId],
+    references: [operadores.id],
+  }),
+  eventos: many(tallerEventos),
+}));
+
+export const tallerEventosRelations = relations(tallerEventos, ({ one }) => ({
+  unidad: one(unidades, {
+    fields: [tallerEventos.unidadId],
+    references: [unidades.id],
+  }),
+  incidencia: one(incidenciasTaller, {
+    fields: [tallerEventos.incidenciaId],
+    references: [incidenciasTaller.id],
+  }),
+  orden: one(ordenesTaller, {
+    fields: [tallerEventos.ordenId],
+    references: [ordenesTaller.id],
+  }),
+}));
+
+export const tallerUreaRelations = relations(tallerUrea, ({ one }) => ({
+  unidad: one(unidades, {
+    fields: [tallerUrea.unidadId],
+    references: [unidades.id],
+  }),
+  operador: one(operadores, {
+    fields: [tallerUrea.operadorId],
+    references: [operadores.id],
+  }),
+}));
+
+export const ordenChecklistRelations = relations(ordenChecklist, ({ one }) => ({
+  orden: one(ordenesTaller, {
+    fields: [ordenChecklist.ordenId],
+    references: [ordenesTaller.id],
+  }),
+}));
+
+export const ordenRefaccionesRelations = relations(ordenRefacciones, ({ one }) => ({
+  orden: one(ordenesTaller, {
+    fields: [ordenRefacciones.ordenId],
+    references: [ordenesTaller.id],
+  }),
 }));
 
 export const odometroResetsRelations = relations(odometroResets, ({ one }) => ({
@@ -476,6 +695,7 @@ export const mantenimientosEventosRelations = relations(mantenimientosEventos, (
 export const operadoresRelations = relations(operadores, ({ many }) => ({
   cargas: many(cargas),
   rendimientos: many(rendimientos),
+  ureaTaller: many(tallerUrea),
 }));
 
 export const obrasRelations = relations(obras, ({ many }) => ({
@@ -488,6 +708,10 @@ export const periodosRelations = relations(periodos, ({ many }) => ({
 }));
 
 export const cargasRelations = relations(cargas, ({ one, many }) => ({
+  folioSerie: one(folioSeries, {
+    fields: [cargas.folioSerieId],
+    references: [folioSeries.id],
+  }),
   unidad: one(unidades, {
     fields: [cargas.unidadId],
     references: [unidades.id],
@@ -547,6 +771,10 @@ export const recargasTanqueRelations = relations(recargasTanque, ({ one }) => ({
 }));
 
 export const transferenciasTanqueRelations = relations(transferenciasTanque, ({ one }) => ({
+  folioSerie: one(folioSeries, {
+    fields: [transferenciasTanque.folioSerieId],
+    references: [folioSeries.id],
+  }),
   tanqueOrigen: one(tanques, {
     fields: [transferenciasTanque.tanqueOrigenId],
     references: [tanques.id],

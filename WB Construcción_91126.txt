@@ -1,0 +1,38 @@
+WB Construcción — novedades del sistema de diesel
+
+Actualizamos el sistema con correcciones que pediste y algunas mejoras para el día a día. Nada de esto cambia cómo capturas patio o campo; sí evita errores en el corte y te muestra mejor la información.
+
+1. Folios repetidos
+Había notas reales con el mismo número (patio y campo). No borramos cargas ni litros. A las duplicadas se les asignó el siguiente folio libre y quedó anotado el original. A partir de ahora el sistema no deja repetir folio en el mismo origen (patio o campo).
+
+2. Cambiar fecha de una nota
+Si una carga del viernes en realidad era sábado, al editar la fecha ya pasa al período correcto y se recalcula el rendimiento.
+
+3. Borrar una nota y el tanque
+Al borrar, los litros siempre regresan al tanque, aunque la NISSAN esté llena. Si se pasa del tope (ej. 1,200 L + 500 L = 1,700 L), el sistema lo marca como sobrecarga y explica por qué, para no perder diesel en el número.
+
+4. Hubodómetro / rin nuevo
+En la ficha de la unidad → Mantenimiento hay Reset de hubodómetro. Ya no hay que editar la última carga a mano. El km del aparato nuevo y el km acumulado se guardan aparte, para que el rendimiento de la semana no se rompa. También se puede editar un servicio de mantenimiento ya capturado.
+
+5. Excel de oficina
+En la hoja de rendimientos, la columna de km/hrs se puede corregir y el rendimiento se recalcula solo (fórmula). Los litros siguen saliendo del sistema.
+
+6. App en el teléfono (PWA)
+Se puede instalar en el celular con el logo de WB. En iPhone: Compartir → Añadir a pantalla de inicio.
+
+7. Avisos
+En el menú: Activar avisos. Cuando Taller o NISSAN bajan del mínimo (500 L / 100 L), llega notificación. En el teléfono conviene tener la app instalada. El aviso de stock bajo ya no se cierra con la X: se queda hasta que recarguen o transfieran.
+
+8. Dashboard
+Si hay diesel de campo con obra, se ve consumo por proyecto y un estimado en pesos (precio de la última pipa). Si hay unidades fuera de tolerancia en el último cierre, aparecen para vigilarlas. Si esa semana no hay datos, esas tarjetas no se muestran (no estorban vacías).
+
+9. Catálogos
+• Obras: litros de campo, costo estimado, cuántas cargas, unidades que pasaron, última fecha. Clic entra al detalle con el mismo resumen.
+• Operadores: litros, cargas, unidades, última actividad.
+• Unidades: se agregó la fecha de la última carga (ya tenían litros y rendimiento).
+
+10. Menú
+Carga patio, carga campo y Tanques quedan juntos y visibles (Tanques es el inventario; no va escondido).
+
+11. Zona horaria
+El “hoy” del sistema es Monterrey, no la hora del servidor. Evita que de noche el período o el día salgan corridos.

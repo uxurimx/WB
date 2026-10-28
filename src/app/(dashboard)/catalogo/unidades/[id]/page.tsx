@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { unidades } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requirePermission } from "@/lib/server-guard";
+import { getNowLocal } from "@/lib/date-utils";
 import { getCatalogoCargas, getOperadores, getObras } from "@/app/actions/catalogo";
 import { getRendimientosUnidad } from "@/app/actions/rendimientos";
 import { getArchivosUnidad } from "@/app/actions/archivos";
@@ -15,6 +16,7 @@ import {
   getResumenMantenimientoUnidad,
 } from "@/app/actions/mantenimiento";
 import { getOdometroResetsUnidad } from "@/app/actions/cargas";
+import { getOrdenesUnidad, getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
 import { Badge } from "@/components/ui/badge";
 import CatalogoDetalleClient from "@/components/catalogo/CatalogoDetalleClient";
 import { CatalogDetalleHeader } from "@/components/ui/mobile-list";
@@ -29,11 +31,13 @@ const TIPO_VARIANT: Record<string, "default" | "success" | "warning" | "secondar
 
 export default async function UnidadDetallePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   await requirePermission("catalogo");
-  const { id } = await params;
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const unidadId = parseInt(id);
   if (isNaN(unidadId)) notFound();
 
@@ -46,7 +50,7 @@ export default async function UnidadDetallePage({
   const canEdit = MANAGE_ROLES.includes(clerkUser?.publicMetadata?.role as string);
   const canManageMaintenance = canEdit;
 
-  const [cargas, rends, fotos, audits, operadores, obras, mantenimientoResumen, mantenimientoEventos, odometroResets] = await Promise.all([
+  const [cargas, rends, fotos, audits, operadores, obras, mantenimientoResumen, mantenimientoEventos, odometroResets, ordenesTaller, incidenciasTaller, ureaTaller] = await Promise.all([
     getCatalogoCargas("unidad", unidadId),
     getRendimientosUnidad(unidadId),
     getArchivosUnidad(unidadId),
@@ -56,6 +60,9 @@ export default async function UnidadDetallePage({
     getResumenMantenimientoUnidad(unidadId),
     getEventosMantenimientoUnidad(unidadId),
     getOdometroResetsUnidad(unidadId),
+    getOrdenesUnidad(unidadId),
+    getIncidenciasTaller({ desde: "2000-01-01", hasta: getNowLocal().fecha, unidadId }),
+    getUreaTaller(unidadId),
   ]);
 
   const nombreModelo = [unidad.nombre, unidad.modelo].filter(Boolean).join(" · ");
@@ -97,6 +104,7 @@ export default async function UnidadDetallePage({
 
       <CatalogoDetalleClient
         tipo="unidad"
+        initialTab={query.tab === "bitacora" ? "bitacora" : undefined}
         unidadId={unidad.id}
         unidadTipo={unidad.tipo}
         cargas={cargas}
@@ -118,6 +126,29 @@ export default async function UnidadDetallePage({
           lecturaNueva: r.lecturaNueva,
           notas: r.notas,
         }))}
+        ordenesTaller={ordenesTaller.map((o) => ({
+          id: o.id,
+          folio: o.folio,
+          fecha: o.fecha,
+          createdAt: o.createdAt?.toISOString() ?? null,
+          kmHrs: o.kmHrs,
+          motivo: o.motivo,
+          categoria: o.categoria,
+          estado: o.estado,
+          quienAtendio: o.quienAtendio,
+          trabajoRealizado: o.trabajoRealizado,
+          comentarios: o.comentarios,
+          proveedorExterno: o.proveedorExterno,
+          operador: o.operador,
+          refacciones: o.refacciones.map((r) => ({
+            precio: r.precio,
+            cantidad: r.cantidad,
+            iva: r.iva,
+          })),
+          checklist: o.checklist.map((c) => ({ clave: c.clave, fotos: c.fotos })),
+        }))}
+        incidenciasTaller={incidenciasTaller}
+        ureaTaller={ureaTaller}
       />
     </div>
   );

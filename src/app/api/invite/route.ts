@@ -3,18 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-
-// Roles válidos del sistema
-const VALID_ROLES = [
-  "admin",
-  "gerente",
-  "despachador",
-  "operador_nissan",
-  "encargado_obra",
-  "chofer",
-] as const;
-
-type Role = (typeof VALID_ROLES)[number];
+import { VALID_ROLES, type Role } from "@/lib/roles";
 
 export async function POST(req: Request) {
   const { userId } = await auth();

@@ -508,7 +508,7 @@ export async function registrarMantenimientoUnidad(input: {
     ),
   });
 
-  await db.insert(mantenimientosEventos).values({
+  const [evento] = await db.insert(mantenimientosEventos).values({
     unidadId: input.unidadId,
     planId: plan?.id ?? null,
     tipoControl: input.tipoControl,
@@ -517,11 +517,12 @@ export async function registrarMantenimientoUnidad(input: {
     descripcion: input.descripcion ?? null,
     notas: input.notas ?? null,
     registradoPorId: userId,
-  });
+  }).returning({ id: mantenimientosEventos.id });
 
   revalidatePath("/catalogo/unidades");
   revalidatePath(`/catalogo/unidades/${input.unidadId}`);
   revalidatePath("/overview");
+  return { id: evento.id };
 }
 
 export async function updateEventoMantenimiento(input: {
