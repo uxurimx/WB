@@ -543,11 +543,14 @@ export default function TallerBoard({
       source.cells.forEach((style, index) => { row.getCell(firstColumn + index).style = structuredClone(style); });
       return row;
     };
-    const clearValues = (sheet: NonNullable<typeof general>, fromRow: number) => {
-      sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-        if (rowNumber < fromRow) return;
-        row.eachCell({ includeEmpty: true }, (cell) => { cell.value = null; });
-      });
+    // La plantilla declara dimensiones hasta la fila 1,048,576 en dos hojas,
+    // aunque sus bloques de captura solo llegan a la fila 38. No usar rowCount
+    // como límite: ExcelJS lo interpreta como una hoja con un millón de filas.
+    const templateLastRow = 40;
+    const clearValues = (sheet: NonNullable<typeof general>, fromRow: number, toRow: number) => {
+      for (let rowNo = fromRow; rowNo <= toRow; rowNo += 1) {
+        sheet.getRow(rowNo).eachCell({ includeEmpty: true }, (cell) => { cell.value = null; });
+      }
     };
     const clearStyles = (sheet: NonNullable<typeof general>, fromRow: number, toRow: number, fromColumn: number, toColumn: number) => {
       for (let rowNo = fromRow; rowNo <= toRow; rowNo += 1) {
@@ -572,8 +575,8 @@ export default function TallerBoard({
 
     // Hoja general: se conserva el formato del cliente y se repite la fila modelo.
     const generalModel = rowStyles(general, 5, 2, 11);
-    const generalTemplateEnd = Math.max(general.rowCount, 5);
-    clearValues(general, 5);
+    const generalTemplateEnd = templateLastRow;
+    clearValues(general, 5, generalTemplateEnd);
     clearStyles(general, 5, generalTemplateEnd, 2, 11);
     actualRows.forEach((row, index) => {
       const n = index + 5;
@@ -609,10 +612,10 @@ export default function TallerBoard({
 
     // BITACORA DESGLOSE: un bloque por unidad y una fila por actividad registrada.
     const detailStyles = new Map<number, ReturnType<typeof rowStyles>>();
-    const detailTemplateEnd = Math.max(desglose.rowCount, 32);
+    const detailTemplateEnd = 32;
     for (let row = 1; row <= detailTemplateEnd; row += 1) detailStyles.set(row, rowStyles(desglose, row, 2, 4));
     for (const merge of [...desglose.model.merges]) desglose.unMergeCells(merge);
-    clearValues(desglose, 2);
+    clearValues(desglose, 2, detailTemplateEnd);
     clearStyles(desglose, 2, detailTemplateEnd, 2, 4);
     let detailLastRow = 1;
     let detailStart = 3;
@@ -690,10 +693,10 @@ export default function TallerBoard({
 
     // COSTOS: una sección por orden con sus refacciones, proveedor, factura y total con IVA.
     const costStyles = new Map<number, ReturnType<typeof rowStyles>>();
-    const costTemplateEnd = Math.max(costos.rowCount, 38);
+    const costTemplateEnd = templateLastRow;
     for (let row = 1; row <= costTemplateEnd; row += 1) costStyles.set(row, rowStyles(costos, row, 2, 8));
     for (const merge of [...costos.model.merges]) if (merge !== "B1:D1") costos.unMergeCells(merge);
-    clearValues(costos, 2);
+    clearValues(costos, 2, costTemplateEnd);
     clearStyles(costos, 2, costTemplateEnd, 2, 8);
     const ordersWithCosts = selectedOrders.filter((order) => order.refacciones?.length);
     let costLastRow = 1;
