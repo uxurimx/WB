@@ -141,7 +141,8 @@ export async function getOverviewStats() {
   if (periodoActivo) {
     const cargasPeriodo = await db.query.cargas.findMany({
       where: eq(cargas.periodoId, periodoActivo.id),
-      with: { unidad: true },
+      columns: { unidadId: true, fecha: true, litros: true, origen: true },
+      with: { unidad: { columns: { codigo: true } } },
     });
 
     // Agrupar por unidadId + fecha
@@ -171,13 +172,11 @@ export async function getOverviewStats() {
       }
 
       // Carga individual excesiva (patio)
+      let yaReportadaEnGrupo = group.length > UMBRAL_CARGAS_DIA;
       for (const c of group) {
         if (c.origen === "patio" && (c.litros ?? 0) > UMBRAL_LITROS_CARGA) {
-          // Solo si no ya fue reportada como múltiple
-          const yaReportada = anomaliasActivas.some(
-            (a) => a.unidadId === c.unidadId && a.fecha === c.fecha
-          );
-          if (!yaReportada) {
+          // Una alerta por día basta para señalar el grupo de cargas excesivas.
+          if (!yaReportadaEnGrupo) {
             anomaliasActivas.push({
               tipo:         "litros_excesivos",
               unidadCodigo,
@@ -187,6 +186,7 @@ export async function getOverviewStats() {
               totalLitros:  c.litros ?? 0,
               numCargas:    1,
             });
+            yaReportadaEnGrupo = true;
           }
         }
       }

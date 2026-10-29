@@ -254,6 +254,7 @@ export default function TallerBoard({
   const [errorDetalleBitacora, setErrorDetalleBitacora] = useState("");
   const [incluirUrea, setIncluirUrea] = useState(true);
   const [cargandoIncidencias, setCargandoIncidencias] = useState(false);
+  const skipInitialIncidenciasFetch = useRef(true);
   const [exportandoBitacora, setExportandoBitacora] = useState(false);
   const exportandoBitacoraRef = useRef(false);
   const [error, setError] = useState("");
@@ -262,6 +263,10 @@ export default function TallerBoard({
   useEffect(() => setIncidenciasVista(incidencias), [incidencias]);
 
   useEffect(() => {
+    if (skipInitialIncidenciasFetch.current) {
+      skipInitialIncidenciasFetch.current = false;
+      return;
+    }
     if (!desdeIncidencias && !hastaIncidencias) {
       setIncidenciasVista(incidencias);
       return;

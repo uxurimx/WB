@@ -14,7 +14,7 @@ import {
   tallerEventos,
   tallerUrea,
 } from "@/db/schema";
-import { eq, and, inArray, gte, lte, desc, ne } from "drizzle-orm";
+import { eq, and, inArray, gte, lte, desc, ne, isNotNull } from "drizzle-orm";
 import { requireActionPermission, requireAnyActionPermission } from "@/lib/authz";
 import { CHECKLIST_PUNTOS, type EstadoOrden } from "@/lib/taller-checklist";
 import { getNowLocal, parseLocalDate } from "@/lib/date-utils";
@@ -820,12 +820,15 @@ export async function getServiciosProgramadosTaller() {
     db.query.ordenesTaller.findMany({
       columns: { id: true, unidadId: true, proximoMto: true, estado: true },
       with: { unidad: { columns: { codigo: true, tipo: true } } },
-      where: eq(ordenesTaller.estado, "cerrada"),
+      where: and(eq(ordenesTaller.estado, "cerrada"), isNotNull(ordenesTaller.proximoMto)),
       orderBy: (t, { desc: d }) => [d(t.id)],
     }),
     db.query.ordenesTaller.findMany({
       columns: { unidadId: true, esPreventivo: true, tipoControlPreventivo: true, estado: true },
-      where: (t, { inArray }) => inArray(t.estado, ["abierta", "en_proceso", "terminada"]),
+      where: and(
+        inArray(ordenesTaller.estado, ["abierta", "en_proceso", "terminada"]),
+        eq(ordenesTaller.esPreventivo, true),
+      ),
     }),
   ]);
   const resumenPorUnidad = new Map(resumen.map((r) => [r.unidadId, r]));

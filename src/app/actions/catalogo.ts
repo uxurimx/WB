@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { unidades, operadores, obras, cargas, rendimientos, periodos, recargasTanque } from "@/db/schema";
-import { eq, count, inArray, and, sql, isNotNull } from "drizzle-orm";
+import { eq, count, inArray, and, sql, isNotNull, desc } from "drizzle-orm";
 import { requireManageRole, requireAnyActionPermission } from "@/lib/authz";
 import { getResumenMantenimientoUnidades } from "@/app/actions/mantenimiento";
 
@@ -37,7 +37,7 @@ export async function getUnidadesConStats() {
       .where(inArray(cargas.unidadId, ids))
       .groupBy(cargas.unidadId),
     db
-      .select({
+      .selectDistinctOn([rendimientos.unidadId], {
         unidadId:             rendimientos.unidadId,
         periodoNombre:        periodos.nombre,
         rendimientoActual:    rendimientos.rendimientoActual,
@@ -49,7 +49,8 @@ export async function getUnidadesConStats() {
       })
       .from(rendimientos)
       .innerJoin(periodos, eq(rendimientos.periodoId, periodos.id))
-      .where(and(inArray(rendimientos.unidadId, ids), eq(periodos.cerrado, true))),
+      .where(and(inArray(rendimientos.unidadId, ids), eq(periodos.cerrado, true)))
+      .orderBy(rendimientos.unidadId, desc(periodos.fechaFin)),
     getResumenMantenimientoUnidades(ids),
   ]);
 

@@ -29,7 +29,7 @@ export default async function TallerPage({
     getUnidadesYOperadoresTaller(),
   ]);
   const [incidenciasResult, incidenciasActivasResult, eventos, ureaResult] = await Promise.all([
-    getIncidenciasTaller({ desde: "2000-01-01", hasta: getNowLocal().fecha }).then((items) => ({ items, schemaReady: true as const }))
+    getIncidenciasTaller({ desde: `${getNowLocal().fecha.slice(0, 7)}-01`, hasta: getNowLocal().fecha }).then((items) => ({ items, schemaReady: true as const }))
       .catch(() => ({ items: [], schemaReady: false as const })),
     getIncidenciasActivasTaller().catch(() => []),
     permisos.includes("taller.bitacora") ? getBitacoraGeneralTaller() : Promise.resolve([]),
