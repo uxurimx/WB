@@ -17,6 +17,7 @@ import {
 import { transferirEntreTanques } from "@/app/actions/tanques";
 import { getFolioSeriesForTransfer } from "@/app/actions/folios";
 import type { FolioSerieCaptura } from "@/lib/folios";
+import { formatTransferenciaFolio } from "@/lib/folio-format";
 
 function todayStr() {
   const d = new Date();
@@ -118,7 +119,7 @@ export default function TransferirNissanModal({
         });
         onTransferComplete?.(res.origen.litrosActuales, res.destino.litrosActuales, res.origen.cuentalitros);
         setSuccess(
-          `Folio T-${folioSeries.find((serie) => serie.id === folioSerieId)?.codigo ?? "—"}-${res.folio} · ${litros.toLocaleString()} L transferidos → NISSAN. ` +
+          `Folio ${formatTransferenciaFolio(res.folio, folioSeries.find((serie) => serie.id === folioSerieId)?.codigo)} · ${litros.toLocaleString()} L transferidos → NISSAN. ` +
           `Taller: ${res.origen.litrosActuales.toFixed(0)} L | ` +
           `NISSAN: ${res.destino.litrosActuales.toFixed(0)} L`
         );
@@ -177,7 +178,7 @@ export default function TransferirNissanModal({
                         setForm((prev) => ({ ...prev, folio: selected?.siguienteFolio == null ? "" : String(selected.siguienteFolio) }));
                       }}
                       className="w-full rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                      {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.nombre}{serie.predeterminada ? " (predeterminada)" : ""}</option>)}
+                      {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.folioMin || "sin mínimo"}–{serie.folioMax || "sin máximo"}{serie.predeterminada ? " (en uso)" : ""}</option>)}
                     </select>
                   </div>
                 )}

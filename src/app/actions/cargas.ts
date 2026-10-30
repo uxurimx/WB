@@ -14,6 +14,7 @@ import {
   getFolioSerieActiva,
   getSiguienteFolioEnSerie,
   getSiguienteFolioPatioCompartido,
+  normalizeFolioConflict,
 } from "@/lib/folios";
 import { getOrCreatePeriodoActual } from "./periodos";
 import { getFolioSeriesForCapture } from "./folios";
@@ -114,6 +115,8 @@ export async function createCargaPatio(input: CargaPatioInput) {
     quienRecibeId: null,
     notas: parsed.notas ?? null,
     registradoPorId: userId,
+  }).catch((error: unknown) => {
+    throw normalizeFolioConflict(error, folio, serie.codigo);
   });
 
   await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
@@ -215,6 +218,8 @@ export async function createCargaCampo(input: CargaCampoInput) {
     quienRecibeId: parsed.quienRecibeId ?? null,
     notas: parsed.notas ?? null,
     registradoPorId: userId,
+  }).catch((error: unknown) => {
+    throw normalizeFolioConflict(error, parsed.folioNissan, serie.codigo);
   });
 
   await pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
@@ -273,6 +278,7 @@ export async function getCargas(opts?: {
     conds.push(
       or(
         sql`${cargas.folio}::text ilike ${like}`,
+        sql`EXISTS (SELECT 1 FROM folio_series fs WHERE fs.id = ${cargas.folioSerieId} AND (fs.codigo || ${cargas.folio}::text) ILIKE ${like})`,
         inArray(cargas.folioSerieId, db.select({ id: folioSeries.id }).from(folioSeries).where(ilike(folioSeries.codigo, like))),
         inArray(cargas.folioSerieId, db.select({ id: folioSeries.id }).from(folioSeries).where(ilike(folioSeries.nombre, like))),
         inArray(cargas.unidadId, db.select({ id: unidades.id }).from(unidades).where(ilike(unidades.codigo, like))),

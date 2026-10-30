@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { db, neonSql } from "@/db";
 import { tanques, recargasTanque, transferenciasTanque, auditLog, cargas } from "@/db/schema";
 import { eq, inArray, gte, and, or, desc } from "drizzle-orm";
 import { requireManageRole } from "@/lib/authz";
@@ -9,6 +9,7 @@ import {
   assertFolioTransferenciaDisponible,
   assertFolioEnSerie,
   getFolioSerieActiva,
+  normalizeFolioConflict,
 } from "@/lib/folios";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
 import { conciliarTanques } from "@/lib/conciliacion";
@@ -16,6 +17,11 @@ import { UMBRAL_TALLER, UMBRAL_NISSAN } from "@/lib/alertas-config";
 import { recargaTanqueSchema, transferenciaSchema, parseOrThrow } from "@/lib/validators";
 import { maybeNotifyStockBajo } from "@/lib/alertas-notify";
 import { calcSobrecarga, type MotivoSobrecarga, type SobrecargaTanque } from "@/lib/tanque-sobrecarga";
+
+function asRows(result: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(result) || result.length === 0) return [];
+  return Array.isArray(result[0]) ? result[0] as Record<string, unknown>[] : result as Record<string, unknown>[];
+}
 
 export type RecargaTanqueInput = {
   tanqueId: number;
@@ -116,16 +122,8 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
       `Stock insuficiente en ${origen.nombre}. Disponible: ${origen.litrosActuales?.toFixed(0)} L`
     );
 
-  const nuevosLitrosOrigen = (origen.litrosActuales ?? 0) - input.litros;
-  const nuevosLitrosDestino = Math.min(
-    destino.capacidadMax,
-    (destino.litrosActuales ?? 0) + input.litros
-  );
   // Cuentalitros taller (bomba): si el usuario ingresó lectura manual, usar inicio+litros; si no, auto-incrementar
   const tallerInicio = input.cuentalitrosOrigen ?? null;
-  const nuevoCuentalitrosOrigen = tallerInicio !== null
-    ? tallerInicio + input.litros
-    : (origen.cuentalitrosActual ?? 0) + input.litros;
 
   // Solo para el registro histórico — NO se actualiza el cuentalitros de la NISSAN
   const cuentaInicio = tallerInicio;
@@ -136,50 +134,87 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   assertFolioEnSerie(folio, serie);
   await assertFolioTransferenciaDisponible(folio, serie.id);
 
-  // Actualizar ambos tanques + insertar registro
-  await Promise.all([
-    db
-      .update(tanques)
-      .set({
-        litrosActuales: nuevosLitrosOrigen,
-        cuentalitrosActual: nuevoCuentalitrosOrigen,
-        ultimaActualizacion: new Date(),
-      })
-      .where(eq(tanques.id, input.tanqueOrigenId)),
-    db
-      .update(tanques)
-      .set({
-        litrosActuales: nuevosLitrosDestino,
-        ultimaActualizacion: new Date(),
-      })
-      .where(eq(tanques.id, input.tanqueDestinoId)),
-    db.insert(transferenciasTanque).values({
-      folio,
-      folioSerieId: serie.id,
-      fecha: input.fecha,
-      litros: input.litros,
-      tanqueOrigenId: input.tanqueOrigenId,
-      tanqueDestinoId: input.tanqueDestinoId,
-      cuentalitrosNissanInicio: cuentaInicio,
-      cuentalitrosDestino:      cuentaFin,
-      registradoPorId: userId,
-      notas: input.notas ?? null,
-    }),
-  ]);
+  // Una sola sentencia mantiene los saldos y el folio juntos si la validación
+  // global de serie detecta un duplicado concurrente.
+  let mutationResult: unknown;
+  try {
+    mutationResult = await neonSql`
+    WITH tanques_bloqueados AS MATERIALIZED (
+      SELECT id FROM tanques
+      WHERE id IN (${input.tanqueOrigenId}, ${input.tanqueDestinoId})
+      ORDER BY id
+      FOR UPDATE
+    ),
+    origen_actualizado AS (
+      UPDATE tanques
+      SET litros_actuales = litros_actuales - ${input.litros},
+          cuentalitros_actual = CASE
+            WHEN ${tallerInicio}::double precision IS NOT NULL
+              THEN ${tallerInicio}::double precision + ${input.litros}::double precision
+            ELSE COALESCE(cuentalitros_actual, 0) + ${input.litros}::double precision
+          END,
+          ultima_actualizacion = now()
+      WHERE id = ${input.tanqueOrigenId}
+        AND litros_actuales >= ${input.litros}
+        AND EXISTS (SELECT 1 FROM tanques_bloqueados WHERE id = ${input.tanqueDestinoId})
+      RETURNING id, nombre, litros_actuales, cuentalitros_actual
+    ),
+    destino_actualizado AS (
+      UPDATE tanques AS destino
+      SET litros_actuales = LEAST(destino.capacidad_max, destino.litros_actuales + ${input.litros}),
+          ultima_actualizacion = now()
+      FROM origen_actualizado
+      WHERE destino.id = ${input.tanqueDestinoId}
+      RETURNING destino.id, destino.nombre, destino.litros_actuales
+    ),
+    transferencia_insertada AS (
+      INSERT INTO transferencias_tanque (
+        folio, folio_serie_id, fecha, litros, tanque_origen_id, tanque_destino_id,
+        cuentalitros_nissan_inicio, cuentalitros_destino, registrado_por_id, notas
+      )
+      SELECT ${folio}, ${serie.id}, ${input.fecha}, ${input.litros},
+        ${input.tanqueOrigenId}, ${input.tanqueDestinoId}, ${cuentaInicio}, ${cuentaFin},
+        ${userId}, ${input.notas ?? null}
+      FROM origen_actualizado CROSS JOIN destino_actualizado
+      RETURNING id
+    )
+    SELECT origen_actualizado.nombre AS origen_nombre,
+      origen_actualizado.litros_actuales AS origen_litros,
+      origen_actualizado.cuentalitros_actual AS origen_cuentalitros,
+      destino_actualizado.nombre AS destino_nombre,
+      destino_actualizado.litros_actuales AS destino_litros,
+      transferencia_insertada.id AS transferencia_id
+    FROM origen_actualizado
+    CROSS JOIN destino_actualizado
+    CROSS JOIN transferencia_insertada
+    `;
+  } catch (error) {
+    throw normalizeFolioConflict(error, folio, serie.codigo);
+  }
+  const mutationRows = asRows(mutationResult);
+  if (mutationRows.length === 0) {
+    throw new Error(`Stock insuficiente en ${origen.nombre}. Disponible: ${origen.litrosActuales?.toFixed(0)} L`);
+  }
+  const mutation = mutationRows[0];
+  const origenNombre = String(mutation.origen_nombre);
+  const destinoNombre = String(mutation.destino_nombre);
+  const nuevosLitrosOrigen = Number(mutation.origen_litros);
+  const nuevoCuentalitrosOrigen = mutation.origen_cuentalitros == null ? null : Number(mutation.origen_cuentalitros);
+  const nuevosLitrosDestino = Number(mutation.destino_litros);
 
   // Notificar ambos tanques vía Pusher
   await Promise.allSettled([
     pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
-      tanque: origen.nombre,
+      tanque: origenNombre,
       litrosActuales: nuevosLitrosOrigen,
       cuentalitros: nuevoCuentalitrosOrigen,
     }),
     pusherServer.trigger(CHANNELS.stock, EVENTS.stockActualizado, {
-      tanque: destino.nombre,
+      tanque: destinoNombre,
       litrosActuales: nuevosLitrosDestino,
     }),
     maybeNotifyStockBajo({
-      nombre: origen.nombre,
+      nombre: origenNombre,
       litrosAntes: origen.litrosActuales ?? 0,
       litrosAhora: nuevosLitrosOrigen,
     }),
@@ -191,11 +226,11 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
     ok: true,
     folio,
     origen: {
-      nombre: origen.nombre,
+      nombre: origenNombre,
       litrosActuales: nuevosLitrosOrigen,
       cuentalitros: nuevoCuentalitrosOrigen,
     },
-    destino: { nombre: destino.nombre, litrosActuales: nuevosLitrosDestino },
+    destino: { nombre: destinoNombre, litrosActuales: nuevosLitrosDestino },
   };
 }
 

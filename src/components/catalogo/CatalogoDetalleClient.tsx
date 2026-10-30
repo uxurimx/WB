@@ -19,6 +19,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MobileList, MobileRow, MobileStatStrip, MobileStickyToolbar, type MobileStatItem } from "@/components/ui/mobile-list";
 import { updateCarga, deleteCarga, createCargaExterna } from "@/app/actions/cargas";
+import { formatCargaFolio } from "@/lib/folio-format";
 import { saveArchivoFoto } from "@/app/actions/archivos";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { getCatalogoCargas } from "@/app/actions/catalogo";
@@ -57,9 +58,7 @@ function fmtFechaCorta(fecha: string) {
 }
 
 function formatFolioCarga(c: Pick<Carga, "folio" | "folioSerieCodigo" | "origen">) {
-  if (c.folio == null) return "—";
-  const origen = c.origen === "campo" ? "C" : c.origen === "externo" ? "E" : "P";
-  return `${origen}-${c.folioSerieCodigo ? `${c.folioSerieCodigo}-` : ""}${c.folio}`;
+  return formatCargaFolio(c.folio, c.folioSerieCodigo, c.origen);
 }
 
 function SortIcon({ col, current, dir }: { col: SortCol; current: SortCol; dir: "asc" | "desc" }) {
@@ -208,6 +207,7 @@ export default function CatalogoDetalleClient({
       r = r.filter((c) =>
         (c.folio != null ? String(c.folio) : "").includes(q) ||
         (c.folioSerieCodigo ?? "").toLowerCase().includes(q) ||
+        `${c.folioSerieCodigo ?? ""}${c.folio ?? ""}`.toLowerCase().includes(q) ||
         (c.operadorNombre ?? "").toLowerCase().includes(q) ||
         (c.obraNombre ?? "").toLowerCase().includes(q) ||
         (c.unidadCodigo ?? "").toLowerCase().includes(q) ||

@@ -18,6 +18,7 @@ import { getCatalogoResumen, updateCarga, deleteCarga, getAuditLogCargasUnidad }
 import { getRendimientosUnidad } from "@/app/actions/rendimientos";
 import { getArchivosUnidad } from "@/app/actions/archivos";
 import { getOperadores, getObras } from "@/app/actions/catalogo";
+import { formatCargaFolio } from "@/lib/folio-format";
 
 type Resumen      = Awaited<ReturnType<typeof getCatalogoResumen>>;
 type RendUnidad   = Awaited<ReturnType<typeof getRendimientosUnidad>>;
@@ -39,9 +40,7 @@ function fmtNum(n: number | null, d = 1) {
 }
 
 function formatFolioCarga(c: Pick<CargaReciente, "folio" | "folioSerieCodigo" | "origen">) {
-  if (c.folio == null) return "—";
-  const origen = c.origen === "campo" ? "C" : c.origen === "externo" ? "E" : "P";
-  return `${origen}-${c.folioSerieCodigo ? `${c.folioSerieCodigo}-` : ""}${c.folio}`;
+  return formatCargaFolio(c.folio, c.folioSerieCodigo, c.origen);
 }
 
 export default function CatalogoDetalleModal({

@@ -129,7 +129,7 @@ export default async function SettingsPage() {
           <div>
             <p className="font-semibold text-sm mb-0.5" style={{ color: "var(--fg)" }}>Series de folios</p>
             <p className="text-xs mb-4" style={{ color: "var(--fg-muted)" }}>
-              Registra cada bloque físico. El código debe aparecer marcado en sus tickets; el sistema guarda el folio junto con esa serie.
+              Registra la serie del bloque físico. El folio se identifica como código más número (por ejemplo, A10001); los registros históricos BASE conservan su número sin prefijo.
             </p>
             <FolioSeriesConfig series={folioSeries} />
           </div>

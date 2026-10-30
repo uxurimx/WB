@@ -2,6 +2,8 @@
 
 La aplicación espera el esquema creado por `folio-series.sql`. No usar `drizzle-kit push` en la rama de producción: el historial de folios requiere preflight y la migración conserva las filas existentes bajo la serie `BASE`.
 
+Para habilitar la configuración compartida nueva, aplicar después `migrations/20261030_shared_folio_series.sql` siguiendo [shared-folio-series-migration.md](shared-folio-series-migration.md). La migración base sigue describiendo la instalación histórica; no reemplaza ese segundo paso.
+
 ## Antes de aplicar
 
 Confirmar que `DATABASE_URL` apunta a la rama Neon objetivo y ejecutar estas consultas en modo lectura:
@@ -25,7 +27,7 @@ JOIN transferencias_tanque t ON t.folio = c.folio
 WHERE c.origen = 'patio' AND c.folio IS NOT NULL;
 ```
 
-La primera y segunda consulta deben regresar cero filas. Las coincidencias de la tercera son referencias de categorías distintas (`P-` para cargas Patio y `T-` para transferencias); se conservan y no se consideran duplicados de identidad. En producción aparecen cuatro coincidencias históricas de este tipo.
+La primera y segunda consulta deben regresar cero filas. Las coincidencias de la tercera son referencias históricas separadas por su tipo de movimiento y origen; se conservan. En producción aparecen cuatro coincidencias históricas de este tipo.
 
 Las cargas `externo` no pertenecen a bloques Patio/Campo. Sus folios de proveedor se conservan sin serie; la migración solo asigna `BASE` a cargas Patio/Campo y permite que `folio_serie_id` sea nulo para origen externo.
 

@@ -14,6 +14,7 @@ import { saveArchivoFoto } from "@/app/actions/archivos";
 import { useUploadThing } from "@/lib/uploadthing";
 import { getNowLocal } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
+import { formatFolioNumber } from "@/lib/folio-format";
 
 import { KM_MAX_DIFERENCIA } from "@/lib/odometro";
 import type { FolioSerieCaptura } from "@/lib/folios";
@@ -233,7 +234,7 @@ export default function FormCargaPatio({
           <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
           <div>
             <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
-              Carga registrada — P-{success.serie}-{success.folio}
+              Carga registrada — {formatFolioNumber(success.folio, success.serie)}
             </p>
             <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
               {success.litros} L despachados correctamente
@@ -259,7 +260,9 @@ export default function FormCargaPatio({
             style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
             <Hash className="w-4 h-4 text-indigo-500 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>Folio</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-muted)" }}>
+                Folio <span className="ml-1 font-bold text-red-600">{serieSeleccionada?.codigo ?? "—"}</span>
+              </p>
               {folioEditando ? (
                 <input
                   type="number"
@@ -293,9 +296,6 @@ export default function FormCargaPatio({
                 ↺
               </button>
             )}
-            <p className="text-[10px] mt-1" style={{ color: "var(--fg-muted)" }}>
-              Serie {serieSeleccionada?.codigo ?? "—"} · {serieSeleccionada?.nombre ?? "Sin serie"}
-            </p>
           </div>
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border"
             style={{ backgroundColor: "var(--surface-2)", borderColor: "var(--border)" }}>
@@ -313,7 +313,7 @@ export default function FormCargaPatio({
             <Label htmlFor="folioSeriePatio">Bloque físico</Label>
             <select id="folioSeriePatio" value={folioSerieId} onChange={(e) => setFolioSerieId(Number(e.target.value))}
               className="w-full rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}>
-              {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.nombre}{serie.predeterminada ? " (predeterminada)" : ""}</option>)}
+              {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.folioMin || "sin mínimo"}–{serie.folioMax || "sin máximo"}{serie.predeterminada ? " (en uso)" : ""}</option>)}
             </select>
           </div>
         )}

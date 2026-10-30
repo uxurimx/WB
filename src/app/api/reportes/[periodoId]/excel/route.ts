@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { getCargas } from "@/app/actions/cargas";
 import { getRendimientosPeriodo } from "@/app/actions/rendimientos";
 import * as XLSX from "xlsx";
+import { formatCargaFolio } from "@/lib/folio-format";
 
 export async function GET(
   req: Request,
@@ -78,7 +79,7 @@ export async function GET(
 
   const cargasRows = cargasData.map((c) => [
     c.folio ?? "",
-    c.folio == null ? "" : `${c.origen === "campo" ? "C" : c.origen === "externo" ? "E" : "P"}-${c.folioSerie?.codigo ? `${c.folioSerie.codigo}-` : ""}${c.folio}`,
+    formatCargaFolio(c.folio, c.folioSerie?.codigo, c.origen),
     c.fecha,
     c.hora ? c.hora.slice(0, 5) : "",
     c.unidad?.codigo ?? `#${c.unidadId}`,

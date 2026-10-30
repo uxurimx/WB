@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { formatFechaHoraMx, formatFechaMx } from "@/lib/date-utils";
+import { formatCargaFolio as formatCargaFolioLabel, formatTransferenciaFolio } from "@/lib/folio-format";
 
 type Carga = {
   id: number;
@@ -242,10 +243,10 @@ export default function CargasRecientes({
                 </p>
                 <p className="font-mono font-bold text-lg" style={{ color: "var(--fg)" }}>
                   {selected._tipo === "carga"
-                    ? selected.data.folio != null ? `${selected.data.origen === "campo" ? "C" : selected.data.origen === "externo" ? "E" : "P"}-${selected.data.folioSerieCodigo ? `${selected.data.folioSerieCodigo}-` : ""}${selected.data.folio}` : "—"
+                    ? formatCargaFolioLabel(selected.data.folio, selected.data.folioSerieCodigo, selected.data.origen as "patio" | "campo" | "externo")
                     : selected._tipo === "recarga"
                     ? selected.data.folioFactura ?? "Sin factura"
-                    : selected.data.folio ? `T-${selected.data.folioSerieCodigo ? `${selected.data.folioSerieCodigo}-` : ""}${selected.data.folio}` : "Sin folio"}
+                    : selected.data.folio ? formatTransferenciaFolio(selected.data.folio, selected.data.folioSerieCodigo) : "Sin folio"}
                 </p>
                 <p className="text-xs flex items-center gap-1 mt-1" style={{ color: "var(--fg-muted)" }}>
                   <Clock className="w-3 h-3" />
@@ -274,7 +275,7 @@ export default function CargasRecientes({
                   <Info label="Origen" value={selected.data.origenNombre} />
                   <Info label="Destino" value={selected.data.destinoNombre} />
                   <Info label="Litros" value={`${selected.data.litros.toLocaleString()} L`} mono />
-                  <Info label="Folio" value={selected.data.folio ? `T-${selected.data.folioSerieCodigo ? `${selected.data.folioSerieCodigo}-` : ""}${selected.data.folio}` : "—"} mono />
+                  <Info label="Folio" value={formatTransferenciaFolio(selected.data.folio, selected.data.folioSerieCodigo)} mono />
                 </div>
               )}
             </div>
@@ -316,7 +317,7 @@ function CargaRow({ carga: c }: { carga: Carga }) {
       </div>
       <div className="w-20 shrink-0">
         <p className="font-mono text-sm font-bold" style={{ color: "var(--fg)" }}>
-          {c.folio != null ? `${c.origen === "campo" ? "C" : c.origen === "externo" ? "E" : "P"}-${c.folioSerieCodigo ? `${c.folioSerieCodigo}-` : ""}${c.folio}` : "—"}
+          {formatCargaFolioLabel(c.folio, c.folioSerieCodigo, c.origen as "patio" | "campo" | "externo")}
         </p>
         <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>
           {formatFechaHora(c.fecha, c.createdAt, c.hora)}
@@ -376,7 +377,7 @@ function TransferenciaRow({ transf: t }: { transf: TransferenciaFeed }) {
       </div>
       <div className="w-20 shrink-0">
         <p className="font-mono text-sm font-bold" style={{ color: "var(--fg)" }}>
-          {t.folio ? `T-${t.folioSerieCodigo ? `${t.folioSerieCodigo}-` : ""}${t.folio}` : "—"}
+          {formatTransferenciaFolio(t.folio, t.folioSerieCodigo)}
         </p>
         <p className="text-[11px]" style={{ color: "var(--fg-muted)" }}>{formatFechaHora(t.fecha, t.createdAt)}</p>
       </div>

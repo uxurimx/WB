@@ -94,8 +94,8 @@ export const odometroResets = pgTable("odometro_resets", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Bloques físicos de folios. Cada origen puede tener varios bloques disponibles
-// y uno predeterminado para asignación automática.
+// Series físicas compartidas por Patio, Campo y transferencias. Las filas
+// Patio/Campo anteriores se conservan para identificar el historial.
 export const folioSeries = pgTable("folio_series", {
   id: serial("id").primaryKey(),
   origen: varchar("origen", { length: 10 }).notNull(),
@@ -345,6 +345,9 @@ export const cargas = pgTable("cargas", {
   check("cargas_folio_serie_required", sql`${table.origen} = 'externo' OR ${table.folioSerieId} IS NOT NULL`),
   uniqueIndex("cargas_folio_origen_serie_unique")
     .on(table.folio, table.origen, table.folioSerieId)
+    .where(sql`${table.folio} IS NOT NULL AND ${table.folioSerieId} IS NOT NULL`),
+  uniqueIndex("cargas_folio_serie_unique")
+    .on(table.folioSerieId, table.folio)
     .where(sql`${table.folio} IS NOT NULL AND ${table.folioSerieId} IS NOT NULL`),
   uniqueIndex("cargas_folio_origen_without_serie_unique")
     .on(table.folio, table.origen)

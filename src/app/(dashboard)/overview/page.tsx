@@ -10,6 +10,7 @@ import OperacionPanel from "@/components/dashboard/OperacionPanel";
 import { UMBRAL_TALLER, UMBRAL_NISSAN } from "@/lib/alertas-config";
 import Link from "next/link";
 import { formatFechaMx, formatFechaHoraMx } from "@/lib/date-utils";
+import { formatCargaFolio } from "@/lib/folio-format";
 
 function formatPeriodo(fechaInicio: string, fechaFin: string) {
   const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
@@ -145,7 +146,7 @@ export default async function OverviewPage() {
             </tr></thead>
             <tbody>
               {stats.historial.map((movimiento, index) => <tr key={movimiento.id} className="border-b transition-colors hover:bg-[var(--surface-2)]" style={{ borderColor: "var(--border)", backgroundColor: index % 2 ? "var(--surface)" : "var(--surface-2)" }}>
-                <td className="whitespace-nowrap px-4 py-4 font-mono text-sm font-bold">{movimiento.serie && movimiento.folio != null ? `${movimiento.serie}-${movimiento.folio}` : "—"}</td>
+                <td className="whitespace-nowrap px-4 py-4 font-mono text-sm font-bold">{formatCargaFolio(movimiento.folio, movimiento.serie, movimiento.origen)}</td>
                 <td className="whitespace-nowrap px-4 py-4 text-sm">{formatFechaHoraMx(movimiento.fecha, null, movimiento.hora)}</td>
                 <td className="whitespace-nowrap px-4 py-4 font-mono text-sm font-bold">{movimiento.unidad}</td>
                 <td className="whitespace-nowrap px-4 py-4 text-sm" style={{ color: "var(--fg-muted)" }}>{movimiento.operador}</td>

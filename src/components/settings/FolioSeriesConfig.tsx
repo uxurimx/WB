@@ -7,11 +7,11 @@ import {
   setFolioSerieActiva,
   setFolioSeriePredeterminada,
 } from "@/app/actions/folios";
-import type { FolioOrigen } from "@/lib/folios";
+import type { FolioSerieOrigen } from "@/lib/folios";
 
 type Serie = {
   id: number;
-  origen: FolioOrigen;
+  origen: FolioSerieOrigen;
   codigo: string;
   nombre: string;
   folioMin: number;
@@ -20,7 +20,11 @@ type Serie = {
   predeterminada: boolean;
 };
 
-function SeriesOrigenPanel({ origen, label, rows }: { origen: FolioOrigen; label: string; rows: Serie[] }) {
+function formatRange(serie: Serie) {
+  return `${serie.folioMin || "sin mínimo"} – ${serie.folioMax || "sin máximo"}`;
+}
+
+export default function FolioSeriesConfig({ series }: { series: Serie[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [codigo, setCodigo] = useState("");
@@ -29,6 +33,8 @@ function SeriesOrigenPanel({ origen, label, rows }: { origen: FolioOrigen; label
   const [max, setMax] = useState("0");
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const sharedSeries = series.filter((serie) => serie.origen === "compartida");
+  const historicSeries = series.filter((serie) => serie.origen !== "compartida");
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +43,6 @@ function SeriesOrigenPanel({ origen, label, rows }: { origen: FolioOrigen; label
     startTransition(async () => {
       try {
         await createFolioSerie({
-          origen,
           codigo,
           nombre,
           folioMin: Number(min),
@@ -55,64 +60,50 @@ function SeriesOrigenPanel({ origen, label, rows }: { origen: FolioOrigen; label
     });
   }
 
-  function activate(id: number) {
+  function update(action: () => Promise<unknown>, fallback: string) {
     setError("");
     startTransition(async () => {
       try {
-        await setFolioSeriePredeterminada(id);
+        await action();
         router.refresh();
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "No se pudo activar la serie");
-      }
-    });
-  }
-
-  function toggleActive(serie: Serie) {
-    setError("");
-    startTransition(async () => {
-      try {
-        await setFolioSerieActiva(serie.id, !serie.activa);
-        router.refresh();
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "No se pudo actualizar la serie");
+        setError(cause instanceof Error ? cause.message : fallback);
       }
     });
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>{label}</h3>
+        <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>Serie compartida</h3>
         <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
-          La serie predeterminada se asigna automáticamente. Las series activas también aparecen para elegir al capturar.
+          Patio, Campo y transferencias usan la misma serie activa. Cada origen sugiere su propio consecutivo, pero no se puede repetir un número dentro de la misma serie. El folio completo se forma como A10001.
         </p>
       </div>
 
       <div className="space-y-2">
-        {rows.map((serie) => (
+        {sharedSeries.map((serie) => (
           <div key={serie.id} className="rounded-xl border p-3 flex flex-col sm:flex-row sm:items-center gap-3"
             style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)" }}>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: "var(--fg)" }}>
                 {serie.codigo} · {serie.nombre}
-                {serie.predeterminada && <span className="ml-2 text-xs text-indigo-500">Predeterminada</span>}
+                {serie.predeterminada && <span className="ml-2 text-xs text-indigo-500">En uso</span>}
                 {!serie.activa && <span className="ml-2 text-xs" style={{ color: "var(--fg-muted)" }}>Inactiva</span>}
               </p>
-              <p className="text-xs mt-1 font-mono" style={{ color: "var(--fg-muted)" }}>
-                Rango: {serie.folioMin || "sin mínimo"} – {serie.folioMax || "sin máximo"}
-              </p>
+              <p className="text-xs mt-1 font-mono" style={{ color: "var(--fg-muted)" }}>Rango: {formatRange(serie)}</p>
             </div>
             <div className="flex gap-2 shrink-0">
               {serie.activa && !serie.predeterminada && (
-                <button type="button" onClick={() => activate(serie.id)} disabled={pending}
-                  className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-indigo-500/10 disabled:opacity-50"
+                <button type="button" onClick={() => update(() => setFolioSeriePredeterminada(serie.id), "No se pudo cambiar la serie en uso")}
+                  disabled={pending} className="rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                   style={{ borderColor: "var(--border)", color: "var(--fg)" }}>
-                  Usar por defecto
+                  Usar esta serie
                 </button>
               )}
               {!serie.predeterminada && (
-                <button type="button" onClick={() => toggleActive(serie)} disabled={pending}
-                  className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-[var(--surface-2)] disabled:opacity-50"
+                <button type="button" onClick={() => update(() => setFolioSerieActiva(serie.id, !serie.activa), "No se pudo actualizar la serie")}
+                  disabled={pending} className="rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                   style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>
                   {serie.activa ? "Desactivar" : "Activar"}
                 </button>
@@ -120,23 +111,23 @@ function SeriesOrigenPanel({ origen, label, rows }: { origen: FolioOrigen; label
             </div>
           </div>
         ))}
-        {rows.length === 0 && <p className="text-sm" style={{ color: "var(--fg-muted)" }}>No hay series configuradas.</p>}
+        {sharedSeries.length === 0 && <p className="text-sm" style={{ color: "var(--fg-muted)" }}>Aún no hay series compartidas.</p>}
       </div>
 
       <form onSubmit={handleCreate} className="rounded-xl border p-4 space-y-3"
         style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>
-        <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>Agregar bloque físico</p>
+        <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>Agregar serie</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="space-y-1 text-xs" style={{ color: "var(--fg-muted)" }}>
-            Código corto (se imprime en el ticket)
+            Serie (mínimo 1 carácter)
             <input value={codigo} onChange={(e) => setCodigo(e.target.value)} required maxLength={20}
-              placeholder="2026-B" className="w-full rounded-lg border px-3 py-2 text-sm font-mono"
+              placeholder="A, AA, 2026-" className="w-full rounded-lg border px-3 py-2 text-sm font-mono"
               style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }} />
           </label>
           <label className="space-y-1 text-xs" style={{ color: "var(--fg-muted)" }}>
             Nombre del bloque
             <input value={nombre} onChange={(e) => setNombre(e.target.value)} required maxLength={80}
-              placeholder="Bloque mayo 2026" className="w-full rounded-lg border px-3 py-2 text-sm"
+              placeholder="Bloque físico actual" className="w-full rounded-lg border px-3 py-2 text-sm"
               style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }} />
           </label>
           <label className="space-y-1 text-xs" style={{ color: "var(--fg-muted)" }}>
@@ -157,20 +148,33 @@ function SeriesOrigenPanel({ origen, label, rows }: { origen: FolioOrigen; label
             className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 disabled:opacity-50">
             {pending ? "Guardando…" : "Crear y usar"}
           </button>
-          {saved && <span className="text-xs text-emerald-600">Serie creada y predeterminada.</span>}
+          {saved && <span className="text-xs text-emerald-600">Serie creada y compartida con Patio y Campo.</span>}
           {error && <span className="text-xs text-red-500">{error}</span>}
         </div>
       </form>
-    </div>
-  );
-}
 
-export default function FolioSeriesConfig({ series }: { series: Serie[] }) {
-  return (
-    <div className="space-y-6">
-      <SeriesOrigenPanel origen="patio" label="Patio y transferencias" rows={series.filter((serie) => serie.origen === "patio")} />
-      <div className="border-t" style={{ borderColor: "var(--border)" }} />
-      <SeriesOrigenPanel origen="campo" label="Campo (NISSAN)" rows={series.filter((serie) => serie.origen === "campo")} />
+      {historicSeries.length > 0 && (
+        <div className="border-t pt-5 space-y-2" style={{ borderColor: "var(--border)" }}>
+          <div>
+            <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>Series históricas</h3>
+            <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
+              Se conservan para identificar los registros anteriores y no aparecen al capturar nuevas cargas.
+            </p>
+          </div>
+          {historicSeries.map((serie) => (
+            <div key={serie.id} className="rounded-xl border p-3"
+              style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)" }}>
+              <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
+                {serie.codigo} · {serie.nombre}
+                <span className="ml-2 text-xs font-normal" style={{ color: "var(--fg-muted)" }}>
+                  {serie.origen === "campo" ? "Campo" : "Patio y transferencias"}
+                </span>
+              </p>
+              <p className="text-xs mt-1 font-mono" style={{ color: "var(--fg-muted)" }}>Rango: {formatRange(serie)}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

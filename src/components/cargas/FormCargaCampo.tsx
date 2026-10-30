@@ -16,6 +16,7 @@ import { saveArchivoFoto } from "@/app/actions/archivos";
 import { createObraRapida } from "@/app/actions/catalogo";
 import { useUploadThing } from "@/lib/uploadthing";
 import { getNowLocal } from "@/lib/date-utils";
+import { formatCargaFolio, formatFolioNumber } from "@/lib/folio-format";
 
 import { KM_MAX_DIFERENCIA } from "@/lib/odometro";
 import type { FolioSerieCaptura } from "@/lib/folios";
@@ -333,7 +334,7 @@ export default function FormCargaCampo({
           <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
           <div>
             <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
-              Carga registrada — C-{success.serie}-{success.folio} · {success.unidad}
+              Carga registrada — {formatFolioNumber(success.folio, success.serie)} · {success.unidad}
             </p>
             <p className="text-xs" style={{ color: "var(--fg-muted)" }}>{success.litros} L en campo</p>
           </div>
@@ -377,11 +378,14 @@ export default function FormCargaCampo({
               <Label htmlFor="folioSerieCampo">Bloque físico</Label>
               <select id="folioSerieCampo" value={folioSerieId} onChange={(e) => setFolioSerieId(Number(e.target.value))}
                 className="w-full rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.nombre}{serie.predeterminada ? " (predeterminada)" : ""}</option>)}
+                {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.folioMin || "sin mínimo"}–{serie.folioMax || "sin máximo"}{serie.predeterminada ? " (en uso)" : ""}</option>)}
               </select>
             </div>
           )}
-          <Label htmlFor="folioNissan">Folio NISSAN *</Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="folioNissan">Folio NISSAN *</Label>
+            <span className="text-xs font-bold text-red-600">{serieSeleccionada?.codigo ?? "—"}</span>
+          </div>
           <div className="relative">
             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500 pointer-events-none" />
             <Input id="folioNissan" name="folioNissan" type="number"
@@ -389,9 +393,6 @@ export default function FormCargaCampo({
               placeholder={String(siguienteFolio ?? "")}
               className="font-mono font-bold text-xl h-12 pl-9" />
           </div>
-          <p className="text-[10px]" style={{ color: "var(--fg-muted)" }}>
-            Serie {serieSeleccionada?.codigo ?? "—"} · {serieSeleccionada?.nombre ?? "Sin serie"}. Edita si el ticket físico tiene número distinto.
-          </p>
         </div>
 
         {/* Fecha y hora */}
@@ -452,7 +453,7 @@ export default function FormCargaCampo({
                   <Hash className="w-3 h-3 shrink-0" style={{ color: "var(--fg-muted)" }} />
                   <span style={{ color: "var(--fg-muted)" }}>Folio</span>
                   <span className="font-mono font-semibold ml-auto" style={{ color: "var(--fg)" }}>
-                    {ultimaCarga.folio != null ? `${ultimaCarga.origen === "campo" ? "C" : ultimaCarga.origen === "externo" ? "E" : "P"}-${ultimaCarga.folioSerieCodigo ? `${ultimaCarga.folioSerieCodigo}-` : ""}${ultimaCarga.folio}` : "—"}
+                    {formatCargaFolio(ultimaCarga.folio, ultimaCarga.folioSerieCodigo, ultimaCarga.origen)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">

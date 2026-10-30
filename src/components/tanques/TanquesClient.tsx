@@ -16,6 +16,7 @@ import EditarTanqueModal from "@/components/dashboard/EditarTanqueModal";
 import AjustarStockModal from "@/components/tanques/AjustarStockModal";
 import SobrecargaNotice from "@/components/tanques/SobrecargaNotice";
 import { calcSobrecarga } from "@/lib/tanque-sobrecarga";
+import { formatTransferenciaFolio } from "@/lib/folio-format";
 import type { TanqueDetalle, EventoTimeline } from "@/app/actions/tanques";
 
 // ─── Gauge circular SVG ───────────────────────────────────────────────────────
@@ -213,7 +214,7 @@ function TimelineRow({ ev }: { ev: EventoTimeline }) {
           )}
           {ev.folio && (
             <span className="text-xs font-mono" style={{ color: "var(--fg-muted)" }}>
-              Folio T-{ev.folioSerieCodigo ? `${ev.folioSerieCodigo}-` : ""}{ev.folio}
+              Folio {formatTransferenciaFolio(ev.folio, ev.folioSerieCodigo)}
             </span>
           )}
           {ev.precioLitro && (

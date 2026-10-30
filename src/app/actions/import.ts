@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { cargas, unidades, operadores, obras } from "@/db/schema";
+import { cargas, unidades, operadores, obras, folioSeries, transferenciasTanque } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { getOrCreatePeriodoActual } from "./periodos";
 import { getDefaultFolioSerieId, getFolioSerieActiva } from "@/lib/folios";
@@ -142,16 +142,27 @@ export async function importarCargas(rows: ImportRow[]): Promise<ImportResult> {
     }
   }
 
-  // ── 5. Load existing cargas for dedup ─────────────────────
-  // Key: physical folio + origin + series, matching the database uniqueness rule.
-  const existingCargas = await db
-    .select({ folio: cargas.folio, origen: cargas.origen, folioSerieId: cargas.folioSerieId })
-    .from(cargas);
+  // ── 5. Load existing physical folios for dedup ────────────
+  const [existingCargas, existingTransfers, sharedSeries] = await Promise.all([
+    db.select({ folio: cargas.folio, origen: cargas.origen, folioSerieId: cargas.folioSerieId })
+      .from(cargas),
+    db.select({ folio: transferenciasTanque.folio, folioSerieId: transferenciasTanque.folioSerieId })
+      .from(transferenciasTanque),
+    db.select({ id: folioSeries.id }).from(folioSeries).where(eq(folioSeries.origen, "compartida")),
+  ]);
+  const sharedSeriesIds = new Set(sharedSeries.map((serie) => serie.id));
+  const duplicateKey = (folio: number, origen: string, serieId: number | null) =>
+    sharedSeriesIds.has(serieId ?? -1) ? `${folio}_${serieId}` : `${folio}_${origen}_${serieId}`;
   const existingSet = new Set(
     existingCargas
       .filter((c) => c.folio != null)
-      .map((c) => `${c.folio}_${c.origen}_${c.folioSerieId}`)
+      .map((c) => duplicateKey(c.folio!, c.origen, c.folioSerieId))
   );
+  for (const transfer of existingTransfers) {
+    if (transfer.folio != null && sharedSeriesIds.has(transfer.folioSerieId)) {
+      existingSet.add(duplicateKey(transfer.folio, "transferencia", transfer.folioSerieId));
+    }
+  }
 
   // ── 6. Period cache ───────────────────────────────────────
   const periodoCache = new Map<string, number>();
@@ -184,7 +195,7 @@ export async function importarCargas(rows: ImportRow[]): Promise<ImportResult> {
 
       // Dedup check
       if (row.folio != null) {
-        const dupKey = `${row.folio}_${row.origen}_${folioSerieId}`;
+        const dupKey = duplicateKey(row.folio, row.origen, folioSerieId);
         if (existingSet.has(dupKey)) {
           result.omitidas++;
           continue;
