@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { tanques, cargas, periodos, configuracion, pbTickets, recargasTanque, transferenciasTanque, folioSeries, obras } from "@/db/schema";
-import { eq, desc, and, gte, lte, sql, isNotNull } from "drizzle-orm";
+import { tanques, cargas, periodos, configuracion, pbTickets, recargasTanque, transferenciasTanque, folioSeries, obras, ordenesTaller } from "@/db/schema";
+import { eq, desc, and, gte, lte, sql, isNotNull, inArray } from "drizzle-orm";
 import {
   type AlertaRendimiento,
   type AlertaMantenimiento,
@@ -22,8 +22,9 @@ export async function getOverviewStats() {
   const hoy = getLocalDateString();
 
   const hace7dias = subtractDaysLocal(new Date(), 7);
+  const desdeHistorial = getLocalDateString(subtractDaysLocal(new Date(), 2));
 
-  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion, ticketsResueltos, recientesRecargasData, recientesTransfData, alertasMantenimiento] =
+  const [tanquesData, cargasHoyData, recientes, ultimoPeriodoCerrado, periodoActivo, alertaDiasRow, conciliacion, ticketsResueltos, recientesRecargasData, recientesTransfData, alertasMantenimiento, ordenesPiso, historial] =
     await Promise.all([
       db.select().from(tanques),
       db.select({ litros: cargas.litros }).from(cargas).where(eq(cargas.fecha, hoy)),
@@ -72,6 +73,18 @@ export async function getOverviewStats() {
         .leftJoin(folioSeries, eq(transferenciasTanque.folioSerieId, folioSeries.id))
         .orderBy(desc(transferenciasTanque.createdAt)).limit(6),
       getAlertasMantenimientoOverview(),
+      db.query.ordenesTaller.findMany({
+        where: inArray(ordenesTaller.estado, ["abierta", "en_proceso", "terminada"]),
+        with: { unidad: { columns: { codigo: true } } },
+        orderBy: [desc(ordenesTaller.fecha), desc(ordenesTaller.createdAt)],
+        limit: 60,
+      }).catch(() => []),
+      db.query.cargas.findMany({
+        where: and(gte(cargas.fecha, desdeHistorial), lte(cargas.fecha, hoy)),
+        with: { unidad: { columns: { codigo: true } }, operador: { columns: { nombre: true } }, folioSerie: { columns: { codigo: true } } },
+        orderBy: [desc(cargas.fecha), desc(cargas.createdAt)],
+        limit: 60,
+      }),
     ]);
 
   const taller   = tanquesData.find((t) => t.nombre === "Taller");
@@ -246,6 +259,28 @@ export async function getOverviewStats() {
 
   return {
     hoy,
+    ordenesPiso: ordenesPiso.map((orden) => ({
+      id: orden.id,
+      estado: orden.estado,
+      folio: orden.folio,
+      unidad: orden.unidad?.codigo ?? "—",
+      motivo: orden.motivo ?? "Sin motivo registrado",
+      fecha: orden.fecha,
+    })),
+    historial: historial.map((carga) => ({
+      id: carga.id,
+      fecha: carga.fecha,
+      hora: carga.hora,
+      folio: carga.folio,
+      serie: carga.folioSerie?.codigo ?? null,
+      unidad: carga.unidad?.codigo ?? "—",
+      operador: carga.operador?.nombre ?? "—",
+      litros: carga.litros,
+      odometro: carga.odometroHrs,
+      cuentaInicio: carga.cuentaLtInicio,
+      cuentaFin: carga.cuentaLtFin,
+      origen: carga.origen,
+    })),
     taller: {
       id:                  taller?.id ?? 0,
       nombre:              taller?.nombre ?? "Taller",

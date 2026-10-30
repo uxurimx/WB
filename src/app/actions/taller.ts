@@ -1,5 +1,6 @@
 "use server";
 
+import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
@@ -13,6 +14,7 @@ import {
   incidenciasTaller,
   tallerEventos,
   tallerUrea,
+  mantenimientosEventos,
 } from "@/db/schema";
 import { eq, and, inArray, gte, lte, desc, ne, isNotNull } from "drizzle-orm";
 import { requireActionPermission, requireAnyActionPermission } from "@/lib/authz";
@@ -20,6 +22,15 @@ import { CHECKLIST_PUNTOS, type EstadoOrden } from "@/lib/taller-checklist";
 import { getNowLocal, parseLocalDate } from "@/lib/date-utils";
 import { CATEGORIAS_SIN_TALLER, formatoFolioTaller, TALLER_FALLAS, type CategoriaTaller } from "@/lib/taller-incidencias";
 import { textoActividadesTaller } from "@/lib/taller-actividades";
+
+const CUENTAS_REABRIR_ORDEN = new Set(["wbtaller.beto@gmail.com", "poxelbit@gmail.com"]);
+
+async function requirePermisoReabrirOrden() {
+  const user = await currentUser();
+  const email = user?.primaryEmailAddress?.emailAddress.trim().toLocaleLowerCase("en-US");
+  if (!user || !email || !CUENTAS_REABRIR_ORDEN.has(email)) throw new Error("Sin permisos para reabrir órdenes.");
+  return user.id;
+}
 
 export type RefaccionInput = {
   descripcion: string;
@@ -985,6 +996,7 @@ export async function guardarOrdenTaller(id: number, input: OrdenTallerUpdateInp
       proximoMto: true,
       esPreventivo: true,
       tipoControlPreventivo: true,
+      eventoMantenimientoId: true,
     },
     with: { unidad: { columns: { tipo: true } } },
   });
@@ -1074,6 +1086,41 @@ export async function guardarOrdenTaller(id: number, input: OrdenTallerUpdateInp
     if (rows.length) await db.insert(ordenRefacciones).values(rows);
   }
 
+  if (orden.estado === "terminada" && orden.eventoMantenimientoId) {
+    const evento = await db.query.mantenimientosEventos.findFirst({
+      where: eq(mantenimientosEventos.id, orden.eventoMantenimientoId),
+      columns: { id: true, notas: true },
+    });
+    if (evento) {
+      const marker = `Complemento de orden #${id}`;
+      const complemento = [
+        `Orden reabierta #${id} · información vigente`,
+        `Fecha: ${input.fecha ?? orden.fecha}`,
+        `Motivo: ${input.motivo ?? orden.motivo ?? "—"}`,
+        `Lectura KM/HRS: ${input.kmHrs ?? orden.kmHrs ?? "—"}`,
+        input.categoria !== undefined ? `Categoría: ${input.categoria}` : "",
+        input.proveedorExterno !== undefined ? `Proveedor externo: ${input.proveedorExterno || "—"}` : "",
+        input.quienAtendio !== undefined ? `Atiende: ${input.quienAtendio || "—"}` : "",
+        input.trabajoRealizado !== undefined ? `Trabajo: ${textoActividadesTaller(input.trabajoRealizado, input.quienAtendio ?? orden.quienAtendio ?? "") || "—"}` : "",
+        input.diagnosticoFinal !== undefined ? `Diagnóstico: ${input.diagnosticoFinal || "—"}` : "",
+        input.observacionesSalida !== undefined ? `Observaciones de salida: ${input.observacionesSalida || "—"}` : "",
+        input.comentarios !== undefined ? `Comentarios: ${input.comentarios || "—"}` : "",
+        input.proximoMto !== undefined ? `Próximo mantenimiento: ${input.proximoMto || "—"}` : "",
+        input.fechaSalida !== undefined ? `Fecha de salida: ${input.fechaSalida || "—"}` : "",
+        input.refacciones ? `Refacciones: ${input.refacciones.map((ref) => [ref.descripcion.trim(), ref.cantidad ? `x${ref.cantidad}` : "", ref.proveedor?.trim(), ref.folioFactura?.trim()].filter(Boolean).join(" · ")).filter(Boolean).join("; ") || "ninguna"}` : "",
+        input.checklist ? `Checklist: ${input.checklist.filter((item) => item.ok === false || item.respuesta === "no").map((item) => [item.clave, item.nota].filter(Boolean).join(": ")).join("; ") || "sin fallas pendientes"}` : "",
+        input.fotosIngreso !== undefined ? `Evidencia de ingreso: ${input.fotosIngreso.length} archivo(s)` : "",
+        input.fotosSalida !== undefined ? `Evidencia de salida: ${input.fotosSalida.length} archivo(s)` : "",
+      ].filter(Boolean).join("\n");
+      const previousNotes = evento.notas ?? "";
+      const markerIndex = previousNotes.indexOf(marker);
+      const notesBase = markerIndex >= 0 ? previousNotes.slice(0, markerIndex).trimEnd() : previousNotes.trimEnd();
+      await db.update(mantenimientosEventos).set({
+        notas: [notesBase, marker, complemento].filter(Boolean).join("\n"),
+      }).where(eq(mantenimientosEventos.id, evento.id));
+    }
+  }
+
   await logOrden(id, userId, input.estado === "en_proceso" ? "en_proceso" : "editar");
   if (input.estado && input.estado !== orden.estado) {
     await logTallerEvento({
@@ -1090,6 +1137,45 @@ export async function guardarOrdenTaller(id: number, input: OrdenTallerUpdateInp
   revalidatePath("/taller/bitacora");
   revalidatePath(`/taller/${id}`);
   revalidatePath(`/catalogo/unidades/${orden.unidadId}`);
+  return { ok: true };
+}
+
+export async function reabrirOrdenTaller(id: number) {
+  const userId = await requirePermisoReabrirOrden();
+  const orden = await db.query.ordenesTaller.findFirst({
+    where: eq(ordenesTaller.id, id),
+    columns: { id: true, unidadId: true, incidenciaId: true, estado: true },
+  });
+  if (!orden) throw new Error("Orden no encontrada");
+  if (orden.estado !== "cerrada") throw new Error("Solo se pueden reabrir órdenes completadas.");
+
+  await db.update(ordenesTaller).set({
+    estado: "terminada",
+    cerradoPorId: null,
+    cerradoAt: null,
+    updatedAt: new Date(),
+  }).where(eq(ordenesTaller.id, id));
+
+  if (orden.incidenciaId != null) {
+    await db.update(incidenciasTaller).set({ estado: "recibida", updatedAt: new Date() })
+      .where(eq(incidenciasTaller.id, orden.incidenciaId));
+  }
+  await logOrden(id, userId, "reabrir_cierre");
+  await logTallerEvento({
+    unidadId: orden.unidadId,
+    incidenciaId: orden.incidenciaId,
+    ordenId: id,
+    tipo: "orden_reabierta",
+    detalle: "Orden regresada a pendiente de cierre. Se conserva el evento de mantenimiento vinculado.",
+    usuarioId: userId,
+  });
+
+  revalidatePath("/taller");
+  revalidatePath("/taller/ordenes");
+  revalidatePath("/taller/bitacora");
+  revalidatePath(`/taller/${id}`);
+  revalidatePath(`/catalogo/unidades/${orden.unidadId}`);
+  revalidatePath("/overview");
   return { ok: true };
 }
 

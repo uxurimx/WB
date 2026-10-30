@@ -22,6 +22,8 @@ export default async function TallerPage({
 }) {
   const permisos = await requirePermission("taller");
   const [q, user] = await Promise.all([searchParams, currentUser()]);
+  const email = user?.primaryEmailAddress?.emailAddress.trim().toLocaleLowerCase("en-US");
+  const canReopenOrders = email === "wbtaller.beto@gmail.com" || email === "poxelbit@gmail.com";
   const mesActivo = /^\d{4}-(0[1-9]|1[0-2])$/.test(q.mes ?? "") ? q.mes! : getNowLocal().fecha.slice(0, 7);
   const [ordenes, programados, catalogos] = await Promise.all([
     getOrdenesTaller(),
@@ -56,6 +58,7 @@ export default async function TallerPage({
         canFinishOrders={permisos.includes("taller.terminar")}
         canCloseOrders={permisos.includes("taller.cerrar")}
         canCancelOrders={permisos.includes("taller.cancelar")}
+        canReopenOrders={canReopenOrders}
         extensionReady={incidenciasResult.schemaReady}
         initialNueva={q.nueva === "1"}
         initialUnidadId={q.unidadId ?? ""}

@@ -21,6 +21,7 @@ import {
   recibirIncidenciaTaller,
   cerrarOrdenTaller,
   terminarOrdenTaller,
+  reabrirOrdenTaller,
   cancelarOrdenTaller,
   getOrdenTaller,
 } from "@/app/actions/taller";
@@ -46,6 +47,8 @@ type RegistroBitacora = {
   atendio: string;
   lugar: string;
   resolucion: string;
+  actividadesResolucion?: { atendio: string; trabajo: string }[];
+  resolucionAdicional?: string[];
   costo: number;
   status: string;
   ordenId: number | null;
@@ -164,6 +167,7 @@ export default function TallerBoard({
   canFinishOrders = false,
   canCloseOrders = false,
   canCancelOrders = false,
+  canReopenOrders = false,
   extensionReady = true,
   initialNueva = false,
   initialUnidadId = "",
@@ -185,6 +189,7 @@ export default function TallerBoard({
   canFinishOrders?: boolean;
   canCloseOrders?: boolean;
   canCancelOrders?: boolean;
+  canReopenOrders?: boolean;
   extensionReady?: boolean;
   initialNueva?: boolean;
   initialUnidadId?: string;
@@ -342,7 +347,7 @@ export default function TallerBoard({
   const columnasOrdenes = [
     { estado: "abierta", titulo: "ABIERTO" },
     { estado: "en_proceso", titulo: "EN PROCESO" },
-    { estado: "terminada", titulo: "TERMINADO · EN PROCESO DE CIERRE" },
+    { estado: "terminada", titulo: "PENDIENTE DE CIERRE" },
   ].map((columna) => ({ ...columna, ordenes: ordenesFiltradas.filter((orden) => orden.estado === columna.estado) }));
   const ordenesNoActivasFiltradas = ordenesFiltradas.filter((orden) => !["abierta", "en_proceso", "terminada"].includes(orden.estado));
 
@@ -392,7 +397,7 @@ export default function TallerBoard({
           : orden?.estado === "en_proceso" ? "EN PROCESO"
             : orden ? "ABIERTO"
         : CATEGORIAS_SIN_TALLER.includes(incidencia.categoria as typeof CATEGORIAS_SIN_TALLER[number]) ? "CERRADO"
-          : incidencia.estado === "resuelta" ? "TERMINADO"
+          : incidencia.estado === "resuelta" ? "CERRADO"
             : incidencia.estado === "cancelada" ? "CANCELADO"
               : incidencia.estado === "en_revision" || incidencia.estado === "recibida" ? "EN PROCESO" : "ABIERTO";
       const historial = eventos.filter((evento) => evento.incidenciaId === incidencia.id || (orden && evento.ordenId === orden.id)).map((evento) => ({
@@ -402,6 +407,11 @@ export default function TallerBoard({
         usuarioNombre: evento.usuarioNombre,
       }));
       const esLlantaInformativa = incidencia.categoria === "llanta_danada";
+      const actividadesResolucion = orden && !esLlantaInformativa
+        ? parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").filter((actividad) => actividad.atendio || actividad.trabajo)
+        : [];
+      const resolucionAdicional = esLlantaInformativa ? [] : [orden?.diagnosticoFinal, orden?.observacionesSalida, incidencia.resolucion, incidencia.observaciones, orden?.comentarios]
+        .map((value) => value?.trim()).filter((value): value is string => Boolean(value));
       return {
         id: `incidencia-${incidencia.id}`,
         fecha: orden?.fecha ?? incidencia.fecha,
@@ -416,7 +426,9 @@ export default function TallerBoard({
         operador: incidencia.operador?.nombre ?? "—",
         atendio: orden ? [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map((a) => a.atendio).filter(Boolean))].join(", ") || orden.quienAtendio || incidencia.atendio || "—" : incidencia.atendio ?? "—",
         lugar: esLlantaInformativa ? "" : proveedor ? proveedor : orden ? "TALLER" : incidencia.ubicacion ?? "—",
-        resolucion: esLlantaInformativa ? "" : [...new Set([textoActividadesTaller(orden?.trabajoRealizado, orden?.quienAtendio ?? ""), orden?.diagnosticoFinal, orden?.observacionesSalida, incidencia.resolucion, incidencia.observaciones, orden?.comentarios].map((value) => value?.trim()).filter((value): value is string => Boolean(value)))].join(", ") || "—",
+        resolucion: esLlantaInformativa ? "" : [...new Set([textoActividadesTaller(orden?.trabajoRealizado, orden?.quienAtendio ?? ""), ...resolucionAdicional])].join(", ") || "—",
+        actividadesResolucion,
+        resolucionAdicional: [...new Set(resolucionAdicional)],
         costo,
         status,
         ordenId: orden?.id ?? incidencia.orden?.id ?? null,
@@ -432,6 +444,9 @@ export default function TallerBoard({
         const base = (Number(ref.precio) || 0) * (Number(ref.cantidad) || 1);
         return total + (ref.iva ? base * 1.16 : base);
       }, 0);
+      const actividadesResolucion = parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").filter((actividad) => actividad.atendio || actividad.trabajo);
+      const resolucionAdicional = [orden.diagnosticoFinal, orden.observacionesSalida, orden.comentarios]
+        .map((value) => value?.trim()).filter((value): value is string => Boolean(value));
       registros.push({
         id: `orden-${orden.id}`,
         fecha: orden.fecha,
@@ -446,7 +461,9 @@ export default function TallerBoard({
         operador: orden.operador?.nombre ?? "—",
         atendio: [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map((a) => a.atendio).filter(Boolean))].join(", ") || orden.quienAtendio || "—",
         lugar: proveedor || "TALLER",
-        resolucion: [...new Set([textoActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? ""), orden.diagnosticoFinal, orden.observacionesSalida, orden.comentarios].map((value) => value?.trim()).filter((value): value is string => Boolean(value)))].join(", ") || "—",
+        resolucion: [...new Set([textoActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? ""), ...resolucionAdicional])].join(", ") || "—",
+        actividadesResolucion,
+        resolucionAdicional: [...new Set(resolucionAdicional)],
         costo,
         status: orden.estado === "cerrada" ? "CERRADO" : orden.estado === "terminada" ? "PENDIENTE DE CIERRE" : orden.estado === "cancelada" ? "CANCELADO" : orden.estado === "abierta" ? "ABIERTO" : "EN PROCESO",
         ordenId: orden.id,
@@ -577,6 +594,10 @@ export default function TallerBoard({
         ? "LLANTA DAÑADA"
         : row.folio != null ? formatoFolioTaller(row.folio) : "Pendiente";
     const esInformativo = (row: RegistroBitacora) => row.categoria === "Urea" || row.categoria === "Llanta dañada";
+    const nombresSinRepetir = (value: string) => [...new Map(value.split(",")
+      .map((name) => name.trim())
+      .filter(Boolean)
+      .map((name) => [name.toLocaleLowerCase("es-MX"), name])).values()].join(", ");
 
     // Hoja general: se conserva el formato del cliente y se repite la fila modelo.
     const generalModel = rowStyles(general, 5, 2, 11);
@@ -588,7 +609,7 @@ export default function TallerBoard({
       const target = applyRowStyles(general, n, generalModel, 2);
       target.getCell(2).value = excelDate(row.fecha);
       target.getCell(2).numFmt = "dd/mm/yyyy";
-      const values = [folioLabel(row), row.unidad, row.falla, row.operador, row.atendio, esInformativo(row) ? "" : row.lugar, esInformativo(row) ? "" : row.resolucion, row.costo || "—", row.status];
+      const values = [folioLabel(row), row.unidad, row.falla, row.operador, nombresSinRepetir(row.atendio), esInformativo(row) ? "" : row.lugar, esInformativo(row) ? "" : row.resolucion, row.costo || "—", row.status];
       values.forEach((value, offset) => {
         const cell = target.getCell(offset + 3);
         cell.value = typeof value === "string" ? value.toLocaleUpperCase("es-MX") : value;
@@ -631,6 +652,7 @@ export default function TallerBoard({
       const fallback = [order.diagnosticoFinal, order.observacionesSalida, order.comentarios, source?.resolucion]
         .find((value) => value?.trim())?.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) ?? [];
       const activities = work.length ? work.map((activity) => activity.trabajo) : fallback;
+      const nombresAtendidos = new Set<string>();
       const notes = [order.comentarios, order.observacionesSalida]
         .map((value) => value?.trim())
         .filter((value): value is string => typeof value === "string" && value.length > 0 && !activities.includes(value));
@@ -638,7 +660,17 @@ export default function TallerBoard({
         `OS ${formatoFolioTaller(order.folio)} · ingreso ${dateOnly(order.fecha)}`,
         ...notes,
       ].join(" · ");
-      return activities.map((activity) => ({ order, activity, note, atendio: work.find((row) => row.trabajo === activity)?.atendio || order.quienAtendio || "—" }));
+      return activities.map((activity) => {
+        const nombres = (work.find((row) => row.trabajo === activity)?.atendio || order.quienAtendio || "—")
+          .split(",").map((name) => name.trim()).filter(Boolean)
+          .filter((name) => {
+            const key = name.toLocaleLowerCase("es-MX");
+            if (nombresAtendidos.has(key)) return false;
+            nombresAtendidos.add(key);
+            return true;
+          });
+        return { order, activity, note, atendio: nombres.join(", ") };
+      });
     });
     for (const [, orders] of detailGroups) {
       const activities = activityRows(orders);
@@ -833,8 +865,9 @@ export default function TallerBoard({
     });
   }
 
-  function accionDesdeEstado(row: RegistroBitacora): "terminar" | "cierre" | null {
+  function accionDesdeEstado(row: RegistroBitacora): "terminar" | "cierre" | "reabrir" | null {
     if (row.ordenId == null) return null;
+    if (row.status === "CERRADO" && canReopenOrders) return "reabrir";
     if (["ABIERTO", "EN PROCESO"].includes(row.status) && canFinishOrders) return "terminar";
     if (row.status === "PENDIENTE DE CIERRE" && canCloseOrders) return "cierre";
     return null;
@@ -845,11 +878,14 @@ export default function TallerBoard({
     if (!accion || row.ordenId == null) return;
     const mensaje = accion === "terminar"
       ? "¿Marcar el trabajo como terminado y dejar la orden pendiente de cierre?"
-      : "¿Cerrar esta orden de servicio?";
+      : accion === "reabrir"
+        ? "¿Regresar la orden a PENDIENTE DE CIERRE? Se conservará el evento de mantenimiento vinculado."
+        : "¿Cerrar esta orden de servicio?";
     if (!confirm(mensaje)) return;
     start(async () => {
       try {
         if (accion === "terminar") await terminarOrdenTaller(row.ordenId!);
+        else if (accion === "reabrir") await reabrirOrdenTaller(row.ordenId!);
         else await cerrarOrdenTaller(row.ordenId!);
         router.refresh();
       } catch (err) {
@@ -1101,10 +1137,10 @@ export default function TallerBoard({
         <section className="space-y-3">
           <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
             <div className="flex items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: "var(--border)" }}><div><h2 className="text-sm font-bold">Control de piso de taller</h2><p className="text-xs" style={{ color: "var(--fg-muted)" }}>Órdenes activas por etapa</p></div><Link href="/taller/ordenes" className="text-xs text-indigo-600 underline">Ver órdenes</Link></div>
-            <div className="grid grid-cols-1 gap-3 overflow-x-auto p-3 lg:grid-cols-4">
-              {([ ["abierta", "ABIERTA"], ["en_proceso", "EN REPARACIÓN"], ["terminada", "PENDIENTE DE CIERRE"], ["cerrada", "CERRADA"] ] as const).map(([estado, label]) => {
+            <div className="grid grid-cols-1 gap-3 overflow-x-auto p-3 lg:grid-cols-3">
+              {([ ["abierta", "ABIERTA"], ["en_proceso", "EN REPARACIÓN"], ["terminada", "PENDIENTE DE CIERRE"] ] as const).map(([estado, label]) => {
                 const allRows = ordenes.filter((o) => o.estado === estado);
-                const rows = allRows.slice(0, estado === "cerrada" ? 5 : undefined);
+                const rows = allRows;
                 return <div key={estado} className="min-w-0 rounded-xl p-3" style={{ backgroundColor: "var(--surface-2)" }}><div className="mb-2 flex justify-between text-xs font-bold uppercase"><span>{label}</span><span>{allRows.length}</span></div>
                   {rows.length ? rows.map((o) => <Link key={o.id} href={`/taller/${o.id}`} className="mb-2 block rounded-xl border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}><div className="flex items-center justify-between gap-2"><span className="font-mono text-xs font-bold">{formatoFolioTaller(o.folio)} · {o.unidad?.codigo ?? "—"}</span><Badge variant={estadoOrdenVariant(o.estado)}>{ESTADO_LABEL[o.estado as EstadoOrden] ?? o.estado}</Badge></div><p className="mt-1 line-clamp-2 text-xs">{o.motivo || "Sin motivo registrado"}</p><p className="mt-1 text-xs" style={{ color: "var(--fg-muted)" }}>{fechaMx(o.createdAt)}{o.operador?.nombre ? ` · ${o.operador.nombre}` : ""}</p></Link>) : <p className="py-4 text-center text-xs" style={{ color: "var(--fg-muted)" }}>Sin órdenes en esta etapa.</p>}
                 </div>;
@@ -1145,10 +1181,11 @@ export default function TallerBoard({
                   incidencia: { backgroundColor: "#ffeadc", borderColor: "#ffc99e", punto: "#ce4935" },
                   programada: { backgroundColor: "#f2eafa", borderColor: "#dac5f3", punto: "#8750b4" },
                 }[u.estado];
-                return <button key={u.id} type="button" onClick={() => setEquipoSeleccionado(u)} className="relative min-w-0 rounded-lg border px-2.5 py-2 text-left transition-shadow hover:shadow-sm" style={{ backgroundColor: estilosEstado.backgroundColor, borderColor: estilosEstado.borderColor, color: "var(--fg)" }} title={u.estado === "disponible" ? u.codigo : `${u.codigo} · ${ETIQUETA_ESTADO[u.estado]}`}>
+                const colorTexto = u.estado === "taller" || u.estado === "incidencia" || u.estado === "programada" ? "#263238" : "var(--fg)";
+                return <button key={u.id} type="button" onClick={() => setEquipoSeleccionado(u)} className="relative min-w-0 rounded-lg border px-2.5 py-2 text-left transition-shadow hover:shadow-sm" style={{ backgroundColor: estilosEstado.backgroundColor, borderColor: estilosEstado.borderColor, color: colorTexto }} title={u.estado === "disponible" ? u.codigo : `${u.codigo} · ${ETIQUETA_ESTADO[u.estado]}`}>
                   {u.estado !== "disponible" && <span className="absolute right-2 top-2 h-2 w-2 rounded-full" style={{ backgroundColor: estilosEstado.punto }} />}
                   <span className="block truncate pr-3 font-mono text-sm font-bold leading-tight">{u.codigo}</span>
-                  {u.estado !== "disponible" && <span className="mt-1 block truncate text-[10px] leading-tight" style={{ color: "var(--fg-muted)" }}>{ETIQUETA_ESTADO[u.estado]}</span>}
+                  {u.estado !== "disponible" && <span className="mt-1 block truncate text-[10px] leading-tight" style={{ color: colorTexto }}>{ETIQUETA_ESTADO[u.estado]}</span>}
                 </button>;
               })}
               {unidadesEnVista.length === 0 && <p className="col-span-full py-8 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay unidades para estos filtros.</p>}
@@ -1220,7 +1257,7 @@ export default function TallerBoard({
               <label className="space-y-1 text-xs font-semibold"><span>Unidad</span><Select value={filtroUnidadIncidencia} onChange={(e) => setFiltroUnidadIncidencia(e.target.value)}><option value="todas">Todas las unidades</option>{unidades.map((u) => <option key={u.id} value={u.id}>{u.codigo}</option>)}</Select></label>
               <label className="space-y-1 text-xs font-semibold"><span>Tipo de unidad</span><Select value={filtroTipoUnidad} onChange={(e) => setFiltroTipoUnidad(e.target.value)}><option value="todas">Todos</option><option value="camion">Camión</option><option value="maquina">Maquinaria</option><option value="nissan">NISSAN</option><option value="otro">Otro</option></Select></label>
               <label className="space-y-1 text-xs font-semibold"><span>Categoría</span><Select value={filtroCategoriaBitacora} onChange={(e) => setFiltroCategoriaBitacora(e.target.value)}><option value="todas">Todas</option>{TALLER_CATEGORIAS.map((item) => <option key={item.value} value={item.label}>{item.label}</option>)}</Select></label>
-              <label className="space-y-1 text-xs font-semibold"><span>Estado</span><Select value={filtroEstadoBitacora} onChange={(e) => setFiltroEstadoBitacora(e.target.value)}><option value="todas">Todos</option>{["ABIERTO", "EN PROCESO", "PENDIENTE DE CIERRE", "TERMINADO", "CERRADO", "CANCELADO"].map((status) => <option key={status} value={status}>{status}</option>)}</Select></label>
+              <label className="space-y-1 text-xs font-semibold"><span>Estado</span><Select value={filtroEstadoBitacora} onChange={(e) => setFiltroEstadoBitacora(e.target.value)}><option value="todas">Todos</option>{["ABIERTO", "EN PROCESO", "PENDIENTE DE CIERRE", "CERRADO", "CANCELADO"].map((status) => <option key={status} value={status}>{status}</option>)}</Select></label>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Input className="min-w-[180px] flex-1 sm:max-w-[260px]" value={busquedaIncidencia} onChange={(e) => setBusquedaIncidencia(e.target.value)} placeholder="Buscar en la bitácora…" />
@@ -1247,29 +1284,35 @@ export default function TallerBoard({
           <div className="overflow-x-auto rounded-xl border" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
             <table className="w-full min-w-[1180px] text-sm">
               <thead><tr className="border-b text-left text-[10px] font-semibold uppercase tracking-wide" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>
-                {(["Ingreso / egreso · días", "Folio", "Unidad", "Falla", "Operador", "Atiende", "Lugar", "Resolución", "Costo", "Estado"] as const).map((label) => <th key={label} className="px-2.5 py-2.5">{label}</th>)}
+                {(["Ingreso / egreso · días", "Folio", "Unidad", "Falla", "Operador", "Lugar", "Resolución", "Costo", "Estado"] as const).map((label) => <th key={label} className={`px-2.5 py-2.5 ${label === "Resolución" ? "min-w-[360px]" : ""}`}>{label}</th>)}
                 <th className="w-8 px-2 py-2.5"><input aria-label="Seleccionar registros para descargar" type="checkbox" checked={registrosBitacoraFiltrados.length > 0 && registrosBitacoraFiltrados.every((row) => registrosSeleccionados.includes(row.id))} onChange={(e) => { const ids = registrosBitacoraFiltrados.map((row) => row.id); setRegistrosSeleccionados((prev) => e.target.checked ? [...new Set([...prev, ...ids])] : prev.filter((id) => !ids.includes(id))); setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, ...registrosBitacoraFiltrados.filter(puedeSeleccionarOrden).flatMap((row) => row.ordenId == null ? [] : [row.ordenId])])] : prev.filter((id) => !registrosBitacoraFiltrados.some((row) => row.ordenId === id))); }} className="h-4 w-4 accent-indigo-600" /></th>
               </tr></thead>
               <tbody>
                 {registrosBitacoraFiltrados.map((row) => {
-                  const badgeVariant = row.status === "TERMINADO" || row.status === "CERRADO" ? "success" : row.status === "EN PROCESO" || row.status === "PENDIENTE DE CIERRE" ? "warning" : row.status === "CANCELADO" ? "danger" : "default";
+                  const badgeVariant = row.status === "CERRADO" ? "success" : row.status === "EN PROCESO" || row.status === "PENDIENTE DE CIERRE" ? "warning" : row.status === "CANCELADO" ? "danger" : "default";
                   return <tr key={row.id} className="align-top border-b last:border-0" style={{ borderColor: "var(--border)" }}>
                     <td className="whitespace-nowrap px-2.5 py-2.5 text-[10px]">Ingreso: {formatFechaDmy(row.fecha)}<br />Egreso: {row.fechaEgreso ? formatFechaDmy(row.fechaEgreso) : "—"}{row.diasAbierta != null && <p className="mt-0.5 font-semibold">{row.diasAbierta} días</p>}</td>
                     <td className="px-2.5 py-2.5 font-mono text-xs font-bold text-[#207783]"><button type="button" onClick={() => { void abrirDetalleBitacora(row); }} className="text-left hover:underline">{row.categoria === "Urea" ? "UREA" : row.categoria === "Llanta dañada" ? "LLANTA DAÑADA" : row.folio != null ? formatoFolioTaller(row.folio) : "Pendiente"}</button></td>
                     <td className="px-2.5 py-2.5"><button type="button" onClick={() => { void abrirDetalleBitacora(row); }} className="rounded-md bg-neutral-800 px-2 py-1 font-mono text-xs font-bold text-white hover:underline">{row.unidad}</button></td>
                     <td className="max-w-[240px] px-2.5 py-2.5 text-xs">{row.falla}<p className="mt-0.5 text-[10px]" style={{ color: "var(--fg-muted)" }}>{row.categoria}</p></td>
                     <td className="px-2.5 py-2.5 text-xs">{row.operador}</td>
-                    <td className="px-2.5 py-2.5 text-xs">{row.atendio}</td>
                     <td className="max-w-[180px] px-2.5 py-2.5 text-xs">{row.lugar}</td>
-                    <td className="max-w-[250px] px-2.5 py-2.5 text-xs">{row.resolucion}</td>
+                    <td className="min-w-[360px] px-2.5 py-2.5 text-xs">
+                      {row.actividadesResolucion?.length ? <>
+                        {row.actividadesResolucion.map((actividad, index) => <span key={row.id + "-actividad-" + index}>
+                          {actividad.atendio && <strong>{actividad.atendio}</strong>}{actividad.atendio && actividad.trabajo ? ": " : ""}{actividad.trabajo}{index < row.actividadesResolucion!.length - 1 ? " · " : ""}
+                        </span>)}
+                        {row.resolucionAdicional?.length ? <> · {row.resolucionAdicional.join(", ")}</> : null}
+                      </> : row.resolucion}
+                    </td>
                     <td className="whitespace-nowrap px-2.5 py-2.5 text-right text-xs">{row.costo > 0 ? `$${row.costo.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
                     <td className="px-2.5 py-2.5">
-                      {accionDesdeEstado(row) ? <button type="button" disabled={pending} onClick={() => ejecutarAccionDesdeEstado(row)} title={row.status === "PENDIENTE DE CIERRE" ? "Cerrar orden" : "Marcar como pendiente de cierre"} aria-label={`${row.status}: ${row.status === "PENDIENTE DE CIERRE" ? "cerrar orden" : "marcar pendiente de cierre"}`} className="rounded-full text-left transition hover:brightness-95 disabled:opacity-60"><Badge variant={badgeVariant}>{row.status}</Badge></button> : <Badge variant={badgeVariant}>{row.status}</Badge>}
+                      {accionDesdeEstado(row) ? <button type="button" disabled={pending} onClick={() => ejecutarAccionDesdeEstado(row)} title={accionDesdeEstado(row) === "reabrir" ? "Regresar a pendiente de cierre" : row.status === "PENDIENTE DE CIERRE" ? "Cerrar orden" : "Marcar como pendiente de cierre"} aria-label={`${row.status}: ${accionDesdeEstado(row) === "reabrir" ? "regresar a pendiente de cierre" : row.status === "PENDIENTE DE CIERRE" ? "cerrar orden" : "marcar pendiente de cierre"}`} className="rounded-full text-left transition hover:brightness-95 disabled:opacity-60"><Badge variant={badgeVariant}>{row.status}</Badge></button> : <Badge variant={badgeVariant}>{row.status}</Badge>}
                     </td>
                     <td className="px-2 py-2.5"><input aria-label={`Seleccionar registro ${row.folio ?? row.unidad}`} type="checkbox" checked={registrosSeleccionados.includes(row.id)} onChange={(e) => { setRegistrosSeleccionados((prev) => e.target.checked ? [...new Set([...prev, row.id])] : prev.filter((id) => id !== row.id)); if (row.ordenId != null && puedeSeleccionarOrden(row)) setOrdenesSeleccionadas((prev) => e.target.checked ? [...new Set([...prev, row.ordenId!])] : prev.filter((id) => id !== row.ordenId)); }} className="h-4 w-4 accent-indigo-600" /></td>
                   </tr>;
                 })}
-                {registrosBitacoraFiltrados.length === 0 && <tr><td colSpan={11} className="px-4 py-10 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay registros para estos filtros.</td></tr>}
+                {registrosBitacoraFiltrados.length === 0 && <tr><td colSpan={10} className="px-4 py-10 text-center text-sm" style={{ color: "var(--fg-muted)" }}>No hay registros para estos filtros.</td></tr>}
               </tbody>
             </table>
           </div>

@@ -45,7 +45,7 @@ export default function AlertasPanel({
   const [dismissedConciliacion, setDismissedConciliacion] = useState<Set<number>>(new Set());
   const [dismissedMantenimiento, setDismissedMantenimiento] = useState<Set<string>>(new Set());
   const [dismissedTickets, setDismissedTickets] = useState<Set<number>>(new Set());
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(LS_KEY);
@@ -80,6 +80,12 @@ export default function AlertasPanel({
   const visibleMantenimientos = alertasMantenimiento.filter((a) => !dismissedMantenimiento.has(`${a.unidadId}:${a.tipoControl}:${a.estado}`));
   const visibleTickets       = ticketsResueltos.filter((t) => !dismissedTickets.has(t.id));
   const totalVisible = visibleStockAlertas.length + sobrecargas.length + visibleAnomalias.length + visibleDivergencias.length + visibleMantenimientos.length + visibleTickets.length + (showRend ? 1 : 0);
+  const alertaRojaVisible = visibleDivergencias.length > 0
+    || visibleStockAlertas.some((alerta) => alerta.litros < alerta.umbral * 0.5)
+    || visibleMantenimientos.some((alerta) => alerta.estado === "vencido");
+  const colorAlerta = alertaRojaVisible ? "rgb(239 68 68 / 0.10)" : "rgb(245 158 11 / 0.10)";
+  const bordeAlerta = alertaRojaVisible ? "rgb(239 68 68 / 0.35)" : "rgb(245 158 11 / 0.35)";
+  const textoAlerta = alertaRojaVisible ? "#dc2626" : "#b45309";
 
   if (totalVisible === 0) {
     return (
@@ -109,36 +115,20 @@ export default function AlertasPanel({
     <section id="alertas" className="mb-6 scroll-mt-16">
       <button
         type="button"
-        onClick={() => setMobileOpen((v) => !v)}
-        className="lg:hidden w-full flex items-center justify-between gap-2 rounded-2xl border px-3 py-2.5"
-        aria-expanded={mobileOpen}
-        style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+        onClick={() => setExpanded((value) => !value)}
+        className="relative flex min-h-[88px] w-full items-center justify-center rounded-2xl border px-12 py-6 text-center"
+        aria-expanded={expanded}
+        aria-controls="overview-alertas-list"
+        style={{ backgroundColor: colorAlerta, borderColor: bordeAlerta }}
       >
-        <span className="flex items-center gap-2">
-          <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
-            Alertas proactivas
-          </p>
-          <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none">
-            {totalVisible}
-          </span>
+        <span className="flex flex-wrap items-center justify-center gap-2">
+          <span className="text-sm font-bold uppercase tracking-widest" style={{ color: textoAlerta }}>Alertas proactivas</span>
+          <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-white ${alertaRojaVisible ? "bg-red-600" : "bg-amber-600"}`}>{totalVisible}</span>
         </span>
-        {mobileOpen ? (
-          <ChevronUp className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />
-        ) : (
-          <ChevronDown className="w-4 h-4" style={{ color: "var(--fg-muted)" }} />
-        )}
+        {expanded ? <ChevronUp className="absolute right-4 h-4 w-4" style={{ color: textoAlerta }} /> : <ChevronDown className="absolute right-4 h-4 w-4" style={{ color: textoAlerta }} />}
       </button>
 
-      <div className="hidden lg:flex items-center gap-2 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--fg-muted)" }}>
-          Alertas proactivas
-        </p>
-        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none">
-          {totalVisible}
-        </span>
-      </div>
-
-      <div className={`${mobileOpen ? "block mt-2" : "hidden"} lg:block`}>
+      <div id="overview-alertas-list" className={expanded ? "mt-2 block" : "hidden"}>
         <div className="space-y-2">
           {/* ── Sobrecarga de tanque ───────────────────────── */}
           {sobrecargas.map(({ label, litros, max, exceso }) => (

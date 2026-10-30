@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { requirePermission } from "@/lib/server-guard";
+import { currentUser } from "@clerk/nextjs/server";
 import { getNowLocal } from "@/lib/date-utils";
 import {
   getOrdenesTaller,
@@ -14,7 +15,9 @@ import {
 import TallerBoard from "@/components/taller/TallerBoard";
 
 export default async function TallerBitacoraPage() {
-  const permisos = await requirePermission("taller.bitacora");
+  const [permisos, user] = await Promise.all([requirePermission("taller.bitacora"), currentUser()]);
+  const email = user?.primaryEmailAddress?.emailAddress.trim().toLocaleLowerCase("en-US");
+  const canReopenOrders = email === "wbtaller.beto@gmail.com" || email === "poxelbit@gmail.com";
   const mes = getNowLocal().fecha.slice(0, 7);
   const [ordenes, programados, catalogos] = await Promise.all([
     getOrdenesTaller(), getServiciosProgramadosTaller(), getUnidadesYOperadoresTaller(),
@@ -27,6 +30,6 @@ export default async function TallerBitacoraPage() {
   ]);
 
   return <div className="max-w-[1536px] p-3 sm:p-4 md:p-5">
-    <TallerBoard ordenes={ordenes} programados={programados} unidades={catalogos.unidades} operadores={catalogos.operadores} incidencias={incidenciasResult.items} incidenciasActivas={incidenciasActivas} eventos={eventos} urea={ureaResult.items} extensionReady={incidenciasResult.schemaReady} ureaReady={ureaResult.schemaReady} canViewBitacora={true} canFinishOrders={permisos.includes("taller.terminar")} canCloseOrders={permisos.includes("taller.cerrar")} canCancelOrders={permisos.includes("taller.cancelar")} initialMes={mes} initialSeccion="bitacora" />
+    <TallerBoard ordenes={ordenes} programados={programados} unidades={catalogos.unidades} operadores={catalogos.operadores} incidencias={incidenciasResult.items} incidenciasActivas={incidenciasActivas} eventos={eventos} urea={ureaResult.items} extensionReady={incidenciasResult.schemaReady} ureaReady={ureaResult.schemaReady} canViewBitacora={true} canFinishOrders={permisos.includes("taller.terminar")} canCloseOrders={permisos.includes("taller.cerrar")} canCancelOrders={permisos.includes("taller.cancelar")} canReopenOrders={canReopenOrders} initialMes={mes} initialSeccion="bitacora" />
   </div>;
 }

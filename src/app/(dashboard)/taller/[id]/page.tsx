@@ -12,6 +12,8 @@ import OrdenDetalleForm from "@/components/taller/OrdenDetalleForm";
 export default async function TallerOrdenPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   const [permisos, clerkUser] = await Promise.all([requirePermission("taller"), currentUser()]);
   const isTallerRole = clerkUser?.publicMetadata?.role === "taller";
+  const email = clerkUser?.primaryEmailAddress?.emailAddress.trim().toLocaleLowerCase("en-US");
+  const canReopenOrders = email === "wbtaller.beto@gmail.com" || email === "poxelbit@gmail.com";
   const [{ id }, q] = await Promise.all([params, searchParams]);
   const ordenId = parseInt(id, 10);
   if (Number.isNaN(ordenId)) notFound();
@@ -44,6 +46,7 @@ export default async function TallerOrdenPage({ params, searchParams }: { params
         canFinishOrders={permisos.includes("taller.terminar")}
         canCloseOrders={permisos.includes("taller.cerrar")}
         canCancelOrders={permisos.includes("taller.cancelar")}
+        canReopenOrders={canReopenOrders}
         isTallerRole={isTallerRole}
         intervaloMantenimiento={intervaloMantenimiento}
       />

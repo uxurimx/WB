@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { CHECKLIST_PUNTOS, ESTADO_LABEL, type EstadoOrden } from "@/lib/taller-checklist";
-import { cancelarOrdenTaller, cerrarOrdenTaller, guardarOrdenTaller, terminarOrdenTaller, type RefaccionInput } from "@/app/actions/taller";
+import { cancelarOrdenTaller, cerrarOrdenTaller, guardarOrdenTaller, reabrirOrdenTaller, terminarOrdenTaller, type RefaccionInput } from "@/app/actions/taller";
 import ChecklistIngreso, { parseChecklistRow, serializeCheck, type CheckState } from "@/components/taller/ChecklistIngreso";
 import { formatFechaHoraMx, getLocalDateString } from "@/lib/date-utils";
 import { formatoFolioTaller, TALLER_CATEGORIAS, type CategoriaTaller } from "@/lib/taller-incidencias";
@@ -112,6 +112,7 @@ export default function OrdenDetalleForm({
   canFinishOrders = false,
   canCloseOrders = false,
   canCancelOrders = false,
+  canReopenOrders = false,
   isTallerRole = false,
   intervaloMantenimiento = null,
 }: {
@@ -122,6 +123,7 @@ export default function OrdenDetalleForm({
   canFinishOrders?: boolean;
   canCloseOrders?: boolean;
   canCancelOrders?: boolean;
+  canReopenOrders?: boolean;
   isTallerRole?: boolean;
   intervaloMantenimiento?: number | null;
 }) {
@@ -207,6 +209,18 @@ export default function OrdenDetalleForm({
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "No se pudo avanzar la orden.");
+      }
+    });
+  }
+
+  function reabrirOrden() {
+    if (!confirm("¿Regresar esta orden a PENDIENTE DE CIERRE? El evento de mantenimiento vinculado se conservará para evitar duplicados.")) return;
+    start(async () => {
+      try {
+        await reabrirOrdenTaller(orden.id);
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No se pudo reabrir la orden.");
       }
     });
   }
@@ -365,6 +379,7 @@ export default function OrdenDetalleForm({
             {canCancelOrders && <button type="button" disabled={pending} onClick={cancelarOrden} className="rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-50">Cancelar</button>}
           </div>
         )}
+        {orden.estado === "cerrada" && canReopenOrders && <button type="button" disabled={pending} onClick={reabrirOrden} className="rounded-lg border border-amber-500 px-3 py-2 text-xs font-semibold text-amber-700 disabled:opacity-50 print:hidden">Regresar a PENDIENTE DE CIERRE</button>}
         {!locked && orden.estado !== "terminada" ? (
           <button
             type="button"
