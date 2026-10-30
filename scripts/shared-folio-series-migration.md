@@ -2,7 +2,9 @@
 
 La migración `migrations/20261030_shared_folio_series.sql` habilita series comunes entre Patio, Campo y transferencias. Las series antiguas ligadas a Patio o Campo quedan intactas para consultar el historial. Al crear la primera serie compartida desde Configuración, esta pasa a ser la serie predeterminada de las nuevas capturas y las series antiguas dejan de aparecer en sus selectores.
 
-El identificador persistido sigue compuesto por `folio_serie_id` y el entero `folio`; la interfaz los muestra juntos, por ejemplo `A10001`. El código `BASE` se oculta al mostrar folios históricos. Los consecutivos sugeridos avanzan por separado para Patio y Campo, mientras la validación de duplicados es global entre los dos orígenes y transferencias dentro de cada serie.
+El folio visible combina código de serie y número, por ejemplo `A10001`. El código `BASE` se oculta al mostrar folios históricos. Patio, Campo y transferencias no pueden repetir el identificador completo dentro de una serie, pero un mismo número sí puede usarse con otra serie (por ejemplo, `BASE 60051` y `A60051`). La regla se instala con `migrations/20261030_global_internal_folio_uniqueness.sql`.
+
+El ancho del número se configura escribiendo los límites como texto. `00001` a `99999` conserva cinco dígitos en captura, historial y reportes; `0` a `0` no añade ceros y sugiere del 1 al 99999. El ancho se guarda en `folio_digitos` mediante `migrations/20261030_folio_series_padding.sql`.
 
 ## Preflight
 

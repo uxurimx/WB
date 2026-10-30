@@ -190,7 +190,7 @@ export default async function PrintPage({
               {cargasData.map((c, i) => (
                 <tr key={c.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                   <td className="px-3 py-1.5 border border-gray-200 font-mono font-semibold">
-                    {formatCargaFolio(c.folio, c.folioSerie?.codigo, c.origen)}
+                    {formatCargaFolio(c.folio, c.folioSerie?.codigo, c.origen, c.folioSerie?.folioDigitos)}
                   </td>
                   <td className="px-3 py-1.5 border border-gray-200 text-xs">
                     {fmtFecha(c.fecha)}

@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { cargas, tanques, unidades, fuentesDiesel, configuracion, folioSeries, transferenciasTanque, recargasTanque, periodos, auditLog, users, odometroResets } from "@/db/schema";
-import { eq, max, desc, and, or, count, countDistinct, sum, gte, lte, like, ilike, inArray, sql } from "drizzle-orm";
+import { cargas, tanques, unidades, fuentesDiesel, folioSeries, transferenciasTanque, recargasTanque, periodos, auditLog, users, odometroResets } from "@/db/schema";
+import { eq, desc, and, or, count, countDistinct, sum, gte, lte, like, ilike, inArray, sql } from "drizzle-orm";
 import { obras, operadores } from "@/db/schema";
 
 import { requireActionPermission, requireManageRole } from "@/lib/authz";
@@ -64,6 +64,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
   let folio = parsed.folioManual ?? await getSiguienteFolioPatioCompartido(db, serie.id);
   if (folio === null) throw new Error(`La serie ${serie.codigo} llegó a su folio máximo`);
   assertFolioEnSerie(folio, serie);
+  if (parsed.folioManual != null) await assertFolioDisponible(folio, serie.id);
 
   const tanqueTaller = await getTanquePorNombre("Taller");
   if (!tanqueTaller) throw new Error("Tanque Taller no encontrado");
@@ -84,7 +85,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
   folio = parsed.folioManual ?? await getSiguienteFolioPatioCompartido(db, serie.id);
   if (folio === null) throw new Error(`La serie ${serie.codigo} llegó a su folio máximo`);
   assertFolioEnSerie(folio, serie);
-  await assertFolioDisponible(folio, "patio", serie.id);
+  await assertFolioDisponible(folio, serie.id);
 
   const currentCuentalitros = tanqueTaller.cuentalitrosActual ?? 0;
   const nuevoCuentalitros =
@@ -143,7 +144,7 @@ export async function createCargaPatio(input: CargaPatioInput) {
   revalidatePath("/overview");
 
   const nextFolio = await getSiguienteFolioPatioCompartido(db, serie.id);
-  return { ok: true, folio: inserted.folio ?? folio, cargaId: inserted.cargaId, nextFolio };
+  return { ok: true, folio: inserted.folio ?? folio, folioDigitos: serie.folioDigitos, cargaId: inserted.cargaId, nextFolio };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -174,7 +175,7 @@ export async function createCargaCampo(input: CargaCampoInput) {
   const periodo = await getOrCreatePeriodoActual(parsed.fecha);
   const serie = await getFolioSerieActiva("campo", parsed.folioSerieId);
   assertFolioEnSerie(parsed.folioNissan, serie);
-  await assertFolioDisponible(parsed.folioNissan, "campo", serie.id);
+  await assertFolioDisponible(parsed.folioNissan, serie.id);
 
   const tanqueNissan = await getTanquePorNombre("NISSAN");
   if (!tanqueNissan) throw new Error("Tanque NISSAN no encontrado");
@@ -248,6 +249,7 @@ export async function createCargaCampo(input: CargaCampoInput) {
   return {
     ok: true,
     cargaId: inserted.cargaId,
+    folioDigitos: serie.folioDigitos,
     nuevoCuentalitrosNissan: inserted.tank.cuentalitrosActual ?? nuevoCuentalitrosNissan,
     nextFolio,
   };
@@ -279,6 +281,8 @@ export async function getCargas(opts?: {
       or(
         sql`${cargas.folio}::text ilike ${like}`,
         sql`EXISTS (SELECT 1 FROM folio_series fs WHERE fs.id = ${cargas.folioSerieId} AND (fs.codigo || ${cargas.folio}::text) ILIKE ${like})`,
+        sql`EXISTS (SELECT 1 FROM folio_series fs WHERE fs.id = ${cargas.folioSerieId} AND lpad(${cargas.folio}::text, fs.folio_digitos, '0') ILIKE ${like})`,
+        sql`EXISTS (SELECT 1 FROM folio_series fs WHERE fs.id = ${cargas.folioSerieId} AND (fs.codigo || lpad(${cargas.folio}::text, fs.folio_digitos, '0')) ILIKE ${like})`,
         inArray(cargas.folioSerieId, db.select({ id: folioSeries.id }).from(folioSeries).where(ilike(folioSeries.codigo, like))),
         inArray(cargas.folioSerieId, db.select({ id: folioSeries.id }).from(folioSeries).where(ilike(folioSeries.nombre, like))),
         inArray(cargas.unidadId, db.select({ id: unidades.id }).from(unidades).where(ilike(unidades.codigo, like))),
@@ -295,7 +299,7 @@ export async function getCargas(opts?: {
   const [rows, aggRows] = await Promise.all([
     db.query.cargas.findMany({
       where: whereCond,
-      with: { unidad: true, operador: true, obra: true, folioSerie: { columns: { codigo: true } }, archivos: { columns: { url: true }, limit: 1 }, periodo: { columns: { cerrado: true } } },
+      with: { unidad: true, operador: true, obra: true, folioSerie: { columns: { codigo: true, folioDigitos: true } }, archivos: { columns: { url: true }, limit: 1 }, periodo: { columns: { cerrado: true } } },
       orderBy: (c, { desc: _desc }) => [_desc(c.fecha), _desc(c.createdAt)],
       limit: lim,
       offset: off,
@@ -329,6 +333,7 @@ export async function getCargasPage(opts: {
     hora: c.hora,
     folio: c.folio,
     folioSerieCodigo: c.folioSerie?.codigo ?? null,
+    folioSerieDigitos: c.folioSerie?.folioDigitos ?? 0,
     litros: c.litros,
     origen: c.origen,
     tipoDiesel: c.tipoDiesel,
@@ -391,7 +396,7 @@ export async function getCatalogoResumen(
       unidad:   { columns: { codigo: true } },
       operador: { columns: { nombre: true } },
       obra:     { columns: { nombre: true } },
-      folioSerie: { columns: { codigo: true } },
+      folioSerie: { columns: { codigo: true, folioDigitos: true } },
       periodo:  { columns: { cerrado: true } },
     },
     columns: {
@@ -417,6 +422,7 @@ export async function getCatalogoResumen(
       hora:           c.hora ?? null,
       folio:          c.folio,
       folioSerieCodigo: c.folioSerie?.codigo ?? null,
+      folioSerieDigitos: c.folioSerie?.folioDigitos ?? 0,
       litros:         c.litros,
       origen:         c.origen,
       tipoDiesel:     c.tipoDiesel ?? null,
@@ -516,7 +522,7 @@ export async function getUltimaCargaUnidad(unidadId: number) {
     with: {
       obra:     { columns: { nombre: true } },
       operador: { columns: { nombre: true } },
-      folioSerie: { columns: { codigo: true } },
+      folioSerie: { columns: { codigo: true, folioDigitos: true } },
     },
   });
   if (!ultima) return null;
@@ -528,6 +534,7 @@ export async function getUltimaCargaUnidad(unidadId: number) {
     odometroHrs:    ultima.odometroHrs,
     folio:          ultima.folio,
     folioSerieCodigo: ultima.folioSerie?.codigo ?? null,
+    folioSerieDigitos: ultima.folioSerie?.folioDigitos ?? 0,
     origen:         ultima.origen,
     notas:          ultima.notas,
     createdAt:      ultima.createdAt?.toISOString() ?? null,
@@ -708,7 +715,7 @@ export async function updateCarga(id: number, data: UpdateCargaInput) {
       if (targetFolio !== null) {
         folioSchema.parse(targetFolio);
         assertFolioEnSerie(targetFolio, serie);
-        await assertFolioDisponible(targetFolio, carga.origen as "patio" | "campo", serie.id, db, { cargaId: id });
+        await assertFolioDisponible(targetFolio, targetSerieId, db, { cargaId: id });
       }
     }
   }

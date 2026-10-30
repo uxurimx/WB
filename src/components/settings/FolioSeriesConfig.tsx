@@ -16,12 +16,16 @@ type Serie = {
   nombre: string;
   folioMin: number;
   folioMax: number;
+  folioDigitos: number;
   activa: boolean;
   predeterminada: boolean;
 };
 
 function formatRange(serie: Serie) {
-  return `${serie.folioMin || "sin mínimo"} – ${serie.folioMax || "sin máximo"}`;
+  const format = (value: number, fallback: string) => value === 0
+    ? fallback
+    : String(value).padStart(serie.folioDigitos, "0");
+  return `${format(serie.folioMin, "sin mínimo")} – ${format(serie.folioMax, "sin máximo")}`;
 }
 
 export default function FolioSeriesConfig({ series }: { series: Serie[] }) {
@@ -45,8 +49,8 @@ export default function FolioSeriesConfig({ series }: { series: Serie[] }) {
         await createFolioSerie({
           codigo,
           nombre,
-          folioMin: Number(min),
-          folioMax: Number(max),
+          folioMin: min,
+          folioMax: max,
         });
         setCodigo("");
         setNombre("");
@@ -77,7 +81,7 @@ export default function FolioSeriesConfig({ series }: { series: Serie[] }) {
       <div>
         <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>Serie compartida</h3>
         <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
-          Patio, Campo y transferencias usan la misma serie activa. Cada origen sugiere su propio consecutivo, pero no se puede repetir un número dentro de la misma serie. El folio completo se forma como A10001.
+          Patio, Campo y transferencias usan la misma serie activa. Cada origen sugiere su propio consecutivo, pero no se puede repetir un folio dentro de la misma serie. Escribe el mínimo con ceros iniciales para conservar su ancho, por ejemplo 00001–99999; el folio completo se forma como A00001. Con 0–0 no se agregan ceros y empieza en 1.
         </p>
       </div>
 
@@ -132,13 +136,13 @@ export default function FolioSeriesConfig({ series }: { series: Serie[] }) {
           </label>
           <label className="space-y-1 text-xs" style={{ color: "var(--fg-muted)" }}>
             Folio mínimo (0 = sin límite)
-            <input type="number" min={0} max={99999} value={min} onChange={(e) => setMin(e.target.value)}
+            <input type="text" inputMode="numeric" pattern="[0-9]{1,5}" maxLength={5} value={min} onChange={(e) => setMin(e.target.value)}
               className="w-full rounded-lg border px-3 py-2 text-sm font-mono"
               style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }} />
           </label>
           <label className="space-y-1 text-xs" style={{ color: "var(--fg-muted)" }}>
             Folio máximo (0 = sin límite)
-            <input type="number" min={0} max={99999} value={max} onChange={(e) => setMax(e.target.value)}
+            <input type="text" inputMode="numeric" pattern="[0-9]{1,5}" maxLength={5} value={max} onChange={(e) => setMax(e.target.value)}
               className="w-full rounded-lg border px-3 py-2 text-sm font-mono"
               style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }} />
           </label>

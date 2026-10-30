@@ -25,7 +25,7 @@ import {
 } from "@/app/actions/tanques";
 import type PusherClient from "pusher-js";
 import { formatFechaHoraMx, formatFechaMx } from "@/lib/date-utils";
-import { formatCargaFolio, formatTransferenciaFolio } from "@/lib/folio-format";
+import { formatCargaFolio, formatFolioDigits, formatTransferenciaFolio } from "@/lib/folio-format";
 
 // ─── Types ───────────────────────────────────────────────────
 export type CargaItem = {
@@ -35,6 +35,7 @@ export type CargaItem = {
   hora: string | null;
   folio: number | null;
   folioSerieCodigo: string | null;
+  folioSerieDigitos: number;
   litros: number;
   origen: string;
   tipoDiesel: string | null;
@@ -60,6 +61,7 @@ export type TransferenciaItem = {
   fecha: string;
   folio: number | null;
   folioSerieCodigo: string | null;
+  folioSerieDigitos: number;
   litros: number;
   origenNombre: string;
   destinoNombre: string;
@@ -96,12 +98,12 @@ function formatFechaHora(fecha: string, createdAt?: string | null, hora?: string
   return formatFechaHoraMx(fecha, createdAt, hora);
 }
 
-function formatFolioCarga(item: Pick<CargaItem, "folio" | "folioSerieCodigo" | "origen">) {
-  return formatCargaFolio(item.folio, item.folioSerieCodigo, item.origen);
+function formatFolioCarga(item: Pick<CargaItem, "folio" | "folioSerieCodigo" | "folioSerieDigitos" | "origen">) {
+  return formatCargaFolio(item.folio, item.folioSerieCodigo, item.origen, item.folioSerieDigitos);
 }
 
-function formatFolioTransferencia(item: Pick<TransferenciaItem, "folio" | "folioSerieCodigo">) {
-  return formatTransferenciaFolio(item.folio, item.folioSerieCodigo);
+function formatFolioTransferencia(item: Pick<TransferenciaItem, "folio" | "folioSerieCodigo" | "folioSerieDigitos">) {
+  return formatTransferenciaFolio(item.folio, item.folioSerieCodigo, item.folioSerieDigitos);
 }
 
 function DetailPill({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
@@ -517,7 +519,8 @@ export default function CargasTable({
     if (item._tipo === "recarga") return (item.proveedor ?? "").toLowerCase().includes(q) || item.tanqueNombre.toLowerCase().includes(q);
     return item.origenNombre.toLowerCase().includes(q) || item.destinoNombre.toLowerCase().includes(q)
       || String(item.folio ?? "").includes(q) || (item.folioSerieCodigo ?? "").toLowerCase().includes(q)
-      || `${item.folioSerieCodigo ?? ""}${item.folio ?? ""}`.toLowerCase().includes(q);
+      || `${item.folioSerieCodigo ?? ""}${item.folio ?? ""}`.toLowerCase().includes(q)
+      || formatFolioTransferencia(item).toLowerCase().includes(q);
   };
 
   const recargasView = (tipoFiltro === "actividad" || tipoFiltro === "recarga")
@@ -589,7 +592,7 @@ export default function CargasTable({
     setEditCargaForm({
       fecha:          c.fecha,
       hora:           c.hora?.slice(0, 5) ?? "",
-      folio:          c.folio ? String(c.folio) : "",
+      folio:          formatFolioDigits(c.folio, c.folioSerieDigitos),
       litros:         String(c.litros),
       odometroHrs:    c.odometroHrs != null ? String(c.odometroHrs) : "",
       cuentaLtInicio: c.cuentaLtInicio != null ? String(c.cuentaLtInicio) : "",
@@ -748,7 +751,7 @@ export default function CargasTable({
     setEditTransfForm({
       fecha:                    t.fecha,
       litros:                   String(t.litros),
-      folio:                    t.folio != null ? String(t.folio) : "",
+      folio:                    formatFolioDigits(t.folio, t.folioSerieDigitos),
       cuentalitrosNissanInicio: t.cuentalitrosNissanInicio != null ? String(t.cuentalitrosNissanInicio) : "",
       cuentalitrosDestino:      t.cuentalitrosDestino != null ? String(t.cuentalitrosDestino) : "",
       notas:                    t.notas ?? "",
@@ -1245,7 +1248,7 @@ export default function CargasTable({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Folio</Label>
-                <Input name="folio" type="number" value={editCargaForm.folio} onChange={handleCargaFormChange} className="font-mono" />
+                <Input name="folio" type="text" inputMode="numeric" maxLength={5} value={editCargaForm.folio} onChange={handleCargaFormChange} className="font-mono" />
               </div>
               <div className="space-y-1.5">
                 <Label>Litros *</Label>
@@ -1504,7 +1507,7 @@ export default function CargasTable({
               <div className="relative">
                 <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
                   style={{ color: "var(--fg-muted)" }} />
-                <Input name="folio" type="number" step="1" min="1" max={99999}
+                <Input name="folio" type="text" inputMode="numeric" maxLength={5}
                   value={editTransfForm.folio} onChange={handleTransfFormChange}
                   placeholder="00000" className="font-mono font-bold pl-9" />
               </div>

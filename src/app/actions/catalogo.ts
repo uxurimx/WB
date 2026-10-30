@@ -107,7 +107,7 @@ export async function getCatalogoCargas(
       unidad:   { columns: { codigo: true } },
       operador: { columns: { nombre: true } },
       obra:     { columns: { nombre: true } },
-      folioSerie: { columns: { codigo: true } },
+      folioSerie: { columns: { codigo: true, folioDigitos: true } },
       periodo:  { columns: { id: true, nombre: true, cerrado: true } },
     },
     columns: {
@@ -123,6 +123,7 @@ export async function getCatalogoCargas(
     hora:           c.hora ?? null,
     folio:          c.folio,
       folioSerieCodigo: c.folioSerie?.codigo ?? null,
+      folioSerieDigitos: c.folioSerie?.folioDigitos ?? 0,
     litros:         c.litros,
     origen:         c.origen,
     tipoDiesel:     c.tipoDiesel ?? null,

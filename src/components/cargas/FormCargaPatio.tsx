@@ -14,7 +14,7 @@ import { saveArchivoFoto } from "@/app/actions/archivos";
 import { useUploadThing } from "@/lib/uploadthing";
 import { getNowLocal } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
-import { formatFolioNumber } from "@/lib/folio-format";
+import { formatFolioDigits, formatFolioNumber } from "@/lib/folio-format";
 
 import { KM_MAX_DIFERENCIA } from "@/lib/odometro";
 import type { FolioSerieCaptura } from "@/lib/folios";
@@ -37,13 +37,12 @@ export default function FormCargaPatio({
 }) {
   const router = useRouter();
   const serieInicial = folioSeries.find((serie) => serie.predeterminada) ?? folioSeries[0];
-  const [folioSerieId, setFolioSerieId] = useState(serieInicial?.id ?? 0);
-  const serieSeleccionada = folioSeries.find((serie) => serie.id === folioSerieId) ?? serieInicial;
+  const serieSeleccionada = serieInicial;
   const siguienteFolio = serieSeleccionada?.siguienteFolio ?? null;
   const [isPending, setIsPending] = useState(false);
-  const [success, setSuccess] = useState<{ folio: number; serie: string; litros: number } | null>(null);
+  const [success, setSuccess] = useState<{ folio: number; serie: string; folioDigitos: number; litros: number } | null>(null);
   const [error, setError] = useState("");
-  const [folioManual, setFolioManual] = useState<string>(siguienteFolio == null ? "" : String(siguienteFolio));
+  const [folioManual, setFolioManual] = useState<string>(formatFolioDigits(siguienteFolio, serieSeleccionada?.folioDigitos));
   const [folioEditando, setFolioEditando] = useState(false);
   const skipFolioEffect = useRef(false);
 
@@ -82,8 +81,8 @@ export default function FormCargaPatio({
       skipFolioEffect.current = false;
       return;
     }
-    setFolioManual(siguienteFolio == null ? "" : String(siguienteFolio));
-  }, [folioSerieId, siguienteFolio]);
+    setFolioManual(formatFolioDigits(siguienteFolio, serieSeleccionada?.folioDigitos));
+  }, [siguienteFolio, serieSeleccionada?.folioDigitos]);
 
   useEffect(() => {
     if (!form.unidadId) { setUltimoKm(null); setKmWarning(""); setKmEstimado(false); return; }
@@ -175,7 +174,7 @@ export default function FormCargaPatio({
       const result = await createCargaPatio({
         fecha: form.fecha,
         hora: form.hora,
-        folioSerieId,
+        folioSerieId: serieSeleccionada.id,
         folioManual: folioNum,
         unidadId: parseInt(form.unidadId),
         litros,
@@ -201,7 +200,7 @@ export default function FormCargaPatio({
         }
       }
 
-      setSuccess({ folio: result.folio, serie: serieSeleccionada?.codigo ?? "", litros });
+      setSuccess({ folio: result.folio, serie: serieSeleccionada?.codigo ?? "", folioDigitos: result.folioDigitos, litros });
       clearFoto();
       const nextCuentaLt = form.cuentaLtFin;
       const { fecha, hora } = getNowLocal();
@@ -213,7 +212,7 @@ export default function FormCargaPatio({
       setKmEstimado(false);
       // nextFolio viene directo del server tras el insert — autoritativo, sin race condition
       skipFolioEffect.current = true;
-      setFolioManual(result.nextFolio == null ? "" : String(result.nextFolio));
+      setFolioManual(formatFolioDigits(result.nextFolio, serieSeleccionada?.folioDigitos));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar");
@@ -234,7 +233,7 @@ export default function FormCargaPatio({
           <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
           <div>
             <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
-              Carga registrada — {formatFolioNumber(success.folio, success.serie)}
+              Carga registrada — {formatFolioNumber(success.folio, success.serie, success.folioDigitos)}
             </p>
             <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
               {success.litros} L despachados correctamente
@@ -265,7 +264,9 @@ export default function FormCargaPatio({
               </p>
               {folioEditando ? (
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={5}
                   value={folioManual}
                   onChange={(e) => setFolioManual(e.target.value)}
                   onBlur={() => setFolioEditando(false)}
@@ -288,7 +289,7 @@ export default function FormCargaPatio({
             {parseInt(folioManual) !== siguienteFolio && (
               <button
                 type="button"
-                onClick={() => setFolioManual(String(siguienteFolio))}
+                onClick={() => setFolioManual(formatFolioDigits(siguienteFolio, serieSeleccionada?.folioDigitos))}
                 className="text-[9px] px-1.5 py-0.5 rounded border font-medium shrink-0 hover:bg-[var(--surface)] transition-colors"
                 style={{ color: "var(--fg-muted)", borderColor: "var(--border)" }}
                 title="Restaurar folio secuencial"
@@ -308,16 +309,6 @@ export default function FormCargaPatio({
             </div>
           </div>
         </div>
-        {folioSeries.length > 1 && (
-          <div className="space-y-1.5">
-            <Label htmlFor="folioSeriePatio">Bloque físico</Label>
-            <select id="folioSeriePatio" value={folioSerieId} onChange={(e) => setFolioSerieId(Number(e.target.value))}
-              className="w-full rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}>
-              {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.folioMin || "sin mínimo"}–{serie.folioMax || "sin máximo"}{serie.predeterminada ? " (en uso)" : ""}</option>)}
-            </select>
-          </div>
-        )}
-
         {/* Fecha y hora */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">

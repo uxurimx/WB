@@ -17,7 +17,7 @@ import {
 import { transferirEntreTanques } from "@/app/actions/tanques";
 import { getFolioSeriesForTransfer } from "@/app/actions/folios";
 import type { FolioSerieCaptura } from "@/lib/folios";
-import { formatTransferenciaFolio } from "@/lib/folio-format";
+import { formatFolioDigits, formatTransferenciaFolio } from "@/lib/folio-format";
 
 function todayStr() {
   const d = new Date();
@@ -77,7 +77,7 @@ export default function TransferirNissanModal({
       setFolioSeries(series);
       const selected = series.find((serie) => serie.predeterminada) ?? series[0];
       setFolioSerieId(selected?.id ?? 0);
-      setForm((prev) => ({ ...prev, folio: selected?.siguienteFolio == null ? "" : String(selected.siguienteFolio) }));
+      setForm((prev) => ({ ...prev, folio: formatFolioDigits(selected?.siguienteFolio, selected?.folioDigitos) }));
     });
   }
 
@@ -117,13 +117,13 @@ export default function TransferirNissanModal({
           notas: form.notas || undefined,
           cuentalitrosOrigen: inicioVal !== undefined && !isNaN(inicioVal) ? inicioVal : undefined,
         });
-        onTransferComplete?.(res.origen.litrosActuales, res.destino.litrosActuales, res.origen.cuentalitros);
+        onTransferComplete?.(res.origen.litrosActuales, res.destino.litrosActuales, res.origen.cuentalitros ?? 0);
         setSuccess(
-          `Folio ${formatTransferenciaFolio(res.folio, folioSeries.find((serie) => serie.id === folioSerieId)?.codigo)} · ${litros.toLocaleString()} L transferidos → NISSAN. ` +
+          `Folio ${formatTransferenciaFolio(res.folio, folioSeries.find((serie) => serie.id === folioSerieId)?.codigo, folioSeries.find((serie) => serie.id === folioSerieId)?.folioDigitos)} · ${litros.toLocaleString()} L transferidos → NISSAN. ` +
           `Taller: ${res.origen.litrosActuales.toFixed(0)} L | ` +
           `NISSAN: ${res.destino.litrosActuales.toFixed(0)} L`
         );
-        setForm({ fecha: todayStr(), litros: "", notas: "", folio: "", cuentaLtInicio: "", cuentaLtFin: "" });
+        setForm({ fecha: todayStr(), litros: "", notas: "", folio: formatFolioDigits(res.nextFolio, folioSeries.find((serie) => serie.id === folioSerieId)?.folioDigitos), cuentaLtInicio: "", cuentaLtFin: "" });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al transferir");
       }
@@ -175,10 +175,10 @@ export default function TransferirNissanModal({
                         const id = Number(e.target.value);
                         setFolioSerieId(id);
                         const selected = folioSeries.find((serie) => serie.id === id);
-                        setForm((prev) => ({ ...prev, folio: selected?.siguienteFolio == null ? "" : String(selected.siguienteFolio) }));
+                        setForm((prev) => ({ ...prev, folio: formatFolioDigits(selected?.siguienteFolio, selected?.folioDigitos) }));
                       }}
                       className="w-full rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                      {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.folioMin || "sin mínimo"}–{serie.folioMax || "sin máximo"}{serie.predeterminada ? " (en uso)" : ""}</option>)}
+                      {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.folioMin ? formatFolioDigits(serie.folioMin, serie.folioDigitos) : "sin mínimo"}–{serie.folioMax ? formatFolioDigits(serie.folioMax, serie.folioDigitos) : "sin máximo"}{serie.predeterminada ? " (en uso)" : ""}</option>)}
                     </select>
                   </div>
                 )}
@@ -189,10 +189,9 @@ export default function TransferirNissanModal({
                   <Input
                     id="t-folio"
                     name="folio"
-                    type="number"
-                    step="1"
-                    min="1"
-                    max={99999}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
                     value={form.folio}
                     onChange={handleChange}
                     placeholder="00000"

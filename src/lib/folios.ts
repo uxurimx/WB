@@ -1,7 +1,6 @@
-import { and, desc, eq, max, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { cargas, configuracion, folioSeries, transferenciasTanque } from "@/db/schema";
-import { formatFolioNumber } from "@/lib/folio-format";
 
 export type FolioOrigen = "patio" | "campo";
 export type FolioSerieOrigen = FolioOrigen | "compartida";
@@ -12,6 +11,7 @@ export type FolioSerieCaptura = {
   nombre: string;
   folioMin: number;
   folioMax: number;
+  folioDigitos: number;
   predeterminada: boolean;
   siguienteFolio: number | null;
 };
@@ -73,35 +73,52 @@ export function normalizeFolioConflict(error: unknown, folio: number, serieCodig
   const constraint = String(details.constraint ?? "");
   const isUniqueFolioViolation =
     (String(details.code ?? "") === "23505" && /folio/i.test(constraint)) ||
-    /folio.{0,80}(ya existe|already exists)/i.test(message) ||
+    /folio.{0,100}(ya existe|ya está registrado|already exists)/i.test(message) ||
+    /folio ocupado/i.test(message) ||
     (/duplicate key value violates unique constraint/i.test(message) && /folio/i.test(message));
   if (!isUniqueFolioViolation) return error instanceof Error ? error : new Error(message || "No se pudo guardar el folio");
-  return new Error(`FOLIO OCUPADO: ${formatFolioNumber(folio, serieCodigo)} ya está registrado en esa serie. Verifica el ticket o captura otro número.`);
+  return new Error(`FOLIO OCUPADO: ${serieCodigo}${folio} ya está registrado. El mismo número se permite al usar otro código de serie. Verifica el ticket o captura otro folio.`);
+}
+
+type FolioReciente = { folio: number; createdAt: Date | null; id: number };
+
+async function getUltimoFolioCarga(origen: FolioOrigen, serieId: number, database: FolioDb): Promise<FolioReciente | null> {
+  const [row] = await database.select({ folio: cargas.folio, createdAt: cargas.createdAt, id: cargas.id })
+    .from(cargas)
+    .where(and(eq(cargas.origen, origen), eq(cargas.folioSerieId, serieId), sql`${cargas.folio} IS NOT NULL`))
+    .orderBy(sql`${cargas.createdAt} DESC NULLS LAST`, desc(cargas.id))
+    .limit(1);
+  return row?.folio == null ? null : { ...row, folio: row.folio };
+}
+
+async function getUltimoFolioTransferencia(serieId: number, database: FolioDb): Promise<FolioReciente | null> {
+  const [row] = await database.select({ folio: transferenciasTanque.folio, createdAt: transferenciasTanque.createdAt, id: transferenciasTanque.id })
+    .from(transferenciasTanque)
+    .where(and(eq(transferenciasTanque.folioSerieId, serieId), sql`${transferenciasTanque.folio} IS NOT NULL`))
+    .orderBy(sql`${transferenciasTanque.createdAt} DESC NULLS LAST`, desc(transferenciasTanque.id))
+    .limit(1);
+  return row?.folio == null ? null : { ...row, folio: row.folio };
+}
+
+function getMasReciente(a: FolioReciente | null, b: FolioReciente | null): FolioReciente | null {
+  if (!a) return b;
+  if (!b) return a;
+  const aTime = a.createdAt?.getTime() ?? Number.NEGATIVE_INFINITY;
+  const bTime = b.createdAt?.getTime() ?? Number.NEGATIVE_INFINITY;
+  if (aTime !== bTime) return aTime > bTime ? a : b;
+  return a.id >= b.id ? a : b;
 }
 
 export async function getSiguienteFolioPatioCompartido(database: FolioDb = db, serieId?: number): Promise<number | null> {
   const id = serieId ?? await getDefaultFolioSerieId("patio", database);
   const serie = await getFolioSerieActiva("patio", id, database);
-  const [cargaResult, transferenciaResult] = await Promise.all([
-    database.select({ maxFolio: max(cargas.folio) }).from(cargas)
-      .where(and(
-        eq(cargas.folioSerieId, id),
-        eq(cargas.origen, "patio"),
-        sql`${cargas.folio} BETWEEN 1 AND 99999`,
-      )),
-    database.select({ maxFolio: max(transferenciasTanque.folio) }).from(transferenciasTanque)
-      .where(and(
-        eq(transferenciasTanque.folioSerieId, id),
-        sql`${transferenciasTanque.folio} BETWEEN 1 AND 99999`,
-      )),
+  const [ultimaCarga, ultimaTransferencia] = await Promise.all([
+    getUltimoFolioCarga("patio", id, database),
+    getUltimoFolioTransferencia(id, database),
   ]);
-  const maxCarga = cargaResult[0]?.maxFolio ?? null;
-  const maxTransferencia = transferenciaResult[0]?.maxFolio ?? null;
-  const maxGlobal = maxCarga !== null && maxTransferencia !== null
-    ? Math.max(Number(maxCarga), Number(maxTransferencia))
-    : maxCarga ?? maxTransferencia;
-  const siguiente = maxGlobal !== null
-    ? Number(maxGlobal) + 1
+  const ultimo = getMasReciente(ultimaCarga, ultimaTransferencia);
+  const siguiente = ultimo
+    ? ultimo.folio + 1
     : Math.max(serie.folioBase, serie.folioMin || 1);
   if (siguiente > 99999 || (serie.folioMax > 0 && siguiente > serie.folioMax)) return null;
   return siguiente;
@@ -109,32 +126,38 @@ export async function getSiguienteFolioPatioCompartido(database: FolioDb = db, s
 
 export async function assertFolioDisponible(
   folio: number,
-  origen: FolioOrigen,
   serieId: number,
   database: FolioDb = db,
   exclude?: { cargaId?: number },
 ) {
-  const [serie] = await database.select({ origen: folioSeries.origen, codigo: folioSeries.codigo }).from(folioSeries)
+  const [serie] = await database.select({ codigo: folioSeries.codigo }).from(folioSeries)
     .where(eq(folioSeries.id, serieId)).limit(1);
+  if (!serie) throw new Error("No se encontró la serie del folio");
   const cargaConds: SQL[] = [
     eq(cargas.folio, folio),
-    eq(cargas.folioSerieId, serieId),
+    inArray(cargas.origen, ["patio", "campo"]),
+    eq(folioSeries.codigo, serie.codigo),
   ];
-  if (serie?.origen !== "compartida") cargaConds.push(eq(cargas.origen, origen));
   if (exclude?.cargaId) cargaConds.push(sql`${cargas.id} <> ${exclude.cargaId}`);
 
-  const cargaDup = await database.select({ id: cargas.id }).from(cargas)
+  const [cargaDup] = await database.select({ id: cargas.id, origen: cargas.origen, serieCodigo: folioSeries.codigo })
+    .from(cargas)
+    .leftJoin(folioSeries, eq(cargas.folioSerieId, folioSeries.id))
     .where(and(...cargaConds)).limit(1);
-  if (cargaDup.length > 0)
-    throw new Error(`FOLIO OCUPADO: ${formatFolioNumber(folio, serie?.codigo)} ya está registrado en esa serie.`);
-
-  if (serie?.origen === "compartida") {
-    const transferenciaDup = await database.select({ id: transferenciasTanque.id }).from(transferenciasTanque)
-      .where(and(eq(transferenciasTanque.folio, folio), eq(transferenciasTanque.folioSerieId, serieId))).limit(1);
-    if (transferenciaDup.length > 0)
-      throw new Error(`FOLIO OCUPADO: ${formatFolioNumber(folio, serie.codigo)} ya está registrado en esa serie.`);
+  if (cargaDup) {
+    const origenExistente = cargaDup.origen === "patio" ? "Patio" : "Campo";
+    const serieExistente = cargaDup.serieCodigo ? ` (serie ${cargaDup.serieCodigo})` : "";
+    throw new Error(`FOLIO OCUPADO: ${serie.codigo}${folio} ya está registrado en una carga de ${origenExistente}${serieExistente}. El número puede repetirse al cambiar de serie.`);
   }
 
+  const [transferenciaDup] = await database.select({ id: transferenciasTanque.id, serieCodigo: folioSeries.codigo })
+    .from(transferenciasTanque)
+    .leftJoin(folioSeries, eq(transferenciasTanque.folioSerieId, folioSeries.id))
+    .where(and(eq(transferenciasTanque.folio, folio), eq(folioSeries.codigo, serie.codigo))).limit(1);
+  if (transferenciaDup) {
+    const serieExistente = transferenciaDup.serieCodigo ? ` (serie ${transferenciaDup.serieCodigo})` : "";
+    throw new Error(`FOLIO OCUPADO: ${serie.codigo}${folio} ya está registrado en una transferencia${serieExistente}. El número puede repetirse al cambiar de serie.`);
+  }
 }
 
 export async function assertFolioTransferenciaDisponible(
@@ -143,36 +166,45 @@ export async function assertFolioTransferenciaDisponible(
   database: FolioDb = db,
   excludeId?: number,
 ) {
-  const [serie] = await database.select({ origen: folioSeries.origen, codigo: folioSeries.codigo }).from(folioSeries)
+  const [serie] = await database.select({ codigo: folioSeries.codigo }).from(folioSeries)
     .where(eq(folioSeries.id, serieId)).limit(1);
+  if (!serie) throw new Error("No se encontró la serie del folio");
   const conditions: SQL[] = [
     eq(transferenciasTanque.folio, folio),
-    eq(transferenciasTanque.folioSerieId, serieId),
+    eq(folioSeries.codigo, serie.codigo),
   ];
   if (excludeId) conditions.push(sql`${transferenciasTanque.id} <> ${excludeId}`);
-  const duplicate = await database.select({ id: transferenciasTanque.id }).from(transferenciasTanque)
+  const [duplicate] = await database.select({ id: transferenciasTanque.id, serieCodigo: folioSeries.codigo })
+    .from(transferenciasTanque)
+    .leftJoin(folioSeries, eq(transferenciasTanque.folioSerieId, folioSeries.id))
     .where(and(...conditions)).limit(1);
-  if (duplicate.length) throw new Error(`FOLIO OCUPADO: ${formatFolioNumber(folio, serie?.codigo)} ya está registrado en esa serie.`);
+  if (duplicate) {
+    const serieExistente = duplicate.serieCodigo ? ` (serie ${duplicate.serieCodigo})` : "";
+    throw new Error(`FOLIO OCUPADO: ${serie.codigo}${folio} ya está registrado en una transferencia${serieExistente}. El número puede repetirse al cambiar de serie.`);
+  }
 
-  if (serie?.origen === "compartida") {
-    const cargaDup = await database.select({ id: cargas.id }).from(cargas)
-      .where(and(eq(cargas.folio, folio), eq(cargas.folioSerieId, serieId))).limit(1);
-    if (cargaDup.length) throw new Error(`FOLIO OCUPADO: ${formatFolioNumber(folio, serie.codigo)} ya está registrado en esa serie.`);
+  const cargaConds: SQL[] = [
+    eq(cargas.folio, folio),
+    inArray(cargas.origen, ["patio", "campo"]),
+    eq(folioSeries.codigo, serie.codigo),
+  ];
+  const [cargaDup] = await database.select({ id: cargas.id, origen: cargas.origen, serieCodigo: folioSeries.codigo })
+    .from(cargas)
+    .leftJoin(folioSeries, eq(cargas.folioSerieId, folioSeries.id))
+    .where(and(...cargaConds)).limit(1);
+  if (cargaDup) {
+    const origenExistente = cargaDup.origen === "patio" ? "Patio" : "Campo";
+    const serieExistente = cargaDup.serieCodigo ? ` (serie ${cargaDup.serieCodigo})` : "";
+    throw new Error(`FOLIO OCUPADO: ${serie.codigo}${folio} ya está registrado en una carga de ${origenExistente}${serieExistente}. El número puede repetirse al cambiar de serie.`);
   }
 }
 
 export async function getSiguienteFolioEnSerie(origen: FolioOrigen, serieId: number, database: FolioDb = db): Promise<number | null> {
   if (origen === "patio") return getSiguienteFolioPatioCompartido(database, serieId);
   const serie = await getFolioSerieActiva(origen, serieId, database);
-  const [result] = await database.select({ maxFolio: max(cargas.folio) }).from(cargas)
-    .where(and(
-      eq(cargas.folioSerieId, serieId),
-      eq(cargas.origen, origen),
-      sql`${cargas.folio} BETWEEN 1 AND 99999`,
-    ));
-  const maxCarga = result?.maxFolio == null ? null : Number(result.maxFolio);
-  const siguiente = maxCarga !== null
-    ? maxCarga + 1
+  const ultimo = await getUltimoFolioCarga("campo", serieId, database);
+  const siguiente = ultimo
+    ? ultimo.folio + 1
     : Math.max(serie.folioBase, serie.folioMin || 1);
   if (siguiente > 99999 || (serie.folioMax > 0 && siguiente > serie.folioMax)) return null;
   return siguiente;

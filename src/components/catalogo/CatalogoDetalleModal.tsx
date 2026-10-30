@@ -18,7 +18,7 @@ import { getCatalogoResumen, updateCarga, deleteCarga, getAuditLogCargasUnidad }
 import { getRendimientosUnidad } from "@/app/actions/rendimientos";
 import { getArchivosUnidad } from "@/app/actions/archivos";
 import { getOperadores, getObras } from "@/app/actions/catalogo";
-import { formatCargaFolio } from "@/lib/folio-format";
+import { formatCargaFolio, formatFolioDigits } from "@/lib/folio-format";
 
 type Resumen      = Awaited<ReturnType<typeof getCatalogoResumen>>;
 type RendUnidad   = Awaited<ReturnType<typeof getRendimientosUnidad>>;
@@ -39,8 +39,8 @@ function fmtNum(n: number | null, d = 1) {
   return n.toLocaleString("es-MX", { minimumFractionDigits: d, maximumFractionDigits: d });
 }
 
-function formatFolioCarga(c: Pick<CargaReciente, "folio" | "folioSerieCodigo" | "origen">) {
-  return formatCargaFolio(c.folio, c.folioSerieCodigo, c.origen);
+function formatFolioCarga(c: Pick<CargaReciente, "folio" | "folioSerieCodigo" | "folioSerieDigitos" | "origen">) {
+  return formatCargaFolio(c.folio, c.folioSerieCodigo, c.origen, c.folioSerieDigitos);
 }
 
 export default function CatalogoDetalleModal({
@@ -122,7 +122,7 @@ export default function CatalogoDetalleModal({
     setEditForm({
       fecha:          c.fecha,
       hora:           c.hora?.slice(0, 5) ?? "",
-      folio:          c.folio ? String(c.folio) : "",
+      folio:          formatFolioDigits(c.folio, c.folioSerieDigitos),
       litros:         String(c.litros),
       odometroHrs:    c.odometroHrs != null ? String(c.odometroHrs) : "",
       cuentaLtInicio: c.cuentaLtInicio != null ? String(c.cuentaLtInicio) : "",
@@ -666,7 +666,7 @@ export default function CatalogoDetalleModal({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Folio</Label>
-                <Input name="folio" type="number" value={editForm.folio} onChange={handleEditFormChange} className="font-mono" />
+                <Input name="folio" type="text" inputMode="numeric" maxLength={5} value={editForm.folio} onChange={handleEditFormChange} className="font-mono" />
               </div>
               <div className="space-y-1.5">
                 <Label>Litros *</Label>

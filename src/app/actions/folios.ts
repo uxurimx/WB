@@ -30,6 +30,7 @@ export async function getFolioSeriesConfig() {
     nombre: row.nombre,
     folioMin: row.folioMin,
     folioMax: row.folioMax,
+    folioDigitos: row.folioDigitos,
     activa: row.activa,
     predeterminada: row.origen === "compartida"
       ? row.id === sharedDefaultId
@@ -57,6 +58,7 @@ export async function getFolioSeriesForCapture(origen: FolioOrigen) {
     nombre: row.nombre,
     folioMin: row.folioMin,
     folioMax: row.folioMax,
+    folioDigitos: row.folioDigitos,
     predeterminada: row.id === defaultId,
     siguienteFolio: await getNextFolioForSeries(origen, row.id),
   })));
@@ -81,6 +83,7 @@ export async function getFolioSeriesForTransfer() {
     nombre: row.nombre,
     folioMin: row.folioMin,
     folioMax: row.folioMax,
+    folioDigitos: row.folioDigitos,
     predeterminada: row.id === defaultId,
     siguienteFolio: await getNextFolioForSeries("patio", row.id),
   })));
@@ -89,13 +92,24 @@ export async function getFolioSeriesForTransfer() {
 export async function createFolioSerie(input: {
   codigo: string;
   nombre: string;
-  folioMin: number;
-  folioMax: number;
+  folioMin: string;
+  folioMax: string;
 }) {
   await requireManageRole();
   const codigo = input.codigo.trim();
   const nombre = input.nombre.trim();
-  const { folioMin, folioMax } = input;
+  const parseLimite = (raw: string, label: string) => {
+    if (typeof raw !== "string" || !/^\d{1,5}$/.test(raw)) throw new Error(`El ${label} debe ser un número de 0 a 99999`);
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value > 99999) throw new Error(`El ${label} debe ser un número de 0 a 99999`);
+    return value;
+  };
+  const folioMin = parseLimite(input.folioMin, "mínimo");
+  const folioMax = parseLimite(input.folioMax, "máximo");
+  const folioDigitos = Math.max(
+    folioMin === 0 ? 0 : input.folioMin.length,
+    folioMax === 0 ? 0 : input.folioMax.length,
+  );
   if (!/^[A-Za-z0-9_-]{1,20}$/.test(codigo)) throw new Error("El código debe tener de 1 a 20 letras, números, guiones o guiones bajos");
   if (codigo.toUpperCase() === "BASE") throw new Error("BASE queda reservado para identificar el historial anterior");
   if (!nombre || nombre.length > 80) throw new Error("El nombre debe tener entre 1 y 80 caracteres");
@@ -115,6 +129,7 @@ export async function createFolioSerie(input: {
     folioMin,
     folioMax,
     folioBase: folioMin || 1,
+    folioDigitos,
     activa: true,
   }).returning({ id: folioSeries.id });
   await db.insert(configuracion).values({ clave: DEFAULT_KEY("compartida"), valor: String(serie.id) })

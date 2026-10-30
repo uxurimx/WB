@@ -104,6 +104,7 @@ export const folioSeries = pgTable("folio_series", {
   folioMin: integer("folio_min").notNull().default(0),
   folioMax: integer("folio_max").notNull().default(0),
   folioBase: integer("folio_base").notNull().default(1),
+  folioDigitos: integer("folio_digitos").notNull().default(0),
   activa: boolean("activa").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [

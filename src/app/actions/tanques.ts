@@ -3,12 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { db, neonSql } from "@/db";
 import { tanques, recargasTanque, transferenciasTanque, auditLog, cargas } from "@/db/schema";
-import { eq, inArray, gte, and, or, desc } from "drizzle-orm";
+import { eq, inArray, gte, and, desc } from "drizzle-orm";
 import { requireManageRole } from "@/lib/authz";
 import {
   assertFolioTransferenciaDisponible,
   assertFolioEnSerie,
   getFolioSerieActiva,
+  getSiguienteFolioPatioCompartido,
   normalizeFolioConflict,
 } from "@/lib/folios";
 import { pusherServer, CHANNELS, EVENTS } from "@/lib/pusher-server";
@@ -135,7 +136,7 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
   await assertFolioTransferenciaDisponible(folio, serie.id);
 
   // Una sola sentencia mantiene los saldos y el folio juntos si la validación
-  // global de serie detecta un duplicado concurrente.
+  // global detecta un duplicado concurrente.
   let mutationResult: unknown;
   try {
     mutationResult = await neonSql`
@@ -222,9 +223,11 @@ export async function transferirEntreTanques(input: TransferenciaInput) {
 
   revalidatePath("/overview");
   revalidatePath("/cargas");
+  const nextFolio = await getSiguienteFolioPatioCompartido(db, serie.id);
   return {
     ok: true,
     folio,
+    nextFolio,
     origen: {
       nombre: origenNombre,
       litrosActuales: nuevosLitrosOrigen,
@@ -406,7 +409,7 @@ export async function updateTransferencia(
       if (targetFolio <= 0 || targetFolio > 99999)
         throw new Error("Folio inválido. Debe ser un número entre 1 y 99999");
       assertFolioEnSerie(targetFolio, serie);
-      await assertFolioTransferenciaDisponible(targetFolio, serie.id, db, id);
+      await assertFolioTransferenciaDisponible(targetFolio, targetSerieId, db, id);
     }
   }
 
@@ -605,7 +608,7 @@ export async function getTransferencias(
       : undefined,
     orderBy: (t, { desc }) => [desc(t.createdAt)],
     limit,
-    with: { folioSerie: { columns: { codigo: true } } },
+    with: { folioSerie: { columns: { codigo: true, folioDigitos: true } } },
   });
   // Enriquecer con nombres de tanque (evita join manual)
   const tanquesRows = await db.select({ id: tanques.id, nombre: tanques.nombre }).from(tanques);
@@ -627,6 +630,7 @@ export type EventoTimeline = {
   notas: string | null;
   folio?: number | null;
   folioSerieCodigo?: string | null;
+  folioSerieDigitos?: number;
   proveedor?: string | null;
   precioLitro?: number | null;
   folioFactura?: string | null;
@@ -695,7 +699,7 @@ export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
         }),
         db.query.transferenciasTanque.findMany({
           where: (tr, { or: _or, eq: _eq }) => _or(_eq(tr.tanqueOrigenId, t.id), _eq(tr.tanqueDestinoId, t.id)),
-          with: { folioSerie: { columns: { codigo: true } } },
+          with: { folioSerie: { columns: { codigo: true, folioDigitos: true } } },
           orderBy: (tr, { desc: _desc }) => [_desc(tr.fecha)],
           limit: 60,
         }),
@@ -751,6 +755,7 @@ export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
             notas: tr.notas,
             folio: tr.folio,
             folioSerieCodigo: tr.folioSerie?.codigo ?? null,
+            folioSerieDigitos: tr.folioSerie?.folioDigitos ?? 0,
           });
         } else {
           timeline.push({
@@ -762,6 +767,7 @@ export async function getTanquesDetalle(): Promise<TanqueDetalle[]> {
             notas: tr.notas,
             folio: tr.folio,
             folioSerieCodigo: tr.folioSerie?.codigo ?? null,
+            folioSerieDigitos: tr.folioSerie?.folioDigitos ?? 0,
           });
         }
       }

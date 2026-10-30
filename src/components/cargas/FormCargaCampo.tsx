@@ -16,7 +16,7 @@ import { saveArchivoFoto } from "@/app/actions/archivos";
 import { createObraRapida } from "@/app/actions/catalogo";
 import { useUploadThing } from "@/lib/uploadthing";
 import { getNowLocal } from "@/lib/date-utils";
-import { formatCargaFolio, formatFolioNumber } from "@/lib/folio-format";
+import { formatCargaFolio, formatFolioDigits, formatFolioNumber } from "@/lib/folio-format";
 
 import { KM_MAX_DIFERENCIA } from "@/lib/odometro";
 import type { FolioSerieCaptura } from "@/lib/folios";
@@ -42,11 +42,10 @@ export default function FormCargaCampo({
 }) {
   const router = useRouter();
   const serieInicial = folioSeries.find((serie) => serie.predeterminada) ?? folioSeries[0];
-  const [folioSerieId, setFolioSerieId] = useState(serieInicial?.id ?? 0);
-  const serieSeleccionada = folioSeries.find((serie) => serie.id === folioSerieId) ?? serieInicial;
+  const serieSeleccionada = serieInicial;
   const siguienteFolio = serieSeleccionada?.siguienteFolio ?? null;
   const [isPending, setIsPending] = useState(false);
-  const [success, setSuccess] = useState<{ litros: number; unidad: string; folio: number; serie: string } | null>(null);
+  const [success, setSuccess] = useState<{ litros: number; unidad: string; folio: number; serie: string; folioDigitos: number } | null>(null);
   const [error, setError]     = useState("");
   const [cuentalitrosNissan, setCuentalitrosNissan] = useState(cuentalitrosNissanProp);
   const skipFolioEffect = useRef(false);
@@ -84,7 +83,7 @@ export default function FormCargaCampo({
   const [form, setForm] = useState({
     fecha: fechaInit,
     hora:  horaInit,
-    folioNissan:       siguienteFolio != null ? String(siguienteFolio) : "",
+    folioNissan:       formatFolioDigits(siguienteFolio, serieSeleccionada?.folioDigitos),
     unidadId:          "",
     litros:            "",
     odometroHrs:       "",
@@ -102,8 +101,8 @@ export default function FormCargaCampo({
       skipFolioEffect.current = false;
       return;
     }
-    setForm((prev) => ({ ...prev, folioNissan: siguienteFolio == null ? "" : String(siguienteFolio) }));
-  }, [folioSerieId, siguienteFolio]);
+    setForm((prev) => ({ ...prev, folioNissan: formatFolioDigits(siguienteFolio, serieSeleccionada?.folioDigitos) }));
+  }, [siguienteFolio, serieSeleccionada?.folioDigitos]);
 
   useEffect(() => {
     if (!form.unidadId) {
@@ -240,7 +239,7 @@ export default function FormCargaCampo({
       const result = await createCargaCampo({
         fecha:             form.fecha,
         hora:              form.hora,
-        folioSerieId,
+        folioSerieId: serieSeleccionada.id,
         folioNissan:       parseInt(form.folioNissan),
         unidadId:          parseInt(form.unidadId),
         litros,
@@ -271,7 +270,7 @@ export default function FormCargaCampo({
       if (result.nuevoCuentalitrosNissan !== undefined) {
         setCuentalitrosNissan(result.nuevoCuentalitrosNissan);
       }
-      setSuccess({ litros, unidad: unidadSel?.codigo ?? "", folio: folioNum, serie: serieSeleccionada?.codigo ?? "" });
+      setSuccess({ litros, unidad: unidadSel?.codigo ?? "", folio: folioNum, serie: serieSeleccionada?.codigo ?? "", folioDigitos: result.folioDigitos });
       clearFoto();
       const nextCuentaLt = form.cuentaLtFin;
       const { fecha, hora } = getNowLocal();
@@ -280,7 +279,7 @@ export default function FormCargaCampo({
         cuentaLtInicio: nextCuentaLt, cuentaLtFin: "",
         obraId: "", operadorId: "", quienSuministraId: "", notas: "",
         // nextFolio viene del server tras el insert — autoritativo
-        folioNissan: result.nextFolio == null ? "" : String(result.nextFolio),
+        folioNissan: formatFolioDigits(result.nextFolio, serieSeleccionada?.folioDigitos),
       }));
       skipFolioEffect.current = true;
       setUltimoKm(null);
@@ -334,7 +333,7 @@ export default function FormCargaCampo({
           <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
           <div>
             <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
-              Carga registrada — {formatFolioNumber(success.folio, success.serie)} · {success.unidad}
+              Carga registrada — {formatFolioNumber(success.folio, success.serie, success.folioDigitos)} · {success.unidad}
             </p>
             <p className="text-xs" style={{ color: "var(--fg-muted)" }}>{success.litros} L en campo</p>
           </div>
@@ -373,24 +372,15 @@ export default function FormCargaCampo({
 
         {/* Folio NISSAN */}
         <div className="space-y-1.5">
-          {folioSeries.length > 1 && (
-            <div className="space-y-1.5 mb-3">
-              <Label htmlFor="folioSerieCampo">Bloque físico</Label>
-              <select id="folioSerieCampo" value={folioSerieId} onChange={(e) => setFolioSerieId(Number(e.target.value))}
-                className="w-full rounded-lg border px-3 py-2 text-sm" style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                {folioSeries.map((serie) => <option key={serie.id} value={serie.id}>{serie.codigo} · {serie.folioMin || "sin mínimo"}–{serie.folioMax || "sin máximo"}{serie.predeterminada ? " (en uso)" : ""}</option>)}
-              </select>
-            </div>
-          )}
           <div className="flex items-center gap-1.5">
             <Label htmlFor="folioNissan">Folio NISSAN *</Label>
             <span className="text-xs font-bold text-red-600">{serieSeleccionada?.codigo ?? "—"}</span>
           </div>
           <div className="relative">
             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500 pointer-events-none" />
-            <Input id="folioNissan" name="folioNissan" type="number"
+            <Input id="folioNissan" name="folioNissan" type="text" inputMode="numeric" maxLength={5}
               value={form.folioNissan} onChange={handleChange}
-              placeholder={String(siguienteFolio ?? "")}
+              placeholder={formatFolioDigits(siguienteFolio, serieSeleccionada?.folioDigitos)}
               className="font-mono font-bold text-xl h-12 pl-9" />
           </div>
         </div>
@@ -453,7 +443,7 @@ export default function FormCargaCampo({
                   <Hash className="w-3 h-3 shrink-0" style={{ color: "var(--fg-muted)" }} />
                   <span style={{ color: "var(--fg-muted)" }}>Folio</span>
                   <span className="font-mono font-semibold ml-auto" style={{ color: "var(--fg)" }}>
-                    {formatCargaFolio(ultimaCarga.folio, ultimaCarga.folioSerieCodigo, ultimaCarga.origen)}
+                    {formatCargaFolio(ultimaCarga.folio, ultimaCarga.folioSerieCodigo, ultimaCarga.origen, ultimaCarga.folioSerieDigitos)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">

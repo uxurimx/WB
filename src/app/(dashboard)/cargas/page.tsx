@@ -71,6 +71,7 @@ export default async function HistorialCargasPage({
     fecha: t.fecha,
     folio: t.folio,
     folioSerieCodigo: t.folioSerie?.codigo ?? null,
+    folioSerieDigitos: t.folioSerie?.folioDigitos ?? 0,
     litros: t.litros,
     origenNombre: t.origenNombre,
     destinoNombre: t.destinoNombre,

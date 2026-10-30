@@ -79,7 +79,7 @@ export async function GET(
 
   const cargasRows = cargasData.map((c) => [
     c.folio ?? "",
-    formatCargaFolio(c.folio, c.folioSerie?.codigo, c.origen),
+    formatCargaFolio(c.folio, c.folioSerie?.codigo, c.origen, c.folioSerie?.folioDigitos),
     c.fecha,
     c.hora ? c.hora.slice(0, 5) : "",
     c.unidad?.codigo ?? `#${c.unidadId}`,
