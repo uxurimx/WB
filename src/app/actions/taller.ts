@@ -424,7 +424,7 @@ export async function getOrdenesUnidad(unidadId: number) {
     },
   });
   const folios = await leerFoliosOrdenes(ordenes.map((orden) => orden.id));
-  const detalles = new Map<number, { trabajoRealizado: string | null; comentarios: string | null; proveedorExterno: string | null }>();
+  const detalles = new Map<number, { trabajoRealizado: string | null; comentarios: string | null; proveedorExterno: string | null; fotosIngreso: string | null; fotosSalida: string | null }>();
   if (ordenes.length) {
     try {
       const rows = await db.select({
@@ -432,6 +432,8 @@ export async function getOrdenesUnidad(unidadId: number) {
         trabajoRealizado: ordenesTaller.trabajoRealizado,
         comentarios: ordenesTaller.comentarios,
         proveedorExterno: ordenesTaller.proveedorExterno,
+        fotosIngreso: ordenesTaller.fotosIngreso,
+        fotosSalida: ordenesTaller.fotosSalida,
       }).from(ordenesTaller).where(inArray(ordenesTaller.id, ordenes.map((orden) => orden.id)));
       for (const row of rows) detalles.set(row.id, row);
     } catch (error) {
@@ -446,6 +448,8 @@ export async function getOrdenesUnidad(unidadId: number) {
     trabajoRealizado: detalles.get(orden.id)?.trabajoRealizado ?? null,
     comentarios: detalles.get(orden.id)?.comentarios ?? null,
     proveedorExterno: detalles.get(orden.id)?.proveedorExterno ?? null,
+    fotosIngreso: detalles.get(orden.id)?.fotosIngreso ?? null,
+    fotosSalida: detalles.get(orden.id)?.fotosSalida ?? null,
     checklist: orden.checklist.map((item) => ({ ...item, fotos: fotos.get(item.id) ?? null })),
   }));
 }

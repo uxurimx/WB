@@ -28,7 +28,7 @@ import {
 import type { AlertaMantenimiento } from "@/app/actions/mantenimiento";
 import type { getBitacoraGeneralTaller, getUreaTaller } from "@/app/actions/taller";
 import { CATEGORIAS_SIN_TALLER, etiquetaCategoriaTaller, formatoFolioTaller, TALLER_CATEGORIAS, TALLER_FALLAS, type CategoriaTaller } from "@/lib/taller-incidencias";
-import { parseActividadesTaller, textoActividadesTaller } from "@/lib/taller-actividades";
+import { nombresAtiendeActividadTaller, parseActividadesTaller, textoActividadesTaller } from "@/lib/taller-actividades";
 
 type Incidencia = Awaited<ReturnType<typeof getIncidenciasTaller>>[number];
 type Evento = Awaited<ReturnType<typeof getBitacoraGeneralTaller>>[number];
@@ -109,6 +109,10 @@ const ESTADOS_INCIDENCIA: Record<string, string> = {
 function fechaMx(value: string | Date | null) {
   if (!value) return "—";
   return formatFechaHoraMx(value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10), value instanceof Date ? value.toISOString() : null);
+}
+
+function formatoMonedaMX(value: number) {
+  return value.toLocaleString("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function estadoOrdenVariant(estado: string) {
@@ -406,12 +410,19 @@ export default function TallerBoard({
         createdAt: evento.createdAt,
         usuarioNombre: evento.usuarioNombre,
       }));
-      const esLlantaInformativa = incidencia.categoria === "llanta_danada";
-      const actividadesResolucion = orden && !esLlantaInformativa
+      const esRegistroInformativo = incidencia.categoria === "urea" || incidencia.categoria === "llanta_danada";
+      const actividadesResolucion = orden && !esRegistroInformativo
         ? parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").filter((actividad) => actividad.atendio || actividad.trabajo)
+          .map((actividad) => ({ ...actividad, atendio: nombresAtiendeActividadTaller(actividad) }))
         : [];
-      const resolucionAdicional = esLlantaInformativa ? [] : [orden?.diagnosticoFinal, orden?.observacionesSalida, incidencia.resolucion, incidencia.observaciones, orden?.comentarios]
+      // Al cerrar una orden vinculada, incidencia.resolucion guarda una copia de
+      // las actividades. La tabla ya las muestra desde trabajoRealizado.
+      const resolucionIncidencia = orden && actividadesResolucion.length ? null : incidencia.resolucion;
+      const resolucionAdicional = (esRegistroInformativo
+        ? [incidencia.observaciones, incidencia.resolucion !== incidencia.descripcion ? incidencia.resolucion : null]
+        : [orden?.diagnosticoFinal, orden?.observacionesSalida, resolucionIncidencia, incidencia.observaciones, orden?.comentarios])
         .map((value) => value?.trim()).filter((value): value is string => Boolean(value));
+      const resolucionesUnicas = [...new Set(resolucionAdicional)];
       return {
         id: `incidencia-${incidencia.id}`,
         fecha: orden?.fecha ?? incidencia.fecha,
@@ -424,15 +435,15 @@ export default function TallerBoard({
         categoria: etiquetaCategoriaTaller(orden?.categoria ?? incidencia.categoria),
         falla: textoFallaReportada(incidencia.fallas, incidencia.descripcion),
         operador: incidencia.operador?.nombre ?? "—",
-        atendio: orden ? [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map((a) => a.atendio).filter(Boolean))].join(", ") || orden.quienAtendio || incidencia.atendio || "—" : incidencia.atendio ?? "—",
-        lugar: esLlantaInformativa ? "" : proveedor ? proveedor : orden ? "TALLER" : incidencia.ubicacion ?? "—",
-        resolucion: esLlantaInformativa ? "" : [...new Set([textoActividadesTaller(orden?.trabajoRealizado, orden?.quienAtendio ?? ""), ...resolucionAdicional])].join(", ") || "—",
+        atendio: orden ? [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map(nombresAtiendeActividadTaller).filter(Boolean))].join(", ") || orden.quienAtendio || incidencia.atendio || "—" : incidencia.atendio ?? "—",
+        lugar: esRegistroInformativo ? "" : proveedor ? proveedor : orden ? "TALLER" : incidencia.ubicacion ?? "—",
+        resolucion: [...new Set([textoActividadesTaller(orden?.trabajoRealizado, orden?.quienAtendio ?? ""), ...resolucionesUnicas])].filter(Boolean).join(", ") || (esRegistroInformativo ? "Sin notas registradas." : "—"),
         actividadesResolucion,
-        resolucionAdicional: [...new Set(resolucionAdicional)],
+        resolucionAdicional: resolucionesUnicas,
         costo,
         status,
         ordenId: orden?.id ?? incidencia.orden?.id ?? null,
-        observaciones: esLlantaInformativa ? "" : incidencia.observaciones ?? "",
+        observaciones: incidencia.observaciones ?? "",
         historial,
       };
     });
@@ -444,7 +455,8 @@ export default function TallerBoard({
         const base = (Number(ref.precio) || 0) * (Number(ref.cantidad) || 1);
         return total + (ref.iva ? base * 1.16 : base);
       }, 0);
-      const actividadesResolucion = parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").filter((actividad) => actividad.atendio || actividad.trabajo);
+      const actividadesResolucion = parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").filter((actividad) => actividad.atendio || actividad.trabajo)
+        .map((actividad) => ({ ...actividad, atendio: nombresAtiendeActividadTaller(actividad) }));
       const resolucionAdicional = [orden.diagnosticoFinal, orden.observacionesSalida, orden.comentarios]
         .map((value) => value?.trim()).filter((value): value is string => Boolean(value));
       registros.push({
@@ -459,7 +471,7 @@ export default function TallerBoard({
         categoria: etiquetaCategoriaTaller(orden.categoria),
         falla: orden.motivo ?? "Servicio de taller",
         operador: orden.operador?.nombre ?? "—",
-        atendio: [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map((a) => a.atendio).filter(Boolean))].join(", ") || orden.quienAtendio || "—",
+        atendio: [...new Set(parseActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? "").map(nombresAtiendeActividadTaller).filter(Boolean))].join(", ") || orden.quienAtendio || "—",
         lugar: proveedor || "TALLER",
         resolucion: [...new Set([textoActividadesTaller(orden.trabajoRealizado, orden.quienAtendio ?? ""), ...resolucionAdicional])].join(", ") || "—",
         actividadesResolucion,
@@ -486,11 +498,11 @@ export default function TallerBoard({
         operador: registro.operadorNombre ?? "—",
         atendio: "—",
         lugar: "",
-        resolucion: "",
+        resolucion: registro.observaciones?.trim() || "Carga de urea registrada.",
         costo: 0,
         status: "CERRADO",
         ordenId: null,
-        observaciones: "",
+        observaciones: registro.observaciones ?? "",
         historial: [],
       })));
     }
@@ -531,6 +543,21 @@ export default function TallerBoard({
     && i.categoria === "llanta_danada"
     && /·\s*\d+(?:[.,]\d+)?%\s+de vida$/i.test(i.descripcion)
   ), [incidencias, mesVigente]);
+  const totalesRefaccionesDetalle = useMemo(() => {
+    const refacciones = ordenDetalleBitacora?.refacciones ?? [];
+    return refacciones.reduce((total, refaccion) => {
+      const precio = Number(refaccion.precio) || 0;
+      const cantidad = Number(refaccion.cantidad) || 1;
+      const subtotal = precio * cantidad;
+      const iva = refaccion.iva ? subtotal * 0.16 : 0;
+      return {
+        subtotal: total.subtotal + subtotal,
+        iva: total.iva + iva,
+        total: total.total + subtotal + iva,
+        ivaAplicable: total.ivaAplicable || refaccion.iva,
+      };
+    }, { subtotal: 0, iva: 0, total: 0, ivaAplicable: false });
+  }, [ordenDetalleBitacora?.refacciones]);
 
   async function exportarBitacora() {
     if (exportandoBitacoraRef.current) return;
@@ -660,8 +687,9 @@ export default function TallerBoard({
         `OS ${formatoFolioTaller(order.folio)} · ingreso ${dateOnly(order.fecha)}`,
         ...notes,
       ].join(" · ");
-      return activities.map((activity) => {
-        const nombres = (work.find((row) => row.trabajo === activity)?.atendio || order.quienAtendio || "—")
+      return activities.map((activity, activityIndex) => {
+        const actividad = work[activityIndex];
+        const nombres = (actividad ? nombresAtiendeActividadTaller(actividad) : order.quienAtendio || "—")
           .split(",").map((name) => name.trim()).filter(Boolean)
           .filter((name) => {
             const key = name.toLocaleLowerCase("es-MX");
@@ -1321,7 +1349,12 @@ export default function TallerBoard({
 
       <Dialog open={modalDetalleBitacora} onOpenChange={setModalDetalleBitacora}>
         <DialogContent className="flex h-[min(88vh,760px)] max-h-[88vh] max-w-4xl flex-col overflow-hidden">
-          <DialogHeader><DialogTitle>{ordenDetalleBitacora?.folio ? `${formatoFolioTaller(ordenDetalleBitacora.folio)} · ${ordenDetalleBitacora.unidad?.codigo ?? registroDetalleBitacora?.unidad}` : `Bitácora · ${registroDetalleBitacora?.unidad ?? "Registro"}`}</DialogTitle></DialogHeader>
+          <DialogHeader className="relative flex flex-col items-start gap-2 pr-8 sm:min-h-7 sm:flex-row sm:items-center sm:justify-between sm:pr-0">
+            <DialogTitle className="min-w-0 sm:max-w-[40%]">Bitácora · {ordenDetalleBitacora
+              ? `${ordenDetalleBitacora.folio != null ? formatoFolioTaller(ordenDetalleBitacora.folio) : `OS ${ordenDetalleBitacora.id}`} · ${ordenDetalleBitacora.unidad?.codigo ?? registroDetalleBitacora?.unidad ?? "Unidad"}`
+              : registroDetalleBitacora?.unidad ?? "Registro"}</DialogTitle>
+            {ordenDetalleBitacora && <Link href={`/taller/${ordenDetalleBitacora.id}`} className="shrink-0 text-xs font-semibold underline underline-offset-4 sm:absolute sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">Ir a orden de servicio</Link>}
+          </DialogHeader>
           {cargandoDetalleBitacora && <p className="py-8 text-center text-sm" style={{ color: "var(--fg-muted)" }}>Cargando expediente…</p>}
           {errorDetalleBitacora && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{errorDetalleBitacora}</p>}
           {registroDetalleBitacora && !ordenDetalleBitacora && !cargandoDetalleBitacora && <div className="grid gap-3 rounded-xl border p-4 text-sm sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
@@ -1368,11 +1401,40 @@ export default function TallerBoard({
                 : <FotoLightbox key={foto.key ?? `ingreso-${index}`} foto={{ url: foto.url, key: foto.key ?? `ingreso-${index}`, alt: "Evidencia de ingreso" }} />)}</div></section>}
             </div>}
             {tabDetalleBitacora === "refacciones" && <div className="space-y-2">
-              {ordenDetalleBitacora.refacciones.map((ref, index) => <div key={ref.id ?? index} className="grid gap-2 rounded-xl border p-3 text-sm sm:grid-cols-[2fr_0.7fr_1fr_1fr]" style={{ borderColor: "var(--border)" }}>
-                <p className="font-semibold">{ref.descripcion}</p><p>{ref.cantidad ?? 1} {ref.unidadMedida}</p><p>{ref.proveedor || "Sin proveedor"}</p><p>{ref.folioFactura ? `Factura ${ref.folioFactura}` : "Sin factura"}</p>
-                <p className="text-xs" style={{ color: "var(--fg-muted)" }}>Unitario: {Number(ref.precio ?? 0).toLocaleString("es-MX", { style: "currency", currency: "MXN" })} · IVA {ref.iva ? "incluido" : "no incluido"}</p>
-              </div>)}
+              {ordenDetalleBitacora.refacciones.map((ref, index) => {
+                const precioUnitario = Number(ref.precio) || 0;
+                const cantidad = ref.cantidad ?? 1;
+                const ivaUnitario = ref.iva ? precioUnitario * 0.16 : null;
+                const unitarioConIva = ivaUnitario == null ? null : precioUnitario + ivaUnitario;
+                const totalRefaccion = (precioUnitario + (ivaUnitario ?? 0)) * cantidad;
+                return <div key={ref.id ?? index} className="space-y-2 rounded-xl border p-3 text-sm" style={{ borderColor: "var(--border)" }}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="font-semibold">{ref.descripcion}</p>
+                    <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: "var(--surface-2)", color: "var(--fg-muted)" }}>{ref.iva ? "IVA 16%" : "IVA N/A"}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                    <p><span style={{ color: "var(--fg-muted)" }}>Cantidad</span><br /><b>{cantidad} {ref.unidadMedida}</b></p>
+                    <p><span style={{ color: "var(--fg-muted)" }}>P. unitario sin IVA</span><br /><b>{formatoMonedaMX(precioUnitario)}</b></p>
+                    <p><span style={{ color: "var(--fg-muted)" }}>IVA unitario</span><br /><b>{ivaUnitario == null ? "N/A" : formatoMonedaMX(ivaUnitario)}</b></p>
+                    <p><span style={{ color: "var(--fg-muted)" }}>Unitario + IVA</span><br /><b>{unitarioConIva == null ? "N/A" : formatoMonedaMX(unitarioConIva)}</b></p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-xs" style={{ borderColor: "var(--border)" }}>
+                    <p style={{ color: "var(--fg-muted)" }}>{ref.proveedor || "Sin proveedor"} · {ref.folioFactura ? `Factura ${ref.folioFactura}` : "Sin factura"}</p>
+                    <p className="font-semibold">Total refacción: {formatoMonedaMX(totalRefaccion)}</p>
+                  </div>
+                </div>;
+              })}
               {ordenDetalleBitacora.refacciones.length === 0 && <p className="rounded-xl border p-4 text-sm" style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}>Sin refacciones registradas.</p>}
+              {ordenDetalleBitacora.refacciones.length > 0 && <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>
+                <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-xs">
+                  <p>SUBTOTAL <b>{formatoMonedaMX(totalesRefaccionesDetalle.subtotal)}</b></p>
+                  <p>IVA {totalesRefaccionesDetalle.ivaAplicable ? <b>{formatoMonedaMX(totalesRefaccionesDetalle.iva)}</b> : <b>N/A</b>}</p>
+                  <p className="text-sm font-bold">TOTAL {formatoMonedaMX(totalesRefaccionesDetalle.total)}</p>
+                </div>
+                <p className="mt-1 text-right text-[11px]" style={{ color: "var(--fg-muted)" }}>
+                  SUBTOTAL {formatoMonedaMX(totalesRefaccionesDetalle.subtotal)} + IVA {totalesRefaccionesDetalle.ivaAplicable ? formatoMonedaMX(totalesRefaccionesDetalle.iva) : "N/A"} = TOTAL {formatoMonedaMX(totalesRefaccionesDetalle.total)}
+                </p>
+              </div>}
             </div>}
             </div>
           </>}

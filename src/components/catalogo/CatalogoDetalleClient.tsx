@@ -120,6 +120,8 @@ export default function CatalogoDetalleClient({
     trabajoRealizado: string | null;
     comentarios: string | null;
     proveedorExterno: string | null;
+    fotosIngreso: string | null;
+    fotosSalida: string | null;
     operador: { nombre: string } | null;
     refacciones: { precio: number | null; cantidad: number | null; iva: boolean }[];
     checklist: { clave: string; fotos: string | null }[];

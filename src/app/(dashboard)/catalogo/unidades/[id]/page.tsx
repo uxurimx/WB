@@ -139,6 +139,8 @@ export default async function UnidadDetallePage({
           trabajoRealizado: o.trabajoRealizado,
           comentarios: o.comentarios,
           proveedorExterno: o.proveedorExterno,
+          fotosIngreso: o.fotosIngreso,
+          fotosSalida: o.fotosSalida,
           operador: o.operador,
           refacciones: o.refacciones.map((r) => ({
             precio: r.precio,

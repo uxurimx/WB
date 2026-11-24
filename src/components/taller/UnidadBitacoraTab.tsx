@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { formatFechaDmy } from "@/lib/date-utils";
-import { parseActividadesTaller, textoActividadesTaller } from "@/lib/taller-actividades";
+import { nombresAtiendeActividadTaller, parseActividadesTaller, textoActividadesTaller } from "@/lib/taller-actividades";
 import FotoLightbox, { type TallerFoto } from "@/components/taller/FotoLightbox";
 import type { getIncidenciasTaller, getUreaTaller } from "@/app/actions/taller";
 import { etiquetaCategoriaTaller, formatoFolioTaller } from "@/lib/taller-incidencias";
@@ -22,10 +22,13 @@ type Orden = {
   trabajoRealizado: string | null;
   comentarios: string | null;
   proveedorExterno: string | null;
+  fotosIngreso: string | null;
+  fotosSalida: string | null;
   operador: { nombre: string } | null;
   refacciones: { precio: number | null; cantidad: number | null; iva: boolean; descripcion?: string }[];
   checklist: { clave: string; fotos: string | null }[];
 };
+type EvidenciaOrden = TallerFoto & { tipo: "imagen" | "video" };
 type Incidencia = Awaited<ReturnType<typeof getIncidenciasTaller>>[number];
 type Urea = Awaited<ReturnType<typeof getUreaTaller>>[number];
 type FiltroExpediente = "historial" | "activos" | "refacciones" | "urea";
@@ -47,16 +50,37 @@ type Registro = {
   tipo: "orden" | "incidencia" | "urea";
 };
 
-function fotosDeOrden(checklist: Orden["checklist"]): TallerFoto[] {
-  return checklist.flatMap((item) => {
+function parseEvidencias(value: string | null, etiqueta: string): EvidenciaOrden[] {
+  if (!value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((item, index) => {
+      if (!item || typeof item !== "object" || !("url" in item) || typeof item.url !== "string") return [];
+      const key = "key" in item && typeof item.key === "string" ? item.key : `${etiqueta}-${index}`;
+      const tipo = "tipo" in item && item.tipo === "video" ? "video" : "imagen";
+      return [{ url: item.url, key, tipo, alt: etiqueta }];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function fotosDeOrden(orden: Orden): EvidenciaOrden[] {
+  const checklist = orden.checklist.flatMap((item) => {
     if (!item.fotos) return [];
     try {
-      const fotos = JSON.parse(item.fotos) as { url: string; key: string }[];
-      return fotos.map((foto) => ({ ...foto, alt: `Foto de ${item.clave}` }));
+      const fotos = JSON.parse(item.fotos) as { url: string; key: string; tipo?: "imagen" | "video" }[];
+      return fotos.map((foto) => ({ ...foto, tipo: foto.tipo ?? "imagen", alt: `Checklist · ${item.clave}` }));
     } catch {
       return [];
     }
   });
+  return [
+    ...parseEvidencias(orden.fotosIngreso, "Ingreso"),
+    ...checklist,
+    ...parseEvidencias(orden.fotosSalida, "Lugar / salida"),
+  ];
 }
 
 function costo(refs: Orden["refacciones"]) {
@@ -98,7 +122,7 @@ export default function UnidadBitacoraTab({
       resolucion: textoActividadesTaller(o.trabajoRealizado, o.quienAtendio ?? "") || o.comentarios || "Sin resolución registrada.",
       estado: estadoRegistro(o.estado),
       operador: o.operador?.nombre ?? "—",
-      atendio: [...new Set(parseActividadesTaller(o.trabajoRealizado, o.quienAtendio ?? "").map((item) => item.atendio).filter(Boolean))].join(", ") || o.quienAtendio || "—",
+      atendio: [...new Set(parseActividadesTaller(o.trabajoRealizado, o.quienAtendio ?? "").map(nombresAtiendeActividadTaller).filter(Boolean))].join(", ") || o.quienAtendio || "—",
       lugar: o.proveedorExterno || "TALLER",
       lectura: o.kmHrs != null ? `${Math.round(o.kmHrs).toLocaleString("es-MX")} km/hrs` : "—",
       falla: o.motivo || "—",
@@ -174,7 +198,7 @@ export default function UnidadBitacoraTab({
       {registrosVisibles.length ? <div className="divide-y rounded-lg border px-3" style={{ borderColor: "var(--border)" }}>
         {registrosVisibles.map((r) => {
           const orden = r.ordenId ? ordenes.find((o) => o.id === r.ordenId) : undefined;
-          const fotos = orden ? fotosDeOrden(orden.checklist) : [];
+          const evidencias = orden ? fotosDeOrden(orden) : [];
           return <article key={r.key} className="py-3" style={{ borderColor: "var(--border)" }}>
             <div className="flex items-start gap-3">
               <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-slate-400" />
@@ -184,9 +208,20 @@ export default function UnidadBitacoraTab({
                   {r.ordenId && <Link href={`/taller/${r.ordenId}`} aria-label="Ir a la orden de servicio" title="Ir a la orden de servicio" className="rounded-md p-1.5 text-indigo-600 hover:bg-[var(--surface-2)]"><ExternalLink className="h-4 w-4" /></Link>}
                 </div>
                 <p className="mt-1 text-sm font-semibold">{r.titulo}</p>
-                <p className="mt-0.5 text-xs" style={{ color: "var(--fg-muted)" }}><span className="font-semibold">Resolución:</span> {r.resolucion}</p>
-                <p className="mt-0.5 text-xs" style={{ color: "var(--fg-muted)" }}>{r.operador !== "—" ? `Operador: ${r.operador} · ` : ""}Lugar: {r.lugar}{r.lectura !== "—" ? ` · ${r.lectura}` : ""}{r.costo > 0 ? ` · Refacciones: ${r.costo.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2 })}` : ""}</p>
-                {fotos.length > 0 && <div className="mt-2 flex gap-2">{fotos.map((foto) => <FotoLightbox key={foto.key} foto={foto} />)}</div>}
+                <div className="mt-1 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <div className="min-w-0">
+                    <p className="whitespace-pre-wrap break-words text-xs" style={{ color: "var(--fg-muted)" }}><span className="font-semibold">Resolución:</span> {r.resolucion}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: "var(--fg-muted)" }}>{r.operador !== "—" ? `Operador: ${r.operador} · ` : ""}Lugar: {r.lugar}{r.lectura !== "—" ? ` · ${r.lectura}` : ""}{r.costo > 0 ? ` · Refacciones: ${r.costo.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2 })}` : ""}</p>
+                  </div>
+                  {evidencias.length > 0 && <div className="flex flex-wrap items-start gap-2 sm:max-w-[300px] sm:justify-end">
+                    {evidencias.map((evidencia) => <div key={evidencia.key} className="w-[72px]">
+                      {evidencia.tipo === "video"
+                        ? <video src={evidencia.url} controls preload="metadata" aria-label={evidencia.alt} className="h-16 w-[72px] rounded-lg border object-cover" style={{ borderColor: "var(--border)" }} />
+                        : <FotoLightbox foto={evidencia} />}
+                      <p className="mt-0.5 truncate text-[9px]" style={{ color: "var(--fg-muted)" }}>{evidencia.alt}</p>
+                    </div>)}
+                  </div>}
+                </div>
               </div>
             </div>
           </article>;

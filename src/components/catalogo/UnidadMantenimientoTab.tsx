@@ -413,6 +413,11 @@ export default function UnidadMantenimientoTab({
                   {evento.descripcion && (
                     <p className="text-xs mt-0.5 truncate" style={{ color: "var(--fg-muted)" }}>{evento.descripcion}</p>
                   )}
+                  {evento.notas && (
+                    <p className="text-xs mt-0.5 whitespace-pre-wrap break-words" style={{ color: "var(--fg-muted)" }}>
+                      Notas: {evento.notas}
+                    </p>
+                  )}
                 </div>
                 {canManageMaintenance && (
                   <button

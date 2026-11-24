@@ -15,7 +15,7 @@ import { formatFechaHoraMx, getLocalDateString } from "@/lib/date-utils";
 import { formatoFolioTaller, TALLER_CATEGORIAS, type CategoriaTaller } from "@/lib/taller-incidencias";
 import { useUploadThing } from "@/lib/uploadthing";
 import FotoLightbox from "@/components/taller/FotoLightbox";
-import { parseActividadesTaller, serializeActividadesTaller, type ActividadTaller } from "@/lib/taller-actividades";
+import { nombresAtiendeActividadTaller, parseActividadesTaller, serializeActividadesTaller, type ActividadTaller } from "@/lib/taller-actividades";
 import DateDmyInput from "@/components/taller/DateDmyInput";
 
 type MediaFile = { url: string; key: string; tipo: "imagen" | "video" };
@@ -141,11 +141,20 @@ export default function OrdenDetalleForm({
   const [quienRecibio, setQuienRecibio] = useState(orden.quienRecibio ?? "");
   const [quienAtendio] = useState(orden.quienAtendio ?? "");
   const mecanicosGuardados = (() => { try { return JSON.parse(orden.mecanicos ?? "[]") as string[]; } catch { return []; } })();
-  const [mecanicoOtro, setMecanicoOtro] = useState(orden.mecanicoOtro ?? "");
+  const mecanicoOtroAnterior = orden.mecanicoOtro ?? "";
   const [proveedorExterno, setProveedorExterno] = useState(orden.proveedorExterno ?? "");
   const [actividades, setActividades] = useState<ActividadTaller[]>(() => {
     const rows = parseActividadesTaller(orden.trabajoRealizado ?? orden.comentarios, mecanicosGuardados.join(", ") || orden.quienAtendio || "");
-    return rows.length ? rows : [actividadVacia()];
+    const compatibles = rows.map((row) => {
+      const names = row.atendio.split(",").map((name) => name.trim()).filter(Boolean);
+      const hasLegacyOther = Boolean(mecanicoOtroAnterior && names.includes(mecanicoOtroAnterior));
+      return {
+        ...row,
+        atendio: hasLegacyOther ? names.map((name) => name === mecanicoOtroAnterior ? "Otro" : name).join(", ") : row.atendio,
+        mecanicoOtro: row.mecanicoOtro || (hasLegacyOther ? mecanicoOtroAnterior : ""),
+      };
+    });
+    return compatibles.length ? compatibles : [actividadVacia()];
   });
   const proximoMatch = (orden.proximoMto ?? "").match(/([\d,.]+)\s*(hrs?|hor[oó]metro|km|kms?)/i);
   const [proximoActivo, setProximoActivo] = useState(Boolean(orden.proximoMto));
@@ -260,12 +269,9 @@ export default function OrdenDetalleForm({
     });
   }
 
-  const actividadesNormalizadas = actividades.map((actividad) => ({
-    ...actividad,
-    atendio: actividad.atendio.split(",").map((nombre) => nombre.trim()).filter(Boolean).map((nombre) => nombre === "Otro" && mecanicoOtro.trim() ? mecanicoOtro.trim() : nombre).join(", "),
-  }));
-  const mecanicosLabel = [...new Set(actividadesNormalizadas.flatMap((actividad) => actividad.atendio.split(",").map((nombre) => nombre.trim()).filter(Boolean)))].join(", ");
-  const mecanicos = [...new Set(actividadesNormalizadas.flatMap((actividad) => actividad.atendio.split(",").map((nombre) => nombre.trim()).filter(Boolean)))];
+  const nombresAtendidos = [...new Set(actividades.flatMap((actividad) => nombresAtiendeActividadTaller(actividad).split(",").map((nombre) => nombre.trim()).filter(Boolean)))];
+  const mecanicosLabel = nombresAtendidos.join(", ");
+  const mecanicos = nombresAtendidos;
 
   function payload() {
     return {
@@ -277,9 +283,8 @@ export default function OrdenDetalleForm({
       quienRecibio,
       quienAtendio: mecanicosLabel || quienAtendio,
       mecanicos,
-      mecanicoOtro,
       proveedorExterno,
-      trabajoRealizado: serializeActividadesTaller(actividadesNormalizadas),
+      trabajoRealizado: serializeActividadesTaller(actividades),
       fechaSalida: fechaSalida || null,
       proximoMto: proximoActivo && proximoValorFinal ? `${proximoValorFinal} ${tipoPrev}` : "",
       fotosIngreso,
@@ -312,6 +317,19 @@ export default function OrdenDetalleForm({
     });
   }
 
+  function toggleAtiendeActividad(index: number, nombre: string) {
+    setActividades((rows) => rows.map((row, i) => {
+      if (i !== index) return row;
+      const current = row.atendio.split(",").map((item) => item.trim()).filter(Boolean);
+      const next = current.includes(nombre) ? current.filter((item) => item !== nombre) : [...current, nombre];
+      return { ...row, atendio: next.join(", ") };
+    }));
+  }
+
+  function updateActividadNombre(index: number, campo: "mecanicoOtro" | "proveedorExterno", value: string) {
+    setActividades((rows) => rows.map((row, i) => i === index ? { ...row, [campo]: value } : row));
+  }
+
   useEffect(() => {
     if (locked) return;
     const fingerprint = JSON.stringify(payload());
@@ -326,7 +344,7 @@ export default function OrdenDetalleForm({
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fecha, motivo, categoria, quienRecibio, quienAtendio, kmHrs, mecanicoOtro, proveedorExterno, actividades, fechaSalida, proximoActivo, proximoValor, fotosIngreso, fotosSalida, operadorId, checks, refs, estadoOrden]);
+  }, [fecha, motivo, categoria, quienRecibio, quienAtendio, kmHrs, proveedorExterno, actividades, fechaSalida, proximoActivo, proximoValor, fotosIngreso, fotosSalida, operadorId, checks, refs, estadoOrden]);
 
   const total = refs.reduce((s, r) => {
     const p = (r.precio ?? 0) * (r.cantidad ?? 1);
@@ -474,21 +492,22 @@ export default function OrdenDetalleForm({
               const nombres = actividad.atendio.split(",").map((nombre) => nombre.trim()).filter(Boolean);
               return <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1.35fr)_minmax(300px,1fr)_auto]">
               <Input disabled={locked || !orden.extensionReady} value={actividad.trabajo} onChange={(e) => setActividades((rows) => rows.map((row, i) => i === index ? { ...row, trabajo: e.target.value } : row))} placeholder="Describe la actividad realizada" className="h-10" />
-              <div className="flex flex-wrap content-start gap-1.5">
-                {["Oscar", "Carlos", "Rolando", "Otro", "Externo"].map((nombre) => {
-                  const active = nombres.includes(nombre) || (nombre === "Otro" && Boolean(mecanicoOtro.trim()) && nombres.includes(mecanicoOtro.trim()));
-                  return <button key={nombre} type="button" disabled={locked} aria-pressed={active} onClick={() => setActividades((rows) => rows.map((row, i) => {
-                    if (i !== index) return row;
-                    const current = row.atendio.split(",").map((item) => item.trim()).filter(Boolean);
-                    const next = current.includes(nombre) ? current.filter((item) => item !== nombre) : [...current, nombre];
-                    return { ...row, atendio: next.join(", ") };
-                  }))} className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium ${active ? "border-[#207783] bg-[#207783] text-white" : ""}`} style={active ? undefined : { borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>{nombre}</button>;
+              <div className="space-y-1">
+              <div className="grid grid-cols-3 content-start gap-1">
+                {["Oscar", "Carlos", "Rolando", "Externo", "Damián", "Miguel"].map((nombre) => {
+                  const active = nombres.includes(nombre);
+                  return <button key={nombre} type="button" disabled={locked} aria-pressed={active} onClick={() => toggleAtiendeActividad(index, nombre)} className={`w-full rounded-lg border px-1.5 py-1 text-[11px] font-medium ${active ? "border-[#207783] bg-[#207783] text-white" : ""}`} style={active ? undefined : { borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>{nombre}</button>;
                 })}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button type="button" disabled={locked} aria-pressed={nombres.includes("Otro")} onClick={() => toggleAtiendeActividad(index, "Otro")} className={`rounded-lg border px-2 py-1 text-[11px] font-medium ${nombres.includes("Otro") ? "border-[#207783] bg-[#207783] text-white" : ""}`} style={nombres.includes("Otro") ? undefined : { borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>Otro</button>
+                {nombres.includes("Otro") && <Input className="h-8 min-w-[130px] flex-1" disabled={locked} value={actividad.mecanicoOtro ?? ""} onChange={(e) => updateActividadNombre(index, "mecanicoOtro", e.target.value)} placeholder="Nombre del mecánico" aria-label={`Nombre del mecánico para actividad ${index + 1}`} />}
+                {nombres.includes("Externo") && <Input className="h-8 min-w-[150px] flex-1" disabled={locked} value={actividad.proveedorExterno ?? ""} onChange={(e) => updateActividadNombre(index, "proveedorExterno", e.target.value)} placeholder="Proveedor externo" aria-label={`Proveedor externo para actividad ${index + 1}`} />}
+              </div>
               </div>
               {!locked && <button type="button" aria-label="Quitar actividad" onClick={() => setActividades((rows) => { const remaining = rows.filter((_, i) => i !== index); return remaining.length ? remaining : [actividadVacia()]; })} className="px-2 text-red-500"><X className="h-4 w-4" /></button>}
             </div>;
             })}
-            {actividades.some((actividad) => actividad.atendio.split(",").map((nombre) => nombre.trim()).includes("Otro")) && <Input disabled={locked} value={mecanicoOtro} onChange={(e) => setMecanicoOtro(e.target.value)} placeholder="Nombre del mecánico (Otro)" />}
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1.35fr)_minmax(300px,1fr)_auto]">
               <div className="min-w-0 space-y-1">
                 <Label>Lugar / Ubicación</Label>
